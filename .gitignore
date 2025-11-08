@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Testing
+coverage/
+*.lcov
+.nyc_output
+junit.xml
+test-results/
+playwright-report/
+playwright/.cache/
+.jest-cache/
