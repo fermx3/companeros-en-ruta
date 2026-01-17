@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { env } from '../env'
 
@@ -26,5 +27,20 @@ export function createClient() {
         },
       },
     }
+  )
+}
+
+/**
+ * Crea un cliente de Supabase con service role key
+ * Para operaciones administrativas que bypasean RLS
+ */
+export function createServiceClient() {
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured');
+  }
+
+  return createSupabaseClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
   )
 }

@@ -49,3 +49,8 @@ test-results/
 playwright-report/
 playwright/.cache/
 .jest-cache/
+supabase/.temp/
+
+# AI Agents
+agents.md
+skills/
