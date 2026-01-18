@@ -1,27 +1,13 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/lib/env';
-
-// Crear cliente Supabase con service role key
-const supabase = createClient(
-  env.NEXT_PUBLIC_SUPABASE_URL,
-  env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
-
-const DEMO_TENANT_ID = 'fe0f429d-2d83-4738-af65-32c655cef656';
+import { getAuthenticatedServiceClient } from '@/lib/utils/tenant';
 
 export async function GET(request: NextRequest) {
   try {
+    // Obtener cliente autenticado y tenant_id
+    const { supabase, tenantId } = await getAuthenticatedServiceClient();
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') ?? '1');
     const limit = parseInt(searchParams.get('limit') ?? '20');
-    const tenantId = searchParams.get('tenant_id') ?? DEMO_TENANT_ID;
 
     const from = (page - 1) * limit;
     const to = from + limit - 1;
@@ -68,8 +54,9 @@ export async function GET(request: NextRequest) {
 // Crear brand
 export async function POST(request: NextRequest) {
   try {
+    // Obtener cliente autenticado y tenant_id
+    const { supabase, tenantId } = await getAuthenticatedServiceClient();
     const body = await request.json();
-    const tenantId = DEMO_TENANT_ID;
 
     // Generar public_id único
     const { count } = await supabase

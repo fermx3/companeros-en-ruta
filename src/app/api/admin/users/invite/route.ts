@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { getAuthenticatedServiceClient } from '@/lib/utils/tenant';
 
 /**
  * API Route para invitar usuarios con permisos de administrador
@@ -7,7 +7,8 @@ import { createServiceClient } from '@/lib/supabase/server';
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServiceClient();
+    // Obtener cliente autenticado y tenant_id
+    const { supabase, tenantId } = await getAuthenticatedServiceClient();
     const body = await request.json();
 
     const {
@@ -57,9 +58,42 @@ export async function POST(request: NextRequest) {
       createUserPayload.email_confirm = true;
     }
 
-    const { data: authUser, error: authError } = await supabase.auth.admin.createUser(createUserPayload);
+    let authUser;
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser(createUserPayload);
 
-    if (authError || !authUser.user) {
+    // Si el usuario ya existe en auth, intentar obtenerlo
+    if (authError?.message?.includes('User already registered') || authError?.message?.includes('already exists')) {
+      console.log('User already exists in auth, attempting to retrieve existing user');
+
+      // Obtener el usuario existente
+      const { data: existingUsers, error: getUserError } = await supabase.auth.admin.listUsers();
+
+      if (getUserError) {
+        return NextResponse.json(
+          {
+            error: `Error al verificar usuarios existentes: ${getUserError.message}`,
+            details: getUserError
+          },
+          { status: 400 }
+        );
+      }
+
+      // Buscar el usuario por email
+      const existingUser = existingUsers.users?.find((user: any) => user.email === email);
+
+      if (!existingUser) {
+        return NextResponse.json(
+          {
+            error: `Usuario ya existe en auth pero no se pudo recuperar: ${authError.message}`,
+            details: authError
+          },
+          { status: 400 }
+        );
+      }
+
+      // Usar el usuario existente
+      authUser = { user: existingUser };
+    } else if (authError || !authData?.user) {
       console.error('Supabase Auth Error:', authError);
       return NextResponse.json(
         {
@@ -68,57 +102,119 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+    } else {
+      authUser = authData;
     }
 
+    let userWasCreatedNew = !authError?.message?.includes('User already registered') && !authError?.message?.includes('already exists');
+
     try {
-      const tenantId = process.env.NEXT_PUBLIC_DEMO_TENANT_ID;
+      // 2. Verificar si ya existe el perfil o crearlo
+      let profile;
 
-      if (!tenantId) {
-        throw new Error('NEXT_PUBLIC_DEMO_TENANT_ID not configured');
-      }
-
-      // 2. Crear perfil de usuario
-      const { data: profile, error: profileError } = await supabase
+      // Primero verificar si existe el perfil
+      const { data: existingProfile } = await supabase
         .from('user_profiles')
-        .insert({
-          user_id: authUser.user.id,
-          tenant_id: tenantId,
-          first_name,
-          last_name,
-          email,
-          phone,
-          position,
-          department,
-          employee_code,
-          status: 'active',
-          timezone: 'America/Mexico_City'
-        })
-        .select()
+        .select('*')
+        .eq('user_id', authUser.user.id)
         .single();
 
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        throw new Error(`Error creando perfil: ${profileError.message}`);
+      if (existingProfile) {
+        // Si ya existe el perfil, actualizarlo con los nuevos datos
+        const { data: updatedProfile, error: updateError } = await supabase
+          .from('user_profiles')
+          .update({
+            first_name,
+            last_name,
+            email,
+            phone,
+            position,
+            department,
+            employee_code,
+            status: 'active',
+            timezone: 'America/Mexico_City'
+          })
+          .eq('user_id', authUser.user.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Profile update error:', updateError);
+          throw new Error(`Error actualizando perfil: ${updateError.message}`);
+        }
+
+        profile = updatedProfile;
+      } else {
+        // Si no existe, crearlo
+        const { data: newProfile, error: profileError } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: authUser.user.id,
+            tenant_id: tenantId,
+            first_name,
+            last_name,
+            email,
+            phone,
+            position,
+            department,
+            employee_code,
+            status: 'active',
+            timezone: 'America/Mexico_City'
+          })
+          .select()
+          .single();
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          throw new Error(`Error creando perfil: ${profileError.message}`);
+        }
+
+        profile = newProfile;
       }
 
-      // 3. Asignar rol inicial
-      const { data: roleData, error: roleError } = await supabase
+      // 3. Verificar y asignar rol inicial
+      let roleData;
+
+      // Determinar el scope correcto basado en si hay brand_id
+      const roleScope = brand_id ? 'brand' : 'tenant';
+
+      // Verificar si ya tiene un rol similar
+      const { data: existingRole } = await supabase
         .from('user_roles')
-        .insert({
-          user_profile_id: profile.id, // Usar el ID del perfil, no del usuario auth
-          tenant_id: tenantId,
-          role,
-          brand_id: brand_id || null,
-          zone_id: zone_id || null,
-          status: 'active',
-          scope: 'tenant' // Scope por defecto
-        })
-        .select()
+        .select('*')
+        .eq('user_profile_id', profile.id)
+        .eq('tenant_id', tenantId)
+        .eq('role', role)
+        .eq('brand_id', brand_id || null)
+        .eq('zone_id', zone_id || null)
+        .eq('scope', roleScope)
         .single();
 
-      if (roleError) {
-        console.error('Role creation error:', roleError);
-        throw new Error(`Error creando rol: ${roleError.message}`);
+      if (existingRole) {
+        // Si ya existe el rol, simplemente usarlo
+        roleData = existingRole;
+      } else {
+        // Si no existe, crearlo
+        const { data: newRole, error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_profile_id: profile.id, // Usar el ID del perfil, no del usuario auth
+            tenant_id: tenantId,
+            role,
+            brand_id: brand_id || null,
+            zone_id: zone_id || null,
+            status: 'active',
+            scope: roleScope // Usar el scope calculado
+          })
+          .select()
+          .single();
+
+        if (roleError) {
+          console.error('Role creation error:', roleError);
+          throw new Error(`Error creando rol: ${roleError.message}`);
+        }
+
+        roleData = newRole;
       }
 
       return NextResponse.json({
@@ -127,8 +223,10 @@ export async function POST(request: NextRequest) {
       }, { status: 201 });
 
     } catch (error) {
-      // Si falla la creación del perfil o rol, limpiar usuario de auth
-      await supabase.auth.admin.deleteUser(authUser.user.id);
+      // Si falla la creación del perfil o rol y el usuario fue creado nuevo, limpiar usuario de auth
+      if (userWasCreatedNew && authUser?.user?.id) {
+        await supabase.auth.admin.deleteUser(authUser.user.id);
+      }
       throw error;
     }
 

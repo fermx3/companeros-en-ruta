@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/client';
 import { env } from '@/lib/env';
 import type {
   AdminDashboardMetrics,
+  RecentActivity,
   Brand,
   Client,
   UserProfile,
@@ -37,31 +38,31 @@ export class AdminService {
 
   // Obtener tenant_id del usuario actual (para MVP usamos tenant demo)
   private async getCurrentTenantId(): Promise<string> {
-    // Para el MVP, usamos directamente el tenant demo
-    // En producción, esto debería obtenerse del contexto de autenticación
-    const DEMO_TENANT_ID = env.NEXT_PUBLIC_DEMO_TENANT_ID || 'fe0f429d-2d83-4738-af65-32c655cef656';
-
     try {
-      // Intentar obtener usuario autenticado
+      // En el cliente, obtener del perfil del usuario autenticado
       const { data: { user } } = await this.supabase.auth.getUser();
 
-      if (user) {
-        // Buscar el perfil del usuario para obtener el tenant_id real
-        const { data: profile } = await this.supabase
-          .from('user_profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (profile) {
-          // En el futuro aquí obtendríamos el tenant_id desde user_roles o user_profiles
-          return DEMO_TENANT_ID;
-        }
+      if (!user) {
+        throw new Error('Usuario no autenticado');
       }
 
-      // Fallback: usar tenant demo para desarrollo
-      return DEMO_TENANT_ID;
+      // Buscar el perfil del usuario para obtener el tenant_id real
+      const { data: profile, error: profileError } = await this.supabase
+        .from('user_profiles')
+        .select('tenant_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        throw new Error('No se pudo obtener el perfil del usuario autenticado');
+      }
+
+      return profile.tenant_id;
+
     } catch (error) {
+      console.error('Error obteniendo tenant_id:', error);
+      // Fallback solo para desarrollo - en producción esto debería fallar
+      const DEMO_TENANT_ID = env.NEXT_PUBLIC_DEMO_TENANT_ID || 'fe0f429d-2d83-4738-af65-32c655cef656';
       return DEMO_TENANT_ID;
     }
   }
@@ -121,6 +122,101 @@ export class AdminService {
   }
 
   /**
+   * Recent Activity - Obtener actividad reciente del sistema
+   */
+  async getRecentActivity(limit = 5): Promise<ApiResponse<RecentActivity[]>> {
+    try {
+      const tenantId = await this.getCurrentTenantId();
+
+      // Consultar audit_logs para obtener actividad reciente
+      const { data, error } = await this.supabase
+        .from('audit_logs')
+        .select(`
+          id,
+          user_id,
+          action,
+          resource_type,
+          resource_id,
+          new_values,
+          created_at,
+          user_profiles(first_name, last_name)
+        `)
+        .eq('tenant_id', tenantId)
+        .in('action', ['CREATE', 'UPDATE'])
+        .in('resource_type', ['brands', 'users', 'clients', 'visits', 'orders'])
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        throw new Error(`Error al obtener actividad reciente: ${error.message}`);
+      }
+
+      if (!data) {
+        return { data: [] };
+      }
+
+      // Mapear los datos a formato de RecentActivity
+      const activities: RecentActivity[] = data.map((log: any) => {
+        const entityName = log.new_values?.name || log.new_values?.business_name || log.new_values?.first_name || 'Elemento';
+        const userName = log.user_profiles ? `${log.user_profiles.first_name} ${log.user_profiles.last_name}`.trim() : undefined;
+
+        // Determinar el tipo de acción y descripción
+        let actionType: RecentActivity['action_type'];
+        let description: string;
+
+        const resourceType = log.resource_type.slice(0, -1); // Quitar 's' del plural
+        const actionVerb = log.action === 'CREATE' ? 'creó' : 'actualizó';
+
+        switch (resourceType) {
+          case 'brand':
+            actionType = log.action === 'CREATE' ? 'brand_created' : 'brand_updated';
+            description = `Se ${actionVerb} la marca ${entityName}`;
+            break;
+          case 'user':
+            actionType = log.action === 'CREATE' ? 'user_created' : 'user_role_assigned';
+            description = `Se ${actionVerb} el usuario ${entityName}`;
+            break;
+          case 'client':
+            actionType = log.action === 'CREATE' ? 'client_created' : 'client_updated';
+            description = `Se ${actionVerb} el cliente ${entityName}`;
+            break;
+          case 'visit':
+            actionType = 'visit_created';
+            description = `Se ${actionVerb} una visita`;
+            break;
+          case 'order':
+            actionType = 'order_created';
+            description = `Se ${actionVerb} una orden`;
+            break;
+          default:
+            actionType = 'brand_created';
+            description = `Se ${actionVerb} ${entityName}`;
+        }
+
+        return {
+          id: log.id,
+          tenant_id: tenantId,
+          user_id: log.user_id,
+          action: log.action,
+          resource_type: log.resource_type,
+          resource_id: log.resource_id,
+          user_name: userName,
+          created_at: log.created_at,
+          action_type: actionType,
+          description
+        };
+      });
+
+      return { data: activities };
+
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      return { error: message };
+    }
+  }
+
+  /**
    * Brand Management
    */
   /**
@@ -148,6 +244,34 @@ export class AdminService {
       limit,
       totalPages: Math.ceil((count || 0) / limit)
     };
+  }
+
+  async getBrandById(id: string): Promise<ApiResponse<Brand>> {
+    try {
+      const tenantId = await this.getCurrentTenantId();
+
+      const { data, error } = await this.supabase
+        .from('brands')
+        .select('*')
+        .eq('id', id)
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
+        .single();
+
+      if (error) throw new Error(`Error al obtener brand: ${error.message}`);
+      if (!data) throw new Error('Brand no encontrada');
+
+      return {
+        data: data as Brand,
+        message: 'Brand obtenida exitosamente'
+      };
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      return {
+        error: message
+      };
+    }
   }
 
   async createBrand(brandData: BrandCreateForm): Promise<ApiResponse<Brand>> {

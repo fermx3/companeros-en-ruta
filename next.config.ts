@@ -5,6 +5,19 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+
+  // Configuración para imágenes externas
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/**',
+      },
+    ],
+  },
+
   // Configuración para Turbopack (Next.js 16)
   turbopack: {},
 

@@ -1,5 +1,8 @@
 # Database Schema Design for Compañeros en Ruta (PerfectApp) MVP V2.0
 
+## Importante, leer primero!!
+La implementacion actual de la database que ya existe en Supabase está en database_actual.md
+
 ## 1. Overview del modelo
 
 Compañeros en Ruta implements a multi-tenant SaaS architecture supporting corporate holdings (tenants) that manage one or multiple brands. Each brand operates loyalty programs and field sales operations targeting retail clients (stores/points of sale). The system uses soft isolation with strict Row Level Security (RLS) policies based on tenant_id to ensure complete data segregation.

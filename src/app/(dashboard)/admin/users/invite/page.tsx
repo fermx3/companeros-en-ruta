@@ -130,7 +130,6 @@ export default function InviteUserPage() {
       supervisor: 'Supervisor',
       advisor: 'Asesor',
       market_analyst: 'Analista de Mercado',
-      client: 'Cliente'
     };
     return labels[role as keyof typeof labels] || role;
   };

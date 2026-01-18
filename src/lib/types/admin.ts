@@ -192,6 +192,25 @@ export interface AdminDashboardMetrics {
   monthlyRevenue: number;
 }
 
+// Recent activity types
+export interface RecentActivity {
+  id: string;
+  tenant_id: string;
+  user_id?: string;
+  action: string; // Campo de la tabla audit_logs
+  resource_type: string; // Tipo de entidad afectada
+  resource_id?: string; // ID del recurso
+  user_name?: string; // Nombre del usuario que hizo la acción (join con user_profiles)
+  created_at: string;
+  // Campos calculados para mostrar en la UI
+  action_type: 'brand_created' | 'brand_updated' | 'user_created' | 'user_role_assigned' | 'client_created' | 'client_updated' | 'visit_created' | 'order_created';
+  description: string;
+}
+
+export interface AdminDashboardData extends AdminDashboardMetrics {
+  recentActivity: RecentActivity[];
+}
+
 // Form validation schemas
 export const brandCreateSchema = z.object({
   name: z.string().min(1, 'Nombre de marca es requerido').max(100),

@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { adminService } from '@/lib/services/adminService'
-import type { AdminDashboardMetrics } from '@/lib/types/admin'
+import type { AdminDashboardMetrics, RecentActivity } from '@/lib/types/admin'
 
 /**
  * Dashboard principal del administrador
@@ -14,6 +14,7 @@ import type { AdminDashboardMetrics } from '@/lib/types/admin'
  */
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<AdminDashboardMetrics | null>(null)
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const loadingRef = useRef(true)
@@ -50,14 +51,24 @@ export default function AdminDashboard() {
     }, 15000) // 15 segundos timeout
 
     try {
-      const response = await adminService.getDashboardMetrics()
+      const [metricsResponse, activityResponse] = await Promise.all([
+        adminService.getDashboardMetrics(),
+        adminService.getRecentActivity(3)
+      ])
 
       // Verificar si el componente aún está montado y no hay timeout
       if (loadingRef.current) {
-        if (response.error) {
-          setError(response.error)
+        if (metricsResponse.error) {
+          setError(metricsResponse.error)
         } else {
-          setMetrics(response.data || null)
+          setMetrics(metricsResponse.data || null)
+        }
+
+        if (activityResponse.error) {
+          console.warn('Error loading recent activity:', activityResponse.error)
+          setRecentActivity([]) // Fallar silenciosamente para actividad
+        } else {
+          setRecentActivity(activityResponse.data || [])
         }
       }
     } catch (err) {
@@ -251,53 +262,26 @@ export default function AdminDashboard() {
                 Actividad Reciente
               </h3>
               <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity) => (
+                    <RecentActivityItem key={activity.id} activity={activity} />
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
+                    <p className="text-sm">No hay actividad reciente</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">
-                      Se creó la brand <span className="font-medium">Demo Brand</span>
-                    </p>
-                    <p className="text-xs text-gray-500">hace 2 meses</p>
-                  </div>
-                </div>
+                )}
 
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                {recentActivity.length > 0 && (
+                  <div className="text-center pt-4">
+                    <Button variant="outline" size="sm">
+                      Ver toda la actividad
+                    </Button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">
-                      Se registró el cliente <span className="font-medium">Demo Client</span>
-                    </p>
-                    <p className="text-xs text-gray-500">hace 2 meses</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">
-                      Tu perfil fue configurado como <span className="font-medium">Admin</span>
-                    </p>
-                    <p className="text-xs text-gray-500">hace 2 meses</p>
-                  </div>
-                </div>
-
-                <div className="text-center pt-4">
-                  <Button variant="outline" size="sm">
-                    Ver toda la actividad
-                  </Button>
-                </div>
+                )}
               </div>
             </div>
           </Card>
@@ -370,5 +354,116 @@ function QuickActionItem({ title, description, href, icon }: QuickActionItemProp
         </div>
       </div>
     </Link>
+  );
+}
+
+// Componente auxiliar para mostrar actividad reciente
+interface RecentActivityItemProps {
+  activity: RecentActivity;
+}
+
+function RecentActivityItem({ activity }: RecentActivityItemProps) {
+  // Función para obtener el icono y color según el tipo de actividad
+  const getActivityIcon = (actionType: RecentActivity['action_type']) => {
+    const iconProps = "w-4 h-4";
+
+    switch (actionType) {
+      case 'brand_created':
+      case 'brand_updated':
+        return {
+          icon: (
+            <svg className={`${iconProps} text-blue-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          ),
+          bgColor: 'bg-blue-100'
+        };
+      case 'user_created':
+      case 'user_role_assigned':
+        return {
+          icon: (
+            <svg className={`${iconProps} text-purple-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+            </svg>
+          ),
+          bgColor: 'bg-purple-100'
+        };
+      case 'client_created':
+      case 'client_updated':
+        return {
+          icon: (
+            <svg className={`${iconProps} text-green-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          ),
+          bgColor: 'bg-green-100'
+        };
+      case 'visit_created':
+        return {
+          icon: (
+            <svg className={`${iconProps} text-indigo-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          ),
+          bgColor: 'bg-indigo-100'
+        };
+      case 'order_created':
+        return {
+          icon: (
+            <svg className={`${iconProps} text-yellow-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          ),
+          bgColor: 'bg-yellow-100'
+        };
+      default:
+        return {
+          icon: (
+            <svg className={`${iconProps} text-gray-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          ),
+          bgColor: 'bg-gray-100'
+        };
+    }
+  };
+
+  // Función para formatear el tiempo relativo
+  const formatRelativeTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+    if (diffInMinutes < 1) return 'ahora';
+    if (diffInMinutes < 60) return `hace ${diffInMinutes} minuto${diffInMinutes > 1 ? 's' : ''}`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `hace ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `hace ${diffInDays} día${diffInDays > 1 ? 's' : ''}`;
+
+    const diffInMonths = Math.floor(diffInDays / 30);
+    return `hace ${diffInMonths} mes${diffInMonths > 1 ? 'es' : ''}`;
+  };
+
+  const { icon, bgColor } = getActivityIcon(activity.action_type);
+
+  return (
+    <div className="flex items-start space-x-3">
+      <div className={`flex-shrink-0 w-8 h-8 ${bgColor} rounded-full flex items-center justify-center`}>
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-gray-900">
+          {activity.description}
+          {activity.user_name && (
+            <span className="text-gray-600"> por {activity.user_name}</span>
+          )}
+        </p>
+        <p className="text-xs text-gray-500">{formatRelativeTime(activity.created_at)}</p>
+      </div>
+    </div>
   );
 }

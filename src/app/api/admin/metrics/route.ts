@@ -1,25 +1,10 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/lib/env';
-
-// Crear cliente Supabase con service role key
-const supabase = createClient(
-  env.NEXT_PUBLIC_SUPABASE_URL,
-  env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
-
-const DEMO_TENANT_ID = 'fe0f429d-2d83-4738-af65-32c655cef656';
+import { getAuthenticatedServiceClient } from '@/lib/utils/tenant';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenant_id') ?? DEMO_TENANT_ID;
+    // Obtener cliente autenticado y tenant_id
+    const { supabase, tenantId } = await getAuthenticatedServiceClient();
 
     console.log('API Route - getDashboardMetrics:', { tenantId });
 
