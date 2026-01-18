@@ -1,0 +1,507 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/button';
+import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
+
+interface TeamMember {
+  id: string;
+  public_id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  status: string;
+  last_activity: string | null;
+  total_visits: number;
+  total_orders: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Página de gestión de equipos de venta para usuarios de marca
+ */
+export default function BrandTeamPage() {
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+
+  useEffect(() => {
+    const loadTeam = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // TODO: Implementar endpoint para obtener equipo de la marca
+        // const response = await brandService.getTeam({ page, search: searchTerm, role: selectedRole, status: selectedStatus });
+
+        // Mock data para desarrollo
+        const mockTeam: TeamMember[] = [
+          {
+            id: '1',
+            public_id: 'USR-001',
+            full_name: 'María González',
+            email: 'maria.gonzalez@empresa.com',
+            phone: '+52 55 1234 5678',
+            role: 'supervisor',
+            status: 'active',
+            last_activity: new Date().toISOString(),
+            total_visits: 156,
+            total_orders: 89,
+            created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            id: '2',
+            public_id: 'USR-002',
+            full_name: 'Carlos Rodríguez',
+            email: 'carlos.rodriguez@empresa.com',
+            phone: '+52 55 9876 5432',
+            role: 'asesor',
+            status: 'active',
+            last_activity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            total_visits: 234,
+            total_orders: 145,
+            created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            id: '3',
+            public_id: 'USR-003',
+            full_name: 'Ana Martínez',
+            email: 'ana.martinez@empresa.com',
+            phone: '+52 55 5555 1111',
+            role: 'asesor',
+            status: 'active',
+            last_activity: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+            total_visits: 189,
+            total_orders: 112,
+            created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            id: '4',
+            public_id: 'USR-004',
+            full_name: 'Luis Fernández',
+            email: 'luis.fernandez@empresa.com',
+            phone: null,
+            role: 'asesor',
+            status: 'inactive',
+            last_activity: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            total_visits: 45,
+            total_orders: 23,
+            created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          }
+        ];
+
+        setTeam(mockTeam);
+        setTotalPages(1);
+      } catch (err) {
+        console.error('Error loading team:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+        setError(`Error al cargar equipo: ${errorMessage}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTeam();
+  }, [page, searchTerm, selectedRole, selectedStatus]);
+
+  const filteredTeam = team.filter(member => {
+    const matchesSearch = !searchTerm ||
+      member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.public_id.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesRole = !selectedRole || member.role === selectedRole;
+    const matchesStatus = !selectedStatus || member.status === selectedStatus;
+
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  const roles = [
+    { value: '', label: 'Todos los roles' },
+    { value: 'supervisor', label: 'Supervisor' },
+    { value: 'asesor', label: 'Asesor de Ventas' }
+  ];
+
+  const statuses = [
+    { value: '', label: 'Todos los estados' },
+    { value: 'active', label: 'Activo' },
+    { value: 'inactive', label: 'Inactivo' }
+  ];
+
+  if (loading && team.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" className="mx-auto mb-4" />
+          <p className="text-gray-600">Cargando equipo de ventas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <nav className="flex" aria-label="Breadcrumb">
+                <ol className="flex items-center space-x-4">
+                  <li>
+                    <Link href="/brand" className="text-gray-400 hover:text-gray-500">
+                      Marca
+                    </Link>
+                  </li>
+                  <li>
+                    <div className="flex items-center">
+                      <svg className="flex-shrink-0 h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span className="ml-4 text-gray-900 font-medium">Equipo de Ventas</span>
+                    </div>
+                  </li>
+                </ol>
+              </nav>
+              <h1 className="text-2xl font-bold text-gray-900 mt-2">
+                Equipo de Ventas
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Gestiona asesores y supervisores de tu marca
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <Link href="/brand/team/invite">
+                <Button>
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Invitar Miembro
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <Alert variant="error" className="mb-6" onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Métricas del equipo */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <div className="p-6 text-center">
+              <div className="text-3xl font-bold text-blue-600 mb-2">
+                {filteredTeam.filter(m => m.role === 'supervisor').length}
+              </div>
+              <div className="text-sm text-gray-600">Supervisores</div>
+            </div>
+          </Card>
+          <Card>
+            <div className="p-6 text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">
+                {filteredTeam.filter(m => m.role === 'asesor').length}
+              </div>
+              <div className="text-sm text-gray-600">Asesores de Ventas</div>
+            </div>
+          </Card>
+          <Card>
+            <div className="p-6 text-center">
+              <div className="text-3xl font-bold text-purple-600 mb-2">
+                {filteredTeam.filter(m => m.status === 'active').length}
+              </div>
+              <div className="text-sm text-gray-600">Miembros Activos</div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Filtros */}
+        <Card className="mb-6">
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+                  Buscar miembro
+                </label>
+                <input
+                  type="text"
+                  id="search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Nombre o email..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+                  Rol
+                </label>
+                <select
+                  id="role"
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {roles.map(role => (
+                    <option key={role.value} value={role.value}>
+                      {role.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                  Estado
+                </label>
+                <select
+                  id="status"
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {statuses.map(status => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-end">
+                <Button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedRole('');
+                    setSelectedStatus('');
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Limpiar Filtros
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Lista de Miembros del Equipo */}
+        {filteredTeam.length === 0 && !loading ? (
+          <EmptyState
+            icon={
+              <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
+            }
+            title="No hay miembros en el equipo"
+            description={searchTerm || selectedRole || selectedStatus ? "No se encontraron miembros con los filtros aplicados." : "Comienza invitando a tu primer miembro del equipo de ventas."}
+            action={
+              <Link href="/brand/team/invite">
+                <Button>
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Invitar Primer Miembro
+                </Button>
+              </Link>
+            }
+          />
+        ) : (
+          <div className="space-y-6">
+            {/* Grid de Miembros */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredTeam.map((member) => (
+                <TeamMemberCard key={member.id} member={member} />
+              ))}
+            </div>
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center space-x-4 pt-6">
+                <Button
+                  onClick={() => setPage(page - 1)}
+                  disabled={page <= 1}
+                  variant="outline"
+                >
+                  Anterior
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Página {page} de {totalPages}
+                </span>
+                <Button
+                  onClick={() => setPage(page + 1)}
+                  disabled={page >= totalPages}
+                  variant="outline"
+                >
+                  Siguiente
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Componente para cada miembro del equipo
+interface TeamMemberCardProps {
+  member: TeamMember;
+}
+
+function TeamMemberCard({ member }: TeamMemberCardProps) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatLastActivity = (dateString: string | null) => {
+    if (!dateString) return 'Nunca';
+
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+
+    if (diffInHours < 1) return 'Hace menos de 1 hora';
+    if (diffInHours < 24) return `Hace ${diffInHours} horas`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `Hace ${diffInDays} días`;
+
+    return formatDate(dateString);
+  };
+
+  const getRoleLabel = (role: string) => {
+    const roles: Record<string, string> = {
+      supervisor: 'Supervisor',
+      asesor: 'Asesor de Ventas'
+    };
+    return roles[role] || role;
+  };
+
+  const getRoleColor = (role: string) => {
+    const colors: Record<string, string> = {
+      supervisor: 'bg-blue-100 text-blue-800',
+      asesor: 'bg-green-100 text-green-800'
+    };
+    return colors[role] || 'bg-gray-100 text-gray-800';
+  };
+
+  return (
+    <Card>
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-gray-700">
+                  {member.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                </span>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">{member.full_name}</h3>
+                <p className="text-sm text-gray-500">{member.public_id}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getRoleColor(member.role)}`}>
+                {getRoleLabel(member.role)}
+              </span>
+              <StatusBadge status={member.status as 'active' | 'inactive' | 'suspended' | 'pending'} size="sm" />
+            </div>
+          </div>
+        </div>
+
+        {/* Información de contacto */}
+        <div className="space-y-2 text-sm text-gray-600 mb-4">
+          <div className="flex items-center space-x-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span>{member.email}</span>
+          </div>
+
+          {member.phone && (
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              <span>{member.phone}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Métricas de rendimiento */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="text-center p-3 bg-blue-50 rounded-lg">
+            <div className="text-2xl font-bold text-blue-600">{member.total_visits}</div>
+            <div className="text-xs text-blue-700">Visitas Totales</div>
+          </div>
+          <div className="text-center p-3 bg-green-50 rounded-lg">
+            <div className="text-2xl font-bold text-green-600">{member.total_orders}</div>
+            <div className="text-xs text-green-700">Órdenes Generadas</div>
+          </div>
+        </div>
+
+        {/* Última actividad */}
+        <div className="flex justify-between items-center text-xs text-gray-500 mb-4">
+          <span>Última actividad: {formatLastActivity(member.last_activity)}</span>
+          <span>Miembro desde: {formatDate(member.created_at)}</span>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+          <div className="flex space-x-2">
+            <Link href={`/brand/team/${member.id}`}>
+              <Button size="sm" variant="outline">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Ver Perfil
+              </Button>
+            </Link>
+            <Link href={`/brand/team/${member.id}/performance`}>
+              <Button size="sm" variant="outline">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Rendimiento
+              </Button>
+            </Link>
+          </div>
+          <Link href={`/brand/team/${member.id}/edit`}>
+            <Button size="sm" variant="outline">
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Editar
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </Card>
+  );
+}

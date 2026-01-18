@@ -26,7 +26,58 @@ export default function LoginPage() {
     if (error) {
       setError(error.message)
     } else {
-      router.push('/dashboard')
+      // Después del login exitoso, obtener el rol del usuario y redirigir apropiadamente
+      try {
+        const { data: userProfile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select(`
+            role,
+            user_roles (
+              role,
+              brand_id
+            )
+          `)
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError);
+          setError('Error al obtener información del usuario');
+          return;
+        }
+
+        // Redirigir según el rol
+        const hasBrandRole = userProfile.user_roles?.some(
+          (role: any) => role.role === 'brand_manager'
+        );
+
+        switch (userProfile.role) {
+          case 'admin':
+            router.push('/admin');
+            break;
+          case 'supervisor':
+            router.push('/supervisor');
+            break;
+          case 'asesor':
+            router.push('/asesor');
+            break;
+          case 'analyst':
+            router.push('/analyst');
+            break;
+          case 'client':
+            router.push('/client');
+            break;
+          default:
+            if (hasBrandRole) {
+              router.push('/brand');
+            } else {
+              router.push('/unauthorized');
+            }
+        }
+      } catch (err) {
+        console.error('Error durante la redirección:', err);
+        setError('Error durante el inicio de sesión');
+      }
     }
 
     setLoading(false)

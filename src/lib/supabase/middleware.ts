@@ -47,7 +47,8 @@ export async function updateSession(request: NextRequest) {
   // Redireccionar usuarios autenticados lejos de login
   if (request.nextUrl.pathname === '/login' && user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    // Redirigir a una página que maneje la lógica de rol apropiada
+    url.pathname = '/admin' // Default redirect, pero la lógica real está en el login
     return NextResponse.redirect(url)
   }
 

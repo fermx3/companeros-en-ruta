@@ -18,7 +18,7 @@ interface UserWithRoles extends UserProfile {
 }
 
 interface NewRoleData {
-  role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client'
+  role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst'
   brand_id: string
   zone_id: string
 }
@@ -198,8 +198,7 @@ export default function UserRolesPage() {
       brand_manager: 'Gerente de Marca',
       supervisor: 'Supervisor',
       advisor: 'Asesor',
-      market_analyst: 'Analista de Mercado',
-      client: 'Cliente'
+      market_analyst: 'Analista de Mercado'
     }
     return labels[role] || role
   }
@@ -387,7 +386,6 @@ export default function UserRolesPage() {
                   <option value="brand_manager">Gerente de Marca</option>
                   <option value="market_analyst">Analista de Mercado</option>
                   <option value="admin">Administrador</option>
-                  <option value="client">Cliente</option>
                 </select>
               </div>
 

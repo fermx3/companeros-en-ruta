@@ -3,26 +3,34 @@
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
+import type { Visit } from '@/lib/types/visits'
 
 // ===========================================
 // Types
 // ===========================================
 
-interface Visit {
+interface VisitListItem {
   id: string
-  client?: {
-    name: string
-    business_type?: string
-    address?: string
-  }
+  client_id: string
+  visit_number: string
   visit_date: string
-  status: string
-  notes?: string
+  status: 'draft' | 'pending' | 'in_progress' | 'completed'
+  notes?: string | null
+  client?: {
+    id: string
+    business_name: string
+    business_type: string
+    address: string
+  }
+  brand?: {
+    id: string
+    name: string
+  }
 }
 
 interface VisitListProps {
   /** Lista de visitas a mostrar */
-  visits: Visit[]
+  visits: VisitListItem[]
   /** Estado de carga */
   loading: boolean
   /** Mensaje de error si existe */
@@ -138,7 +146,7 @@ export function VisitList({ visits, loading, error, onRefresh }: VisitListProps)
           onClick={() => handleVisitClick(visit.id)}
           role="button"
           tabIndex={0}
-          aria-label={`Ver detalles de visita a ${visit.client?.name || 'cliente'}`}
+          aria-label={`Ver detalles de visita a ${visit.client?.business_name || 'cliente'}`}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               handleVisitClick(visit.id)
@@ -149,7 +157,7 @@ export function VisitList({ visits, loading, error, onRefresh }: VisitListProps)
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {visit.client?.name || 'Cliente sin nombre'}
+                  {visit.client?.business_name || 'Cliente sin nombre'}
                 </h3>
                 <p className="text-sm text-gray-600 mb-1">
                   {visit.client?.business_type || 'Tipo de negocio'} • {visit.client?.address || 'Sin dirección'}
