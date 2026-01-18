@@ -691,12 +691,12 @@ export class AdminService {
     roleData: {
       role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client';
       brand_id: string | null;
-      zone_id: string | null;
+      zone_id?: string | null; // Hacer opcional por problemas de esquema
     }
   ): Promise<UserRole> {
     const tenantId = await this.getCurrentTenantId();
 
-    // Verificar que el usuario pertenece al tenant y obtener su user_id de auth
+    // Verificar que el usuario pertenece al tenant
     const { data: userProfile, error: userError } = await this.supabase
       .from('user_profiles')
       .select('id, user_id')
@@ -709,19 +709,73 @@ export class AdminService {
       throw new Error('Usuario no encontrado o sin permisos');
     }
 
+    // Obtener el perfil del usuario actual (quien está asignando el rol)
+    const { data: { user: currentUser } } = await this.supabase.auth.getUser();
+    if (!currentUser) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const { data: currentUserProfile, error: currentUserError } = await this.supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .is('deleted_at', null)
+      .single();
+
+    if (currentUserError || !currentUserProfile) {
+      throw new Error('Perfil de usuario actual no encontrado');
+    }
+
+    // Verificar si el usuario ya tiene roles
+    const { data: existingRoles, error: rolesError } = await this.supabase
+      .from('user_roles')
+      .select('role, is_primary')
+      .eq('user_profile_id', userProfileId)
+      .eq('status', 'active');
+
+    if (rolesError) {
+      console.error('Error checking existing roles:', rolesError);
+    }
+
+    // Determinar si este rol debería ser primario
+    // Solo el admin o el primer rol asignado debe ser primario
+    const hasPrimaryRole = existingRoles?.some(role => role.is_primary) ?? false;
+    const shouldBePrimary = roleData.role === 'admin' || !hasPrimaryRole;
+
+    // Determinar el scope según el tipo de rol
+    let scope = 'tenant'; // Default para admin, market_analyst
+
+    if (roleData.role === 'brand_manager' || roleData.role === 'supervisor' || roleData.role === 'advisor') {
+      if (!roleData.brand_id) {
+        throw new Error(`El rol ${roleData.role} requiere un brand_id asignado`);
+      }
+      scope = 'brand';
+    }
+
+    if (roleData.role === 'client') {
+      scope = 'client';
+    }
+
+    const insertData: any = {
+      user_profile_id: userProfileId,
+      tenant_id: tenantId,
+      role: roleData.role,
+      brand_id: roleData.brand_id,
+      scope: scope,
+      is_primary: shouldBePrimary,
+      granted_by: currentUserProfile.id, // ID del perfil que otorga el rol
+      granted_at: new Date().toISOString(),
+      status: 'active'
+    };
+
+    // Solo agregar zone_id si está definido (para evitar errores de esquema)
+    if (roleData.zone_id) {
+      insertData.zone_id = roleData.zone_id;
+    }
+
     const { data, error } = await this.supabase
       .from('user_roles')
-      .insert({
-        user_profile_id: userProfileId,
-        tenant_id: tenantId,
-        role: roleData.role,
-        brand_id: roleData.brand_id,
-        scope: 'tenant', // Valor por defecto
-        is_primary: true,
-        granted_by: userProfile.user_id, // Quien otorga el rol
-        granted_at: new Date().toISOString(),
-        status: 'active'
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -740,6 +794,69 @@ export class AdminService {
       .eq('id', roleId);
 
     if (error) throw new Error(`Error al desactivar rol: ${error.message}`);
+  }
+
+  /**
+   * Cambiar el rol primario de un usuario
+   * Desactiva el rol primario actual y activa el nuevo rol como primario
+   */
+  async changePrimaryRole(userProfileId: string, newPrimaryRoleId: string): Promise<void> {
+    const tenantId = await this.getCurrentTenantId();
+
+    // Verificar que ambos roles pertenecen al usuario y tenant
+    const { data: roles, error: rolesError } = await this.supabase
+      .from('user_roles')
+      .select('id, is_primary, role')
+      .eq('user_profile_id', userProfileId)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'active');
+
+    if (rolesError) {
+      throw new Error(`Error al obtener roles del usuario: ${rolesError.message}`);
+    }
+
+    const currentPrimaryRole = roles?.find(role => role.is_primary);
+    const newRole = roles?.find(role => role.id === newPrimaryRoleId);
+
+    if (!newRole) {
+      throw new Error('El rol especificado no existe o no pertenece al usuario');
+    }
+
+    // Iniciar transacción para cambiar roles
+    const updates = [];
+
+    // Si hay un rol primario actual, marcarlo como secundario
+    if (currentPrimaryRole && currentPrimaryRole.id !== newPrimaryRoleId) {
+      updates.push(
+        this.supabase
+          .from('user_roles')
+          .update({
+            is_primary: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentPrimaryRole.id)
+      );
+    }
+
+    // Marcar el nuevo rol como primario
+    updates.push(
+      this.supabase
+        .from('user_roles')
+        .update({
+          is_primary: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', newPrimaryRoleId)
+    );
+
+    // Ejecutar todas las actualizaciones
+    const results = await Promise.all(updates);
+
+    // Verificar si alguna actualización falló
+    const failedUpdate = results.find(result => result.error);
+    if (failedUpdate && failedUpdate.error) {
+      throw new Error(`Error al cambiar rol primario: ${failedUpdate.error.message}`);
+    }
   }
 
   async activateUserRole(roleId: string): Promise<void> {
