@@ -19,11 +19,21 @@ import type {
 
 /**
  * Admin Service - Gestión completa para administradores
- * Todas las queries incluyen tenant_id para multi-tenancy
+ * Usa rutas API para operaciones que requieren permisos elevados
  */
 
 export class AdminService {
   private supabase = createClient();
+
+  // Generar contraseña temporal para invitaciones
+  private generateTempPassword(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
 
   // Obtener tenant_id del usuario actual (para MVP usamos tenant demo)
   private async getCurrentTenantId(): Promise<string> {
@@ -132,10 +142,15 @@ export class AdminService {
         name: brandData.name,
         slug,
         description: brandData.description,
+        logo_url: brandData.logo_url,
+        brand_color_primary: brandData.brand_color_primary,
+        brand_color_secondary: brandData.brand_color_secondary,
+        contact_email: brandData.contact_email,
+        contact_phone: brandData.contact_phone,
         website: brandData.website,
         tenant_id: tenantId,
         status: brandData.status || 'active',
-        settings: brandData.settings || {}
+        settings: {}
       };
 
       const { data, error } = await this.supabase
@@ -340,29 +355,176 @@ export class AdminService {
   /**
    * User Management
    */
-  async getUsers(page = 1, limit = 20): Promise<PaginatedResponse<UserProfile & { roles?: UserRole[] }>> {
+  async getUsers(page = 1, limit = 20): Promise<PaginatedResponse<UserProfile & { user_roles?: UserRole[] }>> {
+    const tenantId = await this.getCurrentTenantId();
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    const { data, error, count } = await this.supabase
+    // Primero obtener los perfiles de usuarios
+    const { data: profiles, error: profileError, count } = await this.supabase
       .from('user_profiles')
-      .select(`
-        *,
-        user_roles(*)
-      `, { count: 'exact' })
+      .select('*', { count: 'exact' })
+      .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    if (error) throw new Error(`Error al obtener usuarios: ${error.message}`);
+    if (profileError) throw new Error(`Error al obtener usuarios: ${profileError.message}`);
+
+    // Para cada perfil, obtener sus roles
+    const usersWithRoles = await Promise.all(
+      (profiles || []).map(async (profile) => {
+        const { data: roles } = await this.supabase
+          .from('user_roles')
+          .select('*')
+          .eq('user_profile_id', profile.id)
+          .eq('tenant_id', tenantId)
+          .is('deleted_at', null);
+
+        return {
+          ...profile,
+          user_roles: roles || []
+        };
+      })
+    );
 
     return {
-      data: data || [],
+      data: usersWithRoles,
       count: count || 0,
       page,
       limit,
       totalPages: Math.ceil((count || 0) / limit)
     };
+  }
+
+  async getUserById(userId: string): Promise<UserProfile & { user_roles?: UserRole[] }> {
+    const tenantId = await this.getCurrentTenantId();
+
+    // Obtener el perfil del usuario
+    const { data: profile, error: profileError } = await this.supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('id', userId)
+      .is('deleted_at', null)
+      .single();
+
+    if (profileError) {
+      if (profileError.code === 'PGRST116') {
+        throw new Error('Usuario no encontrado');
+      }
+      throw new Error(`Error al obtener usuario: ${profileError.message}`);
+    }
+
+    // Obtener los roles del usuario
+    const { data: roles } = await this.supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_profile_id', profile.id)
+      .eq('tenant_id', tenantId)
+      .is('deleted_at', null);
+
+    return {
+      ...profile,
+      user_roles: roles || []
+    };
+  }
+
+  async updateUser(userId: string, userData: Partial<UserProfile>): Promise<UserProfile> {
+    const tenantId = await this.getCurrentTenantId();
+
+    // Verificar que el usuario pertenece al tenant
+    const { data: existingUser, error: checkError } = await this.supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('id', userId)
+      .is('deleted_at', null)
+      .single();
+
+    if (checkError || !existingUser) {
+      throw new Error('Usuario no encontrado o sin permisos para modificar');
+    }
+
+    const { data, error } = await this.supabase
+      .from('user_profiles')
+      .update({
+        ...userData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .eq('tenant_id', tenantId)
+      .select()
+      .single();
+
+    if (error) throw new Error(`Error al actualizar usuario: ${error.message}`);
+
+    return data;
+  }
+
+  async deactivateUser(userId: string): Promise<void> {
+    const tenantId = await this.getCurrentTenantId();
+
+    // Verificar que el usuario pertenece al tenant
+    const { data: existingUser, error: checkError } = await this.supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('id', userId)
+      .is('deleted_at', null)
+      .single();
+
+    if (checkError || !existingUser) {
+      throw new Error('Usuario no encontrado o sin permisos para modificar');
+    }
+
+    const { error } = await this.supabase
+      .from('user_profiles')
+      .update({
+        status: 'inactive',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .eq('tenant_id', tenantId);
+
+    if (error) throw new Error(`Error al desactivar usuario: ${error.message}`);
+
+    // También desactivar todos los roles del usuario
+    await this.supabase
+      .from('user_roles')
+      .update({
+        status: 'inactive',
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+  }
+
+  async reactivateUser(userId: string): Promise<void> {
+    const tenantId = await this.getCurrentTenantId();
+
+    // Verificar que el usuario pertenece al tenant
+    const { data: existingUser, error: checkError } = await this.supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('id', userId)
+      .is('deleted_at', null)
+      .single();
+
+    if (checkError || !existingUser) {
+      throw new Error('Usuario no encontrado o sin permisos para modificar');
+    }
+
+    const { error } = await this.supabase
+      .from('user_profiles')
+      .update({
+        status: 'active',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .eq('tenant_id', tenantId);
+
+    if (error) throw new Error(`Error al reactivar usuario: ${error.message}`);
   }
 
   /**
@@ -471,6 +633,148 @@ export class AdminService {
       console.error('Error updating tenant:', error);
       return { error: 'Error al actualizar información del tenant' };
     }
+  }
+
+  /**
+   * User Role Management
+   */
+  async assignUserRole(
+    userProfileId: string,
+    roleData: {
+      role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client';
+      brand_id: string | null;
+      zone_id: string | null;
+    }
+  ): Promise<UserRole> {
+    const tenantId = await this.getCurrentTenantId();
+
+    // Verificar que el usuario pertenece al tenant y obtener su user_id de auth
+    const { data: userProfile, error: userError } = await this.supabase
+      .from('user_profiles')
+      .select('id, user_id')
+      .eq('tenant_id', tenantId)
+      .eq('id', userProfileId)
+      .is('deleted_at', null)
+      .single();
+
+    if (userError || !userProfile) {
+      throw new Error('Usuario no encontrado o sin permisos');
+    }
+
+    const { data, error } = await this.supabase
+      .from('user_roles')
+      .insert({
+        user_profile_id: userProfileId,
+        tenant_id: tenantId,
+        role: roleData.role,
+        brand_id: roleData.brand_id,
+        scope: 'tenant', // Valor por defecto
+        is_primary: true,
+        granted_by: userProfile.user_id, // Quien otorga el rol
+        granted_at: new Date().toISOString(),
+        status: 'active'
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(`Error al asignar rol: ${error.message}`);
+
+    return data;
+  }
+
+  async deactivateUserRole(roleId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('user_roles')
+      .update({
+        status: 'inactive',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', roleId);
+
+    if (error) throw new Error(`Error al desactivar rol: ${error.message}`);
+  }
+
+  async activateUserRole(roleId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('user_roles')
+      .update({
+        status: 'active',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', roleId);
+
+    if (error) throw new Error(`Error al activar rol: ${error.message}`);
+  }
+
+  async removeUserRole(roleId: string): Promise<void> {
+    // Soft delete del rol
+    const { error } = await this.supabase
+      .from('user_roles')
+      .update({
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', roleId);
+
+    if (error) throw new Error(`Error al eliminar rol: ${error.message}`);
+  }
+
+  async createUser(userData: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string | null;
+    position: string | null;
+    department: string | null;
+    employee_code: string | null;
+    password: string;
+    status: 'active' | 'inactive';
+  }): Promise<UserProfile> {
+    const response = await fetch('/api/admin/users/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al crear usuario');
+    }
+
+    const { user } = await response.json();
+    return user;
+  }
+
+  async inviteUser(userData: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string | null;
+    position: string | null;
+    department: string | null;
+    employee_code: string | null;
+    role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client';
+    brand_id: string | null;
+    zone_id: string | null;
+    send_email: boolean;
+  }): Promise<{ user: UserProfile; role: UserRole }> {
+    const response = await fetch('/api/admin/users/invite', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al invitar usuario');
+    }
+
+    const { user, role } = await response.json();
+    return { user, role };
   }
 }
 

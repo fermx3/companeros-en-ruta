@@ -89,6 +89,7 @@ export interface Client {
 export interface UserProfile {
   id: string;
   user_id: string;
+  tenant_id: string;
   public_id: string;
   employee_code: string | null;
   first_name: string;
@@ -112,13 +113,18 @@ export interface UserProfile {
 // User Role types
 export interface UserRole {
   id: string;
-  user_id: string;
+  user_profile_id: string;
   tenant_id: string;
   brand_id: string | null;
+  zone_id: string | null; // Campo agregado para zonas geográficas
   role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client';
-  zone_id: string | null;
+  scope: string;
+  is_primary: boolean | null;
+  granted_by: string | null;
+  granted_at: string | null;
+  expires_at: string | null;
+  status: 'active' | 'inactive' | null;
   permissions: Record<string, unknown> | null;
-  is_active: boolean;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

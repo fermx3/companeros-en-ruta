@@ -8,7 +8,7 @@ interface InventoryItem {
   product_id: string
   product_name?: string
   current_stock: number
-  notes?: string
+  notes?: string | null
 }
 
 interface VisitInventoryFormProps {

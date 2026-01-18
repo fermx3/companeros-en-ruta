@@ -3,7 +3,8 @@
 interface VisitHeaderProps {
   visit: {
     client?: {
-      name: string
+      name?: string
+      business_name?: string
       business_type: string
       address: string
     }
@@ -42,7 +43,7 @@ export function VisitHeader({ visit }: VisitHeaderProps) {
       <div className="flex justify-between items-start mb-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {visit.client?.name || 'Cliente sin nombre'}
+            {visit.client?.name || visit.client?.business_name || 'Cliente sin nombre'}
           </h1>
           <p className="text-gray-600 mb-1">
             {visit.client?.business_type || 'Tipo de negocio'}
