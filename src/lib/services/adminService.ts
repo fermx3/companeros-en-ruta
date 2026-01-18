@@ -743,9 +743,9 @@ export class AdminService {
     const shouldBePrimary = roleData.role === 'admin' || !hasPrimaryRole;
 
     // Determinar el scope según el tipo de rol
-    let scope = 'tenant'; // Default para admin, market_analyst
+    let scope = 'tenant'; // Default para admin
 
-    if (roleData.role === 'brand_manager' || roleData.role === 'supervisor' || roleData.role === 'advisor') {
+    if (roleData.role === 'brand_manager' || roleData.role === 'supervisor' || roleData.role === 'advisor' || roleData.role === 'market_analyst') {
       if (!roleData.brand_id) {
         throw new Error(`El rol ${roleData.role} requiere un brand_id asignado`);
       }

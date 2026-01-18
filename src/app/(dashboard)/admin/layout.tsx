@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 interface AdminLayoutProps {
@@ -85,8 +86,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {/* Logo/Header */}
           <div className="flex items-center justify-between h-16 px-6 bg-blue-600 text-white">
             <Link href="/admin" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 font-bold text-sm">CR</span>
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center p-1">
+                <Image
+                  src="/perfect-logo-icon.png"
+                  alt="Compañeros en Ruta"
+                  width={24}
+                  height={24}
+                  className="object-contain"
+                />
               </div>
               <div>
                 <h2 className="font-semibold">Admin Panel</h2>
