@@ -1,179 +1,242 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/button';
-import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback';
-import { adminService } from '@/lib/services/adminService';
-import type { UserProfile, UserRole, Brand, Zone } from '@/lib/types/admin';
+import React, { useState, useEffect, useCallback } from 'react'
+import { useParams } from 'next/navigation'
+import Link from 'next/link'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/button'
+import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { adminService } from '@/lib/services/adminService'
+import type { UserProfile, UserRole, Brand, Zone } from '@/lib/types/admin'
+
+// ===========================================
+// Types
+// ===========================================
 
 interface UserWithRoles extends UserProfile {
-  user_roles?: UserRole[];
+  user_roles?: UserRole[]
 }
 
+interface NewRoleData {
+  role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client'
+  brand_id: string
+  zone_id: string
+}
+
+// ===========================================
+// Component
+// ===========================================
+
 /**
- * Página de gestión de roles para un usuario específico
+ * Página de gestión de roles para un usuario específico.
+ * Permite a administradores asignar y gestionar roles por usuario.
+ *
+ * @example
+ * /admin/users/USR-0001/roles
+ *
+ * Requiere rol: admin
  */
 export default function UserRolesPage() {
-  const params = useParams();
-  const userId = params?.id as string;
+  // ===========================================
+  // Hooks y State
+  // ===========================================
 
-  const [user, setUser] = useState<UserWithRoles | null>(null);
-  const [availableBrands, setAvailableBrands] = useState<Brand[]>([]);
-  const [availableZones, setAvailableZones] = useState<Zone[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showAddRole, setShowAddRole] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const params = useParams()
+  const userId = params?.id as string
 
-  // Estados para agregar nuevo rol
-  const [newRole, setNewRole] = useState({
-    role: 'advisor' as 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client',
+  // Estados principales
+  const [user, setUser] = useState<UserWithRoles | null>(null)
+  const [availableBrands, setAvailableBrands] = useState<Brand[]>([])
+  const [availableZones, setAvailableZones] = useState<Zone[]>([])
+
+  // Estados de UI
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showAddRole, setShowAddRole] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  // Estado para formulario de nuevo rol
+  const [newRole, setNewRole] = useState<NewRoleData>({
+    role: 'advisor',
     brand_id: '',
     zone_id: ''
-  });
+  })
 
+  // ===========================================
+  // Handlers y Effects
+  // ===========================================
+
+  /**
+   * Cargar datos iniciales: usuario, brands y zonas
+   */
   const loadData = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) return
 
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
     try {
       // Cargar usuario con roles
-      const userData = await adminService.getUserById(userId);
-      setUser(userData);
+      const userData = await adminService.getUserById(userId)
+      setUser(userData)
 
       // Cargar brands disponibles
-      const brandsResponse = await adminService.getBrands(1, 100);
-      setAvailableBrands(brandsResponse.data);
+      const brandsResponse = await adminService.getBrands(1, 100)
+      setAvailableBrands(brandsResponse.data)
 
       // Cargar zonas disponibles (solo si hay brands)
       if (brandsResponse.data.length > 0) {
-        const zonesData = await adminService.getZones();
-        setAvailableZones(zonesData);
+        const zonesData = await adminService.getZones()
+        setAvailableZones(zonesData)
       }
     } catch (err) {
-      console.error('Error loading data:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(`Error al cargar datos: ${errorMessage}`);
+      console.error('Error loading data:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      setError(`Error al cargar datos: ${errorMessage}`)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [userId]);
+  }, [userId])
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData()
+  }, [loadData])
 
+  /**
+   * Manejar asignación de nuevo rol
+   */
   const handleAddRole = async () => {
-    if (!user) return;
+    if (!user) return
 
     // Validar que los roles que requieren brand_id lo tengan
-    const rolesThatRequireBrand = ['brand_manager', 'supervisor', 'advisor'];
+    const rolesThatRequireBrand = ['brand_manager', 'supervisor', 'advisor']
     if (rolesThatRequireBrand.includes(newRole.role) && !newRole.brand_id) {
-      setError(`El rol ${getRoleLabel(newRole.role)} requiere seleccionar una marca específica`);
-      return;
+      setError(`El rol ${getRoleLabel(newRole.role)} requiere seleccionar una marca específica`)
+      return
     }
 
-    setSaving(true);
-    setError(null);
+    setSaving(true)
+    setError(null)
 
     try {
       await adminService.assignUserRole(user.id, {
         role: newRole.role,
         brand_id: newRole.brand_id || null,
         zone_id: newRole.zone_id || null
-      });
+      })
 
-      await loadData(); // Recargar datos
-      setShowAddRole(false);
-      setNewRole({ role: 'advisor', brand_id: '', zone_id: '' });
+      // Recargar datos y limpiar formulario
+      await loadData()
+      setShowAddRole(false)
+      setNewRole({ role: 'advisor', brand_id: '', zone_id: '' })
     } catch (err) {
-      console.error('Error adding role:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(`Error al asignar rol: ${errorMessage}`);
+      console.error('Error adding role:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      setError(`Error al asignar rol: ${errorMessage}`)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
+  /**
+   * Activar/desactivar rol existente
+   */
   const handleToggleRole = async (roleId: string, currentStatus: boolean) => {
-    if (!user) return;
+    if (!user) return
 
-    setSaving(true);
-    setError(null);
+    setSaving(true)
+    setError(null)
 
     try {
       if (currentStatus) {
-        await adminService.deactivateUserRole(roleId);
+        await adminService.deactivateUserRole(roleId)
       } else {
-        await adminService.activateUserRole(roleId);
+        await adminService.activateUserRole(roleId)
       }
 
-      await loadData(); // Recargar datos
+      await loadData() // Recargar datos
     } catch (err) {
-      console.error('Error toggling role:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(`Error al modificar rol: ${errorMessage}`);
+      console.error('Error toggling role:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      setError(`Error al modificar rol: ${errorMessage}`)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
+  /**
+   * Eliminar rol de usuario
+   */
   const handleRemoveRole = async (roleId: string) => {
-    if (!user || !confirm('¿Estás seguro de eliminar este rol?')) return;
+    if (!user || !confirm('¿Estás seguro de eliminar este rol?')) return
 
-    setSaving(true);
-    setError(null);
+    setSaving(true)
+    setError(null)
 
     try {
-      await adminService.removeUserRole(roleId);
-      await loadData(); // Recargar datos
+      await adminService.removeUserRole(roleId)
+      await loadData() // Recargar datos
     } catch (err) {
-      console.error('Error removing role:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(`Error al eliminar rol: ${errorMessage}`);
+      console.error('Error removing role:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      setError(`Error al eliminar rol: ${errorMessage}`)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
-  const getRoleLabel = (role: string) => {
-    const labels = {
+  // ===========================================
+  // Utility Functions
+  // ===========================================
+
+  /**
+   * Obtener etiqueta legible para un rol
+   */
+  const getRoleLabel = (role: string): string => {
+    const labels: Record<string, string> = {
       admin: 'Administrador',
       brand_manager: 'Gerente de Marca',
       supervisor: 'Supervisor',
       advisor: 'Asesor',
       market_analyst: 'Analista de Mercado',
       client: 'Cliente'
-    };
-    return labels[role as keyof typeof labels] || role;
-  };
+    }
+    return labels[role] || role
+  }
 
-  const getBrandName = (brandId: string | null) => {
-    if (!brandId) return 'Global';
-    const brand = availableBrands.find(b => b.id === brandId);
-    return brand?.name || 'Marca desconocida';
-  };
+  /**
+   * Obtener nombre de marca por ID
+   */
+  const getBrandName = (brandId: string | null): string => {
+    if (!brandId) return 'Global'
+    const brand = availableBrands.find(b => b.id === brandId)
+    return brand?.name || 'Marca desconocida'
+  }
 
-  const getZoneName = (zoneId: string | null) => {
-    if (!zoneId) return 'Todas las zonas';
-    const zone = availableZones.find(z => z.id === zoneId);
-    return zone?.name || 'Zona desconocida';
-  };
+  /**
+   * Obtener nombre de zona por ID
+   */
+  const getZoneName = (zoneId: string | null): string => {
+    if (!zoneId) return 'Todas las zonas'
+    const zone = availableZones.find(z => z.id === zoneId)
+    return zone?.name || 'Zona desconocida'
+  }
 
+  // ===========================================
+  // Render States
+  // ===========================================
+
+  // Estado de carga
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <LoadingSpinner size="lg" className="mx-auto mb-4" />
         <p className="text-gray-600">Cargando roles del usuario...</p>
       </div>
-    );
+    )
   }
 
+  // Usuario no encontrado
   if (!user) {
     return (
       <div className="text-center py-12">
@@ -186,15 +249,22 @@ export default function UserRolesPage() {
           </Link>
         </div>
       </div>
-    );
+    )
   }
+
+  // ===========================================
+  // Main Render
+  // ===========================================
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* ===========================================
+          Header Section
+          =========================================== */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
+            {/* Breadcrumb */}
             <div>
               <nav className="flex" aria-label="Breadcrumb">
                 <ol className="flex items-center space-x-4">
@@ -233,11 +303,15 @@ export default function UserRolesPage() {
                   </li>
                 </ol>
               </nav>
+
+              {/* Page Title */}
               <h1 className="text-2xl font-bold text-gray-900 mt-2">
                 Roles de {user.first_name} {user.last_name}
               </h1>
               <p className="text-gray-600 mt-1">Gestiona los roles y permisos del usuario</p>
             </div>
+
+            {/* Action Buttons */}
             <div className="flex space-x-3">
               <Link href={`/admin/users/${userId}`}>
                 <Button variant="outline">
@@ -263,202 +337,216 @@ export default function UserRolesPage() {
         </div>
       </div>
 
+      {/* ===========================================
+          Main Content
+          =========================================== */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error Alert */}
         {error && (
-          <Alert variant="error">
+          <Alert variant="error" className="mb-6">
             {error}
           </Alert>
         )}
 
-      {/* Modal para agregar rol */}
-      {showAddRole && (
-        <Card className="p-6 border-2 border-blue-200">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Agregar Nuevo Rol</h2>
-            <Button
-              onClick={() => setShowAddRole(false)}
-              variant="outline"
-              size="sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rol
-              </label>
-              <select
-                value={newRole.role}
-                onChange={(e) => setNewRole(prev => ({
-                  ...prev,
-                  role: e.target.value as typeof newRole.role
-                }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        {/* ===========================================
+            Add Role Modal
+            =========================================== */}
+        {showAddRole && (
+          <Card className="mb-6 p-6 border-2 border-blue-200">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Agregar Nuevo Rol</h2>
+              <Button
+                onClick={() => setShowAddRole(false)}
+                variant="outline"
+                size="sm"
+                aria-label="Cerrar modal"
               >
-                <option value="advisor">Asesor</option>
-                <option value="supervisor">Supervisor</option>
-                <option value="brand_manager">Gerente de Marca</option>
-                <option value="market_analyst">Analista de Mercado</option>
-                <option value="admin">Administrador</option>
-                <option value="client">Cliente</option>
-              </select>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </Button>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Marca {['brand_manager', 'supervisor', 'advisor'].includes(newRole.role) && (
-                  <span className="text-red-500">*</span>
-                )}
-              </label>
-              <select
-                value={newRole.brand_id}
-                onChange={(e) => setNewRole(prev => ({ ...prev, brand_id: e.target.value }))}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  ['brand_manager', 'supervisor', 'advisor'].includes(newRole.role) && !newRole.brand_id
-                    ? 'border-red-300 bg-red-50'
-                    : 'border-gray-300'
-                }`}
-              >
-                <option value="">
-                  {['brand_manager', 'supervisor', 'advisor'].includes(newRole.role)
-                    ? 'Selecciona una marca'
-                    : 'Global (todas las marcas)'
-                  }
-                </option>
-                {availableBrands.map(brand => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
+            {/* Form Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Rol Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rol
+                </label>
+                <select
+                  value={newRole.role}
+                  onChange={(e) => setNewRole(prev => ({
+                    ...prev,
+                    role: e.target.value as NewRoleData['role']
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="advisor">Asesor</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="brand_manager">Gerente de Marca</option>
+                  <option value="market_analyst">Analista de Mercado</option>
+                  <option value="admin">Administrador</option>
+                  <option value="client">Cliente</option>
+                </select>
+              </div>
+
+              {/* Brand Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Marca {['brand_manager', 'supervisor', 'advisor'].includes(newRole.role) && (
+                    <span className="text-red-500">*</span>
+                  )}
+                </label>
+                <select
+                  value={newRole.brand_id}
+                  onChange={(e) => setNewRole(prev => ({ ...prev, brand_id: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    ['brand_manager', 'supervisor', 'advisor'].includes(newRole.role) && !newRole.brand_id
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">
+                    {['brand_manager', 'supervisor', 'advisor'].includes(newRole.role)
+                      ? 'Selecciona una marca'
+                      : 'Global (todas las marcas)'
+                    }
                   </option>
-                ))}
-              </select>
-              {['brand_manager', 'supervisor', 'advisor'].includes(newRole.role) && !newRole.brand_id && (
-                <p className="text-red-500 text-xs mt-1">
-                  Este rol requiere seleccionar una marca específica
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Zona
-              </label>
-              <select
-                value={newRole.zone_id}
-                onChange={(e) => setNewRole(prev => ({ ...prev, zone_id: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Todas las zonas</option>
-                {availableZones
-                  .filter(zone => !newRole.brand_id || zone.brand_id === newRole.brand_id)
-                  .map(zone => (
-                    <option key={zone.id} value={zone.id}>
-                      {zone.name}
+                  {availableBrands.map(brand => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name}
                     </option>
                   ))}
-              </select>
+                </select>
+                {['brand_manager', 'supervisor', 'advisor'].includes(newRole.role) && !newRole.brand_id && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Este rol requiere seleccionar una marca específica
+                  </p>
+                )}
+              </div>
+
+              {/* Zone Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Zona
+                </label>
+                <select
+                  value={newRole.zone_id}
+                  onChange={(e) => setNewRole(prev => ({ ...prev, zone_id: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Todas las zonas</option>
+                  {availableZones
+                    .filter(zone => !newRole.brand_id || zone.brand_id === newRole.brand_id)
+                    .map(zone => (
+                      <option key={zone.id} value={zone.id}>
+                        {zone.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
             </div>
-          </div>
 
-          <div className="flex justify-end space-x-3 mt-6">
-            <Button
-              onClick={() => setShowAddRole(false)}
-              variant="outline"
-              disabled={saving}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleAddRole}
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={saving}
-            >
-              {saving ? 'Agregando...' : 'Agregar Rol'}
-            </Button>
-          </div>
-        </Card>
-      )}
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                onClick={() => setShowAddRole(false)}
+                variant="outline"
+                disabled={saving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleAddRole}
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={saving}
+              >
+                {saving ? 'Asignando...' : 'Asignar Rol'}
+              </Button>
+            </div>
+          </Card>
+        )}
 
-      {/* Lista de roles existentes */}
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">Roles Actuales</h2>
+        {/* ===========================================
+            Roles List Section
+            =========================================== */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Roles Actuales</h2>
 
-        <div className="space-y-4">
-          {user.user_roles && user.user_roles.length > 0 ? (
-            user.user_roles.map((role, index) => (
-              <div key={role.id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      role.status === 'active' ? 'bg-green-500' : 'bg-red-500'
-                    }`} />
-                    <div>
-                      <h3 className="font-medium text-gray-900">
-                        {getRoleLabel(role.role)}
-                      </h3>
-                      <div className="flex space-x-4 text-sm text-gray-600 mt-1">
-                        <span>Marca: {getBrandName(role.brand_id)}</span>
-                        <span>Zona: {getZoneName(role.zone_id)}</span>
-                      </div>
-                      {role.permissions && Object.keys(role.permissions).length > 0 && (
-                        <div className="text-sm text-gray-500 mt-1">
-                          Permisos especiales configurados
+          <div className="space-y-4">
+            {user.user_roles && user.user_roles.length > 0 ? (
+              user.user_roles.map((role: UserRole, index: number) => (
+                <div key={role.id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${
+                        role.status === 'active' ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
+                      <div>
+                        <h3 className="font-medium text-gray-900">
+                          {getRoleLabel(role.role)}
+                        </h3>
+                        <div className="flex space-x-4 text-sm text-gray-600 mt-1">
+                          <span>Marca: {getBrandName(role.brand_id)}</span>
+                          <span>Zona: {getZoneName(role.zone_id)}</span>
                         </div>
-                      )}
+                        {role.permissions && Object.keys(role.permissions).length > 0 && (
+                          <div className="text-sm text-gray-500 mt-1">
+                            Permisos especiales configurados
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <StatusBadge
+                      status={role.status === 'active' ? 'active' : 'inactive'}
+                    />
+
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={() => handleToggleRole(role.id, role.status === 'active')}
+                        variant="outline"
+                        size="sm"
+                        disabled={saving}
+                      >
+                        {role.status === 'active' ? 'Desactivar' : 'Activar'}
+                      </Button>
+
+                      <Button
+                        onClick={() => handleRemoveRole(role.id)}
+                        variant="outline"
+                        size="sm"
+                        disabled={saving}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </Button>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex items-center space-x-3">
-                  <StatusBadge
-                    status={role.status === 'active' ? 'active' : 'inactive'}
-                  />
-
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => handleToggleRole(role.id, role.status === 'active')}
-                      variant="outline"
-                      size="sm"
-                      disabled={saving}
-                    >
-                      {role.status === 'active' ? 'Desactivar' : 'Activar'}
-                    </Button>
-
-                    <Button
-                      onClick={() => handleRemoveRole(role.id)}
-                      variant="outline"
-                      size="sm"
-                      disabled={saving}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </Button>
-                  </div>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                </svg>
+                <p className="text-gray-500">No se han asignado roles a este usuario</p>
+                <Button
+                  onClick={() => setShowAddRole(true)}
+                  className="bg-blue-600 hover:bg-blue-700 mt-4"
+                >
+                  Agregar Primer Rol
+                </Button>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-              </svg>
-              <p className="text-gray-500">No se han asignado roles a este usuario</p>
-              <Button
-                onClick={() => setShowAddRole(true)}
-                className="bg-blue-600 hover:bg-blue-700 mt-4"
-              >
-                Agregar Primer Rol
-              </Button>
-            </div>
-          )}
-        </div>
-      </Card>
+            )}
+          </div>
+        </Card>
       </div>
     </div>
-  );
+  )
 }

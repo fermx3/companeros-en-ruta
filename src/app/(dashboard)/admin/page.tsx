@@ -1,56 +1,84 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/button';
-import { LoadingSpinner, Alert } from '@/components/ui/feedback';
-import { adminService } from '@/lib/services/adminService';
-import type { AdminDashboardMetrics } from '@/lib/types/admin';
+import React, { useEffect, useState, useRef } from 'react'
+import Link from 'next/link'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/button'
+import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { adminService } from '@/lib/services/adminService'
+import type { AdminDashboardMetrics } from '@/lib/types/admin'
 
 /**
  * Dashboard principal del administrador
  * Muestra métricas clave y navegación rápida a las secciones principales
  */
 export default function AdminDashboard() {
-  const [metrics, setMetrics] = useState<AdminDashboardMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<AdminDashboardMetrics | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const loadingRef = useRef(true)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    loadMetrics();
-
-    // Timeout de seguridad para evitar loading infinito
-    const timeout = setTimeout(() => {
-      if (loading) {
-        console.warn('Dashboard loading timeout - forcing loading to false');
-        setLoading(false);
-        setError('Timeout: La petición tardó demasiado. Por favor, recarga la página.');
+    loadMetrics()
+    return () => {
+      // Limpiar timeout al desmontar
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
       }
-    }, 15000); // 15 segundos timeout para dashboard
-
-    return () => clearTimeout(timeout);
-  }, []);
+    }
+  }, [])
 
   const loadMetrics = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
+    loadingRef.current = true
+
+    // Limpiar timeout previo
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+
+    // Timeout de seguridad para evitar loading infinito
+    timeoutRef.current = setTimeout(() => {
+      if (loadingRef.current) {
+        console.warn('Dashboard loading timeout - forcing loading to false')
+        setLoading(false)
+        setError('Timeout: La petición tardó demasiado. Por favor, recarga la página.')
+        loadingRef.current = false
+      }
+    }, 15000) // 15 segundos timeout
 
     try {
-      const response = await adminService.getDashboardMetrics();
+      const response = await adminService.getDashboardMetrics()
 
-      if (response.error) {
-        setError(response.error);
-      } else {
-        setMetrics(response.data || null);
+      // Verificar si el componente aún está montado y no hay timeout
+      if (loadingRef.current) {
+        if (response.error) {
+          setError(response.error)
+        } else {
+          setMetrics(response.data || null)
+        }
       }
     } catch (err) {
-      console.error('Error loading dashboard metrics:', err);
-      setError('Error al cargar las métricas del dashboard');
+      console.error('Error loading dashboard metrics:', err)
+      if (loadingRef.current) {
+        setError('Error al cargar las métricas del dashboard')
+      }
     } finally {
-      setLoading(false);
+      // Solo cambiar loading si no hubo timeout
+      if (loadingRef.current) {
+        setLoading(false)
+        loadingRef.current = false
+      }
+
+      // Limpiar timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
     }
-  };
+  }
 
   if (loading) {
     return (
