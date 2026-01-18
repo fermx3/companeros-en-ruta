@@ -73,19 +73,50 @@ export class AdminService {
     try {
       const tenantId = await this.getCurrentTenantId();
 
-      const response = await fetch(`/api/admin/metrics?tenant_id=${tenantId}`);
+      // Crear AbortController para timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+
+      const response = await fetch(`/api/admin/metrics?tenant_id=${tenantId}`, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al obtener métricas');
+        let errorMessage = 'Error al obtener métricas';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const metrics = await response.json();
+
+      // Validar que la respuesta tenga el formato esperado
+      if (!metrics || typeof metrics !== 'object') {
+        throw new Error('Respuesta inválida del servidor');
+      }
+
       return { data: metrics };
 
     } catch (error) {
       console.error('Error fetching dashboard metrics:', error);
-      return { error: 'Error al cargar métricas del dashboard' };
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          return { error: 'Timeout: La petición tardó demasiado tiempo' };
+        }
+        return { error: error.message };
+      }
+
+      return { error: 'Error desconocido al cargar métricas del dashboard' };
     }
   }
 
@@ -307,49 +338,66 @@ export class AdminService {
     client_type_name?: string;
     commercial_structure_name?: string;
   }>> {
-    const tenantId = await this.getCurrentTenantId();
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+    try {
+      // Construir parámetros de query
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      });
 
-    let query = this.supabase
-      .from('clients')
-      .select(`
-        *,
-        zones:zone_id(name),
-        markets:market_id(name),
-        client_types:client_type_id(name),
-        commercial_structures:commercial_structure_id(name)
-      `, { count: 'exact' })
-      .eq('tenant_id', tenantId)
-      .is('deleted_at', null);
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.zone_id) params.append('zone_id', filters.zone_id);
+      if (filters?.market_id) params.append('market_id', filters.market_id);
 
-    // Aplicar filtros
-    if (filters?.status) query = query.eq('status', filters.status);
-    if (filters?.zone_id) query = query.eq('zone_id', filters.zone_id);
-    if (filters?.market_id) query = query.eq('market_id', filters.market_id);
+      console.log('Calling API with params:', params.toString());
 
-    const { data, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(from, to);
+      // Crear AbortController para timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
 
-    if (error) throw new Error(`Error al obtener clientes: ${error.message}`);
+      const response = await fetch(`/api/admin/clients?${params.toString()}`, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-    // Formatear data con nombres de relaciones
-    const formattedData = (data || []).map(client => ({
-      ...client,
-      zone_name: client.zones?.name,
-      market_name: client.markets?.name,
-      client_type_name: client.client_types?.name,
-      commercial_structure_name: client.commercial_structures?.name
-    }));
+      clearTimeout(timeoutId);
 
-    return {
-      data: formattedData,
-      count: count || 0,
-      page,
-      limit,
-      totalPages: Math.ceil((count || 0) / limit)
-    };
+      if (!response.ok) {
+        let errorMessage = 'Error al obtener clientes';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+
+      console.log('API response:', data);
+
+      // Validar que tenemos datos válidos
+      if (!data || typeof data !== 'object') {
+        throw new Error('Datos inválidos recibidos del servidor');
+      }
+
+      return data;
+
+    } catch (error) {
+      console.error('Error in getClients:', error);
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw new Error('Timeout: La petición tardó demasiado tiempo');
+        }
+        throw error;
+      }
+
+      throw new Error('Error desconocido al obtener clientes');
+    }
   }
 
   /**

@@ -19,6 +19,17 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadMetrics();
+
+    // Timeout de seguridad para evitar loading infinito
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Dashboard loading timeout - forcing loading to false');
+        setLoading(false);
+        setError('Timeout: La petición tardó demasiado. Por favor, recarga la página.');
+      }
+    }, 15000); // 15 segundos timeout para dashboard
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const loadMetrics = async () => {

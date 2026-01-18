@@ -54,10 +54,18 @@ export default function AdminClientsPage() {
       if (filters.market_id) activeFilters.market_id = filters.market_id;
 
       const response = await adminService.getClients(currentPage, limit, activeFilters);
-      setClients(response);
+
+      // Verificar si la respuesta es válida
+      if (response && typeof response === 'object') {
+        setClients(response);
+      } else {
+        throw new Error('Respuesta inválida del servidor');
+      }
     } catch (err) {
       console.error('Error loading clients:', err);
-      setError('Error al cargar los clientes');
+      const errorMessage = err instanceof Error ? err.message : 'Error al cargar los clientes';
+      setError(errorMessage);
+      setClients(null); // Limpiar datos anteriores en caso de error
     } finally {
       setLoading(false);
     }
@@ -71,6 +79,19 @@ export default function AdminClientsPage() {
     loadClients();
   }, [loadClients]);
 
+  // Timeout de seguridad para evitar loading infinito
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Loading timeout - forcing loading to false');
+        setLoading(false);
+        setError('Timeout: La petición tardó demasiado. Por favor, recarga la página.');
+      }
+    }, 30000); // 30 segundos timeout
+
+    return () => clearTimeout(timeout);
+  }, [loading]);
+
   const loadInitialData = async () => {
     try {
       const [zonesData, marketsData] = await Promise.all([
@@ -83,6 +104,8 @@ export default function AdminClientsPage() {
     } catch (err) {
       console.error('Error loading initial data:', err);
       setError('Error al cargar datos iniciales');
+      // Si falla la carga inicial, también deshabilitar loading para mostrar el error
+      setLoading(false);
     }
   };
 
@@ -153,8 +176,29 @@ export default function AdminClientsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex justify-between items-start">
+              <div className="text-red-700">
+                <h3 className="font-medium">Error al cargar clientes</h3>
+                <p className="mt-1">{error}</p>
+              </div>
+              <Button
+                onClick={loadClients}
+                variant="outline"
+                size="sm"
+                disabled={loading}
+                className="ml-4 text-red-600 border-red-300 hover:bg-red-50"
+              >
+                {loading ? (
+                  <>
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    Cargando...
+                  </>
+                ) : (
+                  'Reintentar'
+                )}
+              </Button>
+            </div>
           </div>
         )}
 
