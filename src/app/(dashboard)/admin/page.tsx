@@ -2,11 +2,16 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
+import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
-import { LoadingSpinner, Alert } from '@/components/ui/feedback'
-import { adminService } from '@/lib/services/adminService'
+import { AdminService } from '@/lib/services/adminService'
 import type { AdminDashboardMetrics, RecentActivity } from '@/lib/types/admin'
+
+// Componente AlertDescription simple
+const AlertDescription: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="mt-2 text-sm text-gray-600">{children}</div>
+);
 
 /**
  * Dashboard principal del administrador
@@ -51,30 +56,30 @@ export default function AdminDashboard() {
     }, 15000) // 15 segundos timeout
 
     try {
-      const [metricsResponse, activityResponse] = await Promise.all([
-        adminService.getDashboardMetrics(),
-        adminService.getRecentActivity(3)
-      ])
+      const adminService = new AdminService();
+
+      // Obtener métricas del dashboard desde Supabase
+      const metricsResponse = await adminService.getDashboardMetrics();
+      if (metricsResponse.error) {
+        throw new Error(metricsResponse.error);
+      }
+
+      // Obtener actividad reciente desde Supabase
+      const activityResponse = await adminService.getRecentActivity(5);
+      if (activityResponse.error) {
+        console.warn('Error loading recent activity:', activityResponse.error);
+        // No bloquear si falla la actividad, solo usar array vacío
+      }
 
       // Verificar si el componente aún está montado y no hay timeout
       if (loadingRef.current) {
-        if (metricsResponse.error) {
-          setError(metricsResponse.error)
-        } else {
-          setMetrics(metricsResponse.data || null)
-        }
-
-        if (activityResponse.error) {
-          console.warn('Error loading recent activity:', activityResponse.error)
-          setRecentActivity([]) // Fallar silenciosamente para actividad
-        } else {
-          setRecentActivity(activityResponse.data || [])
-        }
+        setMetrics(metricsResponse.data || null);
+        setRecentActivity(activityResponse.data || []);
       }
     } catch (err) {
       console.error('Error loading dashboard metrics:', err)
       if (loadingRef.current) {
-        setError('Error al cargar las métricas del dashboard')
+        setError(err instanceof Error ? err.message : 'Error al cargar las métricas del dashboard')
       }
     } finally {
       // Solo cambiar loading si no hubo timeout
@@ -106,14 +111,16 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Alert variant="error" title="Error al cargar dashboard">
-          <p>{error}</p>
-          <Button
-            onClick={loadMetrics}
-            className="mt-4"
-            variant="outline"
-          >
-            Reintentar
-          </Button>
+          <AlertDescription>
+            <p>{error}</p>
+            <Button
+              onClick={loadMetrics}
+              className="mt-4"
+              variant="outline"
+            >
+              Reintentar
+            </Button>
+          </AlertDescription>
         </Alert>
       </div>
     );
@@ -199,6 +206,30 @@ export default function AdminDashboard() {
             }
             color="indigo"
           />
+        </div>
+
+        {/* Revenue Card */}
+        <div className="mb-8">
+          <Card>
+            <div className="p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 rounded-md flex items-center justify-center bg-yellow-500 text-yellow-100">
+                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-4 flex-1">
+                  <p className="text-sm font-medium text-gray-600">Ingresos del Mes</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    ${(metrics?.monthlyRevenue || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-sm text-gray-500">{metrics?.totalOrders || 0} órdenes totales</p>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Quick Actions */}

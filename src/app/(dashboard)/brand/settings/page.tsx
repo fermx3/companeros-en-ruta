@@ -34,41 +34,31 @@ export default function BrandSettingsPage() {
       setError(null);
 
       try {
-        // TODO: Implementar endpoint para obtener la marca del usuario actual
-        // const response = await adminService.getCurrentUserBrand();
-        // setBrand(response.data);
+        // Obtener datos reales de la marca
+        const response = await fetch('/api/brand/info', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
 
-        // Mock data para desarrollo
-        const mockBrand: Brand = {
-          id: 'mock-brand-1',
-          public_id: 'BRD-001',
-          tenant_id: 'mock-tenant',
-          name: 'Mi Marca',
-          slug: 'mi-marca',
-          description: 'Descripción de mi marca',
-          logo_url: null,
-          brand_color_primary: '#3B82F6',
-          brand_color_secondary: '#10B981',
-          contact_email: 'contacto@mimarca.com',
-          contact_phone: '+52 55 1234 5678',
-          website: 'https://mimarca.com',
-          status: 'active',
-          settings: null,
-          dashboard_metrics: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          deleted_at: null
-        };
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error al cargar datos de la marca');
+        }
 
-        setBrand(mockBrand);
+        const data = await response.json();
+        const brandData = data.brand;
+
+        setBrand(brandData);
         setFormData({
-          name: mockBrand.name,
-          description: mockBrand.description || '',
-          contact_email: mockBrand.contact_email || '',
-          contact_phone: mockBrand.contact_phone || '',
-          website: mockBrand.website || '',
-          brand_color_primary: mockBrand.brand_color_primary || '#3B82F6',
-          brand_color_secondary: mockBrand.brand_color_secondary || '#10B981'
+          name: brandData.name || '',
+          description: brandData.description || '',
+          contact_email: brandData.contact_email || '',
+          contact_phone: brandData.contact_phone || '',
+          website: brandData.website || '',
+          brand_color_primary: brandData.brand_color_primary || '#3B82F6',
+          brand_color_secondary: brandData.brand_color_secondary || '#10B981'
         });
 
       } catch (err) {
@@ -97,13 +87,26 @@ export default function BrandSettingsPage() {
     setSuccessMessage(null);
 
     try {
-      // TODO: Implementar endpoint para actualizar marca
-      // const response = await adminService.updateCurrentUserBrand(formData);
+      // Actualizar marca con datos reales
+      const response = await fetch('/api/brand/info', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
 
-      // Simular guardado exitoso
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al actualizar marca');
+      }
 
-      setSuccessMessage('Configuración guardada exitosamente');
+      const data = await response.json();
+      setBrand(data.brand);
+      setSuccessMessage('Configuración guardada correctamente');
+
+      // Limpiar mensaje después de 3 segundos
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       console.error('Error saving brand settings:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';

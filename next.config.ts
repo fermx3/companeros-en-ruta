@@ -15,6 +15,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/storage/v1/object/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'logoeps.com',
+        port: '',
+        pathname: '/wp-content/uploads/**',
+      },
     ],
   },
 

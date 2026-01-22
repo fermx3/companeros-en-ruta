@@ -79,13 +79,15 @@ export async function GET(request: NextRequest) {
 
     const metrics = {
       totalBrands: brandsResponse.count || 0,
-      totalClients: clientsResponse.count || 0,
-      totalUsers: usersResponse.count || 0,
-      monthlyVisits,
-      monthlyRevenue,
       activeBrands: brands.length,
+      totalClients: clientsResponse.count || 0,
       activeClients: clients.length,
-      activeUsers: users.length
+      totalUsers: usersResponse.count || 0,
+      activeUsers: users.length,
+      totalVisits: visitsResponse.count || 0,
+      monthlyVisits,
+      totalOrders: ordersResponse.count || 0,
+      monthlyRevenue
     };
 
     console.log('API Route - metrics result:', metrics);

@@ -1,386 +1,412 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/button';
-import { LoadingSpinner, Alert } from '@/components/ui/feedback';
-import { adminService } from '@/lib/services/adminService';
-import type { Brand, AdminDashboardMetrics } from '@/lib/types/admin';
+import { useEffect, useState, useCallback } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
+import { Button } from "@/components/ui/button"
+import { Users, TrendingUp, MapPin, Star, Settings, Building2 } from "lucide-react"
+import Link from 'next/link'
+import Image from 'next/image'
 
-/**
- * Dashboard principal para usuarios con rol de Marca
- * Muestra métricas y gestión específica de su marca asignada
- */
+// Interfaces basadas en la vista brand_dashboard_metrics
+interface BrandDashboardMetrics {
+  brand_id: string
+  brand_public_id: string
+  tenant_id: string
+  brand_name: string
+  brand_slug: string
+  logo_url: string | null
+  brand_color_primary: string | null
+  brand_color_secondary: string | null
+  website: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  contact_address: string | null
+  status: 'active' | 'inactive'
+  settings: Record<string, unknown>
+  created_at: string
+  updated_at: string
+  tenant_name: string
+  tenant_slug: string
+  total_clients: number
+  active_clients: number
+  pending_clients: number
+  avg_client_points: number
+  total_points_balance: number
+  total_visits: number
+  monthly_visits: number
+  active_visits: number
+  avg_visit_rating: number
+  total_orders: number
+  monthly_orders: number
+  total_revenue: number
+  monthly_revenue: number
+  active_promotions: number
+  total_promotions: number
+  conversion_rate: number
+  revenue_per_client: number
+  first_membership_date: string | null
+  last_membership_date: string | null
+  last_visit_date: string | null
+  last_order_date: string | null
+}
+
 export default function BrandDashboard() {
-  const [brand, setBrand] = useState<Brand | null>(null);
-  const [metrics, setMetrics] = useState<AdminDashboardMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<BrandDashboardMetrics | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadBrandMetrics = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch('/api/brand/metrics')
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al cargar métricas')
+      }
+
+      const data = await response.json()
+      setMetrics(data)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      console.error('Error loading brand metrics:', errorMessage)
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    const loadDashboardData = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        // TODO: Implementar endpoint para obtener la marca del usuario actual
-        // const brandResponse = await adminService.getCurrentUserBrand();
-        // setBrand(brandResponse.data);
-
-        // Por ahora usar métricas generales - TODO: filtrar por marca
-        const metricsResponse = await adminService.getDashboardMetrics();
-        if (metricsResponse.data) {
-          setMetrics(metricsResponse.data);
-        }
-
-        // Mock data para desarrollo
-        setBrand({
-          id: 'mock-brand-1',
-          public_id: 'BRD-001',
-          tenant_id: 'mock-tenant',
-          name: 'Mi Marca',
-          slug: 'mi-marca',
-          description: 'Descripción de mi marca',
-          logo_url: null,
-          brand_color_primary: '#3B82F6',
-          brand_color_secondary: '#10B981',
-          contact_email: 'contacto@mimarca.com',
-          contact_phone: null,
-          website: 'https://mimarca.com',
-          status: 'active',
-          settings: null,
-          dashboard_metrics: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          deleted_at: null
-        });
-
-      } catch (err) {
-        console.error('Error loading brand dashboard:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-        setError(`Error al cargar dashboard: ${errorMessage}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboardData();
-  }, []);
+    loadBrandMetrics()
+  }, [loadBrandMetrics])
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="lg" className="mx-auto mb-4" />
-          <p className="text-gray-600">Cargando dashboard de marca...</p>
+      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
+          <div className="h-8 bg-gray-300 rounded-md w-64"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white p-6 rounded-lg shadow-sm">
+                <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+                <div className="h-8 bg-gray-300 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm h-64"></div>
+            <div className="bg-white p-6 rounded-lg shadow-sm h-64"></div>
+          </div>
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 px-4 py-8">
+      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          <Alert variant="error">
-            {error}
-          </Alert>
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <CardTitle className="text-red-800">Error al cargar los datos</CardTitle>
+              <CardDescription className="text-red-600">{error}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={loadBrandMetrics} variant="outline" className="mt-4">
+                Intentar de nuevo
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              {/* Brand Logo/Icon */}
-              {brand?.logo_url ? (
-                <Image
-                  src={brand.logo_url}
-                  alt={brand.name}
-                  width={48}
-                  height={48}
-                  className="w-12 h-12 rounded-lg object-cover"
-                />
-              ) : (
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg"
-                  style={{ backgroundColor: brand?.brand_color_primary || '#3B82F6' }}
-                >
-                  {brand?.name?.charAt(0)?.toUpperCase() || 'M'}
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {brand?.name || 'Mi Marca'}
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  Panel de gestión de marca
-                </p>
-              </div>
-            </div>
-            <div className="flex space-x-3">
-              <Link href="/brand/settings">
-                <Button variant="outline">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Configuración
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gray-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Métricas principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <MetricCard
-            title="Clientes Activos"
-            value={metrics?.totalClients || 0}
-            subtitle="En tu marca"
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            }
-            color="blue"
-          />
-
-          <MetricCard
-            title="Visitas del Mes"
-            value={metrics?.monthlyVisits || 0}
-            subtitle="Por asesores"
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            }
-            color="green"
-          />
-
-          <MetricCard
-            title="Órdenes Totales"
-            value={metrics?.totalOrders || 0}
-            subtitle="Generadas"
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-            }
-            color="yellow"
-          />
-
-          <MetricCard
-            title="Facturación"
-            value={`$${(metrics?.monthlyRevenue || 0).toLocaleString()}`}
-            subtitle="Este mes"
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-              </svg>
-            }
-            color="purple"
-          />
-        </div>
-
-        {/* Secciones principales */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Acciones rápidas */}
-          <Card>
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Acciones Rápidas
-              </h3>
-              <div className="space-y-3">
-                <QuickActionItem
-                  title="Gestionar Clientes"
-                  description="Ver y administrar tus clientes"
-                  href="/brand/clients"
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  }
-                />
-                <QuickActionItem
-                  title="Promociones Activas"
-                  description="Gestionar campañas y ofertas"
-                  href="/brand/promotions"
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                  }
-                />
-                <QuickActionItem
-                  title="Equipos de Venta"
-                  description="Administrar asesores y supervisores"
-                  href="/brand/team"
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                    </svg>
-                  }
-                />
-                <QuickActionItem
-                  title="Reportes y Analytics"
-                  description="Ver métricas detalladas"
-                  href="/brand/reports"
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  }
-                />
+        <div className="space-y-8">
+          {/* Header with Logo and Brand Info */}
+          {metrics && (
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="flex items-center space-x-4">
+                {metrics.logo_url ? (
+                  <Image
+                    src={metrics.logo_url}
+                    alt={`${metrics.brand_name} logo`}
+                    width={64}
+                    height={64}
+                    className="h-16 w-16 object-contain"
+                  />
+                ) : (
+                  <div
+                    className="h-16 w-16 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: metrics.brand_color_primary || '#3B82F6' }}
+                  >
+                    <Building2 className="h-8 w-8 text-white" />
+                  </div>
+                )}
+                <div>
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                    {metrics.brand_name}
+                  </h1>
+                  <p className="text-gray-600 mt-1">
+                    Dashboard de Marca • {metrics.brand_public_id}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/brand/settings">
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configuración
+                  </Button>
+                </Link>
+                <Link href="/brand/reports">
+                  <Button className="w-full sm:w-auto">
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Ver Reportes
+                  </Button>
+                </Link>
               </div>
             </div>
-          </Card>
+          )}
 
-          {/* Información de la marca */}
-          <Card>
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Información de la Marca
-              </h3>
-              {brand && (
+          {/* Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Clientes Totales</p>
+                    <p className="text-2xl font-bold text-gray-900">{metrics?.total_clients || 0}</p>
+                  </div>
+                  <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <Users className="h-4 w-4 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Visitas Activas</p>
+                    <p className="text-2xl font-bold text-gray-900">{metrics?.active_visits || 0}</p>
+                  </div>
+                  <div className="h-8 w-8 bg-green-50 rounded-lg flex items-center justify-center">
+                    <MapPin className="h-4 w-4 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Ingresos Mensuales</p>
+                    <p className="text-2xl font-bold text-gray-900">${(metrics?.monthly_revenue || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="h-8 w-8 bg-green-50 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Rating Promedio</p>
+                    <p className="text-2xl font-bold text-gray-900">{(metrics?.avg_visit_rating || 0).toFixed(1)}</p>
+                  </div>
+                  <div className="h-8 w-8 bg-yellow-50 rounded-lg flex items-center justify-center">
+                    <Star className="h-4 w-4 text-yellow-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Quick Actions */}
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
+                <CardDescription className="text-gray-600">Herramientas principales para gestionar tu marca</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 gap-3">
+                  <Link href="/brand/clients">
+                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+                      <Users className="h-6 w-6 text-blue-600" />
+                      <span className="text-sm font-medium">Clientes</span>
+                    </Button>
+                  </Link>
+
+                  <Link href="/brand/visits">
+                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+                      <MapPin className="h-6 w-6 text-green-600" />
+                      <span className="text-sm font-medium">Visitas</span>
+                    </Button>
+                  </Link>
+
+                  <Link href="/brand/promotions">
+                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+                      <Star className="h-6 w-6 text-yellow-600" />
+                      <span className="text-sm font-medium">Promociones</span>
+                    </Button>
+                  </Link>
+
+                  <Link href="/brand/reports">
+                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+                      <TrendingUp className="h-6 w-6 text-purple-600" />
+                      <span className="text-sm font-medium">Reportes</span>
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Brand Performance Summary */}
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Resumen de Desempeño</CardTitle>
+                <CardDescription className="text-gray-600">Métricas clave de tu marca</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-500">ID Público:</span>
-                    <span className="text-sm text-gray-900">{brand.public_id}</span>
+                    <span className="text-sm text-gray-600">Clientes activos</span>
+                    <span className="text-sm font-semibold">{metrics?.active_clients || 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-500">Slug:</span>
-                    <span className="text-sm text-gray-900 font-mono">{brand.slug}</span>
+                    <span className="text-sm text-gray-600">Visitas este mes</span>
+                    <span className="text-sm font-semibold">{metrics?.monthly_visits || 0}</span>
                   </div>
-                  {brand.contact_email && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-500">Email:</span>
-                      <span className="text-sm text-gray-900">{brand.contact_email}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Ingresos mensuales</span>
+                    <span className="text-sm font-semibold">${(metrics?.monthly_revenue || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Tasa de conversión</span>
+                    <span className="text-sm font-semibold">{((metrics?.conversion_rate || 0) * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Ingreso por cliente</span>
+                    <span className="text-sm font-semibold">${(metrics?.revenue_per_client || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Brand Information */}
+          {metrics && (
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Información de la Marca</CardTitle>
+                <CardDescription className="text-gray-600">Detalles y configuración de tu marca</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">Nombre</label>
+                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md block">
+                      {metrics.brand_name}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">Código Público</label>
+                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md block">
+                      {metrics.brand_public_id}
+                    </span>
+                  </div>
+                  {metrics.contact_email && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Email</label>
+                      <span className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md block">
+                        {metrics.contact_email}
+                      </span>
                     </div>
                   )}
-                  {brand.website && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-500">Website:</span>
+                  {metrics.contact_phone && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Teléfono</label>
+                      <span className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md block">
+                        {metrics.contact_phone}
+                      </span>
+                    </div>
+                  )}
+                  {metrics.website && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Sitio Web</label>
                       <a
-                        href={brand.website}
+                        href={metrics.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline"
+                        className="text-sm text-blue-600 hover:text-blue-800 bg-gray-50 px-3 py-2 rounded-md block"
                       >
-                        Ver sitio
+                        {metrics.website}
                       </a>
                     </div>
                   )}
-                  {/* Colores de marca */}
-                  {(brand.brand_color_primary || brand.brand_color_secondary) && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-500 block mb-2">Colores:</span>
-                      <div className="flex space-x-3">
-                        {brand.brand_color_primary && (
-                          <div className="flex items-center space-x-2">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">Estado</label>
+                    <span className={`text-sm px-3 py-2 rounded-md block ${
+                      metrics.status === 'active'
+                        ? 'text-green-700 bg-green-50 border border-green-200'
+                        : 'text-red-700 bg-red-50 border border-red-200'
+                    }`}>
+                      {metrics.status === 'active' ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </div>
+
+                  {/* Colores de Marca */}
+                  {(metrics.brand_color_primary || metrics.brand_color_secondary) && (
+                    <div className="md:col-span-2 space-y-3">
+                      <label className="block text-sm font-semibold text-gray-700">Colores de Marca</label>
+                      <div className="flex flex-wrap gap-4">
+                        {metrics.brand_color_primary && (
+                          <div className="flex items-center space-x-3 bg-gray-50 px-4 py-3 rounded-lg border">
                             <div
-                              className="w-6 h-6 rounded-full border-2 border-gray-200"
-                              style={{ backgroundColor: brand.brand_color_primary }}
-                            />
-                            <span className="text-xs text-gray-600 font-mono">
-                              {brand.brand_color_primary}
-                            </span>
+                              className="w-10 h-10 rounded-lg border-2 border-white shadow-md"
+                              style={{ backgroundColor: metrics.brand_color_primary }}
+                            ></div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Color Primario</p>
+                              <p className="text-xs text-gray-600 font-mono">{metrics.brand_color_primary}</p>
+                            </div>
                           </div>
                         )}
-                        {brand.brand_color_secondary && (
-                          <div className="flex items-center space-x-2">
+
+                        {metrics.brand_color_secondary && (
+                          <div className="flex items-center space-x-3 bg-gray-50 px-4 py-3 rounded-lg border">
                             <div
-                              className="w-6 h-6 rounded-full border-2 border-gray-200"
-                              style={{ backgroundColor: brand.brand_color_secondary }}
-                            />
-                            <span className="text-xs text-gray-600 font-mono">
-                              {brand.brand_color_secondary}
-                            </span>
+                              className="w-10 h-10 rounded-lg border-2 border-white shadow-md"
+                              style={{ backgroundColor: metrics.brand_color_secondary }}
+                            ></div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Color Secundario</p>
+                              <p className="text-xs text-gray-600 font-mono">{metrics.brand_color_secondary}</p>
+                            </div>
                           </div>
                         )}
                       </div>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
-  );
-}
-
-// Componente auxiliar para las métricas
-interface MetricCardProps {
-  title: string;
-  value: number | string;
-  subtitle: string;
-  icon: React.ReactNode;
-  color: 'blue' | 'green' | 'yellow' | 'purple';
-}
-
-function MetricCard({ title, value, subtitle, icon, color }: MetricCardProps) {
-  const colorClasses = {
-    blue: 'bg-blue-500 text-blue-100',
-    green: 'bg-green-500 text-green-100',
-    yellow: 'bg-yellow-500 text-yellow-100',
-    purple: 'bg-purple-500 text-purple-100'
-  };
-
-  return (
-    <Card>
-      <div className="p-6">
-        <div className="flex items-center">
-          <div className={`flex-shrink-0 p-3 rounded-lg ${colorClasses[color]}`}>
-            {icon}
-          </div>
-          <div className="ml-4 flex-1">
-            <p className="text-sm font-medium text-gray-600">{title}</p>
-            <p className="text-2xl font-semibold text-gray-900">{value}</p>
-            <p className="text-xs text-gray-500">{subtitle}</p>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-// Componente auxiliar para acciones rápidas
-interface QuickActionItemProps {
-  title: string;
-  description: string;
-  href: string;
-  icon: React.ReactNode;
-}
-
-function QuickActionItem({ title, description, href, icon }: QuickActionItemProps) {
-  return (
-    <Link href={href} className="block">
-      <div className="flex items-center p-3 -mx-3 rounded-lg hover:bg-gray-50 transition-colors">
-        <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center text-blue-600">
-          {icon}
-        </div>
-        <div className="ml-3 flex-1">
-          <p className="text-sm font-medium text-gray-900">{title}</p>
-          <p className="text-xs text-gray-500">{description}</p>
-        </div>
-        <div className="ml-3 flex-shrink-0">
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
-      </div>
-    </Link>
-  );
+  )
 }

@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { adminService } from '@/lib/services/adminService'
-import type { UserProfile, UserRole, Brand, Zone } from '@/lib/types/admin'
+import type { UserProfile, UserRole, Brand } from '@/lib/types/admin'
 
 // ===========================================
 // Types
@@ -20,7 +20,6 @@ interface UserWithRoles extends UserProfile {
 interface NewRoleData {
   role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst'
   brand_id: string
-  zone_id: string
 }
 
 // ===========================================
@@ -47,7 +46,6 @@ export default function UserRolesPage() {
   // Estados principales
   const [user, setUser] = useState<UserWithRoles | null>(null)
   const [availableBrands, setAvailableBrands] = useState<Brand[]>([])
-  const [availableZones, setAvailableZones] = useState<Zone[]>([])
 
   // Estados de UI
   const [loading, setLoading] = useState(true)
@@ -58,8 +56,7 @@ export default function UserRolesPage() {
   // Estado para formulario de nuevo rol
   const [newRole, setNewRole] = useState<NewRoleData>({
     role: 'advisor',
-    brand_id: '',
-    zone_id: ''
+    brand_id: ''
   })
 
   // ===========================================
@@ -83,12 +80,6 @@ export default function UserRolesPage() {
       // Cargar brands disponibles
       const brandsResponse = await adminService.getBrands(1, 100)
       setAvailableBrands(brandsResponse.data)
-
-      // Cargar zonas disponibles (solo si hay brands)
-      if (brandsResponse.data.length > 0) {
-        const zonesData = await adminService.getZones()
-        setAvailableZones(zonesData)
-      }
     } catch (err) {
       console.error('Error loading data:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -121,14 +112,13 @@ export default function UserRolesPage() {
     try {
       await adminService.assignUserRole(user.id, {
         role: newRole.role,
-        brand_id: newRole.brand_id || null,
-        zone_id: newRole.zone_id || null
+        brand_id: newRole.brand_id || null
       })
 
       // Recargar datos y limpiar formulario
       await loadData()
       setShowAddRole(false)
-      setNewRole({ role: 'advisor', brand_id: '', zone_id: '' })
+      setNewRole({ role: 'advisor', brand_id: '' })
     } catch (err) {
       console.error('Error adding role:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -210,15 +200,6 @@ export default function UserRolesPage() {
     if (!brandId) return 'Global'
     const brand = availableBrands.find(b => b.id === brandId)
     return brand?.name || 'Marca desconocida'
-  }
-
-  /**
-   * Obtener nombre de zona por ID
-   */
-  const getZoneName = (zoneId: string | null): string => {
-    if (!zoneId) return 'Todas las zonas'
-    const zone = availableZones.find(z => z.id === zoneId)
-    return zone?.name || 'Zona desconocida'
   }
 
   // ===========================================
@@ -367,7 +348,7 @@ export default function UserRolesPage() {
             </div>
 
             {/* Form Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Rol Selector */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -423,27 +404,6 @@ export default function UserRolesPage() {
                   </p>
                 )}
               </div>
-
-              {/* Zone Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Zona
-                </label>
-                <select
-                  value={newRole.zone_id}
-                  onChange={(e) => setNewRole(prev => ({ ...prev, zone_id: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Todas las zonas</option>
-                  {availableZones
-                    .filter(zone => !newRole.brand_id || zone.brand_id === newRole.brand_id)
-                    .map(zone => (
-                      <option key={zone.id} value={zone.id}>
-                        {zone.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
             </div>
 
             {/* Action Buttons */}
@@ -485,9 +445,8 @@ export default function UserRolesPage() {
                         <h3 className="font-medium text-gray-900">
                           {getRoleLabel(role.role)}
                         </h3>
-                        <div className="flex space-x-4 text-sm text-gray-600 mt-1">
+                        <div className="text-sm text-gray-600 mt-1">
                           <span>Marca: {getBrandName(role.brand_id)}</span>
-                          <span>Zona: {getZoneName(role.zone_id)}</span>
                         </div>
                         {role.permissions && Object.keys(role.permissions).length > 0 && (
                           <div className="text-sm text-gray-500 mt-1">

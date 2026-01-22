@@ -14,6 +14,8 @@ interface Client {
   contact_phone: string | null;
   address: string | null;
   client_type: string;
+  commercial_structure?: string;
+  commercial_structure_type?: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -37,11 +39,33 @@ export default function BrandClientsPage() {
       setError(null);
 
       try {
-        // TODO: Implementar endpoint para obtener clientes de la marca
-        // const response = await brandService.getClients({ page, search: searchTerm, type: selectedType });
+        // Obtener clientes reales de la marca
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: '10',
+          ...(searchTerm && { search: searchTerm }),
+          ...(selectedType && { type: selectedType })
+        })
 
-        // Mock data para desarrollo
-        const mockClients: Client[] = [
+        const response = await fetch(`/api/brand/clients?${params}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Error al cargar clientes')
+        }
+
+        const data = await response.json()
+        setClients(data.clients || [])
+        setTotalPages(data.pagination?.totalPages || 1)
+
+        // Si no hay datos reales, mostrar placeholder
+        if (!data.clients || data.clients.length === 0) {
+          const mockClients: Client[] = [
           {
             id: '1',
             public_id: 'CLI-001',
@@ -78,10 +102,11 @@ export default function BrandClientsPage() {
             created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
             updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
           }
-        ];
+          ];
 
-        setClients(mockClients);
-        setTotalPages(1);
+          setClients(mockClients);
+          setTotalPages(1);
+        }
       } catch (err) {
         console.error('Error loading clients:', err);
         const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -332,8 +357,8 @@ function ClientCard({ client }: ClientCardProps) {
             </div>
             <p className="text-sm text-gray-500">{client.public_id}</p>
             <div className="flex items-center space-x-2 mt-2">
-              <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getTypeColor(client.client_type)}`}>
-                {getTypeLabel(client.client_type)}
+              <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getTypeColor(client.commercial_structure || client.client_type)}`}>
+                {getTypeLabel(client.commercial_structure || client.client_type)}
               </span>
             </div>
           </div>

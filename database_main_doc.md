@@ -1,7 +1,7 @@
 # Database Schema Design for Compañeros en Ruta (PerfectApp) MVP V2.0
 
 ## Importante, leer primero!!
-La implementacion actual de la database que ya existe en Supabase está en database_actual.md
+La implementacion actual de la database que ya existe en Supabase está en `database_actual.md` y el esquema completo esta en `db_esquema_actual_completo.md`
 
 ## 1. Overview del modelo
 
