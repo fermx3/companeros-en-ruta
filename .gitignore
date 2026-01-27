@@ -1,6 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# ===================
+# Dependencies
+# ===================
 /node_modules
 /.pnp
 .pnp.*
@@ -10,27 +12,17 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
-# next.js
+# ===================
+# Build & Output
+# ===================
 /.next/
 /out/
-
-# production
 /build
+/dist
 
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
+# ===================
+# Environment Variables (SECURITY)
+# ===================
 .env
 .env.local
 .env.development.local
@@ -39,14 +31,16 @@ yarn-error.log*
 .env.*
 !.env.example
 
-# vercel
-.vercel
-
-# typescript
+# ===================
+# TypeScript
+# ===================
 *.tsbuildinfo
 next-env.d.ts
 
+# ===================
 # Testing
+# ===================
+/coverage
 coverage/
 *.lcov
 .nyc_output
@@ -55,13 +49,54 @@ test-results/
 playwright-report/
 playwright/.cache/
 .jest-cache/
-supabase/.temp/
 
-# AI Agents
+# ===================
+# Debug Logs
+# ===================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# ===================
+# OS & IDE
+# ===================
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===================
+# Security
+# ===================
+*.pem
+*.key
+*.cert
+
+# ===================
+# Vercel
+# ===================
+.vercel
+
+# ===================
+# Supabase
+# ===================
+supabase/.temp/
+supabase/backup_*.sql
+
+# ===================
+# Project-specific: Documentation (auto-generated)
+# ===================
+db_esquema_actual_completo.md
+database_actual.md
+database_main_doc.md
+
+# ===================
+# Project-specific: AI Agents (local configuration)
+# ===================
 agents.md
 skills/
 .github/agents/
-database_actual.md
-supabase/backup_20260120_162408.sql
-
-supabase/migrations/
