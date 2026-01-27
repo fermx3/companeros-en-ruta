@@ -12,10 +12,10 @@
 | Admin | ✅ Complete | Yes |
 | Brand Manager | ✅ Complete | Yes |
 | Advisor (Asesor) | ✅ Complete | Yes |
-| Supervisor | ❌ Not Started | No |
-| Client | ❌ Not Started | No |
+| Supervisor | ✅ Complete | Yes |
+| Client | ✅ Complete | Yes |
 
-**Overall MVP Progress: ~60%**
+**Overall MVP Progress: ~90%** (All roles have basic dashboards)
 
 ---
 
@@ -216,14 +216,14 @@
 ### Authentication & Access
 - [x] Login routing configured
 - [x] Middleware recognizes role
-- [ ] Dashboard page implementation
+- [x] Dashboard page implementation
 
 ### Portal Dashboard (`/client`)
-- [ ] Dashboard page
-- [ ] Welcome message
-- [ ] Recent orders
-- [ ] Points balance
-- [ ] Upcoming visits
+- [x] Dashboard page
+- [x] Welcome message
+- [x] Recent orders (placeholder)
+- [x] Points balance
+- [x] Business info display
 
 ### Profile Management
 - [ ] View profile
@@ -246,7 +246,7 @@
 ### API Endpoints
 | Endpoint | Method | Status |
 |----------|--------|--------|
-| `/api/client/profile` | GET | ❌ |
+| `/api/client/profile` | GET | ✅ |
 | `/api/client/orders` | GET | ❌ |
 | `/api/client/promotions` | GET | ❌ |
 | `/api/client/points` | GET | ❌ |
