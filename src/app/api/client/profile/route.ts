@@ -35,37 +35,7 @@ export async function GET() {
       )
     }
 
-    // 2. Get user profile
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id, tenant_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    // 3. Verify client role
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('id, role, status')
-      .eq('user_profile_id', userProfile.id)
-      .eq('status', 'active')
-
-    const clientRole = roles?.find(r => r.role === 'client')
-
-    if (!clientRole) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene rol de cliente activo' },
-        { status: 403 }
-      )
-    }
-
-    // 4. Get client data linked to this user
+    // 2. Get client data linked to this user (clients use user_id directly, not user_roles)
     const { data: clientData, error: clientError } = await supabase
       .from('clients')
       .select(`
@@ -89,41 +59,20 @@ export async function GET() {
       .single()
 
     if (clientError || !clientData) {
-      // Try to find client by email if not linked by user_id
-      const { data: clientByEmail } = await supabase
-        .from('clients')
-        .select(`
-          id,
-          public_id,
-          business_name,
-          owner_name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          status,
-          created_at,
-          zones(name),
-          markets(name),
-          client_types(name)
-        `)
-        .eq('email', user.email)
-        .is('deleted_at', null)
-        .single()
-
-      if (!clientByEmail) {
-        return NextResponse.json(
-          { error: 'No se encontró un perfil de cliente asociado' },
-          { status: 404 }
-        )
-      }
-
-      // Use client found by email
-      Object.assign(clientData || {}, clientByEmail)
+      return NextResponse.json(
+        { error: 'No se encontró un perfil de cliente asociado a tu cuenta' },
+        { status: 404 }
+      )
     }
 
-    const client = clientData!
+    if (clientData.status !== 'active') {
+      return NextResponse.json(
+        { error: 'Tu cuenta de cliente está inactiva' },
+        { status: 403 }
+      )
+    }
+
+    const client = clientData
 
     // 5. Get order stats
     const { count: orderCount } = await supabase

@@ -28,37 +28,50 @@ export default function LoginPage() {
     } else {
       // Después del login exitoso, obtener el rol del usuario y redirigir apropiadamente
       try {
-        // First get the user profile
-        const { data: userProfile, error: profileError } = await supabase
+        // First check if user is a client (clients table has user_id, not user_roles)
+        const { data: clientAccount } = await supabase
+          .from('clients')
+          .select('id, status')
+          .eq('user_id', data.user.id)
+          .is('deleted_at', null)
+          .single();
+
+        if (clientAccount) {
+          // User is a client - redirect to client portal
+          if (clientAccount.status !== 'active') {
+            setError('Tu cuenta de cliente está inactiva. Contacta al administrador.');
+            return;
+          }
+          router.push('/client');
+          return;
+        }
+
+        // Not a client - check for staff roles via user_profiles + user_roles
+        const { data: userProfile } = await supabase
           .from('user_profiles')
           .select('id')
           .eq('user_id', data.user.id)
           .single();
 
-        if (profileError || !userProfile) {
+        if (!userProfile) {
           setError('No se encontró perfil de usuario. Contacta al administrador.');
           return;
         }
 
-        // Then get the user roles
-        const { data: userRoles, error: rolesError } = await supabase
+        // Get user roles
+        const { data: userRoles } = await supabase
           .from('user_roles')
           .select('role, brand_id, status')
           .eq('user_profile_id', userProfile.id)
           .eq('status', 'active');
-
-        if (rolesError) {
-          setError('Error al obtener roles del usuario');
-          return;
-        }
 
         if (!userRoles || userRoles.length === 0) {
           setError('No tienes roles asignados. Contacta al administrador.');
           return;
         }
 
-        // Determine primary role (priority: admin > supervisor > brand_manager > advisor > client)
-        const roleOrder = ['admin', 'supervisor', 'brand_manager', 'advisor', 'client'];
+        // Determine primary role (priority: admin > supervisor > brand_manager > advisor)
+        const roleOrder = ['admin', 'supervisor', 'brand_manager', 'advisor'];
         const roles = userRoles.map(r => r.role);
 
         let primaryRole = 'unauthorized';
@@ -82,9 +95,6 @@ export default function LoginPage() {
             break;
           case 'advisor':
             router.push('/asesor');
-            break;
-          case 'client':
-            router.push('/client');
             break;
           default:
             router.push('/unauthorized');

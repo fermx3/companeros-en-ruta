@@ -44,13 +44,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redireccionar usuarios autenticados lejos de login
-  if (request.nextUrl.pathname === '/login' && user) {
-    const url = request.nextUrl.clone()
-    // Redirigir a una página que maneje la lógica de rol apropiada
-    url.pathname = '/admin' // Default redirect, pero la lógica real está en el login
-    return NextResponse.redirect(url)
-  }
+  // Don't auto-redirect from login - let the login page handle role detection
+  // This prevents security issues where users get redirected to wrong dashboards
 
   return supabaseResponse
 }
