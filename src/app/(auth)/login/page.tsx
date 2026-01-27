@@ -28,51 +28,66 @@ export default function LoginPage() {
     } else {
       // Después del login exitoso, obtener el rol del usuario y redirigir apropiadamente
       try {
+        // First get the user profile
         const { data: userProfile, error: profileError } = await supabase
           .from('user_profiles')
-          .select(`
-            role,
-            user_roles (
-              role,
-              brand_id
-            )
-          `)
+          .select('id')
           .eq('user_id', data.user.id)
           .single();
 
-        if (profileError) {
-          console.error('Error fetching user profile:', profileError);
-          setError('Error al obtener información del usuario');
+        if (profileError || !userProfile) {
+          setError('No se encontró perfil de usuario. Contacta al administrador.');
           return;
         }
 
-        // Redirigir según el rol
-        const hasBrandRole = userProfile.user_roles?.some(
-          (role: any) => role.role === 'brand_manager'
-        );
+        // Then get the user roles
+        const { data: userRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('role, brand_id, status')
+          .eq('user_profile_id', userProfile.id)
+          .eq('status', 'active');
 
-        switch (userProfile.role) {
+        if (rolesError) {
+          setError('Error al obtener roles del usuario');
+          return;
+        }
+
+        if (!userRoles || userRoles.length === 0) {
+          setError('No tienes roles asignados. Contacta al administrador.');
+          return;
+        }
+
+        // Determine primary role (priority: admin > supervisor > brand_manager > advisor > client)
+        const roleOrder = ['admin', 'supervisor', 'brand_manager', 'advisor', 'client'];
+        const roles = userRoles.map(r => r.role);
+
+        let primaryRole = 'unauthorized';
+        for (const role of roleOrder) {
+          if (roles.includes(role)) {
+            primaryRole = role;
+            break;
+          }
+        }
+
+        // Redirect based on role
+        switch (primaryRole) {
           case 'admin':
             router.push('/admin');
             break;
           case 'supervisor':
             router.push('/supervisor');
             break;
-          case 'asesor':
-            router.push('/asesor');
+          case 'brand_manager':
+            router.push('/brand');
             break;
-          case 'analyst':
-            router.push('/analyst');
+          case 'advisor':
+            router.push('/asesor');
             break;
           case 'client':
             router.push('/client');
             break;
           default:
-            if (hasBrandRole) {
-              router.push('/brand');
-            } else {
-              router.push('/unauthorized');
-            }
+            router.push('/unauthorized');
         }
       } catch (err) {
         console.error('Error durante la redirección:', err);
