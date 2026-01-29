@@ -5,12 +5,16 @@ interface ClientProfile {
   id: string
   public_id: string
   business_name: string
+  legal_name: string | null
   owner_name: string | null
   email: string | null
   phone: string | null
-  address: string | null
-  city: string | null
-  state: string | null
+  whatsapp: string | null
+  address_street: string | null
+  address_neighborhood: string | null
+  address_city: string | null
+  address_state: string | null
+  address_postal_code: string | null
   status: string
   zone_name: string | null
   market_name: string | null
@@ -18,6 +22,7 @@ interface ClientProfile {
   total_points: number
   total_orders: number
   last_order_date: string | null
+  last_visit_date: string | null
   created_at: string
 }
 
@@ -42,13 +47,18 @@ export async function GET() {
         id,
         public_id,
         business_name,
+        legal_name,
         owner_name,
         email,
         phone,
-        address,
-        city,
-        state,
+        whatsapp,
+        address_street,
+        address_neighborhood,
+        address_city,
+        address_state,
+        address_postal_code,
         status,
+        last_visit_date,
         created_at,
         zones(name),
         markets(name),
@@ -74,7 +84,7 @@ export async function GET() {
 
     const client = clientData
 
-    // 5. Get order stats
+    // 3. Get order stats
     const { count: orderCount } = await supabase
       .from('orders')
       .select('id', { count: 'exact', head: true })
@@ -90,7 +100,7 @@ export async function GET() {
       .limit(1)
       .single()
 
-    // 6. Get points balance from memberships
+    // 4. Get points balance from memberships
     const { data: memberships } = await supabase
       .from('client_brand_memberships')
       .select('points_balance')
@@ -99,7 +109,7 @@ export async function GET() {
 
     const totalPoints = memberships?.reduce((sum, m) => sum + (m.points_balance || 0), 0) || 0
 
-    // 7. Build profile response
+    // 5. Build profile response
     const zones = client.zones as unknown as { name: string } | null
     const markets = client.markets as unknown as { name: string } | null
     const clientTypes = client.client_types as unknown as { name: string } | null
@@ -108,12 +118,16 @@ export async function GET() {
       id: client.id,
       public_id: client.public_id,
       business_name: client.business_name,
+      legal_name: client.legal_name,
       owner_name: client.owner_name,
       email: client.email,
       phone: client.phone,
-      address: client.address,
-      city: client.city,
-      state: client.state,
+      whatsapp: client.whatsapp,
+      address_street: client.address_street,
+      address_neighborhood: client.address_neighborhood,
+      address_city: client.address_city,
+      address_state: client.address_state,
+      address_postal_code: client.address_postal_code,
       status: client.status,
       zone_name: zones?.name || null,
       market_name: markets?.name || null,
@@ -121,6 +135,7 @@ export async function GET() {
       total_points: totalPoints,
       total_orders: orderCount || 0,
       last_order_date: lastOrder?.created_at || null,
+      last_visit_date: client.last_visit_date,
       created_at: client.created_at
     }
 

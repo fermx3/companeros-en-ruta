@@ -10,12 +10,16 @@ interface ClientProfile {
   id: string
   public_id: string
   business_name: string
+  legal_name: string | null
   owner_name: string | null
   email: string | null
   phone: string | null
-  address: string | null
-  city: string | null
-  state: string | null
+  whatsapp: string | null
+  address_street: string | null
+  address_neighborhood: string | null
+  address_city: string | null
+  address_state: string | null
+  address_postal_code: string | null
   status: string
   zone_name: string | null
   market_name: string | null
@@ -23,6 +27,7 @@ interface ClientProfile {
   total_points: number
   total_orders: number
   last_order_date: string | null
+  last_visit_date: string | null
   created_at: string
 }
 
@@ -198,14 +203,17 @@ export default function ClientPortal() {
                   </div>
                 </div>
 
-                {profile?.address && (
+                {profile?.address_street && (
                   <div className="flex items-start space-x-3">
                     <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="text-sm text-gray-900">{profile.address}</p>
-                      {(profile.city || profile.state) && (
+                      <p className="text-sm text-gray-900">
+                        {profile.address_street}
+                        {profile.address_neighborhood && `, ${profile.address_neighborhood}`}
+                      </p>
+                      {(profile.address_city || profile.address_state) && (
                         <p className="text-sm text-gray-500">
-                          {[profile.city, profile.state].filter(Boolean).join(', ')}
+                          {[profile.address_city, profile.address_state, profile.address_postal_code].filter(Boolean).join(', ')}
                         </p>
                       )}
                     </div>
