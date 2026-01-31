@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-01-29
+**Last Updated:** 2026-01-31
 **Target:** User testing with all roles working at MVP level + Brand Affiliation System
 
 ---
@@ -10,18 +10,18 @@
 | Role | Status | Ready for Testing |
 |------|--------|-------------------|
 | Admin | ✅ Complete | Yes |
-| Brand Manager | 🟡 Partial | Needs tier management |
+| Brand Manager | ✅ Complete | Yes |
 | Advisor (Asesor) | ✅ Complete | Yes |
 | Supervisor | ✅ Complete | Yes |
-| Client | 🟡 Partial | Needs brand memberships |
+| Client | ✅ Complete | Yes |
 
 | System | Status | Ready for Testing |
 |--------|--------|-------------------|
-| Brand Affiliation | 🔴 Not Started | No |
-| Tier System | 🔴 Not Started | No |
-| Points System | 🔴 Not Started | No |
+| Brand Affiliation | ✅ Complete | Yes |
+| Tier System | ✅ Complete | Yes |
+| Points System | ✅ Complete | Yes |
 
-**Overall MVP Progress: ~70%** (Dashboards complete, loyalty system pending)
+**Overall MVP Progress: ~90%** (Dashboards + Brand Affiliation + Tiers + Points complete)
 
 ---
 
@@ -117,19 +117,19 @@
 - [ ] View advisor performance
 
 ### Tier Management (NEW - Required for MVP)
-- [ ] Tiers list page (`/brand/tiers`)
-- [ ] Create new tier
-- [ ] Edit tier requirements (points, visits, purchases)
-- [ ] Edit tier benefits (multiplier, discounts)
-- [ ] Set default tier for new members
+- [x] Tiers list page (`/brand/tiers`)
+- [x] Create new tier
+- [x] Edit tier requirements (points, visits, purchases)
+- [x] Edit tier benefits (multiplier, discounts)
+- [x] Set default tier for new members
 - [ ] Enable/disable auto-assignment
 
 ### Membership Management (NEW - Required for MVP)
-- [ ] Pending memberships queue (`/brand/memberships/pending`)
-- [ ] Approve/reject membership requests
-- [ ] Active members list with tier filter
-- [ ] Manual tier assignment
-- [ ] Award/deduct points
+- [x] Pending memberships queue (`/brand/memberships`)
+- [x] Approve membership requests
+- [x] Active members list with tier filter
+- [x] Manual tier assignment
+- [x] Award/deduct points (Points modal)
 - [ ] View member tier history
 
 ### API Endpoints
@@ -139,13 +139,16 @@
 | `/api/brand/info` | GET | ✅ |
 | `/api/brand/clients` | GET | ✅ |
 | `/api/brand/team` | GET | ❌ |
-| `/api/brand/tiers` | GET | ❌ |
-| `/api/brand/tiers` | POST | ❌ |
-| `/api/brand/tiers/[id]` | PUT | ❌ |
-| `/api/brand/memberships` | GET | ❌ |
-| `/api/brand/memberships/[id]/approve` | PUT | ❌ |
-| `/api/brand/memberships/[id]/assign-tier` | POST | ❌ |
-| `/api/brand/points/award` | POST | ❌ |
+| `/api/brand/tiers` | GET | ✅ |
+| `/api/brand/tiers` | POST | ✅ |
+| `/api/brand/tiers/[id]` | PUT | ✅ |
+| `/api/brand/tiers/[id]` | DELETE | ✅ |
+| `/api/brand/memberships` | GET | ✅ |
+| `/api/brand/memberships` | POST | ✅ |
+| `/api/brand/memberships/[id]/approve` | PUT | ✅ |
+| `/api/brand/memberships/[id]/assign-tier` | POST | ✅ |
+| `/api/brand/points` | GET | ✅ |
+| `/api/brand/points` | POST | ✅ |
 
 ---
 
@@ -267,28 +270,30 @@
 - [ ] Order status tracking
 
 ### Brand Memberships (NEW - Required for MVP)
-- [ ] My Brands page (`/client/brands`)
-- [ ] View membership status per brand
-- [ ] Current tier display with benefits
-- [ ] Points balance per brand
-- [ ] Join new brand flow
+- [x] My Brands page (`/client/brands`)
+- [x] View membership status per brand
+- [x] Current tier display with benefits
+- [x] Points balance per brand
+- [x] Join new brand flow (self-subscribe)
 - [ ] Accept terms and conditions
 
-### Promotions & Rewards
-- [ ] Available promotions
-- [ ] Points balance
+### Points & Rewards
+- [x] Points balance page (`/client/points`)
+- [x] Points history per brand
+- [x] Total points summary
 - [ ] Redeem rewards
-- [ ] Promotion history
+- [ ] Available promotions
 
 ### API Endpoints
 | Endpoint | Method | Status |
 |----------|--------|--------|
 | `/api/client/profile` | GET | ✅ |
 | `/api/client/orders` | GET | ❌ |
-| `/api/client/memberships` | GET | ❌ |
-| `/api/client/memberships/join` | POST | ❌ |
+| `/api/client/memberships` | GET | ✅ |
+| `/api/client/brands` | GET | ✅ |
+| `/api/client/brands` | POST | ✅ |
 | `/api/client/tier` | GET | ❌ |
-| `/api/client/points/history` | GET | ❌ |
+| `/api/client/points` | GET | ✅ |
 | `/api/client/promotions` | GET | ❌ |
 
 ---
@@ -334,10 +339,10 @@
 | orders | ❌ | 0 | |
 | advisor_assignments | ✅ | 1 | |
 | advisor_client_assignments | ✅ | 1 | |
-| **tiers** | ❌ | 0 | Need to create for each brand |
-| **client_brand_memberships** | ❌ | 0 | Need to link clients to brands |
-| **client_tier_assignments** | ❌ | 0 | Need to assign tiers to members |
-| **points_transactions** | ❌ | 0 | Points ledger |
+| **tiers** | ✅ | - | Created via UI |
+| **client_brand_memberships** | ✅ | - | Created via UI |
+| **client_tier_assignments** | ✅ | - | Created via UI |
+| **points_transactions** | ✅ | - | Migration created, ready for use |
 
 ---
 
@@ -357,18 +362,22 @@
 - [x] Display welcome message
 - [x] Display basic profile info
 
-#### Brand Affiliation System (NEW - CRITICAL)
-- [ ] API: `GET /api/client/memberships` - Client's brand memberships
-- [ ] API: `GET /api/brand/memberships` - Brand's members list
-- [ ] API: `PUT /api/brand/memberships/[id]/approve` - Approve membership
-- [ ] Client Portal: "My Brands" page with memberships
-- [ ] Brand Manager: Members list with status
+#### ~~Brand Affiliation System~~ ✅ DONE
+- [x] API: `GET /api/client/memberships` - Client's brand memberships
+- [x] API: `GET /api/client/brands` - Available brands + self-subscribe
+- [x] API: `GET /api/brand/memberships` - Brand's members list
+- [x] API: `POST /api/brand/memberships` - Add clients to brand
+- [x] API: `PUT /api/brand/memberships/[id]/approve` - Approve membership
+- [x] API: `POST /api/brand/memberships/[id]/assign-tier` - Manual tier assignment
+- [x] Client Portal: "My Brands" page with memberships
+- [x] Brand Manager: Members list with status
+- [x] RLS: Client self-subscribe with pending status
 
-#### Tier System (NEW - CRITICAL)
-- [ ] API: `GET /api/brand/tiers` - List brand tiers
-- [ ] API: `GET /api/client/tier` - Client's current tier
-- [ ] Client Portal: Current tier display with benefits
-- [ ] Brand Manager: Tiers configuration page
+#### ~~Tier System~~ ✅ DONE
+- [x] API: `GET/POST /api/brand/tiers` - List and create tiers
+- [x] API: `PUT/DELETE /api/brand/tiers/[id]` - Update/delete tiers
+- [x] Client Portal: Current tier display with benefits
+- [x] Brand Manager: Tiers configuration page
 
 ### P1 - High (Core functionality)
 
@@ -394,40 +403,42 @@
 
 ### P1.5 - Brand Affiliation System (NEW)
 
-#### Client Brand Memberships
-- [ ] API: `GET /api/client/memberships` - List client's brand memberships
-- [ ] API: `POST /api/client/memberships/join` - Request to join a brand
-- [ ] API: `GET /api/brand/memberships` - List brand's client memberships (Brand Manager)
-- [ ] API: `PUT /api/brand/memberships/[id]/approve` - Approve membership request
+#### ~~Client Brand Memberships~~ ✅ DONE
+- [x] API: `GET /api/client/memberships` - List client's brand memberships
+- [x] API: `POST /api/client/brands` - Request to join a brand (self-subscribe)
+- [x] API: `GET /api/brand/memberships` - List brand's client memberships (Brand Manager)
+- [x] API: `POST /api/brand/memberships` - Add clients to brand (bulk)
+- [x] API: `PUT /api/brand/memberships/[id]/approve` - Approve membership request
 - [ ] API: `PUT /api/brand/memberships/[id]/reject` - Reject membership request
-- [ ] Client Portal: "My Brands" page showing all memberships
-- [ ] Client Portal: Join brand flow with terms acceptance
-- [ ] Brand Manager: Pending memberships approval queue
-- [ ] Brand Manager: Active members list with status filters
+- [x] Client Portal: "My Brands" page showing all memberships
+- [x] Client Portal: Join brand flow (self-subscribe pending)
+- [x] Brand Manager: Pending memberships approval queue
+- [x] Brand Manager: Active members list with status filters
 
-#### Tier Management (Brand Manager)
-- [ ] API: `GET /api/brand/tiers` - List brand's tiers
-- [ ] API: `POST /api/brand/tiers` - Create new tier
-- [ ] API: `PUT /api/brand/tiers/[id]` - Update tier settings
-- [ ] Brand Manager: Tiers configuration page
-- [ ] Brand Manager: Tier benefits editor (points multiplier, discounts)
-- [ ] Brand Manager: Tier requirements editor (min points, visits, purchases)
+#### ~~Tier Management (Brand Manager)~~ ✅ DONE
+- [x] API: `GET /api/brand/tiers` - List brand's tiers
+- [x] API: `POST /api/brand/tiers` - Create new tier
+- [x] API: `PUT /api/brand/tiers/[id]` - Update tier settings
+- [x] API: `DELETE /api/brand/tiers/[id]` - Delete tier
+- [x] Brand Manager: Tiers configuration page
+- [x] Brand Manager: Tier benefits editor (points multiplier, discounts)
+- [x] Brand Manager: Tier requirements editor (min points, visits, purchases)
 
-#### Client Tier Assignments
-- [ ] API: `GET /api/client/tier` - Get current tier for each membership
-- [ ] API: `POST /api/brand/memberships/[id]/assign-tier` - Manual tier assignment
-- [ ] Client Portal: Display current tier with benefits
-- [ ] Client Portal: Progress to next tier indicator
-- [ ] Brand Manager: Member tier assignment interface
+#### ~~Client Tier Assignments~~ ✅ DONE
+- [x] API: `POST /api/brand/memberships/[id]/assign-tier` - Manual tier assignment
+- [x] Client Portal: Display current tier with benefits
+- [x] Client Portal: Progress to next tier indicator
+- [x] Brand Manager: Member tier assignment interface
 - [ ] Brand Manager: Tier assignment history view
 - [ ] Auto-assignment logic (evaluate client metrics vs tier requirements)
 
-#### Points System
-- [ ] API: `GET /api/client/points/history` - Points transaction history
-- [ ] API: `POST /api/brand/points/award` - Award points to client
-- [ ] API: `POST /api/brand/points/deduct` - Deduct points from client
-- [ ] Client Portal: Points balance and history
-- [ ] Brand Manager: Points management for members
+#### ~~Points System~~ ✅ DONE
+- [x] Migration: `points_transactions` table
+- [x] API: `GET /api/client/points` - Points summary and history
+- [x] API: `POST /api/brand/points` - Award/deduct points
+- [x] API: `GET /api/brand/points` - View member points history
+- [x] Client Portal: Points page (`/client/points`)
+- [x] Brand Manager: Points modal in memberships page
 
 ### P2 - Medium (Enhanced features)
 

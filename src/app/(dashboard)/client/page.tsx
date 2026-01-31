@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
-import { Store, ShoppingCart, Star, MapPin, Phone, Mail, Gift } from "lucide-react"
+import { Store, ShoppingCart, Star, MapPin, Phone, Mail, Gift, Award, TrendingUp, Building2 } from "lucide-react"
 import Link from 'next/link'
 
 interface ClientProfile {
@@ -31,8 +31,38 @@ interface ClientProfile {
   created_at: string
 }
 
+interface CurrentTier {
+  id: string
+  name: string
+  tier_level: number
+  points_multiplier: number
+  discount_percentage: number
+  tier_color: string | null
+}
+
+interface NextTier {
+  name: string
+  min_points_required: number
+  points_needed: number
+}
+
+interface ClientMembership {
+  id: string
+  public_id: string
+  brand_id: string
+  brand_name: string
+  brand_logo_url: string | null
+  membership_status: string
+  joined_date: string | null
+  points_balance: number
+  lifetime_points: number
+  current_tier: CurrentTier | null
+  next_tier: NextTier | null
+}
+
 export default function ClientPortal() {
   const [profile, setProfile] = useState<ClientProfile | null>(null)
+  const [primaryMembership, setPrimaryMembership] = useState<ClientMembership | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,15 +71,28 @@ export default function ClientPortal() {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/client/profile')
+      const [profileResponse, membershipsResponse] = await Promise.all([
+        fetch('/api/client/profile'),
+        fetch('/api/client/memberships')
+      ])
 
-      if (!response.ok) {
-        const errorData = await response.json()
+      if (!profileResponse.ok) {
+        const errorData = await profileResponse.json()
         throw new Error(errorData.error || 'Error al cargar perfil')
       }
 
-      const data = await response.json()
-      setProfile(data)
+      const profileData = await profileResponse.json()
+      setProfile(profileData)
+
+      if (membershipsResponse.ok) {
+        const membershipsData = await membershipsResponse.json()
+        const activeMemberships = (membershipsData.memberships || []).filter(
+          (m: ClientMembership) => m.membership_status === 'active'
+        )
+        if (activeMemberships.length > 0) {
+          setPrimaryMembership(activeMemberships[0])
+        }
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
       setError(errorMessage)
@@ -185,6 +228,118 @@ export default function ClientPortal() {
             </Card>
           </div>
 
+          {/* Primary Membership Tier */}
+          {primaryMembership && (
+            <Card className="hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+              <div
+                className="h-2"
+                style={{ backgroundColor: primaryMembership.current_tier?.tier_color || '#6366F1' }}
+              />
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {primaryMembership.brand_logo_url ? (
+                      <img
+                        src={primaryMembership.brand_logo_url}
+                        alt={primaryMembership.brand_name}
+                        className="h-12 w-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <Building2 className="h-6 w-6 text-gray-400" />
+                      </div>
+                    )}
+                    <div>
+                      <CardTitle className="text-lg">{primaryMembership.brand_name}</CardTitle>
+                      <CardDescription>Tu membresía principal</CardDescription>
+                    </div>
+                  </div>
+                  <Link href="/client/brands">
+                    <Button variant="outline" size="sm">
+                      Ver todas las marcas
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Current Tier */}
+                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                    <div
+                      className="h-12 w-12 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: primaryMembership.current_tier?.tier_color || '#6366F1' }}
+                    >
+                      <Award className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Tu nivel</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {primaryMembership.current_tier?.name || 'Sin nivel'}
+                      </p>
+                      {primaryMembership.current_tier && (
+                        <div className="flex items-center space-x-2 text-xs text-gray-500">
+                          {primaryMembership.current_tier.points_multiplier > 1 && (
+                            <span className="flex items-center">
+                              <TrendingUp className="h-3 w-3 mr-1" />
+                              {primaryMembership.current_tier.points_multiplier}x puntos
+                            </span>
+                          )}
+                          {primaryMembership.current_tier.discount_percentage > 0 && (
+                            <span>{primaryMembership.current_tier.discount_percentage}% desc.</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Points Balance */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-500">Puntos disponibles</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {primaryMembership.points_balance.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {primaryMembership.lifetime_points.toLocaleString()} pts acumulados
+                    </p>
+                  </div>
+
+                  {/* Progress to Next Tier */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    {primaryMembership.next_tier ? (
+                      <>
+                        <p className="text-sm text-gray-500">Próximo nivel: {primaryMembership.next_tier.name}</p>
+                        <div className="mt-2">
+                          <div className="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>{primaryMembership.lifetime_points.toLocaleString()} pts</span>
+                            <span>{primaryMembership.next_tier.min_points_required.toLocaleString()} pts</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="h-2 rounded-full transition-all duration-500"
+                              style={{
+                                width: `${Math.min(100, (primaryMembership.lifetime_points / primaryMembership.next_tier.min_points_required) * 100)}%`,
+                                backgroundColor: primaryMembership.current_tier?.tier_color || '#6366F1'
+                              }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Faltan <span className="font-medium">{primaryMembership.next_tier.points_needed.toLocaleString()}</span> puntos
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-500">Nivel máximo</p>
+                        <p className="text-lg font-bold text-gray-900 mt-1">Alcanzado</p>
+                        <p className="text-xs text-gray-500">Disfruta todos los beneficios</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Business Information */}
             <Card className="hover:shadow-lg transition-shadow duration-200">
@@ -270,14 +425,14 @@ export default function ClientPortal() {
                     </Button>
                   </Link>
 
-                  <Link href="/client/promotions">
+                  <Link href="/client/brands">
                     <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                      <Gift className="h-8 w-8 text-purple-600" />
-                      <span className="text-sm font-medium">Promociones</span>
+                      <Building2 className="h-8 w-8 text-indigo-600" />
+                      <span className="text-sm font-medium">Mis Marcas</span>
                     </Button>
                   </Link>
 
-                  <Link href="/client/rewards">
+                  <Link href="/client/points">
                     <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
                       <Star className="h-8 w-8 text-yellow-600" />
                       <span className="text-sm font-medium">Mis Puntos</span>

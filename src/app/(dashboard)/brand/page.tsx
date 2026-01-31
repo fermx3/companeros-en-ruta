@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
-import { Users, TrendingUp, MapPin, Star, Settings, Building2 } from "lucide-react"
+import { Users, TrendingUp, MapPin, Star, Settings, Building2, UserCheck, Layers, Gift, ChevronRight } from "lucide-react"
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -250,26 +250,47 @@ export default function BrandDashboard() {
                     </Button>
                   </Link>
 
+                  <Link href="/brand/memberships">
+                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+                      <UserCheck className="h-6 w-6 text-indigo-600" />
+                      <span className="text-sm font-medium">Miembros</span>
+                    </Button>
+                  </Link>
+
+                  <Link href="/brand/tiers">
+                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+                      <Layers className="h-6 w-6 text-purple-600" />
+                      <span className="text-sm font-medium">Niveles</span>
+                    </Button>
+                  </Link>
+
                   <Link href="/brand/visits">
                     <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
                       <MapPin className="h-6 w-6 text-green-600" />
                       <span className="text-sm font-medium">Visitas</span>
                     </Button>
                   </Link>
+                </div>
 
-                  <Link href="/brand/promotions">
-                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                      <Star className="h-6 w-6 text-yellow-600" />
-                      <span className="text-sm font-medium">Promociones</span>
-                    </Button>
-                  </Link>
-
-                  <Link href="/brand/reports">
-                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                      <TrendingUp className="h-6 w-6 text-purple-600" />
-                      <span className="text-sm font-medium">Reportes</span>
-                    </Button>
-                  </Link>
+                {/* More Options */}
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-xs text-gray-500 mb-2">Más opciones</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Link href="/brand/promotions">
+                      <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+                        <Gift className="h-4 w-4 mr-1" />
+                        Promociones
+                        <ChevronRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </Link>
+                    <Link href="/brand/reports">
+                      <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+                        <TrendingUp className="h-4 w-4 mr-1" />
+                        Reportes
+                        <ChevronRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardContent>
             </Card>
