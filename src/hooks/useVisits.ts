@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 
 type Visit = {
@@ -9,7 +8,7 @@ type Visit = {
   tenant_id: string
   client_id: string
   brand_id: string
-  asesor_id: string
+  advisor_id: string
   visit_number: string
   visit_date: string
   start_time: string | null
@@ -22,13 +21,17 @@ type Visit = {
   updated_at: string
   client?: {
     id: string
+    public_id?: string
     business_name: string
-    business_type: string
-    address: string
+    owner_name?: string
+    address_street?: string
+    address_neighborhood?: string
+    phone?: string
   }
   brand?: {
     id: string
     name: string
+    logo_url?: string
   }
   assessment?: {
     id: string
@@ -60,6 +63,15 @@ type AsesorMetrics = {
   effectiveness: number
 }
 
+type CreateVisitData = {
+  client_id: string
+  brand_id: string
+  visit_date?: string
+  notes?: string
+  latitude?: number
+  longitude?: number
+}
+
 // Hook para obtener todas las visitas del asesor
 export function useMyVisits(filters: VisitFilters) {
   const { user } = useAuth()
@@ -72,43 +84,32 @@ export function useMyVisits(filters: VisitFilters) {
     completedVisits: 0,
     effectiveness: 0
   })
-  const supabase = createClient()
 
   const fetchVisits = useCallback(async () => {
     if (!user) return
-    console.log('Fetching visits for user:', user.id)
+
     setLoading(true)
     setError(null)
 
     try {
-      const { data, error: queryError } = await supabase
-        .from('visits')
-        .select(`
-          *,
-          client:clients(*),
-          brand:brands(*)
-        `)
-        .eq('asesor_id', user.id)
-        .order('visit_date', { ascending: false })
+      const params = new URLSearchParams({
+        status: filters.status,
+        date_range: filters.dateRange
+      })
 
-      if (queryError) {
-        console.error('Error fetching visits:', queryError)
-        throw queryError
+      const response = await fetch(`/api/asesor/visits?${params}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al cargar visitas')
       }
-      console.log(data);
 
-      setVisits(data as Visit[])
-
-      // Calculate metrics
-      const totalVisits = data?.length || 0
-      const completed = data?.filter((v: Visit) => v.status === 'completed').length || 0
-      const uniqueClients = new Set(data?.map((v: Visit) => v.client_id)).size
-
-      setMetrics({
-        totalClients: uniqueClients,
+      setVisits(data.visits || [])
+      setMetrics(data.metrics || {
+        totalClients: 0,
         monthlyQuota: 100,
-        completedVisits: completed,
-        effectiveness: totalVisits > 0 ? (completed / totalVisits) * 100 : 0
+        completedVisits: 0,
+        effectiveness: 0
       })
 
     } catch (err) {
@@ -117,7 +118,7 @@ export function useMyVisits(filters: VisitFilters) {
     } finally {
       setLoading(false)
     }
-  }, [user, supabase])
+  }, [user, filters.status, filters.dateRange])
 
   useEffect(() => {
     fetchVisits()
@@ -138,7 +139,6 @@ export function useVisit(visitId: string) {
   const [visit, setVisit] = useState<Visit | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
 
   const fetchVisit = useCallback(async () => {
     if (!user || !visitId) return
@@ -147,39 +147,37 @@ export function useVisit(visitId: string) {
     setError(null)
 
     try {
-      const { data, error: queryError } = await supabase
-        .from('visits')
-        .select(`
-          *,
-          client:clients(*),
-          brand:brands(*)
-        `)
-        .eq('id', visitId)
-        .eq('asesor_id', user.id)
-        .single()
+      const response = await fetch(`/api/asesor/visits/${visitId}`)
+      const data = await response.json()
 
-      if (queryError) throw queryError
-      if (!data) throw new Error('Visita no encontrada')
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al cargar la visita')
+      }
 
-      setVisit(data as Visit)
+      setVisit(data.visit)
     } catch (err) {
       console.error('Error fetching visit:', err)
       setError(err instanceof Error ? err.message : 'Error al cargar la visita')
     } finally {
       setLoading(false)
     }
-  }, [user, visitId, supabase])
+  }, [user, visitId])
 
   const updateVisit = async (updates: Partial<Visit>) => {
     if (!visit) return
 
     try {
-      const { error: updateError } = await supabase
-        .from('visits')
-        .update(updates)
-        .eq('id', visit.id)
+      const response = await fetch(`/api/asesor/visits/${visit.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
 
-      if (updateError) throw updateError
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al actualizar la visita')
+      }
 
       await fetchVisit()
     } catch (err) {
@@ -188,23 +186,56 @@ export function useVisit(visitId: string) {
     }
   }
 
-  const completeVisit = async () => {
+  const checkin = async (location?: { latitude: number; longitude: number }) => {
     if (!visit) return
 
     try {
-      const { error: updateError } = await supabase
-        .from('visits')
-        .update({
-          status: 'completed',
-          end_time: new Date().toISOString()
-        })
-        .eq('id', visit.id)
+      const response = await fetch(`/api/asesor/visits/${visit.id}/checkin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(location || {})
+      })
 
-      if (updateError) throw updateError
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al iniciar la visita')
+      }
+
+      await fetchVisit()
+      return data
     } catch (err) {
-      console.error('Error completing visit:', err)
+      console.error('Error checking in:', err)
       throw err
     }
+  }
+
+  const checkout = async (checkoutData?: { notes?: string; latitude?: number; longitude?: number }) => {
+    if (!visit) return
+
+    try {
+      const response = await fetch(`/api/asesor/visits/${visit.id}/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(checkoutData || {})
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al completar la visita')
+      }
+
+      await fetchVisit()
+      return data
+    } catch (err) {
+      console.error('Error checking out:', err)
+      throw err
+    }
+  }
+
+  const completeVisit = async () => {
+    return checkout()
   }
 
   useEffect(() => {
@@ -216,7 +247,102 @@ export function useVisit(visitId: string) {
     loading,
     error,
     updateVisit,
+    checkin,
+    checkout,
     completeVisit,
     refetch: fetchVisit
+  }
+}
+
+// Hook para crear una nueva visita
+export function useCreateVisit() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const createVisit = async (visitData: CreateVisitData) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/asesor/visits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(visitData)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al crear la visita')
+      }
+
+      return data.visit as Visit
+    } catch (err) {
+      console.error('Error creating visit:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Error al crear la visita'
+      setError(errorMessage)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return {
+    createVisit,
+    loading,
+    error
+  }
+}
+
+// Hook para obtener clientes asignados
+export function useAssignedClients() {
+  const { user } = useAuth()
+  const [clients, setClients] = useState<Array<{
+    id: string
+    public_id: string
+    business_name: string
+    business_type: string
+    address: string
+    phone: string
+    email: string
+    last_visit_date: string | null
+    brands: Array<{ id: string; name: string; logo_url: string | null }>
+    assignment: { type: string; priority: number }
+  }>>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchClients = useCallback(async () => {
+    if (!user) return
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/asesor/clients')
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al cargar clientes')
+      }
+
+      setClients(data.clients || [])
+    } catch (err) {
+      console.error('Error fetching clients:', err)
+      setError(err instanceof Error ? err.message : 'Error al cargar clientes')
+    } finally {
+      setLoading(false)
+    }
+  }, [user])
+
+  useEffect(() => {
+    fetchClients()
+  }, [fetchClients])
+
+  return {
+    clients,
+    loading,
+    error,
+    refetch: fetchClients
   }
 }

@@ -19,8 +19,9 @@ interface VisitListItem {
   client?: {
     id: string
     business_name: string
-    business_type: string
-    address: string
+    owner_name?: string
+    address_street?: string
+    address_neighborhood?: string
   }
   brand?: {
     id: string
@@ -160,7 +161,7 @@ export function VisitList({ visits, loading, error, onRefresh }: VisitListProps)
                   {visit.client?.business_name || 'Cliente sin nombre'}
                 </h3>
                 <p className="text-sm text-gray-600 mb-1">
-                  {visit.client?.business_type || 'Tipo de negocio'} • {visit.client?.address || 'Sin dirección'}
+                  {[visit.client?.address_street, visit.client?.address_neighborhood].filter(Boolean).join(', ') || 'Sin dirección'}
                 </p>
                 <p className="text-sm text-gray-500">
                   {new Date(visit.visit_date).toLocaleDateString('es-ES', {

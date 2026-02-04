@@ -9,8 +9,9 @@ import { Card } from '@/components/ui/Card'
 interface VisitClient {
   name?: string
   business_name?: string
-  business_type: string
-  address: string
+  owner_name?: string
+  address_street?: string
+  address_neighborhood?: string
 }
 
 interface VisitBrand {
@@ -97,15 +98,17 @@ export function VisitHeader({ visit }: VisitHeaderProps) {
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               {getClientName()}
             </h1>
-            <p className="text-gray-600 mb-1">
-              {visit.client?.business_type || 'Tipo de negocio'}
-            </p>
+            {visit.client?.owner_name && (
+              <p className="text-gray-600 mb-1">
+                Propietario: {visit.client.owner_name}
+              </p>
+            )}
             <p className="text-gray-500 text-sm flex items-center">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              {visit.client?.address || 'Sin dirección'}
+              {[visit.client?.address_street, visit.client?.address_neighborhood].filter(Boolean).join(', ') || 'Sin dirección'}
             </p>
           </div>
           <div className="text-right ml-4">

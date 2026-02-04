@@ -76,7 +76,7 @@ export interface Visit {
   tenant_id: string;
   client_id: string;
   brand_id: string;
-  asesor_id: string;
+  advisor_id: string;
   visit_number: string;
   visit_date: string;
   start_time?: string;
