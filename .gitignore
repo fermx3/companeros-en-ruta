@@ -99,6 +99,9 @@ supabase/_backup/
 # Supabase baseline local archive
 supabase/migrations__archive_prebaseline/
 
+# Supabase CLI internals
+supabase/.branches/
+
 
 # ===================
 # Project-specific: Documentation (auto-generated)
