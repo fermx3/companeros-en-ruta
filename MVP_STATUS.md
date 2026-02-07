@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-01-31
+**Last Updated:** 2026-02-05
 **Target:** User testing with all roles working at MVP level + Brand Affiliation System
 
 ---
@@ -21,7 +21,7 @@
 | Tier System | ✅ Complete | Yes |
 | Points System | ✅ Complete | Yes |
 
-**Overall MVP Progress: ~90%** (Dashboards + Brand Affiliation + Tiers + Points complete)
+**Overall MVP Progress: ~95%** (Dashboards + Brand Affiliation + Tiers + Points + Visit Management complete)
 
 ---
 
@@ -99,9 +99,15 @@
 ### Client Management
 - [x] List clients for brand (`/brand/clients`)
 - [x] Search and filter clients
+- [x] Create client (`/brand/clients/create`)
 - [x] API: `GET /api/brand/clients`
-- [ ] Add client to brand
+- [x] API: `POST /api/brand/clients`
 - [ ] Remove client from brand
+
+### Reports
+- [x] Reports page (`/brand/reports`)
+- [x] Analytics dashboard
+- [x] Performance metrics
 
 ### Brand Settings
 - [x] Settings page (`/brand/settings`)
@@ -111,10 +117,13 @@
 - [ ] Upload brand logo
 
 ### Team Management
-- [ ] List team members (`/brand/team`)
+- [x] List team members (`/brand/team`)
+- [x] API: `GET /api/brand/team`
+- [x] Filter by role and status
+- [x] View team metrics (supervisors, advisors, active)
 - [ ] Add advisor to brand
 - [ ] Remove advisor from brand
-- [ ] View advisor performance
+- [ ] View advisor performance details
 
 ### Tier Management (NEW - Required for MVP)
 - [x] Tiers list page (`/brand/tiers`)
@@ -138,7 +147,8 @@
 | `/api/brand/metrics` | GET | ✅ |
 | `/api/brand/info` | GET | ✅ |
 | `/api/brand/clients` | GET | ✅ |
-| `/api/brand/team` | GET | ❌ |
+| `/api/brand/clients` | POST | ✅ |
+| `/api/brand/team` | GET | ✅ |
 | `/api/brand/tiers` | GET | ✅ |
 | `/api/brand/tiers` | POST | ✅ |
 | `/api/brand/tiers/[id]` | PUT | ✅ |
@@ -175,20 +185,30 @@
 
 ### Client Management
 - [x] Database table: `advisor_client_assignments`
-- [ ] List assigned clients
-- [ ] View client details
-- [ ] Contact client (WhatsApp link)
+- [x] List assigned clients (`/asesor/clients`)
+- [x] View client details
+- [x] Contact client (WhatsApp link)
 
 ### Visit Management
 - [x] Visit list page (`/asesor/visitas`)
 - [x] Visit detail page (`/asesor/visitas/[visitId]`)
 - [x] Visit filters component
 - [x] `useMyVisits()` hook
-- [ ] Create new visit
-- [ ] Start visit (check-in)
-- [ ] Complete visit (check-out)
-- [ ] Add visit notes
+- [x] Create new visit
+- [x] Start visit (check-in)
+- [x] Complete visit (check-out)
+- [x] Add visit notes
 - [ ] Upload visit photos
+
+### Schedule/Agenda
+- [x] Schedule page (`/asesor/schedule`)
+- [x] Day/Week/Month views
+- [x] Visit calendar integration
+
+### Reports
+- [x] Reports page (`/asesor/reports`)
+- [x] Performance metrics dashboard
+- [x] Visit statistics
 
 ### API Endpoints
 | Endpoint | Method | Status |
@@ -196,11 +216,13 @@
 | `/api/asesor/profile` | GET | ✅ |
 | `/api/asesor/profile` | PUT | ✅ |
 | `/api/asesor/stats` | GET | ✅ |
-| `/api/asesor/clients` | GET | ❌ |
-| `/api/asesor/visits` | GET | ❌ |
-| `/api/asesor/visits` | POST | ❌ |
-| `/api/asesor/visits/[id]/checkin` | POST | ❌ |
-| `/api/asesor/visits/[id]/checkout` | POST | ❌ |
+| `/api/asesor/clients` | GET | ✅ |
+| `/api/asesor/visits` | GET | ✅ |
+| `/api/asesor/visits` | POST | ✅ |
+| `/api/asesor/visits/[id]` | GET | ✅ |
+| `/api/asesor/visits/[id]` | PUT | ✅ |
+| `/api/asesor/visits/[id]/checkin` | POST | ✅ |
+| `/api/asesor/visits/[id]/checkout` | POST | ✅ |
 
 ---
 
@@ -264,10 +286,12 @@
 - [ ] Invoice data (RFC)
 
 ### Order Management
-- [ ] Order history
+- [x] Order history (`/client/orders`)
+- [x] API: `GET /api/client/orders`
+- [x] Filter by status
+- [x] Order status tracking
 - [ ] View order details
 - [ ] Reorder functionality
-- [ ] Order status tracking
 
 ### Brand Memberships (NEW - Required for MVP)
 - [x] My Brands page (`/client/brands`)
@@ -288,7 +312,7 @@
 | Endpoint | Method | Status |
 |----------|--------|--------|
 | `/api/client/profile` | GET | ✅ |
-| `/api/client/orders` | GET | ❌ |
+| `/api/client/orders` | GET | ✅ |
 | `/api/client/memberships` | GET | ✅ |
 | `/api/client/brands` | GET | ✅ |
 | `/api/client/brands` | POST | ✅ |
@@ -381,23 +405,23 @@
 
 ### P1 - High (Core functionality)
 
-#### Visit Management (Advisor)
-- [ ] Create visit API: `POST /api/asesor/visits`
-- [ ] Check-in API: `POST /api/asesor/visits/[id]/checkin`
-- [ ] Check-out API: `POST /api/asesor/visits/[id]/checkout`
-- [ ] Visit creation form
-- [ ] Visit workflow UI
+#### ~~Visit Management (Advisor)~~ ✅ DONE
+- [x] Create visit API: `POST /api/asesor/visits`
+- [x] Check-in API: `POST /api/asesor/visits/[id]/checkin`
+- [x] Check-out API: `POST /api/asesor/visits/[id]/checkout`
+- [x] Visit creation form
+- [x] Visit workflow UI
 
-#### Client Assignment (Advisor)
-- [ ] Assigned clients API: `GET /api/asesor/clients`
-- [ ] Client list page for advisor
-- [ ] Client quick actions
+#### ~~Client Assignment (Advisor)~~ ✅ DONE
+- [x] Assigned clients API: `GET /api/asesor/clients`
+- [x] Client list page for advisor
+- [x] Client quick actions
 
 ### P2 - Medium (Enhanced features)
 
 - [ ] Supervisor: Approve/review visits
-- [ ] Client: Order history
-- [ ] Brand Manager: Team management
+- [x] Client: Order history
+- [x] Brand Manager: Team management (list view)
 - [ ] Notifications system
 - [ ] Email integration
 
@@ -443,10 +467,21 @@
 ### P2 - Medium (Enhanced features)
 
 - [ ] Supervisor: Approve/review visits
-- [ ] Client: Order history
-- [ ] Brand Manager: Team management
+- [x] Client: Order history
+- [x] Brand Manager: Team management (list view)
 - [ ] Notifications system
 - [ ] Email integration
+
+### Features Implementadas (Febrero 2026)
+
+- Asesor Schedule/Agenda - Vista de calendario con día/semana/mes
+- Asesor Reports - Dashboard de métricas y desempeño
+- Asesor Clients - Lista de clientes asignados con acciones rápidas
+- Brand Create Client - Formulario simplificado para crear clientes
+- Brand Reports - Dashboard de analítica de marca
+- Visit Management completo - Check-in, check-out, notas
+- Brand Team Management - Lista de equipo con filtros y métricas
+- Client Order History - Historial de órdenes con filtros y resumen
 
 ### P3 - Low (Nice to have)
 
