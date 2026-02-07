@@ -13,7 +13,7 @@ type Visit = {
   visit_date: string
   start_time: string | null
   end_time: string | null
-  status: 'draft' | 'pending' | 'in_progress' | 'completed'
+  status: 'planned' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'
   notes: string | null
   latitude: number | null
   longitude: number | null
@@ -52,7 +52,7 @@ type Visit = {
 }
 
 type VisitFilters = {
-  status: 'all' | 'pending' | 'in_progress' | 'completed'
+  status: 'all' | 'planned' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'
   dateRange: 'today' | 'week' | 'month'
 }
 
@@ -295,22 +295,29 @@ export function useCreateVisit() {
 }
 
 // Hook para obtener clientes asignados
-export function useAssignedClients() {
+export function useAssignedClients(options?: { search?: string; page?: number; limit?: number }) {
   const { user } = useAuth()
   const [clients, setClients] = useState<Array<{
     id: string
     public_id: string
     business_name: string
-    business_type: string
+    owner_name: string
     address: string
     phone: string
     email: string
+    status: string
     last_visit_date: string | null
     brands: Array<{ id: string; name: string; logo_url: string | null }>
     assignment: { type: string; priority: number }
   }>>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 1
+  })
 
   const fetchClients = useCallback(async () => {
     if (!user) return
@@ -319,7 +326,15 @@ export function useAssignedClients() {
     setError(null)
 
     try {
-      const response = await fetch('/api/asesor/clients')
+      const params = new URLSearchParams()
+      if (options?.search) params.set('search', options.search)
+      if (options?.page) params.set('page', options.page.toString())
+      if (options?.limit) params.set('limit', options.limit.toString())
+
+      const queryString = params.toString()
+      const url = queryString ? `/api/asesor/clients?${queryString}` : '/api/asesor/clients'
+
+      const response = await fetch(url)
       const data = await response.json()
 
       if (!response.ok) {
@@ -327,13 +342,16 @@ export function useAssignedClients() {
       }
 
       setClients(data.clients || [])
+      if (data.pagination) {
+        setPagination(data.pagination)
+      }
     } catch (err) {
       console.error('Error fetching clients:', err)
       setError(err instanceof Error ? err.message : 'Error al cargar clientes')
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [user, options?.search, options?.page, options?.limit])
 
   useEffect(() => {
     fetchClients()
@@ -343,6 +361,8 @@ export function useAssignedClients() {
     clients,
     loading,
     error,
+    pagination,
+    total: pagination.total,
     refetch: fetchClients
   }
 }

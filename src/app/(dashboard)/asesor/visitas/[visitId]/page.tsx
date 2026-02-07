@@ -107,7 +107,7 @@ export default function VisitDetailPage() {
   }
 
   const canComplete = visit.status === 'in_progress'
-  const canCheckin = visit.status === 'pending' || visit.status === 'draft'
+  const canCheckin = visit.status === 'planned'
   const isCompleted = visit.status === 'completed'
   const isInProgress = visit.status === 'in_progress'
 

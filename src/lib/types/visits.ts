@@ -81,7 +81,7 @@ export interface Visit {
   visit_date: string;
   start_time?: string;
   end_time?: string;
-  status: 'in_progress' | 'completed' | 'cancelled';
+  status: 'planned' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
   latitude?: number;
   longitude?: number;
   notes?: string;

@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card'
 // ===========================================
 
 interface VisitFiltersState {
-  status: 'all' | 'pending' | 'in_progress' | 'completed'
+  status: 'all' | 'planned' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'
   dateRange: 'today' | 'week' | 'month'
 }
 
@@ -63,9 +63,11 @@ export function VisitFilters({ filters, onFiltersChange }: VisitFiltersProps) {
 
   const statusOptions = [
     { value: 'all', label: 'Todas' },
-    { value: 'pending', label: 'Pendientes' },
+    { value: 'planned', label: 'Planificadas' },
     { value: 'in_progress', label: 'En Progreso' },
-    { value: 'completed', label: 'Completadas' }
+    { value: 'completed', label: 'Completadas' },
+    { value: 'cancelled', label: 'Canceladas' },
+    { value: 'no_show', label: 'No Realizadas' }
   ]
 
   const dateRangeOptions = [

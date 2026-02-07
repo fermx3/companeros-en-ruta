@@ -14,7 +14,7 @@ interface VisitListItem {
   client_id: string
   visit_number: string
   visit_date: string
-  status: 'draft' | 'pending' | 'in_progress' | 'completed'
+  status: 'planned' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'
   notes?: string | null
   client?: {
     id: string
@@ -72,9 +72,11 @@ export function VisitList({ visits, loading, error, onRefresh }: VisitListProps)
    */
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { style: string; label: string }> = {
-      pending: { style: 'bg-yellow-100 text-yellow-800', label: 'Pendiente' },
+      planned: { style: 'bg-yellow-100 text-yellow-800', label: 'Planificada' },
       in_progress: { style: 'bg-blue-100 text-blue-800', label: 'En Progreso' },
       completed: { style: 'bg-green-100 text-green-800', label: 'Completada' },
+      cancelled: { style: 'bg-red-100 text-red-800', label: 'Cancelada' },
+      no_show: { style: 'bg-gray-100 text-gray-800', label: 'No Realizada' },
     }
 
     const config = statusConfig[status] || { style: 'bg-gray-100 text-gray-800', label: status }

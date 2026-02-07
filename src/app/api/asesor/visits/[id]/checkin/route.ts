@@ -141,9 +141,14 @@ export async function POST(
       brandInfo = brand
     }
 
+    // Map public_id to visit_number and visit_status to status for frontend compatibility
     return NextResponse.json({
-      visit: { ...updatedVisit, brand: brandInfo },
-      status: 'success',
+      visit: {
+        ...updatedVisit,
+        visit_number: updatedVisit.public_id,
+        status: updatedVisit.visit_status,
+        brand: brandInfo
+      },
       message: 'Check-in realizado exitosamente'
     })
 

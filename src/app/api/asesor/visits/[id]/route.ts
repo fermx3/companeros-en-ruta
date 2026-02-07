@@ -96,7 +96,15 @@ export async function GET(
       brandInfo = brand
     }
 
-    return NextResponse.json({ visit: { ...visit, brand: brandInfo } })
+    // Map public_id to visit_number and visit_status to status for frontend compatibility
+    return NextResponse.json({
+      visit: {
+        ...visit,
+        visit_number: visit.public_id,
+        status: visit.visit_status,
+        brand: brandInfo
+      }
+    })
 
   } catch (error) {
     console.error('Error en GET /api/asesor/visits/[id]:', error)
@@ -199,9 +207,14 @@ export async function PUT(
       brandInfo = brand
     }
 
+    // Map public_id to visit_number and visit_status to status for frontend compatibility
     return NextResponse.json({
-      visit: { ...updatedVisit, brand: brandInfo },
-      status: 'success',
+      visit: {
+        ...updatedVisit,
+        visit_number: updatedVisit.public_id,
+        status: updatedVisit.visit_status,
+        brand: brandInfo
+      },
       message: 'Visita actualizada exitosamente'
     })
 

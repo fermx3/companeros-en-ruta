@@ -14,7 +14,7 @@ export default function VisitasPage() {
   const router = useRouter()
   const { user } = useAuth()
   const [filters, setFilters] = useState({
-    status: 'all' as 'all' | 'pending' | 'in_progress' | 'completed',
+    status: 'all' as 'all' | 'planned' | 'in_progress' | 'completed' | 'cancelled' | 'no_show',
     dateRange: 'month' as 'today' | 'week' | 'month'
   })
   const [asesorName, setAsesorName] = useState<string | null>(null)
