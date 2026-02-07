@@ -1,6 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Helper to get brand profile from auth
+async function getBrandProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return { error: { message: 'Usuario no autenticado', status: 401 } }
+  }
+
+  const { data: userProfile, error: profileError } = await supabase
+    .from('user_profiles')
+    .select(`
+      id,
+      tenant_id,
+      user_roles!user_roles_user_profile_id_fkey(
+        brand_id,
+        role,
+        status,
+        tenant_id
+      )
+    `)
+    .eq('user_id', user.id)
+    .single()
+
+  if (profileError || !userProfile) {
+    return { error: { message: 'Perfil de usuario no encontrado', status: 404 } }
+  }
+
+  const brandRole = userProfile.user_roles.find(role =>
+    role.status === 'active' &&
+    ['brand_manager', 'brand_admin'].includes(role.role)
+  )
+
+  if (!brandRole || !brandRole.brand_id) {
+    return { error: { message: 'Usuario no tiene permisos de marca activos', status: 403 } }
+  }
+
+  return {
+    user,
+    userProfile,
+    brandRole,
+    brandId: brandRole.brand_id,
+    tenantId: brandRole.tenant_id || userProfile.tenant_id
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -199,6 +244,151 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error en /api/brand/clients:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+
+    return NextResponse.json(
+      { error: 'Error interno del servidor', details: errorMessage },
+      { status: 500 }
+    )
+  }
+}
+
+// POST /api/brand/clients - Create a new client for the brand
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const result = await getBrandProfile(supabase)
+
+    if ('error' in result && result.error) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: result.error.status }
+      )
+    }
+
+    const { brandId, tenantId } = result
+
+    const body = await request.json()
+    const {
+      business_name,
+      legal_name,
+      owner_name,
+      email,
+      phone,
+      whatsapp,
+      address_street,
+      address_neighborhood,
+      address_city,
+      address_state,
+      address_postal_code,
+      address_country = 'MX'
+    } = body
+
+    // Validate required fields
+    const validationErrors: Array<{ field: string; message: string }> = []
+
+    if (!business_name?.trim()) {
+      validationErrors.push({ field: 'business_name', message: 'El nombre del negocio es requerido' })
+    }
+    if (!owner_name?.trim()) {
+      validationErrors.push({ field: 'owner_name', message: 'El nombre del propietario es requerido' })
+    }
+    if (!address_street?.trim()) {
+      validationErrors.push({ field: 'address_street', message: 'La dirección es requerida' })
+    }
+    if (!address_city?.trim()) {
+      validationErrors.push({ field: 'address_city', message: 'La ciudad es requerida' })
+    }
+    if (!address_state?.trim()) {
+      validationErrors.push({ field: 'address_state', message: 'El estado es requerido' })
+    }
+
+    // Validate email format if provided
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      validationErrors.push({ field: 'email', message: 'El email no es válido' })
+    }
+
+    if (validationErrors.length > 0) {
+      return NextResponse.json(
+        { error: 'Errores de validación', details: validationErrors },
+        { status: 400 }
+      )
+    }
+
+    // Create client
+    const now = new Date().toISOString()
+    const clientData = {
+      tenant_id: tenantId,
+      business_name: business_name.trim(),
+      legal_name: legal_name?.trim() || null,
+      owner_name: owner_name.trim(),
+      email: email?.trim() || null,
+      phone: phone?.trim() || null,
+      whatsapp: whatsapp?.trim() || null,
+      address_street: address_street.trim(),
+      address_neighborhood: address_neighborhood?.trim() || null,
+      address_city: address_city.trim(),
+      address_state: address_state.trim(),
+      address_postal_code: address_postal_code?.trim() || null,
+      address_country: address_country,
+      status: 'active',
+      created_at: now,
+      updated_at: now
+    }
+
+    const { data: newClient, error: clientError } = await supabase
+      .from('clients')
+      .insert(clientData)
+      .select()
+      .single()
+
+    if (clientError) {
+      console.error('Error creating client:', clientError)
+      return NextResponse.json(
+        { error: 'Error al crear el cliente', details: clientError.message },
+        { status: 500 }
+      )
+    }
+
+    // Create brand membership
+    const membershipData = {
+      tenant_id: tenantId,
+      brand_id: brandId,
+      client_id: newClient.id,
+      membership_status: 'active',
+      joined_date: now.slice(0, 10),
+      lifetime_points: 0,
+      points_balance: 0,
+      created_at: now,
+      updated_at: now
+    }
+
+    const { data: newMembership, error: membershipError } = await supabase
+      .from('client_brand_memberships')
+      .insert(membershipData)
+      .select()
+      .single()
+
+    if (membershipError) {
+      console.error('Error creating membership:', membershipError)
+      // Note: We still return success since the client was created
+      // The membership can be created later if needed
+      return NextResponse.json({
+        client: newClient,
+        membership: null,
+        warning: 'Cliente creado pero hubo un error al crear la membresía',
+        message: 'Cliente creado exitosamente'
+      }, { status: 201 })
+    }
+
+    return NextResponse.json({
+      client: newClient,
+      membership: newMembership,
+      message: 'Cliente y membresía creados exitosamente'
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error('Error en POST /api/brand/clients:', error)
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
 
     return NextResponse.json(
