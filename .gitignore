@@ -87,6 +87,19 @@ yarn-error.log*
 supabase/.temp/
 supabase/backup_*.sql
 
+# Supabase local temp
+supabase/.temp/
+
+# Supabase backups (schema / data / full dumps)
+supabase/_backup/
+
+# Local supabase volumes
+.supabase/
+
+# Supabase baseline local archive
+supabase/migrations__archive_prebaseline/
+
+
 # ===================
 # Project-specific: Documentation (auto-generated)
 # ===================
