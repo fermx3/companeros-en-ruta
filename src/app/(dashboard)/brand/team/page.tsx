@@ -40,71 +40,24 @@ export default function BrandTeamPage() {
       setError(null);
 
       try {
-        // TODO: Implementar endpoint para obtener equipo de la marca
-        // const response = await brandService.getTeam({ page, search: searchTerm, role: selectedRole, status: selectedStatus });
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: '20',
+          ...(searchTerm && { search: searchTerm }),
+          ...(selectedRole && { role: selectedRole }),
+          ...(selectedStatus && { status: selectedStatus })
+        });
 
-        // Mock data para desarrollo
-        const mockTeam: TeamMember[] = [
-          {
-            id: '1',
-            public_id: 'USR-001',
-            full_name: 'María González',
-            email: 'maria.gonzalez@empresa.com',
-            phone: '+52 55 1234 5678',
-            role: 'supervisor',
-            status: 'active',
-            last_activity: new Date().toISOString(),
-            total_visits: 156,
-            total_orders: 89,
-            created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            public_id: 'USR-002',
-            full_name: 'Carlos Rodríguez',
-            email: 'carlos.rodriguez@empresa.com',
-            phone: '+52 55 9876 5432',
-            role: 'asesor',
-            status: 'active',
-            last_activity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            total_visits: 234,
-            total_orders: 145,
-            created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: '3',
-            public_id: 'USR-003',
-            full_name: 'Ana Martínez',
-            email: 'ana.martinez@empresa.com',
-            phone: '+52 55 5555 1111',
-            role: 'asesor',
-            status: 'active',
-            last_activity: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-            total_visits: 189,
-            total_orders: 112,
-            created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: '4',
-            public_id: 'USR-004',
-            full_name: 'Luis Fernández',
-            email: 'luis.fernandez@empresa.com',
-            phone: null,
-            role: 'asesor',
-            status: 'inactive',
-            last_activity: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            total_visits: 45,
-            total_orders: 23,
-            created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          }
-        ];
+        const response = await fetch(`/api/brand/team?${params}`);
 
-        setTeam(mockTeam);
-        setTotalPages(1);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error al cargar el equipo');
+        }
+
+        const data = await response.json();
+        setTeam(data.team || []);
+        setTotalPages(data.pagination?.totalPages || 1);
       } catch (err) {
         console.error('Error loading team:', err);
         const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
