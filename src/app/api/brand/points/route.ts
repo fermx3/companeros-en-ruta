@@ -4,19 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 interface PointsTransactionRequest {
   membership_id: string
   points_amount: number
+  // Database enum values only
   transaction_type: 'earned' | 'penalty' | 'adjusted' | 'bonus'
   reference_type?: 'order' | 'visit' | 'promotion' | 'manual' | 'tier_upgrade' | 'birthday' | 'referral' | 'other'
   reference_id?: string
   description?: string
   notes?: string
-}
-
-// Map frontend-friendly names to database enum values
-const transactionTypeMap: Record<string, string> = {
-  award: 'earned',
-  deduct: 'penalty',
-  adjustment: 'adjusted',
-  bonus: 'bonus'
 }
 
 export async function POST(request: NextRequest) {
@@ -95,17 +88,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Accept both frontend names (award/deduct) and database names (earned/penalty)
-    const validTypes = ['award', 'deduct', 'adjustment', 'bonus', 'earned', 'penalty', 'adjusted']
+    // Validate transaction type (database enum values only)
+    const validTypes = ['earned', 'penalty', 'adjusted', 'bonus']
     if (!validTypes.includes(transaction_type)) {
       return NextResponse.json(
-        { error: 'Tipo de transacción inválido. Debe ser: award, deduct, adjustment, o bonus' },
+        { error: 'Tipo de transacción inválido. Debe ser: earned, penalty, adjusted, o bonus' },
         { status: 400 }
       )
     }
-
-    // Map to database enum value
-    const dbTransactionType = transactionTypeMap[transaction_type] || transaction_type
 
     // 4. Get membership and verify permissions
     const { data: membership, error: membershipError } = await supabase
@@ -179,9 +169,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Determine if this is a deduction
-    const isDeduction = transaction_type === 'deduct' || transaction_type === 'penalty'
-    const isAddition = transaction_type === 'award' || transaction_type === 'earned' || transaction_type === 'bonus'
+    // Determine if this is a deduction or addition based on database enum values
+    const isDeduction = transaction_type === 'penalty'
+    const isAddition = transaction_type === 'earned' || transaction_type === 'bonus'
 
     let effectiveAmount = Math.abs(pointsAmountNum)
     if (isDeduction) {
@@ -211,7 +201,7 @@ export async function POST(request: NextRequest) {
     const insertData = {
       client_brand_membership_id: membership_id,
       tenant_id: membership.tenant_id,
-      transaction_type: dbTransactionType,
+      transaction_type: transaction_type,
       points: pointsValue,
       balance_after: newBalance,
       source_type: reference_type || 'manual',
@@ -254,7 +244,7 @@ export async function POST(request: NextRequest) {
         id: transaction.id,
         public_id: transaction.public_id,
         points: effectiveAmount,
-        transaction_type: dbTransactionType,
+        transaction_type: transaction_type,
         new_balance: newBalance,
         lifetime_points: newLifetime
       }

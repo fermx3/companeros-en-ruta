@@ -628,13 +628,16 @@ export default function BrandMembershipsPage() {
     try {
       setActionLoading(pointsModal.membership.id)
 
+      // Map UI values to database enum values
+      const dbTransactionType = data.transaction_type === 'award' ? 'earned' : 'penalty'
+
       const response = await fetch('/api/brand/points', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           membership_id: pointsModal.membership.id,
           points_amount: data.points_amount,
-          transaction_type: data.transaction_type,
+          transaction_type: dbTransactionType,
           description: data.description
         })
       })
