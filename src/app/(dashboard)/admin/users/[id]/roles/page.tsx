@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { adminService } from '@/lib/services/adminService'
-import type { UserProfile, UserRole, Brand } from '@/lib/types/admin'
+import type { UserProfile, UserRole, Brand, Distributor } from '@/lib/types/admin'
 
 // ===========================================
 // Types
@@ -18,8 +18,9 @@ interface UserWithRoles extends UserProfile {
 }
 
 interface NewRoleData {
-  role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst'
+  role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'asesor_de_ventas'
   brand_id: string
+  distributor_id: string
 }
 
 // ===========================================
@@ -27,7 +28,7 @@ interface NewRoleData {
 // ===========================================
 
 /**
- * Página de gestión de roles para un usuario específico.
+ * Pagina de gestion de roles para un usuario especifico.
  * Permite a administradores asignar y gestionar roles por usuario.
  *
  * @example
@@ -46,6 +47,7 @@ export default function UserRolesPage() {
   // Estados principales
   const [user, setUser] = useState<UserWithRoles | null>(null)
   const [availableBrands, setAvailableBrands] = useState<Brand[]>([])
+  const [availableDistributors, setAvailableDistributors] = useState<Distributor[]>([])
 
   // Estados de UI
   const [loading, setLoading] = useState(true)
@@ -56,7 +58,8 @@ export default function UserRolesPage() {
   // Estado para formulario de nuevo rol
   const [newRole, setNewRole] = useState<NewRoleData>({
     role: 'promotor',
-    brand_id: ''
+    brand_id: '',
+    distributor_id: ''
   })
 
   // ===========================================
@@ -64,7 +67,7 @@ export default function UserRolesPage() {
   // ===========================================
 
   /**
-   * Cargar datos iniciales: usuario, brands y zonas
+   * Cargar datos iniciales: usuario, brands y distribuidores
    */
   const loadData = useCallback(async () => {
     if (!userId) return
@@ -80,6 +83,10 @@ export default function UserRolesPage() {
       // Cargar brands disponibles
       const brandsResponse = await adminService.getBrands(1, 100)
       setAvailableBrands(brandsResponse.data)
+
+      // Cargar distribuidores disponibles
+      const distributorsResponse = await adminService.getDistributors()
+      setAvailableDistributors(distributorsResponse)
     } catch (err) {
       console.error('Error loading data:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -94,15 +101,21 @@ export default function UserRolesPage() {
   }, [loadData])
 
   /**
-   * Manejar asignación de nuevo rol
+   * Manejar asignacion de nuevo rol
    */
   const handleAddRole = async () => {
     if (!user) return
 
     // Validar que los roles que requieren brand_id lo tengan
-    const rolesThatRequireBrand = ['brand_manager', 'supervisor', 'promotor', 'market_analyst']
+    const rolesThatRequireBrand = ['brand_manager', 'supervisor', 'promotor']
     if (rolesThatRequireBrand.includes(newRole.role) && !newRole.brand_id) {
-      setError(`El rol ${getRoleLabel(newRole.role)} requiere seleccionar una marca específica`)
+      setError(`El rol ${getRoleLabel(newRole.role)} requiere seleccionar una marca`)
+      return
+    }
+
+    // Validar que asesor_de_ventas tenga distribuidor
+    if (newRole.role === 'asesor_de_ventas' && !newRole.distributor_id) {
+      setError('El rol Asesor de Ventas requiere seleccionar un distribuidor')
       return
     }
 
@@ -112,13 +125,14 @@ export default function UserRolesPage() {
     try {
       await adminService.assignUserRole(user.id, {
         role: newRole.role,
-        brand_id: newRole.brand_id || null
+        brand_id: newRole.role === 'asesor_de_ventas' ? null : (newRole.brand_id || null),
+        distributor_id: newRole.role === 'asesor_de_ventas' ? newRole.distributor_id : undefined
       })
 
       // Recargar datos y limpiar formulario
       await loadData()
       setShowAddRole(false)
-      setNewRole({ role: 'promotor', brand_id: '' })
+      setNewRole({ role: 'promotor', brand_id: '', distributor_id: '' })
     } catch (err) {
       console.error('Error adding role:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -158,7 +172,7 @@ export default function UserRolesPage() {
    * Eliminar rol de usuario
    */
   const handleRemoveRole = async (roleId: string) => {
-    if (!user || !confirm('¿Estás seguro de eliminar este rol?')) return
+    if (!user || !confirm('¿Estas seguro de eliminar este rol?')) return
 
     setSaving(true)
     setError(null)
@@ -188,7 +202,7 @@ export default function UserRolesPage() {
       brand_manager: 'Gerente de Marca',
       supervisor: 'Supervisor',
       promotor: 'Promotor',
-      market_analyst: 'Analista de Mercado'
+      asesor_de_ventas: 'Asesor de Ventas'
     }
     return labels[role] || role
   }
@@ -200,6 +214,15 @@ export default function UserRolesPage() {
     if (!brandId) return 'Global'
     const brand = availableBrands.find(b => b.id === brandId)
     return brand?.name || 'Marca desconocida'
+  }
+
+  /**
+   * Obtener nombre de distribuidor por ID
+   */
+  const getDistributorName = (distributorId: string | null): string => {
+    if (!distributorId) return '-'
+    const distributor = availableDistributors.find(d => d.id === distributorId)
+    return distributor?.name || 'Distribuidor desconocido'
   }
 
   // ===========================================
@@ -231,6 +254,11 @@ export default function UserRolesPage() {
       </div>
     )
   }
+
+  // Roles que requieren marca
+  const rolesThatRequireBrand = ['brand_manager', 'supervisor', 'promotor']
+  const requiresBrand = rolesThatRequireBrand.includes(newRole.role)
+  const requiresDistributor = newRole.role === 'asesor_de_ventas'
 
   // ===========================================
   // Main Render
@@ -358,52 +386,89 @@ export default function UserRolesPage() {
                   value={newRole.role}
                   onChange={(e) => setNewRole(prev => ({
                     ...prev,
-                    role: e.target.value as NewRoleData['role']
+                    role: e.target.value as NewRoleData['role'],
+                    brand_id: '',
+                    distributor_id: ''
                   }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="promotor">Promotor</option>
+                  <option value="asesor_de_ventas">Asesor de Ventas</option>
                   <option value="supervisor">Supervisor</option>
                   <option value="brand_manager">Gerente de Marca</option>
-                  <option value="market_analyst">Analista de Mercado</option>
                   <option value="admin">Administrador</option>
                 </select>
               </div>
 
-              {/* Brand Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Marca {['brand_manager', 'supervisor', 'promotor', 'market_analyst'].includes(newRole.role) && (
-                    <span className="text-red-500">*</span>
+              {/* Brand Selector - solo para roles que requieren marca */}
+              {requiresBrand && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Marca <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newRole.brand_id}
+                    onChange={(e) => setNewRole(prev => ({ ...prev, brand_id: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      !newRole.brand_id ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Selecciona una marca</option>
+                    {availableBrands.map(brand => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!newRole.brand_id && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Este rol requiere seleccionar una marca
+                    </p>
                   )}
-                </label>
-                <select
-                  value={newRole.brand_id}
-                  onChange={(e) => setNewRole(prev => ({ ...prev, brand_id: e.target.value }))}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    ['brand_manager', 'supervisor', 'promotor', 'market_analyst'].includes(newRole.role) && !newRole.brand_id
-                      ? 'border-red-300 bg-red-50'
-                      : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">
-                    {['brand_manager', 'supervisor', 'promotor', 'market_analyst'].includes(newRole.role)
-                      ? 'Selecciona una marca'
-                      : 'Global (todas las marcas)'
-                    }
-                  </option>
-                  {availableBrands.map(brand => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </select>
-                {['brand_manager', 'supervisor', 'promotor', 'market_analyst'].includes(newRole.role) && !newRole.brand_id && (
-                  <p className="text-red-500 text-xs mt-1">
-                    Este rol requiere seleccionar una marca específica
+                </div>
+              )}
+
+              {/* Distributor Selector - solo para asesor_de_ventas */}
+              {requiresDistributor && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Distribuidor <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newRole.distributor_id}
+                    onChange={(e) => setNewRole(prev => ({ ...prev, distributor_id: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      !newRole.distributor_id ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Selecciona un distribuidor</option>
+                    {availableDistributors.map(distributor => (
+                      <option key={distributor.id} value={distributor.id}>
+                        {distributor.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!newRole.distributor_id && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Este rol requiere seleccionar un distribuidor
+                    </p>
+                  )}
+                  {availableDistributors.length === 0 && (
+                    <p className="text-amber-600 text-xs mt-1">
+                      No hay distribuidores disponibles. Crea uno primero.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Info para admin */}
+              {newRole.role === 'admin' && (
+                <div className="md:col-span-2">
+                  <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
+                    El rol Administrador tiene acceso global a todas las marcas y funciones del sistema.
                   </p>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -445,8 +510,16 @@ export default function UserRolesPage() {
                         <h3 className="font-medium text-gray-900">
                           {getRoleLabel(role.role)}
                         </h3>
-                        <div className="text-sm text-gray-600 mt-1">
-                          <span>Marca: {getBrandName(role.brand_id)}</span>
+                        <div className="text-sm text-gray-600 mt-1 space-y-1">
+                          {role.brand_id && (
+                            <span className="block">Marca: {getBrandName(role.brand_id)}</span>
+                          )}
+                          {role.role === 'asesor_de_ventas' && user.distributor_id && (
+                            <span className="block">Distribuidor: {getDistributorName(user.distributor_id)}</span>
+                          )}
+                          {role.role === 'admin' && (
+                            <span className="block text-blue-600">Acceso global</span>
+                          )}
                         </div>
                         {role.permissions && Object.keys(role.permissions).length > 0 && (
                           <div className="text-sm text-gray-500 mt-1">

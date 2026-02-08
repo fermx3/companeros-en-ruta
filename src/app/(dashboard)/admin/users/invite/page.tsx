@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { adminService } from '@/lib/services/adminService';
-import type { Brand, Zone } from '@/lib/types/admin';
+import type { Brand, Zone, Distributor } from '@/lib/types/admin';
 
 /**
  * Página para invitar nuevos usuarios al sistema
@@ -17,6 +17,7 @@ export default function InviteUserPage() {
 
   const [availableBrands, setAvailableBrands] = useState<Brand[]>([]);
   const [availableZones, setAvailableZones] = useState<Zone[]>([]);
+  const [availableDistributors, setAvailableDistributors] = useState<Distributor[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,9 +32,10 @@ export default function InviteUserPage() {
     position: '',
     department: '',
     employee_code: '',
-    role: 'promotor' as 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst' | 'client',
+    role: 'promotor' as 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'asesor_de_ventas',
     brand_id: '',
     zone_id: '',
+    distributor_id: '',
     send_email: true
   });
 
@@ -42,14 +44,16 @@ export default function InviteUserPage() {
     setError(null);
 
     try {
-      // Cargar brands y zonas disponibles
-      const [brandsResponse, zonesData] = await Promise.all([
+      // Cargar brands, zonas y distribuidores disponibles
+      const [brandsResponse, zonesData, distributorsData] = await Promise.all([
         adminService.getBrands(1, 100),
-        adminService.getZones()
+        adminService.getZones(),
+        adminService.getDistributors()
       ]);
 
       setAvailableBrands(brandsResponse.data);
       setAvailableZones(zonesData);
+      setAvailableDistributors(distributorsData);
     } catch (err) {
       console.error('Error loading initial data:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -106,6 +110,7 @@ export default function InviteUserPage() {
         role: 'promotor',
         brand_id: '',
         zone_id: '',
+        distributor_id: '',
         send_email: true
       });
 
@@ -129,7 +134,7 @@ export default function InviteUserPage() {
       brand_manager: 'Gerente de Marca',
       supervisor: 'Supervisor',
       promotor: 'Promotor',
-      market_analyst: 'Analista de Mercado',
+      asesor_de_ventas: 'Asesor de Ventas',
     };
     return labels[role as keyof typeof labels] || role;
   };
@@ -325,57 +330,97 @@ export default function InviteUserPage() {
                   value={formData.role}
                   onChange={(e) => setFormData(prev => ({
                     ...prev,
-                    role: e.target.value as typeof formData.role
+                    role: e.target.value as typeof formData.role,
+                    brand_id: '',
+                    distributor_id: ''
                   }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value="promotor">Promotor</option>
+                  <option value="asesor_de_ventas">Asesor de Ventas</option>
                   <option value="supervisor">Supervisor</option>
                   <option value="brand_manager">Gerente de Marca</option>
-                  <option value="market_analyst">Analista de Mercado</option>
                   <option value="admin">Administrador</option>
-                  <option value="client">Cliente</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Marca
-                </label>
-                <select
-                  value={formData.brand_id}
-                  onChange={(e) => setFormData(prev => ({ ...prev, brand_id: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Global (todas las marcas)</option>
-                  {availableBrands.map(brand => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Zona
-                </label>
-                <select
-                  value={formData.zone_id}
-                  onChange={(e) => setFormData(prev => ({ ...prev, zone_id: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Todas las zonas</option>
-                  {availableZones
-                    .filter(zone => !formData.brand_id || zone.brand_id === formData.brand_id)
-                    .map(zone => (
-                      <option key={zone.id} value={zone.id}>
-                        {zone.name}
+              {/* Marca - solo para roles que la requieren */}
+              {['brand_manager', 'supervisor', 'promotor'].includes(formData.role) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Marca <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.brand_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, brand_id: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Selecciona una marca</option>
+                    {availableBrands.map(brand => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
                       </option>
                     ))}
-                </select>
-              </div>
+                  </select>
+                </div>
+              )}
+
+              {/* Distribuidor - solo para asesor_de_ventas */}
+              {formData.role === 'asesor_de_ventas' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Distribuidor <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.distributor_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, distributor_id: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Selecciona un distribuidor</option>
+                    {availableDistributors.map(dist => (
+                      <option key={dist.id} value={dist.id}>
+                        {dist.name}
+                      </option>
+                    ))}
+                  </select>
+                  {availableDistributors.length === 0 && (
+                    <p className="text-amber-600 text-sm mt-1">No hay distribuidores disponibles</p>
+                  )}
+                </div>
+              )}
+
+              {/* Zona - solo si hay marca seleccionada */}
+              {formData.brand_id && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Zona
+                  </label>
+                  <select
+                    value={formData.zone_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, zone_id: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Todas las zonas</option>
+                    {availableZones
+                      .filter(zone => zone.brand_id === formData.brand_id)
+                      .map(zone => (
+                        <option key={zone.id} value={zone.id}>
+                          {zone.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Info para admin */}
+              {formData.role === 'admin' && (
+                <div className="md:col-span-2">
+                  <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
+                    El rol Administrador tiene acceso global a todas las marcas y funciones.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="mt-4">

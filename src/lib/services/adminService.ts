@@ -12,6 +12,7 @@ import type {
   ClientType,
   CommercialStructure,
   Tenant,
+  Distributor,
   BrandCreateForm,
   TenantUpdateForm,
   ApiResponse,
@@ -244,6 +245,25 @@ export class AdminService {
       limit,
       totalPages: Math.ceil((count || 0) / limit)
     };
+  }
+
+  /**
+   * Get all distributors for the current tenant
+   */
+  async getDistributors(): Promise<Distributor[]> {
+    const tenantId = await this.getCurrentTenantId();
+
+    const { data, error } = await this.supabase
+      .from('distributors')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'active')
+      .is('deleted_at', null)
+      .order('name', { ascending: true });
+
+    if (error) throw new Error(`Error al obtener distribuidores: ${error.message}`);
+
+    return data || [];
   }
 
   async getBrandById(id: string): Promise<ApiResponse<Brand>> {
@@ -813,9 +833,10 @@ export class AdminService {
   async assignUserRole(
     userProfileId: string,
     roleData: {
-      role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst' | 'client';
+      role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'asesor_de_ventas';
       brand_id: string | null;
-      zone_id?: string | null; // Hacer opcional por problemas de esquema
+      zone_id?: string | null;
+      distributor_id?: string; // Para asesor_de_ventas
     }
   ): Promise<UserRole> {
     const tenantId = await this.getCurrentTenantId();
@@ -833,7 +854,7 @@ export class AdminService {
       throw new Error('Usuario no encontrado o sin permisos');
     }
 
-    // Obtener el perfil del usuario actual (quien está asignando el rol)
+    // Obtener el perfil del usuario actual (quien esta asignando el rol)
     const { data: { user: currentUser } } = await this.supabase.auth.getUser();
     if (!currentUser) {
       throw new Error('Usuario no autenticado');
@@ -861,38 +882,42 @@ export class AdminService {
       console.error('Error checking existing roles:', rolesError);
     }
 
-    // Determinar si este rol debería ser primario
-    // Solo el admin o el primer rol asignado debe ser primario
+    // Determinar si este rol deberia ser primario
     const hasPrimaryRole = existingRoles?.some(role => role.is_primary) ?? false;
     const shouldBePrimary = roleData.role === 'admin' || !hasPrimaryRole;
 
-    // Determinar el scope según el tipo de rol
+    // Determinar el scope segun el tipo de rol
     let scope = 'tenant'; // Default para admin
 
-    if (roleData.role === 'brand_manager' || roleData.role === 'supervisor' || roleData.role === 'promotor' || roleData.role === 'market_analyst') {
+    if (roleData.role === 'brand_manager' || roleData.role === 'supervisor' || roleData.role === 'promotor') {
       if (!roleData.brand_id) {
         throw new Error(`El rol ${roleData.role} requiere un brand_id asignado`);
       }
       scope = 'brand';
     }
 
-    if (roleData.role === 'client') {
-      scope = 'client';
+    // Asesor de ventas requiere distribuidor, no marca
+    if (roleData.role === 'asesor_de_ventas') {
+      if (!roleData.distributor_id) {
+        throw new Error('El rol asesor_de_ventas requiere un distributor_id asignado');
+      }
+      scope = 'tenant'; // Scope tenant porque trabaja para distribuidor, no para marca especifica
     }
 
-    const insertData: any = {
+    // Primero crear el rol
+    const insertData: Record<string, unknown> = {
       user_profile_id: userProfileId,
       tenant_id: tenantId,
       role: roleData.role,
-      brand_id: roleData.brand_id,
+      brand_id: roleData.role === 'asesor_de_ventas' ? null : roleData.brand_id,
       scope: scope,
       is_primary: shouldBePrimary,
-      granted_by: currentUserProfile.id, // ID del perfil que otorga el rol
+      granted_by: currentUserProfile.id,
       granted_at: new Date().toISOString(),
       status: 'active'
     };
 
-    // Solo agregar zone_id si está definido (para evitar errores de esquema)
+    // Solo agregar zone_id si esta definido
     if (roleData.zone_id) {
       insertData.zone_id = roleData.zone_id;
     }
@@ -904,6 +929,18 @@ export class AdminService {
       .single();
 
     if (error) throw new Error(`Error al asignar rol: ${error.message}`);
+
+    // Si es asesor_de_ventas, actualizar el distributor_id en user_profiles
+    if (roleData.role === 'asesor_de_ventas' && roleData.distributor_id) {
+      const { error: updateError } = await this.supabase
+        .from('user_profiles')
+        .update({ distributor_id: roleData.distributor_id })
+        .eq('id', userProfileId);
+
+      if (updateError) {
+        console.error('Error actualizando distributor_id:', updateError);
+      }
+    }
 
     return data;
   }
@@ -1044,9 +1081,10 @@ export class AdminService {
     position: string | null;
     department: string | null;
     employee_code: string | null;
-    role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst' | 'client';
+    role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'asesor_de_ventas';
     brand_id: string | null;
     zone_id: string | null;
+    distributor_id?: string;
     send_email: boolean;
   }): Promise<{ user: UserProfile; role: UserRole }> {
     const response = await fetch('/api/admin/users/invite', {
