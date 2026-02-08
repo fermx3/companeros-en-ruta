@@ -35,7 +35,7 @@ export default function CreateUserPage() {
     confirm_password: '',
     // Rol inicial (opcional)
     assign_role: false,
-    role: 'advisor' as 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client',
+    role: 'promotor' as 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst' | 'client',
     brand_id: '',
     zone_id: ''
   });
@@ -327,7 +327,7 @@ export default function CreateUserPage() {
                   value={formData.position}
                   onChange={(e) => handleInputChange('position', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Asesor Comercial"
+                  placeholder="Promotor Comercial"
                 />
               </div>
 
@@ -427,7 +427,7 @@ export default function CreateUserPage() {
                     onChange={(e) => handleInputChange('role', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="advisor">Asesor</option>
+                    <option value="promotor">Promotor</option>
                     <option value="supervisor">Supervisor</option>
                     <option value="brand_manager">Gerente de Marca</option>
                     <option value="market_analyst">Analista de Mercado</option>

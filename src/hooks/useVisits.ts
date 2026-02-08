@@ -8,7 +8,7 @@ type Visit = {
   tenant_id: string
   client_id: string
   brand_id: string
-  advisor_id: string
+  promotor_id: string
   visit_number: string
   visit_date: string
   start_time: string | null
@@ -56,7 +56,7 @@ type VisitFilters = {
   dateRange: 'today' | 'week' | 'month'
 }
 
-type AsesorMetrics = {
+type PromotorMetrics = {
   totalClients: number
   monthlyQuota: number
   completedVisits: number
@@ -72,13 +72,13 @@ type CreateVisitData = {
   longitude?: number
 }
 
-// Hook para obtener todas las visitas del asesor
+// Hook para obtener todas las visitas del promotor
 export function useMyVisits(filters: VisitFilters) {
   const { user } = useAuth()
   const [visits, setVisits] = useState<Visit[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [metrics, setMetrics] = useState<AsesorMetrics>({
+  const [metrics, setMetrics] = useState<PromotorMetrics>({
     totalClients: 0,
     monthlyQuota: 0,
     completedVisits: 0,
@@ -97,7 +97,7 @@ export function useMyVisits(filters: VisitFilters) {
         date_range: filters.dateRange
       })
 
-      const response = await fetch(`/api/asesor/visits?${params}`)
+      const response = await fetch(`/api/promotor/visits?${params}`)
       const data = await response.json()
 
       if (!response.ok) {
@@ -147,7 +147,7 @@ export function useVisit(visitId: string) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/asesor/visits/${visitId}`)
+      const response = await fetch(`/api/promotor/visits/${visitId}`)
       const data = await response.json()
 
       if (!response.ok) {
@@ -167,7 +167,7 @@ export function useVisit(visitId: string) {
     if (!visit) return
 
     try {
-      const response = await fetch(`/api/asesor/visits/${visit.id}`, {
+      const response = await fetch(`/api/promotor/visits/${visit.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -190,7 +190,7 @@ export function useVisit(visitId: string) {
     if (!visit) return
 
     try {
-      const response = await fetch(`/api/asesor/visits/${visit.id}/checkin`, {
+      const response = await fetch(`/api/promotor/visits/${visit.id}/checkin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(location || {})
@@ -214,7 +214,7 @@ export function useVisit(visitId: string) {
     if (!visit) return
 
     try {
-      const response = await fetch(`/api/asesor/visits/${visit.id}/checkout`, {
+      const response = await fetch(`/api/promotor/visits/${visit.id}/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(checkoutData || {})
@@ -264,7 +264,7 @@ export function useCreateVisit() {
     setError(null)
 
     try {
-      const response = await fetch('/api/asesor/visits', {
+      const response = await fetch('/api/promotor/visits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(visitData)
@@ -332,7 +332,7 @@ export function useAssignedClients(options?: { search?: string; page?: number; l
       if (options?.limit) params.set('limit', options.limit.toString())
 
       const queryString = params.toString()
-      const url = queryString ? `/api/asesor/clients?${queryString}` : '/api/asesor/clients'
+      const url = queryString ? `/api/promotor/clients?${queryString}` : '/api/promotor/clients'
 
       const response = await fetch(url)
       const data = await response.json()

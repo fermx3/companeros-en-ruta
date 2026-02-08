@@ -45,7 +45,7 @@ interface VisitListProps {
 // ===========================================
 
 /**
- * Lista de visitas para asesores.
+ * Lista de visitas para promotores.
  * Muestra visitas con estados de carga, error y vacío.
  *
  * @example
@@ -92,7 +92,7 @@ export function VisitList({ visits, loading, error, onRefresh }: VisitListProps)
    * Navegar a detalle de visita
    */
   const handleVisitClick = (visitId: string) => {
-    router.push(`/asesor/visitas/${visitId}`)
+    router.push(`/promotor/visitas/${visitId}`)
   }
 
   // ===========================================

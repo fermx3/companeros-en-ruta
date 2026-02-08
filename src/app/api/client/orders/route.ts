@@ -12,7 +12,7 @@ interface UnifiedOrder {
   notes: string | null
   brand_id: string | null
   brand_name: string | null
-  advisor_name: string | null
+  promotor_name: string | null
   order_date: string
   created_at: string
 }
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
         order_notes,
         order_date,
         created_at,
-        advisor:advisor_id(
+        promotor:promotor_id(
           first_name,
           last_name
         ),
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
         notes: o.client_notes as string | null,
         brand_id: brand?.id || null,
         brand_name: brand?.name || null,
-        advisor_name: null,
+        promotor_name: null,
         order_date: o.order_date as string,
         created_at: o.created_at as string
       }
@@ -158,15 +158,15 @@ export async function GET(request: NextRequest) {
 
     const transformedVisitOrders: UnifiedOrder[] = visitOrders.map((order: unknown) => {
       const o = order as Record<string, unknown>
-      const advisorData = o.advisor as unknown
-      const advisor = (Array.isArray(advisorData) ? advisorData[0] : advisorData) as { first_name: string; last_name: string } | null
+      const promotorData = o.promotor as unknown
+      const promotor = (Array.isArray(promotorData) ? promotorData[0] : promotorData) as { first_name: string; last_name: string } | null
 
       const visitData = o.visits as unknown
       const visit = (Array.isArray(visitData) ? visitData[0] : visitData) as { brand_id: string; brands: unknown } | null
       const brandData = visit?.brands as unknown
       const brand = (Array.isArray(brandData) ? brandData[0] : brandData) as { id: string; name: string } | null
 
-      const advisorName = advisor ? `${advisor.first_name || ''} ${advisor.last_name || ''}`.trim() : null
+      const promotorName = promotor ? `${promotor.first_name || ''} ${promotor.last_name || ''}`.trim() : null
 
       return {
         id: o.id as string,
@@ -179,7 +179,7 @@ export async function GET(request: NextRequest) {
         notes: o.order_notes as string | null,
         brand_id: brand?.id || visit?.brand_id || null,
         brand_name: brand?.name || null,
-        advisor_name: advisorName,
+        promotor_name: promotorName,
         order_date: o.order_date as string,
         created_at: o.created_at as string
       }

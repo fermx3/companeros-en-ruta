@@ -244,13 +244,13 @@ function UserCard({ user, onDeactivate, isDeleting }: UserCardProps) {
       'admin': 'Administrador',
       'brand_manager': 'Gerente de Marca',
       'supervisor': 'Supervisor',
-      'advisor': 'Asesor',
+      'promotor': 'Promotor',
       'market_analyst': 'Analista de Mercado',
       'client': 'Cliente'
     };
 
     // Jerarquía de roles para mostrar el más importante
-    const hierarchy = ['admin', 'brand_manager', 'supervisor', 'advisor', 'market_analyst', 'client'];
+    const hierarchy = ['admin', 'brand_manager', 'supervisor', 'promotor', 'market_analyst', 'client'];
 
     for (const roleType of hierarchy) {
       const role = activeRoles.find(r => r.role === roleType);

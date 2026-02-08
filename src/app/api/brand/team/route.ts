@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || ''
     const offset = (page - 1) * limit
 
-    // Query team members: users with roles for this brand (advisor, supervisor)
+    // Query team members: users with roles for this brand (promotor, supervisor)
     // We need to get user_roles for this brand, then join user_profiles
     let query = supabase
       .from('user_roles')
@@ -126,14 +126,14 @@ export async function GET(request: NextRequest) {
       `)
       .eq('brand_id', brandId)
       .eq('tenant_id', tenantId)
-      .in('role', ['advisor', 'supervisor'])
+      .in('role', ['promotor', 'supervisor'])
       .order('created_at', { ascending: false })
 
     // Filter by role if specified
     if (role === 'supervisor') {
       query = query.eq('role', 'supervisor')
-    } else if (role === 'asesor' || role === 'advisor') {
-      query = query.eq('role', 'advisor')
+    } else if (role === 'promotor') {
+      query = query.eq('role', 'promotor')
     }
 
     // Filter by status if specified
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('brand_id', brandId)
       .eq('tenant_id', tenantId)
-      .in('role', ['advisor', 'supervisor'])
+      .in('role', ['promotor', 'supervisor'])
 
     const { count, error: countError } = await countQuery
 
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get advisor assignments for additional data
+    // Get promotor assignments for additional data
     // Note: Supabase returns single object when using FK relationship with .single() style select
     const userProfileIds = (teamRoles || [])
       .map(tr => {
@@ -181,7 +181,7 @@ export async function GET(request: NextRequest) {
       })
       .filter(Boolean) as string[]
 
-    let advisorAssignments: Record<string, {
+    let promotorAssignments: Record<string, {
       specialization: string | null
       experience_level: string | null
       monthly_quota: number | null
@@ -190,13 +190,13 @@ export async function GET(request: NextRequest) {
 
     if (userProfileIds.length > 0) {
       const { data: assignments } = await supabase
-        .from('advisor_assignments')
+        .from('promotor_assignments')
         .select('user_profile_id, specialization, experience_level, monthly_quota, performance_rating')
         .in('user_profile_id', userProfileIds)
         .eq('is_active', true)
 
       if (assignments) {
-        advisorAssignments = assignments.reduce((acc, a) => {
+        promotorAssignments = assignments.reduce((acc, a) => {
           acc[a.user_profile_id] = {
             specialization: a.specialization,
             experience_level: a.experience_level,
@@ -204,7 +204,7 @@ export async function GET(request: NextRequest) {
             performance_rating: a.performance_rating
           }
           return acc
-        }, {} as typeof advisorAssignments)
+        }, {} as typeof promotorAssignments)
       }
     }
 
@@ -213,30 +213,30 @@ export async function GET(request: NextRequest) {
     let orderCounts: Record<string, number> = {}
 
     if (userProfileIds.length > 0) {
-      // Count visits per advisor
+      // Count visits per promotor
       const { data: visits } = await supabase
         .from('visits')
-        .select('advisor_id')
-        .in('advisor_id', userProfileIds)
+        .select('promotor_id')
+        .in('promotor_id', userProfileIds)
         .eq('brand_id', brandId)
 
       if (visits) {
         visitCounts = visits.reduce((acc, v) => {
-          acc[v.advisor_id] = (acc[v.advisor_id] || 0) + 1
+          acc[v.promotor_id] = (acc[v.promotor_id] || 0) + 1
           return acc
         }, {} as Record<string, number>)
       }
 
-      // Count orders per advisor (if orders table has advisor_id)
+      // Count orders per promotor (if orders table has promotor_id)
       const { data: orders } = await supabase
         .from('orders')
-        .select('advisor_id')
-        .in('advisor_id', userProfileIds)
+        .select('promotor_id')
+        .in('promotor_id', userProfileIds)
 
       if (orders) {
         orderCounts = orders.reduce((acc, o) => {
-          if (o.advisor_id) {
-            acc[o.advisor_id] = (acc[o.advisor_id] || 0) + 1
+          if (o.promotor_id) {
+            acc[o.promotor_id] = (acc[o.promotor_id] || 0) + 1
           }
           return acc
         }, {} as Record<string, number>)
@@ -249,16 +249,16 @@ export async function GET(request: NextRequest) {
     if (userProfileIds.length > 0) {
       const { data: recentVisits } = await supabase
         .from('visits')
-        .select('advisor_id, updated_at')
-        .in('advisor_id', userProfileIds)
+        .select('promotor_id, updated_at')
+        .in('promotor_id', userProfileIds)
         .eq('brand_id', brandId)
         .order('updated_at', { ascending: false })
 
       if (recentVisits) {
-        // Get most recent activity per advisor
+        // Get most recent activity per promotor
         for (const visit of recentVisits) {
-          if (!lastActivity[visit.advisor_id]) {
-            lastActivity[visit.advisor_id] = visit.updated_at
+          if (!lastActivity[visit.promotor_id]) {
+            lastActivity[visit.promotor_id] = visit.updated_at
           }
         }
       }
@@ -284,7 +284,7 @@ export async function GET(request: NextRequest) {
 
         if (!profile) return null
 
-        const assignment = advisorAssignments[profile.id]
+        const assignment = promotorAssignments[profile.id]
 
         // Combine first_name and last_name
         const fullName = [profile.first_name, profile.last_name]
@@ -298,7 +298,7 @@ export async function GET(request: NextRequest) {
           email: profile.email,
           phone: profile.phone,
           avatar_url: profile.avatar_url,
-          role: tr.role === 'advisor' ? 'asesor' : tr.role,
+          role: tr.role,
           status: tr.status || 'active',
           specialization: assignment?.specialization,
           experience_level: assignment?.experience_level,
@@ -329,7 +329,7 @@ export async function GET(request: NextRequest) {
     const metrics = {
       totalMembers: transformedTeam.length,
       supervisors: transformedTeam.filter(m => m.role === 'supervisor').length,
-      advisors: transformedTeam.filter(m => m.role === 'asesor').length,
+      promotors: transformedTeam.filter(m => m.role === 'promotor').length,
       activeMembers: transformedTeam.filter(m => m.status === 'active').length,
       inactiveMembers: transformedTeam.filter(m => m.status === 'inactive').length
     }

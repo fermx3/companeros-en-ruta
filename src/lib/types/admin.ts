@@ -117,7 +117,7 @@ export interface UserRole {
   tenant_id: string;
   brand_id: string | null;
   zone_id: string | null; // Campo agregado para zonas geográficas
-  role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client';
+  role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst' | 'client';
   scope: string;
   is_primary: boolean | null;
   granted_by: string | null;

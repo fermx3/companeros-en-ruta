@@ -28,7 +28,7 @@ interface Order {
   notes: string | null
   brand_id: string | null
   brand_name: string | null
-  advisor_name: string | null
+  promotor_name: string | null
   order_date: string
   created_at: string
 }
@@ -353,9 +353,9 @@ export default function ClientOrdersPage() {
                             {order.brand_name}
                           </span>
                         )}
-                        {order.advisor_name && (
+                        {order.promotor_name && (
                           <span className="text-purple-600">
-                            Asesor: {order.advisor_name}
+                            Promotor: {order.promotor_name}
                           </span>
                         )}
                       </div>

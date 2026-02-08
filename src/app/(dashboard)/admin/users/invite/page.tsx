@@ -31,7 +31,7 @@ export default function InviteUserPage() {
     position: '',
     department: '',
     employee_code: '',
-    role: 'advisor' as 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client',
+    role: 'promotor' as 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst' | 'client',
     brand_id: '',
     zone_id: '',
     send_email: true
@@ -103,7 +103,7 @@ export default function InviteUserPage() {
         position: '',
         department: '',
         employee_code: '',
-        role: 'advisor',
+        role: 'promotor',
         brand_id: '',
         zone_id: '',
         send_email: true
@@ -128,7 +128,7 @@ export default function InviteUserPage() {
       admin: 'Administrador',
       brand_manager: 'Gerente de Marca',
       supervisor: 'Supervisor',
-      advisor: 'Asesor',
+      promotor: 'Promotor',
       market_analyst: 'Analista de Mercado',
     };
     return labels[role as keyof typeof labels] || role;
@@ -294,7 +294,7 @@ export default function InviteUserPage() {
                   value={formData.position}
                   onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="ej: Asesor de Ventas"
+                  placeholder="ej: Promotor de Ventas"
                 />
               </div>
 
@@ -330,7 +330,7 @@ export default function InviteUserPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="advisor">Asesor</option>
+                  <option value="promotor">Promotor</option>
                   <option value="supervisor">Supervisor</option>
                   <option value="brand_manager">Gerente de Marca</option>
                   <option value="market_analyst">Analista de Mercado</option>

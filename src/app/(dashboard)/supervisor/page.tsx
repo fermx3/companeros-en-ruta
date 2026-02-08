@@ -134,7 +134,7 @@ export default function SupervisorDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Asesores en Equipo</p>
+                    <p className="text-sm font-medium text-gray-600">Promotores en Equipo</p>
                     <p className="text-2xl font-bold text-gray-900">{metrics?.team_size || 0}</p>
                   </div>
                   <div className="h-10 w-10 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -227,7 +227,7 @@ export default function SupervisorDashboard() {
             <CardHeader className="pb-4">
               <CardTitle className="text-lg">Miembros del Equipo</CardTitle>
               <CardDescription className="text-gray-600">
-                Desempeño individual de cada asesor
+                Desempeño individual de cada promotor
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
@@ -237,7 +237,7 @@ export default function SupervisorDashboard() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Asesor
+                          Promotor
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Estado
@@ -317,9 +317,9 @@ export default function SupervisorDashboard() {
               ) : (
                 <div className="text-center py-12">
                   <Users className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">Sin asesores asignados</h3>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Sin promotores asignados</h3>
                   <p className="mt-1 text-sm text-gray-500">
-                    No hay asesores en tu equipo actualmente.
+                    No hay promotores en tu equipo actualmente.
                   </p>
                 </div>
               )}

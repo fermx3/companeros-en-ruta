@@ -85,7 +85,7 @@ export default function BrandTeamPage() {
   const roles = [
     { value: '', label: 'Todos los roles' },
     { value: 'supervisor', label: 'Supervisor' },
-    { value: 'asesor', label: 'Asesor de Ventas' }
+    { value: 'promotor', label: 'Promotor' }
   ];
 
   const statuses = [
@@ -133,7 +133,7 @@ export default function BrandTeamPage() {
                 Equipo de Ventas
               </h1>
               <p className="text-gray-600 mt-1">
-                Gestiona asesores y supervisores de tu marca
+                Gestiona promotores y supervisores de tu marca
               </p>
             </div>
             <div className="flex space-x-3">
@@ -170,9 +170,9 @@ export default function BrandTeamPage() {
           <Card>
             <div className="p-6 text-center">
               <div className="text-3xl font-bold text-green-600 mb-2">
-                {filteredTeam.filter(m => m.role === 'asesor').length}
+                {filteredTeam.filter(m => m.role === 'promotor').length}
               </div>
-              <div className="text-sm text-gray-600">Asesores de Ventas</div>
+              <div className="text-sm text-gray-600">Promotores</div>
             </div>
           </Card>
           <Card>
@@ -348,7 +348,7 @@ function TeamMemberCard({ member }: TeamMemberCardProps) {
   const getRoleLabel = (role: string) => {
     const roles: Record<string, string> = {
       supervisor: 'Supervisor',
-      asesor: 'Asesor de Ventas'
+      promotor: 'Promotor'
     };
     return roles[role] || role;
   };
@@ -356,7 +356,7 @@ function TeamMemberCard({ member }: TeamMemberCardProps) {
   const getRoleColor = (role: string) => {
     const colors: Record<string, string> = {
       supervisor: 'bg-blue-100 text-blue-800',
-      asesor: 'bg-green-100 text-green-800'
+      promotor: 'bg-green-100 text-green-800'
     };
     return colors[role] || 'bg-gray-100 text-gray-800';
   };

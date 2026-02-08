@@ -67,7 +67,7 @@ export async function GET() {
       )
     }
 
-    // 4. Get team members (advisors in the same tenant/brand)
+    // 4. Get team members (promotors in the same tenant/brand)
     const { data: teamRoles } = await supabase
       .from('user_roles')
       .select(`
@@ -83,7 +83,7 @@ export async function GET() {
           email
         )
       `)
-      .eq('role', 'advisor')
+      .eq('role', 'promotor')
       .eq('status', 'active')
       .eq('brand_id', supervisorRole.brand_id)
 
@@ -99,18 +99,18 @@ export async function GET() {
           email: string
         }
 
-        // Get advisor's client count
+        // Get promotor's client count
         const { count: clientCount } = await supabase
-          .from('advisor_client_assignments')
+          .from('promotor_client_assignments')
           .select('id', { count: 'exact', head: true })
-          .eq('advisor_id', profile.id)
+          .eq('promotor_id', profile.id)
           .eq('is_active', true)
 
-        // Get advisor's visit stats
+        // Get promotor's visit stats
         const { data: visits } = await supabase
           .from('visits')
           .select('id, visit_status, client_satisfaction_rating')
-          .eq('advisor_id', profile.id)
+          .eq('promotor_id', profile.id)
           .is('deleted_at', null)
 
         const completedVisits = visits?.filter(v => v.visit_status === 'completed').length || 0
@@ -141,14 +141,14 @@ export async function GET() {
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
     // Get all team visits for monthly stats
-    const advisorIds = teamMembers.map(m => m.id)
+    const promotorIds = teamMembers.map(m => m.id)
 
     let visitsThisMonth = 0
-    if (advisorIds.length > 0) {
+    if (promotorIds.length > 0) {
       const { count } = await supabase
         .from('visits')
         .select('id', { count: 'exact', head: true })
-        .in('advisor_id', advisorIds)
+        .in('promotor_id', promotorIds)
         .gte('created_at', firstDayOfMonth.toISOString())
         .is('deleted_at', null)
 

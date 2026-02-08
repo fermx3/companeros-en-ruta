@@ -813,7 +813,7 @@ export class AdminService {
   async assignUserRole(
     userProfileId: string,
     roleData: {
-      role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client';
+      role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst' | 'client';
       brand_id: string | null;
       zone_id?: string | null; // Hacer opcional por problemas de esquema
     }
@@ -869,7 +869,7 @@ export class AdminService {
     // Determinar el scope según el tipo de rol
     let scope = 'tenant'; // Default para admin
 
-    if (roleData.role === 'brand_manager' || roleData.role === 'supervisor' || roleData.role === 'advisor' || roleData.role === 'market_analyst') {
+    if (roleData.role === 'brand_manager' || roleData.role === 'supervisor' || roleData.role === 'promotor' || roleData.role === 'market_analyst') {
       if (!roleData.brand_id) {
         throw new Error(`El rol ${roleData.role} requiere un brand_id asignado`);
       }
@@ -1044,7 +1044,7 @@ export class AdminService {
     position: string | null;
     department: string | null;
     employee_code: string | null;
-    role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst' | 'client';
+    role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst' | 'client';
     brand_id: string | null;
     zone_id: string | null;
     send_email: boolean;

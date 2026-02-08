@@ -18,7 +18,7 @@ interface UserWithRoles extends UserProfile {
 }
 
 interface NewRoleData {
-  role: 'admin' | 'brand_manager' | 'supervisor' | 'advisor' | 'market_analyst'
+  role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst'
   brand_id: string
 }
 
@@ -55,7 +55,7 @@ export default function UserRolesPage() {
 
   // Estado para formulario de nuevo rol
   const [newRole, setNewRole] = useState<NewRoleData>({
-    role: 'advisor',
+    role: 'promotor',
     brand_id: ''
   })
 
@@ -100,7 +100,7 @@ export default function UserRolesPage() {
     if (!user) return
 
     // Validar que los roles que requieren brand_id lo tengan
-    const rolesThatRequireBrand = ['brand_manager', 'supervisor', 'advisor', 'market_analyst']
+    const rolesThatRequireBrand = ['brand_manager', 'supervisor', 'promotor', 'market_analyst']
     if (rolesThatRequireBrand.includes(newRole.role) && !newRole.brand_id) {
       setError(`El rol ${getRoleLabel(newRole.role)} requiere seleccionar una marca específica`)
       return
@@ -118,7 +118,7 @@ export default function UserRolesPage() {
       // Recargar datos y limpiar formulario
       await loadData()
       setShowAddRole(false)
-      setNewRole({ role: 'advisor', brand_id: '' })
+      setNewRole({ role: 'promotor', brand_id: '' })
     } catch (err) {
       console.error('Error adding role:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -187,7 +187,7 @@ export default function UserRolesPage() {
       admin: 'Administrador',
       brand_manager: 'Gerente de Marca',
       supervisor: 'Supervisor',
-      advisor: 'Asesor',
+      promotor: 'Promotor',
       market_analyst: 'Analista de Mercado'
     }
     return labels[role] || role
@@ -362,7 +362,7 @@ export default function UserRolesPage() {
                   }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="advisor">Asesor</option>
+                  <option value="promotor">Promotor</option>
                   <option value="supervisor">Supervisor</option>
                   <option value="brand_manager">Gerente de Marca</option>
                   <option value="market_analyst">Analista de Mercado</option>
@@ -373,7 +373,7 @@ export default function UserRolesPage() {
               {/* Brand Selector */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Marca {['brand_manager', 'supervisor', 'advisor', 'market_analyst'].includes(newRole.role) && (
+                  Marca {['brand_manager', 'supervisor', 'promotor', 'market_analyst'].includes(newRole.role) && (
                     <span className="text-red-500">*</span>
                   )}
                 </label>
@@ -381,13 +381,13 @@ export default function UserRolesPage() {
                   value={newRole.brand_id}
                   onChange={(e) => setNewRole(prev => ({ ...prev, brand_id: e.target.value }))}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    ['brand_manager', 'supervisor', 'advisor', 'market_analyst'].includes(newRole.role) && !newRole.brand_id
+                    ['brand_manager', 'supervisor', 'promotor', 'market_analyst'].includes(newRole.role) && !newRole.brand_id
                       ? 'border-red-300 bg-red-50'
                       : 'border-gray-300'
                   }`}
                 >
                   <option value="">
-                    {['brand_manager', 'supervisor', 'advisor', 'market_analyst'].includes(newRole.role)
+                    {['brand_manager', 'supervisor', 'promotor', 'market_analyst'].includes(newRole.role)
                       ? 'Selecciona una marca'
                       : 'Global (todas las marcas)'
                     }
@@ -398,7 +398,7 @@ export default function UserRolesPage() {
                     </option>
                   ))}
                 </select>
-                {['brand_manager', 'supervisor', 'advisor', 'market_analyst'].includes(newRole.role) && !newRole.brand_id && (
+                {['brand_manager', 'supervisor', 'promotor', 'market_analyst'].includes(newRole.role) && !newRole.brand_id && (
                   <p className="text-red-500 text-xs mt-1">
                     Este rol requiere seleccionar una marca específica
                   </p>

@@ -48,10 +48,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate active brand role (brand_manager, brand_admin, supervisor, or advisor)
+    // Validate active brand role (brand_manager, brand_admin, supervisor, or promotor)
     const validRole = userProfile.user_roles.find(role =>
       role.status === 'active' &&
-      ['brand_manager', 'brand_admin', 'supervisor', 'advisor'].includes(role.role)
+      ['brand_manager', 'brand_admin', 'supervisor', 'promotor'].includes(role.role)
     )
 
     if (!validRole) {
@@ -120,20 +120,20 @@ export async function POST(request: NextRequest) {
       ['brand_manager', 'brand_admin'].includes(role.role)
     )
 
-    // Look for supervisor/advisor role in the same tenant
-    const supervisorOrAdvisorRole = userProfile.user_roles.find(role =>
+    // Look for supervisor/promotor role in the same tenant
+    const supervisorOrPromotorRole = userProfile.user_roles.find(role =>
       role.status === 'active' &&
       role.tenant_id === membership.tenant_id &&
-      ['supervisor', 'advisor'].includes(role.role)
+      ['supervisor', 'promotor'].includes(role.role)
     )
 
     let hasClientPermission = false
-    if (supervisorOrAdvisorRole && !brandRole) {
+    if (supervisorOrPromotorRole && !brandRole) {
       // Check if client is assigned to this user
       const { data: assignment } = await supabase
-        .from('advisor_client_assignments')
+        .from('promotor_client_assignments')
         .select('id')
-        .eq('advisor_id', userProfile.id)
+        .eq('promotor_id', userProfile.id)
         .eq('client_id', membership.client_id)
         .eq('is_active', true)
         .is('deleted_at', null)

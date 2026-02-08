@@ -56,16 +56,16 @@ export async function PUT(
       )
     }
 
-    // 4. Check user permissions - brand_manager/brand_admin OR supervisor/advisor for assigned clients
+    // 4. Check user permissions - brand_manager/brand_admin OR supervisor/promotor for assigned clients
     const brandRole = userProfile.user_roles.find(role =>
       role.status === 'active' &&
       ['brand_manager', 'brand_admin'].includes(role.role) &&
       role.brand_id === membership.brand_id
     )
 
-    const supervisorOrAdvisorRole = userProfile.user_roles.find(role =>
+    const supervisorOrPromotorRole = userProfile.user_roles.find(role =>
       role.status === 'active' &&
-      ['supervisor', 'advisor'].includes(role.role) &&
+      ['supervisor', 'promotor'].includes(role.role) &&
       role.tenant_id === membership.tenant_id
     )
 
@@ -74,12 +74,12 @@ export async function PUT(
     if (brandRole) {
       // Brand managers and admins can approve any membership for their brand
       canApprove = true
-    } else if (supervisorOrAdvisorRole) {
-      // Supervisors and advisors can only approve for clients assigned to them
+    } else if (supervisorOrPromotorRole) {
+      // Supervisors and promotors can only approve for clients assigned to them
       const { data: assignment } = await supabase
-        .from('advisor_client_assignments')
+        .from('promotor_client_assignments')
         .select('id')
-        .eq('advisor_id', userProfile.id)
+        .eq('promotor_id', userProfile.id)
         .eq('client_id', membership.client_id)
         .eq('is_active', true)
         .is('deleted_at', null)

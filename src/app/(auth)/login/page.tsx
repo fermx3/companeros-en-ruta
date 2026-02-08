@@ -70,8 +70,8 @@ export default function LoginPage() {
           return;
         }
 
-        // Determine primary role (priority: admin > supervisor > brand_manager > advisor)
-        const roleOrder = ['admin', 'supervisor', 'brand_manager', 'advisor'];
+        // Determine primary role (priority: admin > supervisor > brand_manager > promotor)
+        const roleOrder = ['admin', 'supervisor', 'brand_manager', 'promotor'];
         const roles = userRoles.map(r => r.role);
 
         let primaryRole = 'unauthorized';
@@ -93,8 +93,8 @@ export default function LoginPage() {
           case 'brand_manager':
             router.push('/brand');
             break;
-          case 'advisor':
-            router.push('/asesor');
+          case 'promotor':
+            router.push('/promotor');
             break;
           default:
             router.push('/unauthorized');

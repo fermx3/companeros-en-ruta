@@ -76,7 +76,7 @@ export interface Visit {
   tenant_id: string;
   client_id: string;
   brand_id: string;
-  advisor_id: string;
+  promotor_id: string;
   visit_number: string;
   visit_date: string;
   start_time?: string;
@@ -91,7 +91,7 @@ export interface Visit {
   // Relations
   client?: Client;
   brand?: Brand;
-  asesor?: User;
+  promotor?: User;
 }
 
 export interface VisitAssessment {
