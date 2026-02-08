@@ -65,18 +65,20 @@ export async function GET() {
     try {
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
-        .select('id, status, total_amount, created_at')
+        .select('id, order_status, total_amount, created_at')
         .eq('assigned_to', asesorId)
         .is('deleted_at', null)
 
       if (!ordersError && orders) {
-        const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'delivered')
+        const completedOrders = orders.filter(o => o.order_status === 'completed' || o.order_status === 'delivered')
         const totalSales = completedOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
 
         orderStats = {
           total_orders: orders.length,
           orders_this_month: orders.filter(o => new Date(o.created_at) >= firstDayOfMonth).length,
-          pending_orders: orders.filter(o => o.status === 'pending' || o.status === 'processing').length,
+          pending_orders: orders.filter(o =>
+            ['draft', 'submitted', 'confirmed', 'processing'].includes(o.order_status || '')
+          ).length,
           completed_orders: completedOrders.length,
           total_sales_amount: totalSales,
           avg_order_value: completedOrders.length > 0 ? totalSales / completedOrders.length : 0
@@ -87,26 +89,37 @@ export async function GET() {
     }
 
     // 6. Obtener estadisticas de clientes asignados
-    let clientStats = {
+    const clientStats = {
       total_clients: 0
     }
 
     try {
-      if (asesorVentasRole.brand_id) {
-        const { count } = await supabase
+      // First, count from direct client_assignments
+      const { count: assignmentsCount } = await supabase
+        .from('client_assignments')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_profile_id', asesorId)
+        .eq('is_active', true)
+        .is('deleted_at', null)
+
+      clientStats.total_clients = assignmentsCount || 0
+
+      // If no direct assignments but has brand_id, fallback to brand memberships
+      if (clientStats.total_clients === 0 && asesorVentasRole.brand_id) {
+        const { count: membershipsCount } = await supabase
           .from('client_brand_memberships')
           .select('id', { count: 'exact', head: true })
           .eq('brand_id', asesorVentasRole.brand_id)
           .is('deleted_at', null)
 
-        clientStats.total_clients = count || 0
+        clientStats.total_clients = membershipsCount || 0
       }
     } catch {
       // Client query failed, using defaults
     }
 
     // 7. Obtener estadisticas de QR canjeados (cuando exista la tabla)
-    let qrStats = {
+    const qrStats = {
       qr_redeemed_this_month: 0,
       total_qr_redeemed: 0
     }
