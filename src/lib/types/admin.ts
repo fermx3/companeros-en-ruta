@@ -101,6 +101,7 @@ export interface UserProfile {
   department: string | null;
   hire_date: string | null;
   manager_id: string | null;
+  distributor_id: string | null; // For Asesor de Ventas: linked distributor
   status: 'active' | 'inactive' | 'suspended';
   preferences: Record<string, unknown> | null;
   last_login_at: string | null;
@@ -117,7 +118,7 @@ export interface UserRole {
   tenant_id: string;
   brand_id: string | null;
   zone_id: string | null; // Campo agregado para zonas geográficas
-  role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'market_analyst' | 'client';
+  role: 'admin' | 'brand_manager' | 'supervisor' | 'promotor' | 'asesor_de_ventas' | 'market_analyst' | 'client';
   scope: string;
   is_primary: boolean | null;
   granted_by: string | null;
@@ -125,6 +126,30 @@ export interface UserRole {
   expires_at: string | null;
   status: 'active' | 'inactive' | null;
   permissions: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+// Distributor types
+export interface Distributor {
+  id: string;
+  public_id: string;
+  tenant_id: string;
+  name: string;
+  legal_name: string | null;
+  rfc: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  address_street: string | null;
+  address_city: string | null;
+  address_state: string | null;
+  address_postal_code: string | null;
+  address_country: string;
+  status: 'active' | 'inactive' | 'suspended';
+  notes: string | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
