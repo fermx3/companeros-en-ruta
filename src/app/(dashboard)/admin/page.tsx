@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Card } from '@/components/ui/Card'
@@ -22,79 +22,69 @@ export default function AdminDashboard() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const loadingRef = useRef(true)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  useEffect(() => {
-    loadMetrics()
-    return () => {
-      // Limpiar timeout al desmontar
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [])
-
-  const loadMetrics = async () => {
+  const loadMetrics = useCallback(async (signal?: AbortSignal) => {
     setLoading(true)
     setError(null)
-    loadingRef.current = true
-
-    // Limpiar timeout previo
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-
-    // Timeout de seguridad para evitar loading infinito
-    timeoutRef.current = setTimeout(() => {
-      if (loadingRef.current) {
-        console.warn('Dashboard loading timeout - forcing loading to false')
-        setLoading(false)
-        setError('Timeout: La petición tardó demasiado. Por favor, recarga la página.')
-        loadingRef.current = false
-      }
-    }, 15000) // 15 segundos timeout
 
     try {
       const adminService = new AdminService();
 
+      // Check if aborted before making requests
+      if (signal?.aborted) return
+
       // Obtener métricas del dashboard desde Supabase
       const metricsResponse = await adminService.getDashboardMetrics();
+
+      if (signal?.aborted) return
+
       if (metricsResponse.error) {
         throw new Error(metricsResponse.error);
       }
 
       // Obtener actividad reciente desde Supabase
       const activityResponse = await adminService.getRecentActivity(5);
+
+      if (signal?.aborted) return
+
       if (activityResponse.error) {
         console.warn('Error loading recent activity:', activityResponse.error);
-        // No bloquear si falla la actividad, solo usar array vacío
       }
 
-      // Verificar si el componente aún está montado y no hay timeout
-      if (loadingRef.current) {
+      if (!signal?.aborted) {
         setMetrics(metricsResponse.data || null);
         setRecentActivity(activityResponse.data || []);
       }
     } catch (err) {
+      if (signal?.aborted) return
       console.error('Error loading dashboard metrics:', err)
-      if (loadingRef.current) {
-        setError(err instanceof Error ? err.message : 'Error al cargar las métricas del dashboard')
-      }
+      setError(err instanceof Error ? err.message : 'Error al cargar las métricas del dashboard')
     } finally {
-      // Solo cambiar loading si no hubo timeout
-      if (loadingRef.current) {
+      if (!signal?.aborted) {
         setLoading(false)
-        loadingRef.current = false
-      }
-
-      // Limpiar timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-        timeoutRef.current = null
       }
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    // Timeout de seguridad
+    const timeoutId = setTimeout(() => {
+      if (!controller.signal.aborted) {
+        controller.abort()
+        setLoading(false)
+        setError('Timeout: La petición tardó demasiado. Por favor, recarga la página.')
+      }
+    }, 15000)
+
+    loadMetrics(controller.signal)
+
+    return () => {
+      clearTimeout(timeoutId)
+      controller.abort()
+    }
+  }, [loadMetrics])
 
   if (loading) {
     return (
@@ -114,7 +104,7 @@ export default function AdminDashboard() {
           <AlertDescription>
             <p>{error}</p>
             <Button
-              onClick={loadMetrics}
+              onClick={() => loadMetrics()}
               className="mt-4"
               variant="outline"
             >
