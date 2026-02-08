@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-02-07
+**Last Updated:** 2026-02-08
 **Target:** Implementación requerimientos PerfectApp según especificaciones cliente
 
 ---
@@ -240,15 +240,15 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 
 | ID | Tarea | Implementa | Esfuerzo | Dependencias |
 |----|-------|------------|----------|--------------|
-| TASK-001 | **RENOMBRAR** advisor → promotor en DB (enum, tablas, constraints) | REQ-001 | 2 | - |
-| TASK-001b | **RENOMBRAR** advisor → promotor en código (routes, APIs, types) | REQ-001 | 3 | TASK-001 |
-| TASK-001c | **RENOMBRAR** advisor → promotor en UI (labels, textos, navegación) | REQ-001 | 2 | TASK-001b |
-| TASK-002 | **CREAR** rol asesor_de_ventas en DB (enum, migration) | REQ-001b | 1 | - |
-| TASK-002-dist | **CREAR** tabla distributors (id, name, tenant_id, contact_info, etc.) | REQ-001c | 2 | - |
-| TASK-002-link | **AGREGAR** columna distributor_id a user_profiles (FK a distributors) | REQ-001d | 1 | TASK-002-dist |
-| TASK-002b | Crear route group /asesor-ventas con dashboard clientes asignados | REQ-030 | 3 | TASK-002 |
-| TASK-002c | Crear módulo órdenes para Asesor de Ventas | REQ-031 | 4 | TASK-002b |
-| TASK-002d | Crear módulo cliente (acceso perfil para validar promociones) | REQ-032 | 3 | TASK-002b |
+| TASK-001 | ~~**RENOMBRAR** advisor → promotor en DB (enum, tablas, constraints)~~ | REQ-001 | 2 | - | **DONE** |
+| TASK-001b | ~~**RENOMBRAR** advisor → promotor en código (routes, APIs, types)~~ | REQ-001 | 3 | TASK-001 | **DONE** |
+| TASK-001c | ~~**RENOMBRAR** advisor → promotor en UI (labels, textos, navegación)~~ | REQ-001 | 2 | TASK-001b | **DONE** |
+| TASK-002 | ~~**CREAR** rol asesor_de_ventas en DB (enum, migration)~~ | REQ-001b | 1 | - | **DONE** |
+| TASK-002-dist | ~~**CREAR** tabla distributors (id, name, tenant_id, contact_info, etc.)~~ | REQ-001c | 2 | - | **DONE** |
+| TASK-002-link | ~~**AGREGAR** columna distributor_id a user_profiles (FK a distributors)~~ | REQ-001d | 1 | TASK-002-dist | **DONE** |
+| TASK-002b | ~~Crear route group /asesor-ventas con dashboard clientes asignados~~ | REQ-030 | 3 | TASK-002 | **DONE** |
+| TASK-002c | ~~Crear módulo órdenes para Asesor de Ventas~~ | REQ-031 | 4 | TASK-002b | **DONE** |
+| TASK-002d | ~~Crear módulo cliente (acceso perfil para validar promociones)~~ | REQ-032 | 3 | TASK-002b | **DONE** |
 | TASK-002e | Crear módulo "Entregar Promoción" (QR descuento/material) | REQ-033 | 3 | TASK-013, TASK-002b |
 | TASK-002f | Implementar tracking QRs para facturación distribuidor→marca | REQ-035 | 2 | TASK-002e |
 | TASK-003 | Actualizar middleware routing para ambos roles | REQ-001, REQ-001b | 1 | TASK-001, TASK-002 |

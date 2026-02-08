@@ -434,7 +434,7 @@ export default function AsesorVentasOrdersPage() {
             ))}
 
             {/* Pagination */}
-            {data.pagination.totalPages > 1 && (
+            {data && data.pagination.totalPages > 1 && (
               <div className="flex items-center justify-center gap-4 pt-6">
                 <Button
                   variant="outline"
@@ -453,7 +453,11 @@ export default function AsesorVentasOrdersPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPage(p => Math.min(data.pagination.totalPages, p + 1))}
+                  onClick={() => {
+                    if (data) {
+                      setPage(p => Math.min(data.pagination.totalPages, p + 1))
+                    }
+                  }}
                   disabled={page >= data.pagination.totalPages}
                 >
                   Siguiente

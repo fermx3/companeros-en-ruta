@@ -2,8 +2,8 @@ import { UserRole, User, Brand } from '@/lib/types'
 
 describe('Type Definitions', () => {
   it('should define correct UserRole types', () => {
-    const roles: UserRole[] = ['admin', 'brand', 'supervisor', 'asesor', 'market_analyst', 'client']
-    expect(roles).toHaveLength(6)
+    const roles: UserRole[] = ['admin', 'brand', 'supervisor', 'promotor', 'asesor_de_ventas', 'market_analyst', 'client']
+    expect(roles).toHaveLength(7)
   })
 
   it('should validate User interface structure', () => {
