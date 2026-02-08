@@ -102,6 +102,10 @@ supabase/migrations__archive_prebaseline/
 # Supabase CLI internals
 supabase/.branches/
 
+/scripts
+
+.env.export
+scripts/exports/
 
 # ===================
 # Project-specific: Documentation (auto-generated)

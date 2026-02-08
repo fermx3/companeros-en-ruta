@@ -10,32 +10,52 @@ This file defines **non-negotiable rules** for how Claude must operate when work
 
 ## 🚨 NON‑NEGOTIABLE RULES (READ FIRST)
 
-### 1. Database Is the Only Source of Truth
+### 1. Schema Truth & No Guessing
 
 * You **MUST NOT assume** any table, column, type, relation, policy, view, function, or enum.
-* You **MUST inspect the live Supabase database schema** before:
+* You **MUST base all schema-dependent work** on the **current project state**:
 
-  * modifying database structure
-  * writing queries that depend on schema
-  * changing RLS policies
-  * introducing or modifying data-access logic
+  * **Versioned migrations in this repo** (primary)
+  * A **local Supabase Postgres** instance mounted via **Docker** that is built from those migrations (primary)
 
-If you have not verified the database structure **directly**, you are operating on invalid assumptions.
+The working assumption for this repository is:
+
+* The schema is controlled via migrations.
+* No one is changing the database structure outside this repository.
+* Therefore, the **local Supabase DB + migrations** represent the **most current schema** when kept in sync.
+
+If you have not verified the schema from **migrations and/or the local Supabase DB**, you are operating on invalid assumptions.
 
 **DO NOT PROCEED.**
 
 ---
 
-### 2. Mandatory Direct Connection to Supabase
+### 2. Connection Policy (Local-First, Remote When Needed)
 
-You **MUST attempt a direct connection** to the Supabase project using one or more of the following approved methods:
+You **MUST NOT perform full database dumps repeatedly**.
 
-* **Supabase CLI** (preferred)
-* **Direct PostgreSQL connection** (fallback)
+#### Default workflow: Local-first
 
-Credentials may be used **only to establish a connection** — never as a source of schema truth.
+You **MUST** use one of these as the default verification sources:
 
-If connection fails:
+* **Supabase CLI + local Supabase (Docker)** (preferred)
+* **Local PostgreSQL connection** to the Supabase Docker DB
+
+#### Remote Supabase connection
+
+A direct connection to the hosted Supabase project is **NOT required for every task**.
+
+You **MUST connect to the hosted Supabase project** only when:
+
+* the task is explicitly about **remote-only resources** (e.g., Edge Functions deployed state, storage buckets configuration, auth settings, project settings)
+* you are about to **ship** database changes and need a **final verification** against the hosted project
+* there is evidence of **schema drift** (local vs remote mismatch) or uncertainty
+
+Credentials may be used **only to establish connections** — never as a source of schema truth.
+
+#### If connection or sync fails
+
+If you cannot confirm schema from migrations/local DB **or** cannot complete a required remote verification:
 
 * ❌ Do NOT guess
 * ❌ Do NOT simulate schema
@@ -44,16 +64,22 @@ If connection fails:
 Instead:
 
 1. Stop immediately
-2. Explain **why** the connection failed
-3. Provide **exact, actionable steps** to resolve it
+2. Explain **why** verification failed
+3. Provide **exact, actionable steps** to restore verification (local sync and/or remote access)
 
-**DO NOT CONTINUE UNTIL CONNECTION IS RESTORED.**
+**DO NOT CONTINUE UNTIL VERIFICATION IS RESTORED.**
 
 ---
 
 ## 🗄️ REQUIRED DB SNAPSHOT (ONLY WHEN SCHEMA / RLS IS IMPACTED)
 
-When a task impacts database structure or access control, you **MUST base decisions on a verified snapshot** of the current database.
+When a task impacts database structure or access control, you **MUST base decisions on a verified snapshot**.
+
+### Preferred sources (in order)
+
+1. **Repo migrations** (authoritative history)
+2. **Local Supabase DB (Docker)** built from migrations (authoritative current state)
+3. **Hosted Supabase DB** (verification when needed)
 
 ### Minimum required understanding:
 
@@ -69,7 +95,11 @@ When a task impacts database structure or access control, you **MUST base decisi
 * Functions and triggers
 * Enums and extensions
 
-You are not required to always output the full snapshot, but your solution **must be derived from it**.
+### Output rule
+
+* You are **not required** to print a full schema dump.
+* Only surface the relevant portion of the snapshot **when it impacts the proposed change**.
+* Your solution **must be derived from verified sources above**.
 
 ---
 
@@ -78,7 +108,16 @@ You are not required to always output the full snapshot, but your solution **mus
 * **All database changes MUST be implemented via migrations**
 * Manual or implicit changes are not acceptable
 
-### If you cannot apply a migration yourself:
+### Local-first change workflow
+
+When proposing database changes, you should assume this workflow:
+
+1. Create / update **versioned migrations** in the repo
+2. Apply them to the **local Supabase DB (Docker)**
+3. Validate behavior locally (including RLS implications)
+4. If the change is destined for production, perform a **final remote verification** step as required
+
+### If you cannot apply migrations yourself
 
 * Provide the **exact SQL migration** required
 * Clearly explain **why** you cannot apply it

@@ -314,6 +314,12 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-071 | Supervisor: UI condicional basada en roles asignados (user_roles) | REQ-037, REQ-038, REQ-039 | 2 | TASK-001c, TASK-002b |
 | TASK-072 | Testing integración end-to-end | - | 3 | All |
 
+### Backlog: Optimizaciones
+
+| ID | Tarea | Descripción | Esfuerzo | Prioridad |
+|----|-------|-------------|----------|-----------|
+| OPT-001 | Optimizar API `/api/asesor-ventas/orders` | Actualmente obtiene TODAS las órdenes para calcular resumen, luego pagina en JS. Separar en 2 queries: una para datos paginados y otra para summary. Reduce tiempo de 6-12s a <1s | 2 | Media |
+
 ---
 
 ## Evaluación Factibilidad 1 Mes
