@@ -6,91 +6,95 @@ export async function GET(request: NextRequest) {
     // Obtener cliente autenticado y tenant_id
     const { supabase, tenantId } = await getAuthenticatedServiceClient();
 
-    console.log('API Route - getDashboardMetrics:', { tenantId });
+    // Calcular fecha de inicio del mes actual (para filtrar en SQL)
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    currentMonth.setHours(0, 0, 0, 0);
+    const monthStart = currentMonth.toISOString();
 
-    // Ejecutar consultas en paralelo para obtener métricas
+    // Ejecutar TODAS las consultas en paralelo con filtros en SQL
     const [
       brandsResponse,
       clientsResponse,
       usersResponse,
-      visitsResponse,
-      ordersResponse
+      totalVisitsResponse,
+      monthlyVisitsResponse,
+      totalOrdersResponse,
+      monthlyOrdersResponse
     ] = await Promise.all([
-      // Brands activas
+      // Brands activas - solo conteo
       supabase
         .from('brands')
-        .select('id', { count: 'exact' })
+        .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenantId)
         .eq('status', 'active')
         .is('deleted_at', null),
 
-      // Clientes activos
+      // Clientes activos - solo conteo
       supabase
         .from('clients')
-        .select('id', { count: 'exact' })
+        .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenantId)
         .eq('status', 'active')
         .is('deleted_at', null),
 
-      // Usuarios activos
+      // Usuarios activos - solo conteo
       supabase
         .from('user_profiles')
-        .select('id', { count: 'exact' })
+        .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenantId)
         .eq('status', 'active')
         .is('deleted_at', null),
 
-      // Visitas del mes
+      // Total de visitas - solo conteo
       supabase
         .from('visits')
-        .select('id, created_at', { count: 'exact' })
+        .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenantId)
         .is('deleted_at', null),
 
-      // Órdenes recientes
+      // Visitas del mes actual - filtrado en SQL
+      supabase
+        .from('visits')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .gte('created_at', monthStart)
+        .is('deleted_at', null),
+
+      // Total de órdenes - solo conteo
       supabase
         .from('orders')
-        .select('id, total_amount, created_at', { count: 'exact' })
+        .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenantId)
+        .is('deleted_at', null),
+
+      // Órdenes del mes actual con total_amount - filtrado en SQL
+      supabase
+        .from('orders')
+        .select('total_amount')
+        .eq('tenant_id', tenantId)
+        .gte('created_at', monthStart)
         .is('deleted_at', null)
     ]);
 
-    // Procesar resultados
-    const brands = brandsResponse.data || [];
-    const clients = clientsResponse.data || [];
-    const users = usersResponse.data || [];
-    const visits = visitsResponse.data || [];
-    const orders = ordersResponse.data || [];
-
-    // Calcular visitas del mes actual
-    const currentMonth = new Date();
-    currentMonth.setDate(1);
-    const monthlyVisits = visits.filter(visit =>
-      new Date(visit.created_at) >= currentMonth
-    ).length;
-
-    // Calcular revenue del mes
-    const monthlyOrders = orders.filter(order =>
-      new Date(order.created_at) >= currentMonth
-    );
+    // Calcular revenue del mes (solo de órdenes del mes, ya filtradas en SQL)
+    const monthlyOrders = monthlyOrdersResponse.data || [];
     const monthlyRevenue = monthlyOrders.reduce((sum, order) =>
       sum + (order.total_amount || 0), 0
     );
 
     const metrics = {
       totalBrands: brandsResponse.count || 0,
-      activeBrands: brands.length,
+      activeBrands: brandsResponse.count || 0,
       totalClients: clientsResponse.count || 0,
-      activeClients: clients.length,
+      activeClients: clientsResponse.count || 0,
       totalUsers: usersResponse.count || 0,
-      activeUsers: users.length,
-      totalVisits: visitsResponse.count || 0,
-      monthlyVisits,
-      totalOrders: ordersResponse.count || 0,
+      activeUsers: usersResponse.count || 0,
+      totalVisits: totalVisitsResponse.count || 0,
+      monthlyVisits: monthlyVisitsResponse.count || 0,
+      totalOrders: totalOrdersResponse.count || 0,
       monthlyRevenue
     };
-
-    console.log('API Route - metrics result:', metrics);
 
     return Response.json(metrics);
 

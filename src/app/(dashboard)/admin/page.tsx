@@ -33,19 +33,17 @@ export default function AdminDashboard() {
       // Check if aborted before making requests
       if (signal?.aborted) return
 
-      // Obtener métricas del dashboard desde Supabase
-      const metricsResponse = await adminService.getDashboardMetrics();
+      // Ejecutar AMBAS llamadas en paralelo para mejor rendimiento
+      const [metricsResponse, activityResponse] = await Promise.all([
+        adminService.getDashboardMetrics(),
+        adminService.getRecentActivity(5)
+      ])
 
       if (signal?.aborted) return
 
       if (metricsResponse.error) {
         throw new Error(metricsResponse.error);
       }
-
-      // Obtener actividad reciente desde Supabase
-      const activityResponse = await adminService.getRecentActivity(5);
-
-      if (signal?.aborted) return
 
       if (activityResponse.error) {
         console.warn('Error loading recent activity:', activityResponse.error);

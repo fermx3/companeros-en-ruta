@@ -316,9 +316,10 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 
 ### Backlog: Optimizaciones
 
-| ID | Tarea | Descripción | Esfuerzo | Prioridad |
-|----|-------|-------------|----------|-----------|
-| OPT-001 | Optimizar API `/api/asesor-ventas/orders` | Actualmente obtiene TODAS las órdenes para calcular resumen, luego pagina en JS. Separar en 2 queries: una para datos paginados y otra para summary. Reduce tiempo de 6-12s a <1s | 2 | Media |
+| ID | Tarea | Descripción | Esfuerzo | Prioridad | Estado |
+|----|-------|-------------|----------|-----------|--------|
+| OPT-001 | Optimizar API `/api/asesor-ventas/orders` | Actualmente obtiene TODAS las órdenes para calcular resumen, luego pagina en JS. Separar en 2 queries: una para datos paginados y otra para summary. Reduce tiempo de 6-12s a <1s | 2 | Media | Pendiente |
+| OPT-002 | ~~Optimizar API `/api/admin/metrics`~~ | ~~Traía TODAS las visitas y órdenes, luego filtraba en JS. Ahora usa filtros SQL `.gte('created_at', monthStart)` y `head: true` para counts. Llamadas paralelizadas en frontend.~~ | 1 | Alta | **DONE** |
 
 ---
 
