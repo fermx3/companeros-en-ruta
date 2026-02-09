@@ -256,12 +256,12 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-005 | Crear hook useGeolocation | REQ-003 | 1 | - |
 | TASK-006 | Crear componente CameraCapture con preview | REQ-004, REQ-091 | 3 | - |
 | TASK-007 | Crear servicio file upload a Supabase Storage | REQ-092 | 2 | TASK-004 |
-| TASK-010 | Crear tabla qr_codes (migration) con max_redemptions | REQ-071, REQ-075 | 2 | - |
-| TASK-010b | Crear tabla qr_redemptions (track múltiples redenciones) | REQ-071b | 2 | TASK-010 |
-| TASK-011 | Crear servicio generación QR (qrcode.react) | REQ-070 | 2 | TASK-010 |
-| TASK-012 | Crear componente QRCodeDisplay | REQ-046 | 2 | TASK-011 |
-| TASK-013 | Crear componente QRScanner (html5-qrcode) | REQ-072 | 3 | - |
-| TASK-014 | Crear API redención QR (lógica "primero en escanear gana" + multi-uso) | REQ-073, REQ-075 | 4 | TASK-010, TASK-010b, TASK-013 |
+| TASK-010 | ~~Crear tabla qr_codes (migration) con max_redemptions~~ | REQ-071, REQ-075 | 2 | - | **DONE** |
+| TASK-010b | ~~Crear tabla qr_redemptions (track múltiples redenciones)~~ | REQ-071b | 2 | TASK-010 | **DONE** |
+| TASK-011 | ~~Crear servicio generación QR (qrcode.react)~~ | REQ-070 | 2 | TASK-010 | **DONE** |
+| TASK-012 | ~~Crear componente QRCodeDisplay~~ | REQ-046 | 2 | TASK-011 | **DONE** |
+| TASK-013 | ~~Crear componente QRScanner (html5-qrcode)~~ | REQ-072 | 3 | - | **DONE** |
+| TASK-014 | ~~Crear API redención QR (lógica "primero en escanear gana" + multi-uso)~~ | REQ-073, REQ-075 | 4 | TASK-010, TASK-010b, TASK-013 | **DONE** |
 
 ### Semana 2: Promociones y Cliente (P0 Features)
 
@@ -693,9 +693,9 @@ Para validar la implementación:
 - [x] `rewards` - Rewards catalog
 
 ### NUEVAS TABLAS REQUERIDAS
-- [ ] `distributors` - Catálogo distribuidores
-- [ ] `qr_codes` - Códigos QR generados
-- [ ] `qr_redemptions` - Historial redenciones QR
+- [x] `distributors` - Catálogo distribuidores
+- [x] `qr_codes` - Códigos QR generados
+- [x] `qr_redemptions` - Historial redenciones QR
 - [ ] `notifications` - Notificaciones sistema
 - [ ] `surveys` - Encuestas
 - [ ] `survey_questions` - Preguntas encuestas
