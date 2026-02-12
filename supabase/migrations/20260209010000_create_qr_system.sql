@@ -325,12 +325,12 @@ CREATE TRIGGER trigger_set_qr_code
 CREATE TRIGGER trigger_qr_codes_updated_at
   BEFORE UPDATE ON qr_codes
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at();
+  EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trigger_qr_redemptions_updated_at
   BEFORE UPDATE ON qr_redemptions
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at();
+  EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
 -- RLS POLICIES
