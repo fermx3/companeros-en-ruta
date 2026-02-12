@@ -137,9 +137,9 @@ export async function GET() {
 
     // 5. Obtener clientes asignados
     const { data: assignedClients } = await supabase
-      .from('promotor_client_assignments')
+      .from('client_assignments')
       .select('id')
-      .eq('promotor_id', userProfile.id)
+      .eq('user_profile_id', userProfile.id)
       .eq('is_active', true)
 
     const totalAssignedClients = assignedClients?.length || 0

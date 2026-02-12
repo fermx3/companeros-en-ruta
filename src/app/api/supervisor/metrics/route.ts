@@ -101,9 +101,9 @@ export async function GET() {
 
         // Get promotor's client count
         const { count: clientCount } = await supabase
-          .from('promotor_client_assignments')
+          .from('client_assignments')
           .select('id', { count: 'exact', head: true })
-          .eq('promotor_id', profile.id)
+          .eq('user_profile_id', profile.id)
           .eq('is_active', true)
 
         // Get promotor's visit stats

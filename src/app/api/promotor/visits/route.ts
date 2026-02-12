@@ -148,9 +148,9 @@ export async function GET(request: NextRequest) {
 
     // Get assigned clients count
     const { count: totalClients } = await supabase
-      .from('promotor_client_assignments')
+      .from('client_assignments')
       .select('id', { count: 'exact', head: true })
-      .eq('promotor_id', promotorId)
+      .eq('user_profile_id', promotorId)
       .eq('is_active', true)
 
     // Get monthly quota from promotor_assignments
@@ -229,9 +229,9 @@ export async function POST(request: NextRequest) {
     }
     // Validate client is assigned to this promotor and get the assignment's brand_id
     const { data: assignment, error: assignmentError } = await supabase
-      .from('promotor_client_assignments')
+      .from('client_assignments')
       .select('id, brand_id')
-      .eq('promotor_id', promotorId)
+      .eq('user_profile_id', promotorId)
       .eq('client_id', client_id)
       .eq('is_active', true)
       .single()

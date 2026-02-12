@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Compañeros en Ruta - Design System Colors */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-primary: oklch(0.64 0.24 25);           /* Naranja #FF5722 */
+  --color-primary-foreground: oklch(1 0 0);       /* Blanco */
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
+  --color-secondary: oklch(0.65 0.22 245);        /* Azul #2196F3 */
+  --color-secondary-foreground: oklch(1 0 0);     /* Blanco */
+
+  --color-accent: oklch(0.64 0.18 145);           /* Verde #4CAF50 */
+  --color-accent-foreground: oklch(1 0 0);        /* Blanco */
+
+  --color-warning: oklch(0.78 0.18 80);           /* Amarillo/Oro #FFB300 */
+
+  --color-background: oklch(0.98 0 0);            /* Fondo principal */
+  --color-foreground: oklch(0.2 0 0);             /* Texto principal */
+
+  --color-card: oklch(1 0 0);                     /* Fondo de cards */
+  --color-card-foreground: oklch(0.2 0 0);        /* Texto en cards */
+
+  --color-muted: oklch(0.96 0.01 250);            /* Fondos sutiles */
+  --color-muted-foreground: oklch(0.55 0 0);      /* Texto muted */
+
+  --color-border: oklch(0.91 0.01 250);           /* Bordes */
+  --color-input: oklch(0.91 0.01 250);            /* Input borders */
+  --color-ring: oklch(0.64 0.24 25);              /* Focus ring (primary) */
+
+  --color-destructive: oklch(0.62 0.25 25);       /* Rojo para destructive */
+  --color-destructive-foreground: oklch(1 0 0);   /* Blanco */
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  font-variation-settings: 'opsz' 32;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-muted-foreground) 30%, transparent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
 }

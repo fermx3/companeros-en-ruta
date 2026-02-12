@@ -77,9 +77,9 @@ export async function PUT(
     } else if (supervisorOrPromotorRole) {
       // Supervisors and promotors can only approve for clients assigned to them
       const { data: assignment } = await supabase
-        .from('promotor_client_assignments')
+        .from('client_assignments')
         .select('id')
-        .eq('promotor_id', userProfile.id)
+        .eq('user_profile_id', userProfile.id)
         .eq('client_id', membership.client_id)
         .eq('is_active', true)
         .is('deleted_at', null)
