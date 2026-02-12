@@ -53,6 +53,13 @@ You **MUST connect to the hosted Supabase project** only when:
 
 Credentials may be used **only to establish connections** — never as a source of schema truth.
 
+#### Available database scripts
+
+For local database management, the following scripts are available:
+
+* **Import local backup**: `bash ./scripts/import_local_backup.sh` - Imports code/data to the local database
+* **Export remote backup**: `bash ./scripts/export_remote_backup.sh` - Exports data from remote database
+
 #### If connection or sync fails
 
 If you cannot confirm schema from migrations/local DB **or** cannot complete a required remote verification:
