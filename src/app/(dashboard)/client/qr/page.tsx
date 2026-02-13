@@ -5,16 +5,14 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
-import { QRCodeDisplay } from '@/components/qr/QRCodeDisplay'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { QRCouponCard } from '@/components/qr/qr-coupon-card'
+import { BrandCarousel } from '@/components/qr/brand-carousel'
 import {
   QrCode,
   Plus,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Building2,
-  History
+  ChevronLeft,
+  Building2
 } from 'lucide-react'
 
 interface QRCode {
@@ -42,48 +40,9 @@ interface ClientMembership {
   membership_status: string
 }
 
-function getStatusConfig(status: string) {
-  const configs = {
-    active: {
-      label: 'Activo',
-      className: 'bg-green-100 text-green-800',
-      icon: CheckCircle2,
-      iconColor: 'text-green-600'
-    },
-    fully_redeemed: {
-      label: 'Canjeado',
-      className: 'bg-blue-100 text-blue-800',
-      icon: CheckCircle2,
-      iconColor: 'text-blue-600'
-    },
-    expired: {
-      label: 'Expirado',
-      className: 'bg-gray-100 text-gray-800',
-      icon: Clock,
-      iconColor: 'text-gray-600'
-    },
-    cancelled: {
-      label: 'Cancelado',
-      className: 'bg-red-100 text-red-800',
-      icon: XCircle,
-      iconColor: 'text-red-600'
-    }
-  }
-  return configs[status as keyof typeof configs] || configs.active
-}
-
-function formatDate(dateString: string | null) {
-  if (!dateString) return null
-  return new Date(dateString).toLocaleDateString('es-MX', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  })
-}
-
 function formatDiscount(type: string | null, value: number | null, description: string | null) {
   if (description) return description
-  if (!type || !value) return 'QR de identificación'
+  if (!type || !value) return 'Cupón de descuento'
 
   switch (type) {
     case 'percentage':
@@ -107,6 +66,7 @@ export default function ClientQRPage() {
   const [qrCodes, setQRCodes] = useState<QRCode[]>([])
   const [memberships, setMemberships] = useState<ClientMembership[]>([])
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'activos' | 'usados'>('activos')
 
   const loadData = useCallback(async () => {
     try {
@@ -197,10 +157,21 @@ export default function ClientQRPage() {
   // Get history (non-active QRs)
   const historyQRs = qrCodes.filter(qr => qr.status !== 'active')
 
-  // Track which promotions already have active QRs (to prevent duplicates)
-  const activePromotionIds = activeQRs
-    .filter(qr => qr.promotion?.id)
-    .map(qr => qr.promotion!.id)
+  // Filter by selected brand
+  const filteredActiveQRs = selectedBrandId
+    ? activeQRs.filter(qr => qr.brand?.id === selectedBrandId)
+    : activeQRs
+
+  const filteredHistoryQRs = selectedBrandId
+    ? historyQRs.filter(qr => qr.brand?.id === selectedBrandId)
+    : historyQRs
+
+  // Get brands from memberships for carousel
+  const brands = memberships.map(m => ({
+    id: m.brand_id,
+    name: m.brand_name,
+    logo_url: m.brand_logo_url
+  }))
 
   if (loading) {
     return (
@@ -211,44 +182,34 @@ export default function ClientQRPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <nav className="flex mb-4" aria-label="Breadcrumb">
-              <ol className="flex items-center space-x-4">
-                <li>
-                  <Link href="/client" className="text-gray-400 hover:text-gray-500">
-                    Mi Portal
-                  </Link>
-                </li>
-                <li>
-                  <div className="flex items-center">
-                    <svg className="flex-shrink-0 h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="ml-4 text-gray-900 font-medium">Mi Código QR</span>
-                  </div>
-                </li>
-              </ol>
-            </nav>
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <QrCode className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Mi Código QR</h1>
-                <p className="text-gray-600">
-                  Genera y administra tus códigos QR para promociones
-                </p>
+          <div className="py-4">
+            <div className="flex items-center gap-3">
+              <Link href="/client">
+                <Button variant="ghost" size="icon" className="h-10 w-10">
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <QrCode className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Mis Cupones QR</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Administra tus cupones de descuento
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Alerts */}
         {error && (
           <Alert variant="error" className="mb-6" onClose={() => setError(null)}>
@@ -261,195 +222,15 @@ export default function ClientQRPage() {
           </Alert>
         )}
 
-        {/* Active QRs Section */}
-        {activeQRs.length > 0 && activeQRs.map((activeQR) => (
-          <div key={activeQR.id} className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              {activeQRs.length === 1 ? 'Tu código QR activo' : `Código QR - ${activeQR.promotion?.name || activeQR.code}`}
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* QR Display */}
-              <QRCodeDisplay
-                value={activeQR.code}
-                size={220}
-                title="Muestra este código al asesor"
-                description="El asesor de ventas escaneará este código para aplicar tu promoción"
-                info={[
-                  {
-                    label: 'Código',
-                    value: activeQR.code
-                  },
-                  {
-                    label: 'Descuento',
-                    value: formatDiscount(activeQR.discount_type, activeQR.discount_value, activeQR.discount_description)
-                  },
-                  {
-                    label: 'Válido hasta',
-                    value: formatDate(activeQR.valid_until) || 'Sin fecha límite'
-                  },
-                  {
-                    label: 'Usos',
-                    value: `${activeQR.redemption_count}/${activeQR.max_redemptions}`
-                  }
-                ]}
-                showDownload={true}
-                showCopy={true}
-              />
-
-              {/* QR Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Información del QR</CardTitle>
-                  <CardDescription>
-                    Detalles y estado de tu código
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Status */}
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      <span className="font-medium text-green-900">Estado</span>
-                    </div>
-                    <span className="px-2 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full">
-                      Activo
-                    </span>
-                  </div>
-
-                  {/* Brand */}
-                  {activeQR.brand && (
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <Building2 className="h-5 w-5 text-gray-600" />
-                        <span className="font-medium text-gray-900">Marca</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {activeQR.brand.logo_url && (
-                          <img
-                            src={activeQR.brand.logo_url}
-                            alt={activeQR.brand.name}
-                            className="h-6 w-6 rounded-full object-cover"
-                          />
-                        )}
-                        <span className="text-gray-700">{activeQR.brand.name}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Created */}
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-5 w-5 text-gray-600" />
-                      <span className="font-medium text-gray-900">Creado</span>
-                    </div>
-                    <span className="text-gray-700">
-                      {formatDate(activeQR.created_at)}
-                    </span>
-                  </div>
-
-                  {/* Tip */}
-                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                    <div className="flex">
-                      <AlertCircle className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
-                      <div className="text-sm text-blue-800">
-                        <p className="font-medium">Consejo</p>
-                        <p className="mt-1">
-                          Descarga tu código QR para tenerlo siempre disponible, incluso sin conexión a internet.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        ))}
-
-        {/* No Active QR - Generate Section */}
-        {activeQRs.length === 0 && (
-          <Card className="mb-8">
-            <CardContent className="p-8 text-center">
-              <div className="mx-auto h-16 w-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                <QrCode className="h-8 w-8 text-purple-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No tienes un código QR activo
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Genera un código QR para que el asesor de ventas pueda aplicar promociones y descuentos en tu próxima compra.
-              </p>
-
-              {memberships.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Brand Selection */}
-                  {memberships.length > 1 && (
-                    <div className="max-w-sm mx-auto">
-                      <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
-                        Selecciona una marca
-                      </label>
-                      <select
-                        value={selectedBrandId || ''}
-                        onChange={(e) => setSelectedBrandId(e.target.value || null)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      >
-                        <option value="">Selecciona una marca...</option>
-                        {memberships.map((m) => (
-                          <option key={m.brand_id} value={m.brand_id}>
-                            {m.brand_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  <Button
-                    onClick={generateQR}
-                    disabled={generating || (memberships.length > 1 && !selectedBrandId)}
-                    className="bg-purple-600 hover:bg-purple-700"
-                    size="lg"
-                  >
-                    {generating ? (
-                      <>
-                        <LoadingSpinner size="sm" className="mr-2" />
-                        Generando...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-5 w-5 mr-2" />
-                        Generar Código QR
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="p-4 bg-yellow-50 rounded-lg inline-block">
-                    <p className="text-sm text-yellow-800">
-                      No tienes membresías activas. Únete a una marca para generar códigos QR.
-                    </p>
-                  </div>
-                  <div>
-                    <Link href="/client/brands">
-                      <Button variant="outline">
-                        Ver Marcas Disponibles
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Generate New QR Button (when already has active) */}
-        {activeQRs.length > 0 && memberships.length > 0 && (
-          <Card className="mb-8">
-            <CardContent className="p-6">
+        {/* Generate New QR Button */}
+        {memberships.length > 0 && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h3 className="font-medium text-gray-900">Generar nuevo código</h3>
-                  <p className="text-sm text-gray-600">
-                    Puedes generar un nuevo código QR si lo necesitas
+                  <h3 className="font-medium text-gray-900">Generar nuevo cupón</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Crea un código QR para obtener descuentos
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -457,7 +238,7 @@ export default function ClientQRPage() {
                     <select
                       value={selectedBrandId || ''}
                       onChange={(e) => setSelectedBrandId(e.target.value || null)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      className="px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
                     >
                       <option value="">Selecciona marca...</option>
                       {memberships.map((m) => (
@@ -470,7 +251,7 @@ export default function ClientQRPage() {
                   <Button
                     onClick={generateQR}
                     disabled={generating || (memberships.length > 1 && !selectedBrandId)}
-                    variant="outline"
+                    size="default"
                   >
                     {generating ? (
                       <>
@@ -480,7 +261,7 @@ export default function ClientQRPage() {
                     ) : (
                       <>
                         <Plus className="h-4 w-4 mr-2" />
-                        Nuevo QR
+                        Generar
                       </>
                     )}
                   </Button>
@@ -490,79 +271,99 @@ export default function ClientQRPage() {
           </Card>
         )}
 
-        {/* History Section */}
-        {historyQRs.length > 0 && (
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <History className="h-5 w-5 text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Historial de códigos</h2>
-            </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'activos' | 'usados')}>
+          <TabsList>
+            <TabsTrigger value="activos">
+              Activos {filteredActiveQRs.length > 0 && <span className="ml-1">({filteredActiveQRs.length})</span>}
+            </TabsTrigger>
+            <TabsTrigger value="usados">
+              Usados
+            </TabsTrigger>
+          </TabsList>
 
-            <Card>
-              <CardContent className="p-0">
-                <div className="divide-y divide-gray-100">
-                  {historyQRs.map((qr) => {
-                    const statusConfig = getStatusConfig(qr.status)
-                    const StatusIcon = statusConfig.icon
+          {/* Active QRs Tab */}
+          <TabsContent value="activos">
+            {filteredActiveQRs.length === 0 ? (
+              <Card className="mt-6">
+                <CardContent className="py-12 text-center">
+                  <QrCode className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No tienes cupones activos</h3>
+                  <p className="text-muted-foreground mb-6">
+                    {selectedBrandId
+                      ? 'No hay cupones activos para esta marca'
+                      : 'Tus cupones de descuento aparecerán aquí'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4 mt-6">
+                {filteredActiveQRs.map((qr) => (
+                  <QRCouponCard
+                    key={qr.id}
+                    code={qr.code}
+                    brandName={qr.brand?.name || 'Sin marca'}
+                    brandLogoUrl={qr.brand?.logo_url}
+                    status={qr.status}
+                    createdAt={qr.created_at}
+                    description={formatDiscount(qr.discount_type, qr.discount_value, qr.discount_description)}
+                    validUntil={qr.valid_until}
+                    maxRedemptions={qr.max_redemptions}
+                    redemptionCount={qr.redemption_count}
+                    promotionName={qr.promotion?.name}
+                    size={180}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
-                    return (
-                      <div key={qr.id} className="p-4 hover:bg-gray-50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className={`h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center`}>
-                              <StatusIcon className={`h-5 w-5 ${statusConfig.iconColor}`} />
-                            </div>
-                            <div>
-                              <div className="flex items-center space-x-2">
-                                <span className="font-mono text-sm font-medium text-gray-900">
-                                  {qr.code}
-                                </span>
-                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusConfig.className}`}>
-                                  {statusConfig.label}
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
-                                {qr.brand && (
-                                  <span className="flex items-center">
-                                    <Building2 className="h-3 w-3 mr-1" />
-                                    {qr.brand.name}
-                                  </span>
-                                )}
-                                <span>
-                                  Creado: {formatDate(qr.created_at)}
-                                </span>
-                                <span>
-                                  Usos: {qr.redemption_count}/{qr.max_redemptions}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm text-gray-700">
-                              {formatDiscount(qr.discount_type, qr.discount_value, qr.discount_description)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+          {/* History/Used QRs Tab */}
+          <TabsContent value="usados">
+            {filteredHistoryQRs.length === 0 ? (
+              <Card className="mt-6">
+                <CardContent className="py-12 text-center">
+                  <QrCode className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No hay cupones usados</h3>
+                  <p className="text-muted-foreground">
+                    {selectedBrandId
+                      ? 'No hay cupones usados para esta marca'
+                      : 'Tu historial de cupones aparecerá aquí'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4 mt-6">
+                {filteredHistoryQRs.map((qr) => (
+                  <QRCouponCard
+                    key={qr.id}
+                    code={qr.code}
+                    brandName={qr.brand?.name || 'Sin marca'}
+                    brandLogoUrl={qr.brand?.logo_url}
+                    status={qr.status}
+                    createdAt={qr.created_at}
+                    description={formatDiscount(qr.discount_type, qr.discount_value, qr.discount_description)}
+                    validUntil={qr.valid_until}
+                    maxRedemptions={qr.max_redemptions}
+                    redemptionCount={qr.redemption_count}
+                    promotionName={qr.promotion?.name}
+                    size={180}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        {/* Brand Carousel */}
+        {brands.length > 1 && (
+          <div className="mt-8">
+            <BrandCarousel
+              brands={brands}
+              selectedBrandId={selectedBrandId}
+              onSelectBrand={setSelectedBrandId}
+            />
           </div>
-        )}
-
-        {/* Empty History */}
-        {qrCodes.length === 0 && (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <History className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Sin historial</h3>
-              <p className="mt-2 text-gray-500">
-                Aún no has generado ningún código QR. Genera tu primer código para empezar.
-              </p>
-            </CardContent>
-          </Card>
         )}
       </div>
     </div>

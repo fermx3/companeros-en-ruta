@@ -31,6 +31,12 @@ export { Label } from './label'
 export { Checkbox } from './checkbox'
 export { Textarea } from './textarea'
 
+export { Avatar } from './avatar'
+export type { AvatarProps, AvatarSize } from './avatar'
+
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs'
+export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './tabs'
+
 export {
     Dialog,
     DialogContent,
@@ -52,4 +58,3 @@ export {
 
 export { Toaster } from './toaster'
 export { Toast } from './toast'
-
