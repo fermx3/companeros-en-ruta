@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-02-08
+**Last Updated:** 2026-02-12
 **Target:** Implementación requerimientos PerfectApp según especificaciones cliente
 
 ---
@@ -303,11 +303,11 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-060 | Actualizar dashboard Promotor (antes Advisor) | REQ-020 | 2 | TASK-001c |
 | TASK-061 | Crear vista campañas asignadas para Promotor | REQ-021 | 2 | TASK-020 |
 | TASK-062 | Crear vista plan trabajo semanal | REQ-024 | 3 | TASK-060 |
-| TASK-063 | **VISITA Sección 1:** Assessment Producto-Empaque-Precio | REQ-022a | 4 | TASK-006 |
+| TASK-063 | **VISITA Sección 1:** Assessment Producto-Empaque-Precio *(Wizard Step 1)* | REQ-022a | 4 | TASK-006 |
 | TASK-063b | UI dinámica por marca/sub-marca + agregar competidor | REQ-025 | 3 | TASK-063 |
-| TASK-064 | **VISITA Sección 2:** Promoción del mes (inventario, orden compra) | REQ-022b | 3 | TASK-063 |
-| TASK-065 | **VISITA Sección 3:** Plan comunicación (materiales, exhibiciones) | REQ-022c | 3 | TASK-064 |
-| TASK-066 | Integrar 3 secciones en flujo check-in/check-out existente | REQ-022 | 3 | TASK-063, 064, 065 |
+| TASK-064 | **VISITA Sección 2:** Promoción del mes (inventario, orden compra) *(Wizard Step 2)* | REQ-022b | 3 | TASK-063 |
+| TASK-065 | **VISITA Sección 3:** Plan comunicación (materiales, exhibiciones) *(Wizard Step 3)* | REQ-022c | 3 | TASK-064 |
+| TASK-066 | **Integrar 3 secciones como WIZARD SECUENCIAL** en flujo check-in/check-out. Ver UX-001 para referencia de implementación (similar a `/brand/promotions/create`) | REQ-022 | 3 | TASK-063, 064, 065 |
 | TASK-066b | Integrar carga de pedidos dentro del flujo de visita (Promotor) | REQ-026 | 3 | TASK-066 |
 | TASK-067 | Brand Manager: Configuración sub-marcas para assessment | REQ-025 | 3 | - |
 | TASK-070 | Integrar visitas/documentación en Asesor de Ventas | REQ-034 | 3 | TASK-002b |
@@ -320,6 +320,13 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 |----|-------|-------------|----------|-----------|--------|
 | OPT-001 | Optimizar API `/api/asesor-ventas/orders` | Actualmente obtiene TODAS las órdenes para calcular resumen, luego pagina en JS. Separar en 2 queries: una para datos paginados y otra para summary. Reduce tiempo de 6-12s a <1s | 2 | Media | Pendiente |
 | OPT-002 | ~~Optimizar API `/api/admin/metrics`~~ | ~~Traía TODAS las visitas y órdenes, luego filtraba en JS. Ahora usa filtros SQL `.gte('created_at', monthStart)` y `head: true` para counts. Llamadas paralelizadas en frontend.~~ | 1 | Alta | **DONE** |
+
+### Backlog: UX/UI Enhancements
+
+| ID | Tarea | Descripción | Esfuerzo | Prioridad | Estado |
+|----|-------|-------------|----------|-----------|--------|
+| UX-001 | **Flujo Visita con Wizard Secuencial** | Implementar el flujo de visita (Assessment 3 secciones) como wizard multi-step similar al formulario de promociones (`/brand/promotions/create`). **IMPORTANTE:** El orden de los pasos es crítico porque el proceso debe seguirse secuencialmente. Referencia de implementación: `/src/app/(dashboard)/brand/promotions/create/page.tsx`. Incluir: (1) Progress indicator visual, (2) Validación por paso antes de avanzar, (3) Botones Anterior/Siguiente, (4) Resumen final antes de completar | 4 | Alta | Pendiente |
+| UX-001b | **Integrar Wizard en Check-in/Check-out** | El wizard de TASK-063/064/065 debe integrarse dentro del flujo existente de visitas. Secuencia: Check-in → Sección 1 (Producto-Empaque-Precio) → Sección 2 (Promoción del mes) → Sección 3 (Comunicación) → Check-out. No permitir check-out sin completar todas las secciones | 3 | Alta | Pendiente |
 
 ---
 
@@ -388,15 +395,23 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
   - qr/history/route.ts (historial para facturación)
 ```
 
-### FLUJO VISITA (3 Secciones Assessment)
+### FLUJO VISITA (3 Secciones Assessment - WIZARD SECUENCIAL)
 ```
+REFERENCIA DE IMPLEMENTACIÓN WIZARD:
+  /src/app/(dashboard)/brand/promotions/create/page.tsx
+  (Usar mismo patrón de wizard multi-step con progress indicator)
+
 /src/components/visits/
-  - VisitAssessmentFlow.tsx (wizard 3 pasos)
-  - AssessmentProductoPrecio.tsx (Sección 1)
-  - AssessmentPromocionMes.tsx (Sección 2)
-  - AssessmentComunicacion.tsx (Sección 3)
+  - VisitAssessmentWizard.tsx (wizard 3 pasos - SECUENCIAL, orden importa)
+  - AssessmentProductoPrecio.tsx (Sección 1 / Step 1)
+  - AssessmentPromocionMes.tsx (Sección 2 / Step 2)
+  - AssessmentComunicacion.tsx (Sección 3 / Step 3)
 /src/app/(dashboard)/promotor/visitas/[visitId]/assessment/
-  - page.tsx (flujo integrado check-in → assessment → check-out)
+  - page.tsx (flujo integrado check-in → wizard assessment → check-out)
+
+FLUJO SECUENCIAL:
+  Check-in → Step 1 → Step 2 → Step 3 → Resumen → Check-out
+  (No permitir saltar pasos ni check-out sin completar todas las secciones)
 ```
 
 ### CONFIGURACIÓN SUB-MARCAS
