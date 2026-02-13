@@ -1,11 +1,11 @@
-import * as React from 'react'
-import { cn } from '@/lib/utils'
-import { Button, ButtonProps } from './button'
+import React from 'react'
 import { Loader2 } from 'lucide-react'
+import { Button, type ButtonProps } from './button'
+import { cn } from '@/lib/utils'
 
-interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'size'> {
+export interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'size'> {
     variant?: 'primary' | 'secondary' | 'ghost' | 'destructive'
-    size?: 'sm' | 'default' | 'lg' | 'icon'
+    size?: 'sm' | 'md' | 'lg' | 'icon'
     icon?: React.ReactNode
     loading?: boolean
     fullWidth?: boolean
@@ -13,7 +13,7 @@ interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'size'> {
 
 export function ActionButton({
     variant = 'primary',
-    size = 'default',
+    size = 'md',
     icon,
     loading,
     fullWidth,
@@ -41,7 +41,7 @@ export function ActionButton({
 
                     // Sizes
                     'h-8 px-3 text-sm': size === 'sm',
-                    'h-10 px-4': size === 'default',
+                    'h-10 px-4': size === 'md',
                     'h-12 px-6 text-lg': size === 'lg',
                     'h-10 w-10 p-0': size === 'icon',
 

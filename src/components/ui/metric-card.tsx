@@ -1,16 +1,44 @@
-import * as React from 'react'
-import { cn } from '@/lib/utils'
-import { Card } from './Card'
+import React from 'react'
 import { TrendingUp, TrendingDown } from 'lucide-react'
+import { Card } from './Card'
+import { cn } from '@/lib/utils'
+import type { TrendType, VariantType } from '@/types/ui'
 
-interface MetricCardProps {
+export interface MetricCardProps {
     title: string
     value: string | number
     change?: string
-    trend?: 'up' | 'down' | 'neutral'
+    trend?: TrendType
     icon?: React.ReactNode
-    variant?: 'default' | 'primary' | 'success' | 'warning'
+    variant?: VariantType
+    loading?: boolean
+    error?: string | null
     className?: string
+}
+
+function MetricCardSkeleton() {
+    return (
+        <Card className="p-6 rounded-2xl border-0 shadow-sm animate-pulse">
+            <div className="flex items-center justify-between">
+                <div className="space-y-2 flex-1">
+                    <div className="h-4 bg-muted rounded w-24" />
+                    <div className="h-8 bg-muted rounded w-32" />
+                    <div className="h-4 bg-muted rounded w-16" />
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-muted" />
+            </div>
+        </Card>
+    )
+}
+
+function MetricCardError({ error }: { error: string }) {
+    return (
+        <Card className="p-6 rounded-2xl border-0 shadow-sm border-destructive/50">
+            <div className="text-sm text-destructive">
+                Error: {error}
+            </div>
+        </Card>
+    )
 }
 
 export function MetricCard({
@@ -20,15 +48,24 @@ export function MetricCard({
     trend,
     icon,
     variant = 'default',
+    loading,
+    error,
     className
 }: MetricCardProps) {
+    // Handle loading state
+    if (loading) return <MetricCardSkeleton />
+
+    // Handle error state
+    if (error) return <MetricCardError error={error} />
+
     return (
         <Card className={cn(
-            "p-6 rounded-2xl border-0 shadow-sm",
+            "p-6 rounded-2xl border-0 shadow-sm transition-all duration-200 hover:shadow-md",
             {
                 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground': variant === 'primary',
                 'bg-gradient-to-br from-green-500 to-green-600 text-white': variant === 'success',
-                'bg-gradient-to-br from-amber-500 to-amber-600 text-white': variant === 'warning'
+                'bg-gradient-to-br from-amber-500 to-amber-600 text-white': variant === 'warning',
+                'bg-card': variant === 'default'
             },
             className
         )}>
@@ -36,7 +73,7 @@ export function MetricCard({
                 <div className="space-y-2">
                     <p className={cn(
                         "text-sm font-medium",
-                        variant === 'default' ? 'text-gray-500' : 'opacity-80'
+                        variant === 'default' ? 'text-muted-foreground' : 'opacity-80'
                     )}>
                         {title}
                     </p>
@@ -52,7 +89,7 @@ export function MetricCard({
                 {icon && (
                     <div className={cn(
                         "h-12 w-12 rounded-xl flex items-center justify-center",
-                        variant === 'default' ? 'bg-gray-100' : 'bg-white/20'
+                        variant === 'default' ? 'bg-primary/10 text-primary' : 'bg-white/20'
                     )}>
                         {icon}
                     </div>
