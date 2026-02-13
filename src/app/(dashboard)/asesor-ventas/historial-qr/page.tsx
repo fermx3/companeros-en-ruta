@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
-import { Button } from '@/components/ui/button'
+import { MetricCard } from '@/components/ui/metric-card'
+import { ActionButton } from '@/components/ui/action-button'
 import { LoadingSpinner, Alert, EmptyState } from '@/components/ui/feedback'
+import { Input } from '@/components/ui/input'
 import {
   History,
   ArrowLeft,
@@ -15,7 +17,9 @@ import {
   MapPin,
   CheckCircle2,
   Clock,
-  Filter
+  Filter,
+  Download,
+  FileText
 } from 'lucide-react'
 
 interface QRRedemption {
@@ -45,6 +49,9 @@ export default function HistorialQRPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
+  const [exporting, setExporting] = useState(false)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   useEffect(() => {
     const loadRedemptions = async () => {
@@ -74,23 +81,26 @@ export default function HistorialQRPage() {
 
   // Filter redemptions
   const filteredRedemptions = redemptions.filter(r => {
-    if (filter === 'all') return true
-
     const date = new Date(r.redeemed_at)
     const now = new Date()
 
+    // Apply preset filter
     if (filter === 'today') {
-      return date.toDateString() === now.toDateString()
-    }
-
-    if (filter === 'week') {
+      if (date.toDateString() !== now.toDateString()) return false
+    } else if (filter === 'week') {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      return date >= weekAgo
+      if (date < weekAgo) return false
+    } else if (filter === 'month') {
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      if (date < monthAgo) return false
     }
 
-    if (filter === 'month') {
-      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      return date >= monthAgo
+    // Apply custom date range
+    if (startDate && date < new Date(startDate)) return false
+    if (endDate) {
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      if (date > end) return false
     }
 
     return true
@@ -105,6 +115,41 @@ export default function HistorialQRPage() {
     totalValue: redemptions
       .filter(r => r.status === 'completed' && r.discount_value)
       .reduce((sum, r) => sum + (r.discount_value || 0), 0)
+  }
+
+  // Handle export
+  const handleExport = async () => {
+    setExporting(true)
+    setError(null)
+
+    try {
+      const params = new URLSearchParams()
+      if (startDate) params.append('start_date', startDate)
+      if (endDate) params.append('end_date', endDate)
+
+      const response = await fetch(`/api/asesor-ventas/qr-history/export?${params}`)
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Error al exportar datos')
+      }
+
+      // Download CSV file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `facturacion_qr_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('Error exporting:', err)
+      setError(err instanceof Error ? err.message : 'Error al exportar')
+    } finally {
+      setExporting(false)
+    }
   }
 
   // Format discount
@@ -204,12 +249,23 @@ export default function HistorialQRPage() {
                   <p className="text-gray-600">Registro de promociones entregadas</p>
                 </div>
               </div>
-              <Link href="/asesor-ventas">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Volver
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <ActionButton
+                  variant="secondary"
+                  size="sm"
+                  icon={<Download className="h-4 w-4" />}
+                  onClick={handleExport}
+                  loading={exporting}
+                  disabled={redemptions.length === 0}
+                >
+                  Exportar para Facturación
+                </ActionButton>
+                <Link href="/asesor-ventas">
+                  <ActionButton variant="ghost" size="sm" icon={<ArrowLeft className="h-4 w-4" />}>
+                    Volver
+                  </ActionButton>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -222,59 +278,32 @@ export default function HistorialQRPage() {
           </Alert>
         )}
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Using MetricCard component */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <QrCode className="h-5 w-5 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Total Canjeados</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.total}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Hoy</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.today}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <Tag className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Valor Total</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    ${stats.totalValue.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <MetricCard
+            title="Total Canjeados"
+            value={stats.total}
+            icon={<QrCode className="h-6 w-6 text-emerald-600" />}
+          />
+          <MetricCard
+            title="Hoy"
+            value={stats.today}
+            icon={<Calendar className="h-6 w-6 text-blue-600" />}
+          />
+          <MetricCard
+            title="Valor Total Facturación"
+            value={`$${stats.totalValue.toFixed(2)}`}
+            icon={<FileText className="h-6 w-6 text-yellow-600" />}
+            variant="warning"
+          />
         </div>
 
         {/* Filters */}
         <Card className="mb-6">
-          <CardContent className="p-4">
+          <CardContent className="p-4 space-y-4">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600 mr-2">Filtrar:</span>
+              <span className="text-sm text-gray-600 mr-2">Filtro rápido:</span>
               <div className="flex gap-2">
                 {[
                   { value: 'all', label: 'Todos' },
@@ -285,15 +314,48 @@ export default function HistorialQRPage() {
                   <button
                     key={option.value}
                     onClick={() => setFilter(option.value as typeof filter)}
-                    className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                      filter === option.value
+                    className={`px-3 py-1 text-sm rounded-full transition-colors ${filter === option.value
                         ? 'bg-emerald-100 text-emerald-700 font-medium'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {option.label}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">Rango personalizado:</span>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="text-sm"
+                  placeholder="Fecha inicio"
+                />
+                <span className="text-gray-400">-</span>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="text-sm"
+                  placeholder="Fecha fin"
+                />
+                {(startDate || endDate) && (
+                  <ActionButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setStartDate('')
+                      setEndDate('')
+                    }}
+                  >
+                    Limpiar
+                  </ActionButton>
+                )}
               </div>
             </div>
           </CardContent>
@@ -305,23 +367,22 @@ export default function HistorialQRPage() {
             icon={<History className="w-16 h-16 text-gray-400" />}
             title="Sin registros"
             description={
-              filter === 'all'
+              filter === 'all' && !startDate && !endDate
                 ? "Aun no has canjeado ninguna promocion."
                 : `No hay promociones canjeadas en el periodo seleccionado.`
             }
             action={
               <Link href="/asesor-ventas/entregar-promocion">
-                <Button className="bg-emerald-600 hover:bg-emerald-700">
-                  <QrCode className="h-4 w-4 mr-2" />
+                <ActionButton variant="primary" icon={<QrCode className="h-4 w-4" />}>
                   Escanear QR
-                </Button>
+                </ActionButton>
               </Link>
             }
           />
         ) : (
           <div className="space-y-4">
             {filteredRedemptions.map((redemption) => (
-              <Card key={redemption.id}>
+              <Card key={redemption.id} className="rounded-2xl">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
