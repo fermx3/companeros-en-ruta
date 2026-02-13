@@ -740,3 +740,146 @@ Para validar la implementación:
 - Migrations are tracked in `supabase/migrations/`
 - Environment variables in `.env` (see `.env.example`)
 - **IMPORTANTE:** Respetar reglas de CLAUDE.md - verificar DB antes de cambios
+
+---
+
+## Technical Debt & Findings
+
+### FINDING-001: Hardcoded Tenant UUIDs en RLS Policies (CRÍTICO)
+**Descubierto:** 2026-02-12
+**Prioridad:** CRÍTICA
+**Estado:** PENDIENTE
+
+**Problema:**
+Tres políticas RLS contienen UUID hardcodeado `fe0f429d-2d83-4738-af65-32c655cef656`:
+
+1. **`brands_tenant_access`** (línea 17828 en `20260207212543_remote_schema.sql`)
+2. **`clients_tenant_access`** (línea 18032)
+3. **`user_profiles_tenant_access`** (línea 18982)
+
+```sql
+-- ❌ PROBLEMA ACTUAL
+CREATE POLICY "brands_tenant_access" ON "public"."brands"
+TO "authenticated"
+USING (("tenant_id" = 'fe0f429d-2d83-4738-af65-32c655cef656'::"uuid"));
+```
+
+**Impacto:**
+- Solo usuarios del tenant hardcodeado pueden acceder a brands, clients y user_profiles
+- Bloquea acceso multi-tenant para otros tenants
+- Viola CLAUDE.md Rule 7: "NUNCA hardcodear IDs de tenant/brand en código"
+- **BLOQUEANTE para multi-tenant en producción**
+
+**Solución Requerida:**
+```sql
+-- ✅ DEBE SER (dinámico)
+CREATE POLICY "brands_tenant_access" ON public.brands
+TO authenticated
+USING (
+  tenant_id IN (
+    SELECT ur.tenant_id
+    FROM public.user_roles ur
+    JOIN public.user_profiles up ON ur.user_profile_id = up.id
+    WHERE up.user_id = auth.uid()
+      AND ur.status = 'active'
+      AND ur.deleted_at IS NULL
+  )
+);
+```
+
+**Nota Crítica:** La política de `user_profiles` debe ser SIMPLE (`user_id = auth.uid()`) para evitar **circular dependency**.
+
+❌ **NUNCA hacer esto:**
+```sql
+-- Circular dependency - user_profiles JOIN user_profiles
+CREATE POLICY "user_profiles_tenant_access" ON user_profiles
+USING (
+  tenant_id IN (
+    SELECT ur.tenant_id
+    FROM user_roles ur
+    JOIN user_profiles up ON ...  -- ⚠️ CIRCULAR!
+  )
+);
+```
+
+✅ **Patrón correcto:**
+```sql
+-- Simple, sin self-reference
+CREATE POLICY "user_profiles_tenant_access" ON user_profiles
+USING (user_id = auth.uid());
+```
+
+**Tasks para resolver:**
+- [ ] Crear migración para DROP/CREATE de 3 políticas RLS
+- [ ] Implementar resolución dinámica via user_roles
+- [ ] Simplificar política user_profiles (evitar circular dependency)
+- [ ] Testing con múltiples tenants
+- [ ] Aplicar a local, staging, y producción
+
+---
+
+### FINDING-002: Hardcoded Tenant UUID en handle_new_user() Function
+**Descubierto:** 2026-02-12
+**Prioridad:** MEDIA
+**Estado:** PENDIENTE (diferido hasta registro multi-tenant)
+
+**Problema:**
+La función `handle_new_user()` tiene default tenant hardcodeado:
+
+```sql
+-- Línea 2453 en supabase/migrations/20260207212543_remote_schema.sql
+CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
+AS $$
+declare
+  default_tenant_id uuid := 'fe0f429d-2d83-4738-af65-32c655cef656'::uuid;
+  ...
+```
+
+**Impacto:**
+- Nuevos usuarios sin `tenant_id` en metadata se asignan al tenant hardcodeado
+- Funciona para desarrollo single-tenant
+- Bloqueará registro multi-tenant en producción
+
+**Tasks para resolver:**
+- [ ] Requerir `tenant_id` en signup metadata (frontend)
+- [ ] Eliminar fallback hardcodeado de función
+- [ ] Implementar manejo de errores si tenant_id falta
+- [ ] Actualizar flows de signup en todas las rutas de registro
+- [ ] Testing con múltiples tenants
+
+---
+
+### FINDING-003: Schema Inconsistency - full_name vs first_name/last_name
+**Descubierto:** 2026-02-12
+**Prioridad:** BAJA (documentación)
+**Estado:** PENDIENTE (auditar codebase)
+
+**Problema:**
+El schema real de `user_profiles` NO tiene campo `full_name`:
+
+```sql
+user_profiles:
+  - first_name (text, NOT NULL)  ✅ Existe
+  - last_name (text, NOT NULL)   ✅ Existe
+  - full_name                    ❌ NO existe como campo directo
+```
+
+**Impacto:**
+- Queries que referencian `full_name` fallan con "column does not exist"
+- Código inconsistente - algunos lugares concatenan, otros asumen campo
+
+**Tasks para resolver:**
+- [ ] Auditar codebase para todas las referencias a `full_name`
+- [ ] Reemplazar con `first_name || ' ' || last_name AS full_name`
+- [ ] Considerar agregar generated column en DB si se usa frecuentemente:
+  ```sql
+  ALTER TABLE user_profiles
+  ADD COLUMN full_name text
+  GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED;
+  ```
+- [ ] Actualizar tipos TypeScript para reflejar schema real
+
+**Archivos conocidos que necesitan actualización:**
+- `/src/app/api/admin/promotions/route.ts`
+- `/src/app/api/brand/metrics/route.ts`
+- Cualquier API que consulte user_profiles
