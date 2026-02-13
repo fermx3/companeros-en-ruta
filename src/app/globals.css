@@ -3,37 +3,79 @@
 @theme {
   /* Compañeros en Ruta - Design System Colors */
 
-  --color-primary: oklch(0.64 0.24 25);           /* Naranja #FF5722 */
-  --color-primary-foreground: oklch(1 0 0);       /* Blanco */
+  --color-primary: oklch(0.64 0.24 25);
+  /* Naranja #FF5722 */
+  --color-primary-foreground: oklch(1 0 0);
+  /* Blanco */
 
-  --color-secondary: oklch(0.65 0.22 245);        /* Azul #2196F3 */
-  --color-secondary-foreground: oklch(1 0 0);     /* Blanco */
+  --color-secondary: oklch(0.65 0.22 245);
+  /* Azul #2196F3 */
+  --color-secondary-foreground: oklch(1 0 0);
+  /* Blanco */
 
-  --color-accent: oklch(0.64 0.18 145);           /* Verde #4CAF50 */
-  --color-accent-foreground: oklch(1 0 0);        /* Blanco */
+  --color-accent: oklch(0.64 0.18 145);
+  /* Verde #4CAF50 */
+  --color-accent-foreground: oklch(1 0 0);
+  /* Blanco */
 
-  --color-warning: oklch(0.78 0.18 80);           /* Amarillo/Oro #FFB300 */
+  --color-warning: oklch(0.78 0.18 80);
+  /* Amarillo/Oro #FFB300 */
 
-  --color-background: oklch(0.98 0 0);            /* Fondo principal */
-  --color-foreground: oklch(0.2 0 0);             /* Texto principal */
+  --color-background: oklch(0.98 0 0);
+  /* Fondo principal */
+  --color-foreground: oklch(0.2 0 0);
+  /* Texto principal */
 
-  --color-card: oklch(1 0 0);                     /* Fondo de cards */
-  --color-card-foreground: oklch(0.2 0 0);        /* Texto en cards */
+  --color-card: oklch(1 0 0);
+  /* Fondo de cards */
+  --color-card-foreground: oklch(0.2 0 0);
+  /* Texto en cards */
 
-  --color-muted: oklch(0.96 0.01 250);            /* Fondos sutiles */
-  --color-muted-foreground: oklch(0.55 0 0);      /* Texto muted */
+  --color-muted: oklch(0.96 0.01 250);
+  /* Fondos sutiles */
+  --color-muted-foreground: oklch(0.55 0 0);
+  /* Texto muted */
 
-  --color-border: oklch(0.91 0.01 250);           /* Bordes */
-  --color-input: oklch(0.91 0.01 250);            /* Input borders */
-  --color-ring: oklch(0.64 0.24 25);              /* Focus ring (primary) */
+  --color-border: oklch(0.91 0.01 250);
+  /* Bordes */
+  --color-input: oklch(0.91 0.01 250);
+  /* Input borders */
+  --color-ring: oklch(0.64 0.24 25);
+  /* Focus ring (primary) */
 
-  --color-destructive: oklch(0.62 0.25 25);       /* Rojo para destructive */
-  --color-destructive-foreground: oklch(1 0 0);   /* Blanco */
+  --color-destructive: oklch(0.62 0.25 25);
+  /* Rojo para destructive */
+  --color-destructive-foreground: oklch(1 0 0);
+  /* Blanco */
 
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
+
+  /* Typography System */
+  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+
+  /* Spacing System (4px base) */
+  --spacing-1: 0.25rem;
+  /* 4px */
+  --spacing-2: 0.5rem;
+  /* 8px */
+  --spacing-3: 0.75rem;
+  /* 12px */
+  --spacing-4: 1rem;
+  /* 16px */
+  --spacing-6: 1.5rem;
+  /* 24px */
+  --spacing-8: 2rem;
+  /* 32px */
+  --spacing-12: 3rem;
+  /* 48px */
+
+  /* Animations */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -66,4 +108,41 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
+}
+
+/* Utility Classes */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Animation utilities */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up var(--transition-base);
+}
+
+.animate-fade-in {
+  animation: fade-in var(--transition-base);
 }
