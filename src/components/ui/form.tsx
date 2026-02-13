@@ -1,162 +1,228 @@
-import React from 'react';
+/**
+ * Form Components with React Hook Form Integration
+ * 
+ * These components integrate React Hook Form with Shadcn/ui styling.
+ * Use with Zod schemas for type-safe form validation.
+ * 
+ * @example
+ * ```tsx
+ * import { useForm } from "react-hook-form"
+ * import { zodResolver } from "@hookform/resolvers/zod"
+ * import * as z from "zod"
+ * 
+ * const formSchema = z.object({
+ *   username: z.string().min(2, "Username must be at least 2 characters"),
+ * })
+ * 
+ * function MyForm() {
+ *   const form = useForm<z.infer<typeof formSchema>>({
+ *     resolver: zodResolver(formSchema),
+ *   })
+ * 
+ *   return (
+ *     <Form {...form}>
+ *       <form onSubmit={form.handleSubmit(onSubmit)}>
+ *         <FormField
+ *           control={form.control}
+ *           name="username"
+ *           render={({ field }) => (
+ *             <FormItem>
+ *               <FormLabel>Username</FormLabel>
+ *               <FormControl>
+ *                 <Input {...field} />
+ *               </FormControl>
+ *               <FormMessage />
+ *             </FormItem>
+ *           )}
+ *         />
+ *         <Button type="submit">Submit</Button>
+ *       </form>
+ *     </Form>
+ *   )
+ * }
+ * ```
+ */
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { Label } from "./label"
+import {
+  Controller,
+  ControllerProps,
+  FieldPath,
+  FieldValues,
+  FormProvider,
+  useFormContext,
+} from "react-hook-form"
+
+// Form Provider Component
+const Form = FormProvider
+
+// Form Field Context
+type FormFieldContextValue<
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+> = {
+  name: TName
 }
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, className = '', ...props }, ref) => {
-    const baseClasses = `
-      block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-      placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500
-      sm:text-sm transition-colors duration-200
-    `;
+const FormFieldContext = React.createContext<FormFieldContextValue>(
+  {} as FormFieldContextValue
+)
 
-    const errorClasses = error
-      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500';
-
-    return (
-      <div className="mb-4">
-        {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {label}
-            {props.required && <span className="text-red-500 ml-1">*</span>}
-          </label>
-        )}
-        <input
-          ref={ref}
-          className={`${baseClasses} ${errorClasses} ${className}`}
-          {...props}
-        />
-        {error && (
-          <p className="mt-1 text-sm text-red-600" id={`${props.id}-error`}>
-            {error}
-          </p>
-        )}
-        {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500" id={`${props.id}-description`}>
-            {helperText}
-          </p>
-        )}
-      </div>
-    );
-  }
-);
-
-Input.displayName = 'Input';
-
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  options: Array<{ value: string; label: string; disabled?: boolean }>;
-  placeholder?: string;
+// Form Field Component
+const FormField = <
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+>({
+  ...props
+}: ControllerProps<TFieldValues, TName>) => {
+  return (
+    <FormFieldContext.Provider value={{ name: props.name }}>
+      <Controller {...props} />
+    </FormFieldContext.Provider>
+  )
 }
 
-export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, helperText, options, placeholder, className = '', ...props }, ref) => {
-    const baseClasses = `
-      block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-      focus:outline-none focus:ring-blue-500 focus:border-blue-500
-      sm:text-sm transition-colors duration-200 bg-white
-    `;
+// Hook to access form field context
+const useFormField = () => {
+  const fieldContext = React.useContext(FormFieldContext)
+  const itemContext = React.useContext(FormItemContext)
+  const { getFieldState, formState } = useFormContext()
 
-    const errorClasses = error
-      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500';
+  const fieldState = getFieldState(fieldContext.name, formState)
 
-    return (
-      <div className="mb-4">
-        {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {label}
-            {props.required && <span className="text-red-500 ml-1">*</span>}
-          </label>
-        )}
-        <select
-          ref={ref}
-          className={`${baseClasses} ${errorClasses} ${className}`}
-          {...props}
-        >
-          {placeholder && (
-            <option value="" disabled>
-              {placeholder}
-            </option>
-          )}
-          {options.map((option) => (
-            <option
-              key={option.value}
-              value={option.value}
-              disabled={option.disabled}
-            >
-              {option.label}
-            </option>
-          ))}
-        </select>
-        {error && (
-          <p className="mt-1 text-sm text-red-600" id={`${props.id}-error`}>
-            {error}
-          </p>
-        )}
-        {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500" id={`${props.id}-description`}>
-            {helperText}
-          </p>
-        )}
-      </div>
-    );
+  if (!fieldContext) {
+    throw new Error("useFormField should be used within <FormField>")
   }
-);
 
-Select.displayName = 'Select';
+  const { id } = itemContext
 
-export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
+  return {
+    id,
+    name: fieldContext.name,
+    formItemId: `${id}-form-item`,
+    formDescriptionId: `${id}-form-item-description`,
+    formMessageId: `${id}-form-item-message`,
+    ...fieldState,
+  }
 }
 
-export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, helperText, className = '', ...props }, ref) => {
-    const baseClasses = `
-      block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-      placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500
-      sm:text-sm transition-colors duration-200 resize-vertical min-h-[80px]
-    `;
+// Form Item Context
+type FormItemContextValue = {
+  id: string
+}
 
-    const errorClasses = error
-      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500';
+const FormItemContext = React.createContext<FormItemContextValue>(
+  {} as FormItemContextValue
+)
 
-    return (
-      <div className="mb-4">
-        {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {label}
-            {props.required && <span className="text-red-500 ml-1">*</span>}
-          </label>
-        )}
-        <textarea
-          ref={ref}
-          className={`${baseClasses} ${errorClasses} ${className}`}
-          {...props}
-        />
-        {error && (
-          <p className="mt-1 text-sm text-red-600" id={`${props.id}-error`}>
-            {error}
-          </p>
-        )}
-        {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500" id={`${props.id}-description`}>
-            {helperText}
-          </p>
-        )}
-      </div>
-    );
+// Form Item Component
+const FormItem = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => {
+  const id = React.useId()
+
+  return (
+    <FormItemContext.Provider value={{ id }}>
+      <div ref={ref} className={cn("space-y-2", className)} {...props} />
+    </FormItemContext.Provider>
+  )
+})
+FormItem.displayName = "FormItem"
+
+// Form Label Component
+const FormLabel = React.forwardRef<
+  React.ElementRef<typeof Label>,
+  React.ComponentPropsWithoutRef<typeof Label>
+>(({ className, ...props }, ref) => {
+  const { error, formItemId } = useFormField()
+
+  return (
+    <Label
+      ref={ref}
+      className={cn(error && "text-red-600", className)}
+      htmlFor={formItemId}
+      {...props}
+    />
+  )
+})
+FormLabel.displayName = "FormLabel"
+
+// Form Control Component
+const FormControl = React.forwardRef<
+  React.ElementRef<"div">,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ ...props }, ref) => {
+  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+
+  return (
+    <div
+      ref={ref}
+      id={formItemId}
+      aria-describedby={
+        !error
+          ? `${formDescriptionId}`
+          : `${formDescriptionId} ${formMessageId}`
+      }
+      aria-invalid={!!error}
+      {...props}
+    />
+  )
+})
+FormControl.displayName = "FormControl"
+
+// Form Description Component
+const FormDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => {
+  const { formDescriptionId } = useFormField()
+
+  return (
+    <p
+      ref={ref}
+      id={formDescriptionId}
+      className={cn("text-sm text-gray-500", className)}
+      {...props}
+    />
+  )
+})
+FormDescription.displayName = "FormDescription"
+
+// Form Message Component (displays validation errors)
+const FormMessage = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, children, ...props }, ref) => {
+  const { error, formMessageId } = useFormField()
+  const body = error ? String(error?.message) : children
+
+  if (!body) {
+    return null
   }
-);
 
-Textarea.displayName = 'Textarea';
+  return (
+    <p
+      ref={ref}
+      id={formMessageId}
+      className={cn("text-sm font-medium text-red-600", className)}
+      {...props}
+    >
+      {body}
+    </p>
+  )
+})
+FormMessage.displayName = "FormMessage"
+
+export {
+  useFormField,
+  Form,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+  FormField,
+}

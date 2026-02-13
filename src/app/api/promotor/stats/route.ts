@@ -100,9 +100,9 @@ export async function GET() {
 
     try {
       const { data: clientAssignments } = await supabase
-        .from('promotor_client_assignments')
+        .from('client_assignments')
         .select('id, created_at')
-        .eq('promotor_id', promotorId)
+        .eq('user_profile_id', promotorId)
         .eq('is_active', true)
 
       if (clientAssignments) {
@@ -115,7 +115,7 @@ export async function GET() {
         }
       }
     } catch {
-      // promotor_client_assignments query failed, using defaults
+      // client_assignments query failed, using defaults
     }
 
     // 7. Calcular performance_score basado en métricas

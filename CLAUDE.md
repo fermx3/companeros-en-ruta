@@ -182,6 +182,24 @@ You must respect:
 
 ---
 
+## 📚 SKILLS & BLUEPRINTS
+
+This repository contains project-specific guides in `.claude/`:
+
+### Skills (`.claude/skills/`)
+Detailed implementation guides for this project. **Consult before implementing**:
+* `api-integration.md` — Next.js Route Handlers + Supabase patterns
+* `frontend-design.md` — Design system, components, Tailwind + shadcn/ui
+* `supabase-database.md` — Multi-tenant DB architecture, schema, RLS
+
+### Blueprints (`.claude/blueprints/`)
+Task templates ensuring CLAUDE.md compliance:
+* `example-task.md` — Standard task structure with schema verification
+
+**These complement the general skills in `skills/` (backend-apis, frontend, data-sql, etc.)**
+
+---
+
 ## 🧪 QUALITY GATES (MANDATORY)
 
 Before considering any change complete, the solution must be compatible with:

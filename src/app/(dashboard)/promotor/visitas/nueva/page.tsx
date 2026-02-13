@@ -2,9 +2,23 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
-import { Select, Textarea } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { ArrowLeft, MapPin, Play } from 'lucide-react'
 
 interface Client {
@@ -22,21 +36,38 @@ interface LocationData {
   longitude: number
 }
 
+/**
+ * Zod schema for visit form validation
+ */
+const visitFormSchema = z.object({
+  client_id: z.string().min(1, 'Debes seleccionar un cliente'),
+  promotor_notes: z.string().optional(),
+})
+
+type VisitFormValues = z.infer<typeof visitFormSchema>
+
 export default function NuevaVisitaPage() {
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Form state
-  const [selectedClientId, setSelectedClientId] = useState('')
-  const [notes, setNotes] = useState('')
+  // Location state (separate from form)
   const [location, setLocation] = useState<LocationData | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [gettingLocation, setGettingLocation] = useState(false)
 
-  // Get selected client info
+  // Initialize React Hook Form with Zod validation
+  const form = useForm<VisitFormValues>({
+    resolver: zodResolver(visitFormSchema),
+    defaultValues: {
+      client_id: '',
+      promotor_notes: '',
+    },
+  })
+
+  // Watch client_id to show selected client info
+  const selectedClientId = form.watch('client_id')
   const selectedClient = clients.find(c => c.id === selectedClientId)
 
   // Fetch assigned clients
@@ -91,16 +122,11 @@ export default function NuevaVisitaPage() {
     )
   }
 
-  // Submit form
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!selectedClientId) {
-      setError('Por favor selecciona un cliente')
-      return
-    }
-
-    setSubmitting(true)
+  /**
+   * Handle form submission
+   * Creates a new visit with the provided data
+   */
+  const onSubmit = async (values: VisitFormValues) => {
     setError(null)
 
     try {
@@ -108,8 +134,8 @@ export default function NuevaVisitaPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          client_id: selectedClientId,
-          promotor_notes: notes || undefined,
+          client_id: values.client_id,
+          promotor_notes: values.promotor_notes || undefined,
           latitude: location?.latitude,
           longitude: location?.longitude
         })
@@ -125,25 +151,24 @@ export default function NuevaVisitaPage() {
       router.push(`/promotor/visitas/${data.visit.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear la visita')
-      setSubmitting(false)
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white shadow-sm border-b">
+      <div className="min-h-screen bg-background">
+        <div className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b">
           <div className="max-w-2xl mx-auto px-4 py-4">
-            <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+            <div className="h-8 bg-muted rounded-lg w-48 animate-pulse"></div>
           </div>
         </div>
         <div className="max-w-2xl mx-auto px-4 py-6">
-          <Card>
+          <Card className="rounded-2xl shadow-sm">
             <CardContent className="p-6">
               <div className="space-y-4">
-                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-20 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-10 bg-muted rounded-xl animate-pulse"></div>
+                <div className="h-10 bg-muted rounded-xl animate-pulse"></div>
+                <div className="h-20 bg-muted rounded-xl animate-pulse"></div>
               </div>
             </CardContent>
           </Card>
@@ -153,143 +178,204 @@ export default function NuevaVisitaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-background">
+      {/* Header con diseño moderno */}
+      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b">
         <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             <Button
               variant="ghost"
+              size="icon"
               onClick={() => router.back()}
-              className="mr-4"
+              className="rounded-full"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl font-bold text-gray-900">Nueva Visita</h1>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Nueva Visita</h1>
+              <p className="text-sm text-muted-foreground">Iniciar visita a cliente</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Iniciar una nueva visita</CardTitle>
+        <Card className="rounded-2xl shadow-sm border-0">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Play className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Iniciar Visita</CardTitle>
+                <p className="text-sm text-muted-foreground">Completa la información para comenzar</p>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-                {error}
+              <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-start gap-3">
+                <div className="h-5 w-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs">!</span>
+                </div>
+                <p>{error}</p>
               </div>
             )}
 
             {clients.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">
+              <div className="text-center py-12">
+                <div className="h-16 w-16 rounded-2xl bg-muted mx-auto mb-4 flex items-center justify-center">
+                  <MapPin className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground mb-6">
                   No tienes clientes asignados. Contacta a tu supervisor para que te asigne clientes.
                 </p>
-                <Button variant="outline" onClick={() => router.back()}>
+                <Button variant="outline" onClick={() => router.back()} className="rounded-xl">
                   Volver
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Client Selection */}
-                <Select
-                  label="Cliente"
-                  required
-                  value={selectedClientId}
-                  onChange={(e) => setSelectedClientId(e.target.value)}
-                  options={clients.map(c => ({
-                    value: c.id,
-                    label: `${c.business_name} - ${c.address}`
-                  }))}
-                  placeholder="Selecciona un cliente"
-                />
-
-                {/* Selected client info */}
-                {selectedClient && (
-                  <div className="p-3 bg-gray-50 rounded-md text-sm">
-                    <p className="font-medium">{selectedClient.business_name}</p>
-                    {selectedClient.owner_name && (
-                      <p className="text-gray-600">Propietario: {selectedClient.owner_name}</p>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Client Selection */}
+                  <FormField
+                    control={form.control}
+                    name="client_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cliente</FormLabel>
+                        <FormControl>
+                          <Select {...field}>
+                            <option value="">Selecciona un cliente</option>
+                            {clients.map((client) => (
+                              <option key={client.id} value={client.id}>
+                                {client.business_name} - {client.address}
+                              </option>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                    <p className="text-gray-500">{selectedClient.address}</p>
-                    {selectedClient.phone && (
-                      <p className="text-gray-500">Tel: {selectedClient.phone}</p>
-                    )}
-                  </div>
-                )}
+                  />
 
-                {/* Notes */}
-                <Textarea
-                  label="Notas (opcional)"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Agrega notas sobre la visita..."
-                  rows={3}
-                />
-
-                {/* Location */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ubicación
-                  </label>
-                  {location ? (
-                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-md">
-                      <div className="flex items-center text-green-700">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        <span className="text-sm">
-                          Ubicación capturada ({location.latitude.toFixed(6)}, {location.longitude.toFixed(6)})
-                        </span>
+                  {/* Selected client info */}
+                  {selectedClient && (
+                    <div className="p-4 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl space-y-2 border border-primary/20">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                              <MapPin className="h-4 w-4 text-primary" />
+                            </div>
+                            <p className="font-semibold text-gray-900">{selectedClient.business_name}</p>
+                          </div>
+                          {selectedClient.owner_name && (
+                            <p className="text-sm text-gray-700 pl-10">
+                              <span className="font-medium">Propietario:</span> {selectedClient.owner_name}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-600 pl-10">{selectedClient.address}</p>
+                          {selectedClient.phone && (
+                            <p className="text-sm text-gray-600 pl-10">
+                              <span className="font-medium">Tel:</span> {selectedClient.phone}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={getLocation}
-                        disabled={gettingLocation}
-                      >
-                        Actualizar
-                      </Button>
-                    </div>
-                  ) : (
-                    <div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={getLocation}
-                        disabled={gettingLocation}
-                        className="w-full"
-                      >
-                        <MapPin className="h-4 w-4 mr-2" />
-                        {gettingLocation ? 'Obteniendo ubicación...' : 'Capturar ubicación actual'}
-                      </Button>
-                      {locationError && (
-                        <p className="mt-1 text-sm text-red-600">{locationError}</p>
-                      )}
-                      <p className="mt-1 text-xs text-gray-500">
-                        La ubicación es opcional pero ayuda a verificar la visita
-                      </p>
                     </div>
                   )}
-                </div>
 
-                {/* Submit */}
-                <div className="pt-4 border-t">
-                  <Button
-                    type="submit"
-                    disabled={submitting || !selectedClientId}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    {submitting ? 'Iniciando visita...' : 'Iniciar Visita'}
-                  </Button>
-                  <p className="mt-2 text-xs text-gray-500 text-center">
-                    Al iniciar la visita se registrará la hora de inicio automáticamente
-                  </p>
-                </div>
-              </form>
+                  {/* Notes */}
+                  <FormField
+                    control={form.control}
+                    name="promotor_notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notas (opcional)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder="Agrega notas sobre la visita..."
+                            rows={3}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Notas que quieras agregar antes de iniciar la visita
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Location */}
+                  <div className="space-y-3">
+                    <FormLabel>Ubicación</FormLabel>
+                    {location ? (
+                      <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <div className="flex items-center text-green-700 gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+                            <MapPin className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Ubicación capturada</p>
+                            <p className="text-xs opacity-75">
+                              {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={getLocation}
+                          disabled={gettingLocation}
+                          className="rounded-xl"
+                        >
+                          Actualizar
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={getLocation}
+                          disabled={gettingLocation}
+                          className="w-full h-12 rounded-xl border-2 border-dashed hover:border-primary hover:bg-primary/5 transition-colors"
+                        >
+                          <MapPin className="h-5 w-5 mr-2" />
+                          {gettingLocation ? 'Obteniendo ubicación...' : 'Capturar ubicación actual'}
+                        </Button>
+                        {locationError && (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                            <p className="text-sm text-red-600">{locationError}</p>
+                          </div>
+                        )}
+                        <FormDescription>
+                          La ubicación es opcional pero ayuda a verificar la visita
+                        </FormDescription>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Submit */}
+                  <div className="pt-6 border-t space-y-4">
+                    <Button
+                      type="submit"
+                      disabled={form.formState.isSubmitting}
+                      className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-medium text-base"
+                    >
+                      <Play className="h-5 w-5 mr-2" />
+                      {form.formState.isSubmitting ? 'Iniciando visita...' : 'Iniciar Visita'}
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Al iniciar la visita se registrará la hora de inicio automáticamente
+                    </p>
+                  </div>
+                </form>
+              </Form>
             )}
           </CardContent>
         </Card>

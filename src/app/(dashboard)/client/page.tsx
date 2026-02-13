@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
-import { Store, ShoppingCart, Star, MapPin, Phone, Mail, Gift, Award, TrendingUp, Building2 } from "lucide-react"
+import { Store, ShoppingCart, Star, MapPin, Phone, Mail, Gift, Award, TrendingUp, Building2, QrCode } from "lucide-react"
 import Link from 'next/link'
 
 interface ClientProfile {
@@ -418,6 +418,13 @@ export default function ClientPortal() {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="grid grid-cols-2 gap-3">
+                  <Link href="/client/qr">
+                    <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center gap-2 hover:bg-purple-50 border-purple-200 bg-purple-50/50">
+                      <QrCode className="h-8 w-8 text-purple-600" />
+                      <span className="text-sm font-medium">Mi Código QR</span>
+                    </Button>
+                  </Link>
+
                   <Link href="/client/orders">
                     <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
                       <ShoppingCart className="h-8 w-8 text-blue-600" />

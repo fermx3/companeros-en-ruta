@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
-import { Input, Select } from '@/components/ui/form';
+import { Input, Select } from '@/components/ui/form-legacy';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { adminService } from '@/lib/services/adminService';
 import { brandCreateSchema, type BrandCreateForm } from '@/lib/types/admin';

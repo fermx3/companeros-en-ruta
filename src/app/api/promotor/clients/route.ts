@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 
     // Get all client assignments for this promotor with client and brand details
     let query = supabase
-      .from('promotor_client_assignments')
+      .from('client_assignments')
       .select(`
         id,
         assignment_type,
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
           logo_url
         )
       `, { count: 'exact' })
-      .eq('promotor_id', promotorId)
+      .eq('user_profile_id', promotorId)
       .eq('is_active', true)
       .is('deleted_at', null)
       .order('priority', { ascending: true })

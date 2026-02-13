@@ -1,4 +1,6 @@
-import { createContext, ReactNode, useEffect, useState } from 'react';
+'use client'
+
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Brand } from '@/lib/types';
 
@@ -15,6 +17,28 @@ export const TenantContext = createContext<TenantContextType>({
   availableBrands: [],
   switchBrand: () => {},
 });
+
+/**
+ * Hook to access tenant context
+ *
+ * Provides access to tenant_id and brand information.
+ * Must be used within a TenantProvider.
+ *
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const { tenantId, currentBrand } = useTenant();
+ *   // Use tenantId in queries...
+ * }
+ * ```
+ */
+export function useTenant() {
+  const context = useContext(TenantContext);
+  if (context === undefined) {
+    throw new Error('useTenant must be used within a TenantProvider');
+  }
+  return context;
+}
 
 export function TenantProvider({ children }: { children: ReactNode }) {
   const [tenantId, setTenantId] = useState<string | null>(null);
