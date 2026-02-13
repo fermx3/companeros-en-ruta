@@ -182,6 +182,7 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | REQ-073 | API Redención QR - Lógica "primero en escanear gana" | PDF_A p.14, Clarificación | P0 |
 | REQ-074 | Tracking Estado QR - Pending, validated (parcial/total), expired | PDF_B p.6 | P0 |
 | REQ-075 | Soporte promociones multi-uso (max_redemptions configurable) | Clarificación | P0 |
+| REQ-075b | Cliente puede generar múltiples QRs activos (uno por promoción) | Requerimiento nuevo | P1 |
 
 ### SISTEMA PROMOCIONES/CAMPANAS
 

@@ -192,10 +192,15 @@ export default function ClientQRPage() {
     }
   }
 
-  // Get active QR code (most recent active one)
-  const activeQR = qrCodes.find(qr => qr.status === 'active')
+  // Get all active QR codes (support multiple)
+  const activeQRs = qrCodes.filter(qr => qr.status === 'active')
   // Get history (non-active QRs)
   const historyQRs = qrCodes.filter(qr => qr.status !== 'active')
+
+  // Track which promotions already have active QRs (to prevent duplicates)
+  const activePromotionIds = activeQRs
+    .filter(qr => qr.promotion?.id)
+    .map(qr => qr.promotion!.id)
 
   if (loading) {
     return (
@@ -256,10 +261,12 @@ export default function ClientQRPage() {
           </Alert>
         )}
 
-        {/* Active QR Section */}
-        {activeQR ? (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Tu código QR activo</h2>
+        {/* Active QRs Section */}
+        {activeQRs.length > 0 && activeQRs.map((activeQR) => (
+          <div key={activeQR.id} className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              {activeQRs.length === 1 ? 'Tu código QR activo' : `Código QR - ${activeQR.promotion?.name || activeQR.code}`}
+            </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* QR Display */}
               <QRCodeDisplay
@@ -356,8 +363,10 @@ export default function ClientQRPage() {
               </Card>
             </div>
           </div>
-        ) : (
-          /* No Active QR - Generate Section */
+        ))}
+
+        {/* No Active QR - Generate Section */}
+        {activeQRs.length === 0 && (
           <Card className="mb-8">
             <CardContent className="p-8 text-center">
               <div className="mx-auto h-16 w-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
@@ -433,7 +442,7 @@ export default function ClientQRPage() {
         )}
 
         {/* Generate New QR Button (when already has active) */}
-        {activeQR && memberships.length > 0 && (
+        {activeQRs.length > 0 && memberships.length > 0 && (
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

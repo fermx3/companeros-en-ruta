@@ -118,14 +118,31 @@ export async function GET() {
       // Client query failed, using defaults
     }
 
-    // 7. Obtener estadisticas de QR canjeados (cuando exista la tabla)
+    // 7. Obtener estadisticas de QR canjeados
     const qrStats = {
       qr_redeemed_this_month: 0,
       total_qr_redeemed: 0
     }
 
-    // La tabla qr_redemptions sera creada en tareas futuras
-    // Por ahora usamos valores por defecto
+    try {
+      // Get QR redemptions for this month
+      const { count: qrThisMonth } = await supabase
+        .from('qr_redemptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('redeemed_by', asesorId)
+        .gte('redeemed_at', firstDayOfMonth.toISOString())
+
+      // Get total QR redemptions
+      const { count: qrTotal } = await supabase
+        .from('qr_redemptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('redeemed_by', asesorId)
+
+      qrStats.qr_redeemed_this_month = qrThisMonth || 0
+      qrStats.total_qr_redeemed = qrTotal || 0
+    } catch {
+      // QR redemptions query failed, using defaults
+    }
 
     const stats = {
       ...orderStats,
