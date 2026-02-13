@@ -120,7 +120,8 @@ export async function GET(request: NextRequest) {
         ),
         user_profiles!promotions_created_by_fkey(
           id,
-          full_name,
+          first_name,
+          last_name,
           email
         )
       `)

@@ -21,7 +21,8 @@ interface Brand {
 
 interface Creator {
   id: string
-  full_name: string
+  first_name: string
+  last_name: string
   email: string
 }
 
@@ -664,7 +665,11 @@ export default function AdminPromotionDetailPage({ params }: { params: Promise<{
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-gray-500">Creada por</p>
-                  <p className="font-medium">{promotion.user_profiles?.full_name || 'Desconocido'}</p>
+                  <p className="font-medium">
+                    {promotion.user_profiles
+                      ? `${promotion.user_profiles.first_name} ${promotion.user_profiles.last_name}`
+                      : 'Desconocido'}
+                  </p>
                   <p className="text-xs text-gray-500">{promotion.user_profiles?.email}</p>
                 </div>
                 <div>

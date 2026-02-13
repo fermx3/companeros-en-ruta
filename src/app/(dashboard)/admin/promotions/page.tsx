@@ -17,7 +17,8 @@ interface Brand {
 
 interface Creator {
   id: string
-  full_name: string
+  first_name: string
+  last_name: string
   email: string
 }
 
@@ -494,7 +495,7 @@ export default function AdminPromotionsPage() {
                         </div>
                         {promo.user_profiles && (
                           <p className="text-xs text-gray-500 mt-2">
-                            Creada por: {promo.user_profiles.full_name}
+                            Creada por: {promo.user_profiles.first_name} {promo.user_profiles.last_name}
                           </p>
                         )}
                       </div>
