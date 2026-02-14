@@ -93,28 +93,51 @@ export function VisitHeader({ visit }: VisitHeaderProps) {
     <Card>
       <div className="p-6">
         {/* Header Section */}
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {getClientName()}
-            </h1>
-            {visit.client?.owner_name && (
-              <p className="text-gray-600 mb-1">
-                Propietario: {visit.client.owner_name}
-              </p>
-            )}
-            <p className="text-gray-500 text-sm flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        <div className="flex justify-between items-start mb-5">
+          <div className="flex-1 space-y-3">
+            {/* Business Name */}
+            <div className="flex items-start gap-2">
+              <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              {[visit.client?.address_street, visit.client?.address_neighborhood].filter(Boolean).join(', ') || 'Sin dirección'}
-            </p>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+                  {getClientName()}
+                </h1>
+              </div>
+            </div>
+
+            {/* Owner Name & Address in a compact grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-7">
+              {visit.client?.owner_name && (
+                <div className="flex items-center gap-1.5 text-sm">
+                  <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="text-gray-700 font-medium truncate">{visit.client.owner_name}</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-1.5 text-sm">
+                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="text-gray-600 truncate">
+                  {[visit.client?.address_street, visit.client?.address_neighborhood].filter(Boolean).join(', ') || 'Sin dirección'}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="text-right ml-4">
+
+          {/* Status & Brand Badge */}
+          <div className="flex flex-col items-end gap-2 ml-4">
             {getStatusBadge(visit.status)}
-            <div className="text-sm text-gray-600 mt-2">
-              Marca: {visit.brand?.name || 'Sin marca'}
+            <div className="flex items-center gap-1.5 text-sm bg-blue-50 px-3 py-1.5 rounded-md">
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+              <span className="text-blue-700 font-medium">{visit.brand?.name || 'Sin marca'}</span>
             </div>
           </div>
         </div>
