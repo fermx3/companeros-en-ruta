@@ -78,13 +78,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       id: promo.id,
       name: promo.name,
       description: promo.description,
-      promotionType: promo.promotion_type,
-      discountDisplay,
-      validUntil: promo.end_date,
+      promotion_type: promo.promotion_type,
+      discount_display: discountDisplay,
+      valid_until: promo.end_date,
       status,
-      usageLimit: promo.usage_limit,
-      timesUsed,
-      remainingUses
+      usage_limit: promo.usage_limit,
+      times_used: timesUsed,
+      remaining_uses: remainingUses
     }
   })
 
