@@ -150,6 +150,86 @@ Multi-tenancy isolation is a **hard requirement**, not an optimization.
 
 ---
 
+## ⚠️ COMMON SCHEMA PITFALLS (MUST READ)
+
+These are **frequently confused field names** that cause runtime errors. **ALWAYS** use the correct column names listed below.
+
+### user_profiles table
+
+| ❌ WRONG | ✅ CORRECT | Notes |
+|----------|------------|-------|
+| `auth_user_id` | `user_id` | Links to `auth.users.id` |
+| `full_name` | `first_name`, `last_name` | Concatenate for display: `${first_name} ${last_name}` |
+
+**Query example:**
+```typescript
+// ✅ CORRECT
+const { data } = await supabase
+  .from('user_profiles')
+  .select('tenant_id, first_name, last_name')
+  .eq('user_id', user.id)  // NOT auth_user_id!
+  .single()
+```
+
+### visits table
+
+| ❌ WRONG | ✅ CORRECT | Notes |
+|----------|------------|-------|
+| `status` | `visit_status` | Enum: `visit_status_enum`. Frontend maps it to `status` for convenience |
+
+**Query example:**
+```typescript
+// ✅ CORRECT
+const { data } = await supabase
+  .from('visits')
+  .select('id, visit_status, promotor_id')
+  .eq('visit_status', 'in_progress')  // NOT status!
+  .eq('promotor_id', userProfile.id)
+```
+
+### orders table
+
+| ❌ WRONG | ✅ CORRECT | Notes |
+|----------|------------|-------|
+| `status` | `order_status` | Enum: `order_status_enum` |
+
+**Query example:**
+```typescript
+// ✅ CORRECT
+const { data } = await supabase
+  .from('orders')
+  .select('id, order_number, order_status, total_amount')
+  .eq('order_status', 'pending')  // NOT status!
+```
+
+### visit_orders table
+
+| ❌ WRONG | ✅ CORRECT | Notes |
+|----------|------------|-------|
+| `status` | `order_status` | Enum: `visit_order_status_enum` |
+
+**Query example:**
+```typescript
+// ✅ CORRECT
+const { data } = await supabase
+  .from('visit_orders')
+  .select('id, order_number, order_status')
+  .eq('visit_id', visitId)
+  .eq('order_status', 'draft')  // NOT status!
+```
+
+### TypeScript Types Reference
+
+Always import and use types from `@/lib/types/database`:
+
+```typescript
+import type { UserProfile, Order, VisitOrder, VisitStageAssessment } from '@/lib/types/database'
+```
+
+These types are documented with the correct field names. See `/src/lib/types/database.ts`.
+
+---
+
 ## 🏗️ STACK & ARCHITECTURAL CONTEXT
 
 You are operating in the following environment:
