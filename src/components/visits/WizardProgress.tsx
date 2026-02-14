@@ -30,9 +30,9 @@ export function WizardProgress({
       {/* Desktop view */}
       <div className="hidden sm:block">
         <nav aria-label="Progress">
-          <ol className="flex items-center justify-between">
+          <ol className="flex items-center justify-center gap-8">
             {stages.map((stage, index) => (
-              <li key={stage.id} className="relative flex-1">
+              <li key={stage.id} className="relative">
                 <div className="flex items-center">
                   {/* Line connector */}
                   {index !== 0 && (

@@ -20,6 +20,7 @@ export interface EvidencePhoto {
 interface PhotoEvidenceUploadProps {
   photos: EvidencePhoto[]
   onPhotosChange: (photos: EvidencePhoto[]) => void
+  visitId?: string
   evidenceStage: 'pricing' | 'inventory' | 'communication'
   evidenceTypes: Array<{ value: string; label: string }>
   minPhotos?: number
@@ -30,6 +31,7 @@ interface PhotoEvidenceUploadProps {
 export function PhotoEvidenceUpload({
   photos,
   onPhotosChange,
+  visitId,
   evidenceStage,
   evidenceTypes,
   minPhotos = 1,
@@ -38,7 +40,45 @@ export function PhotoEvidenceUpload({
 }: PhotoEvidenceUploadProps) {
   const [isCapturing, setIsCapturing] = useState(false)
   const [capturingLocation, setCapturingLocation] = useState(false)
+  const [uploadingPhotoIds, setUploadingPhotoIds] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Upload photo to server
+  const uploadPhoto = useCallback(async (photo: EvidencePhoto): Promise<EvidencePhoto | null> => {
+    if (!visitId || !photo.file) return null
+
+    const formData = new FormData()
+    formData.append('file', photo.file)
+    formData.append('evidence_stage', evidenceStage)
+    formData.append('evidence_type', photo.evidenceType)
+    if (photo.caption) formData.append('caption', photo.caption)
+    if (photo.captureLatitude) formData.append('capture_latitude', photo.captureLatitude.toString())
+    if (photo.captureLongitude) formData.append('capture_longitude', photo.captureLongitude.toString())
+
+    try {
+      const response = await fetch(`/api/promotor/visits/${visitId}/evidence`, {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Error uploading photo:', error)
+        return null
+      }
+
+      const data = await response.json()
+      return {
+        ...photo,
+        id: data.evidence.id,
+        fileUrl: data.evidence.file_url,
+        file: undefined // Clear the file after successful upload
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error)
+      return null
+    }
+  }, [visitId, evidenceStage])
 
   const captureLocation = useCallback(async (): Promise<{ latitude: number; longitude: number } | null> => {
     setCapturingLocation(true)
@@ -75,9 +115,10 @@ export function PhotoEvidenceUpload({
       for (const file of Array.from(files)) {
         if (photos.length + newPhotos.length >= maxPhotos) break
 
+        const tempId = `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         const previewUrl = URL.createObjectURL(file)
         newPhotos.push({
-          id: `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: tempId,
           file,
           previewUrl,
           caption: '',
@@ -88,7 +129,29 @@ export function PhotoEvidenceUpload({
         })
       }
 
-      onPhotosChange([...photos, ...newPhotos])
+      // Add photos immediately for preview
+      const updatedPhotos = [...photos, ...newPhotos]
+      onPhotosChange(updatedPhotos)
+
+      // Upload photos in the background if visitId is provided
+      if (visitId) {
+        setUploadingPhotoIds(prev => new Set([...prev, ...newPhotos.map(p => p.id)]))
+
+        for (const photo of newPhotos) {
+          const uploadedPhoto = await uploadPhoto(photo)
+          if (uploadedPhoto) {
+            // Update the photo with server data
+            onPhotosChange(
+              photos.map(p => p.id === photo.id ? uploadedPhoto : p)
+            )
+          }
+          setUploadingPhotoIds(prev => {
+            const next = new Set(prev)
+            next.delete(photo.id)
+            return next
+          })
+        }
+      }
     } finally {
       setIsCapturing(false)
       if (fileInputRef.current) {
@@ -174,11 +237,19 @@ export function PhotoEvidenceUpload({
                   className="w-full h-full object-cover"
                 />
 
+                {/* Upload indicator overlay */}
+                {uploadingPhotoIds.has(photo.id) && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  </div>
+                )}
+
                 {/* Remove button */}
                 <button
                   type="button"
                   onClick={() => handleRemovePhoto(photo.id)}
-                  className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  disabled={uploadingPhotoIds.has(photo.id)}
+                  className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -188,6 +259,13 @@ export function PhotoEvidenceUpload({
                   <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded flex items-center">
                     <MapPin className="w-3 h-3 mr-1" />
                     GPS
+                  </div>
+                )}
+
+                {/* Upload success indicator */}
+                {photo.fileUrl && !uploadingPhotoIds.has(photo.id) && (
+                  <div className="absolute bottom-1 right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded">
+                    Subida
                   </div>
                 )}
               </div>

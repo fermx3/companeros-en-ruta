@@ -4,8 +4,22 @@ import { useState, useCallback, useEffect } from 'react'
 import { WizardProgress, WizardStage } from './WizardProgress'
 import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/feedback'
-import { ArrowLeft, ArrowRight, Save, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Save, CheckCircle2, MapPin, Store, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+interface VisitInfo {
+  client?: {
+    name?: string
+    business_name?: string
+    owner_name?: string
+    address_street?: string
+    address_neighborhood?: string
+  } | null
+  brand?: {
+    name?: string
+  } | null
+  start_time?: string | null
+}
 
 export interface WizardData {
   // Stage 1: Pricing & Category Audit
@@ -99,6 +113,7 @@ interface VisitAssessmentWizardProps {
   visitId: string
   clientId: string
   brandId: string
+  visit?: VisitInfo
   initialData?: Partial<WizardData>
   onSave: (data: WizardData, stage: number) => Promise<void>
   onComplete: () => Promise<void>
@@ -145,12 +160,19 @@ export function VisitAssessmentWizard({
   visitId,
   clientId,
   brandId,
+  visit,
   initialData,
   onSave,
   onComplete,
   renderStage,
   className
 }: VisitAssessmentWizardProps) {
+  // Client info helpers
+  const clientName = visit?.client?.name || visit?.client?.business_name || 'Cliente'
+  const ownerName = visit?.client?.owner_name
+  const clientAddress = [visit?.client?.address_street, visit?.client?.address_neighborhood].filter(Boolean).join(', ')
+  const brandName = visit?.brand?.name
+  const startTime = visit?.start_time ? new Date(visit.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null
   const [currentStage, setCurrentStage] = useState(0)
   const [data, setData] = useState<WizardData>(() => ({
     ...getInitialData(),
@@ -242,8 +264,20 @@ export function VisitAssessmentWizard({
   }
 
   const handleComplete = async () => {
-    if (!allStagesCompleted) {
-      setError('Debes completar todas las secciones antes de finalizar')
+    // Build list of incomplete stages with friendly names
+    const incompleteStages: string[] = []
+    if (!wizardStages[0].isCompleted) incompleteStages.push('Precios y Categoría')
+    if (!wizardStages[1].isCompleted) incompleteStages.push('Compra e Inventario')
+    if (!wizardStages[2].isCompleted) incompleteStages.push('Comunicación y POP')
+
+    if (incompleteStages.length > 0) {
+      // Navigate to the first incomplete stage
+      const firstIncompleteIndex = wizardStages.findIndex(s => !s.isCompleted)
+      if (firstIncompleteIndex >= 0) {
+        setCurrentStage(firstIncompleteIndex)
+      }
+
+      setError(`Completa las siguientes secciones: ${incompleteStages.join(', ')}`)
       return
     }
 
@@ -262,6 +296,55 @@ export function VisitAssessmentWizard({
 
   return (
     <div className={cn('flex flex-col min-h-full', className)}>
+      {/* Compact client info header */}
+      {visit && (
+        <div className="bg-white border-b px-4 py-3">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-start justify-between gap-4">
+              {/* Left side: Client info */}
+              <div className="flex-1 min-w-0 space-y-2">
+                {/* Business name */}
+                <div className="flex items-center gap-2">
+                  <Store className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                  <h1 className="font-semibold text-gray-900 truncate">{clientName}</h1>
+                </div>
+
+                {/* Owner and Address in grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-7 text-sm">
+                  {ownerName && (
+                    <div className="flex items-center gap-1.5 text-gray-700">
+                      <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="truncate font-medium">{ownerName}</span>
+                    </div>
+                  )}
+                  {clientAddress && (
+                    <div className="flex items-center gap-1.5 text-gray-600">
+                      <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{clientAddress}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right side: Brand and time */}
+              <div className="flex items-center gap-3 text-sm flex-shrink-0">
+                {brandName && (
+                  <span className="hidden sm:inline text-gray-600 font-medium">{brandName}</span>
+                )}
+                {startTime && (
+                  <span className="flex items-center text-gray-500">
+                    <Clock className="w-4 h-4 mr-1" />
+                    {startTime}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Progress indicator */}
       <WizardProgress
         stages={wizardStages}

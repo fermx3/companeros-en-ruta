@@ -166,6 +166,7 @@ export default function VisitDetailPage() {
             data={data.stage1}
             onDataChange={(updates) => updateData({ stage1: { ...data.stage1, ...updates } })}
             brandId={visit.brand_id}
+            visitId={visitId}
           />
         )
       case 1:
@@ -175,6 +176,7 @@ export default function VisitDetailPage() {
             onDataChange={(updates) => updateData({ stage2: { ...data.stage2, ...updates } })}
             visitId={visitId}
             clientId={visit.client_id}
+            brandId={visit.brand_id}
           />
         )
       case 2:
@@ -183,6 +185,7 @@ export default function VisitDetailPage() {
             data={data.stage3}
             onDataChange={(updates) => updateData({ stage3: { ...data.stage3, ...updates } })}
             brandId={visit.brand_id}
+            visitId={visitId}
           />
         )
       default:
@@ -350,6 +353,7 @@ export default function VisitDetailPage() {
           visitId={visitId}
           clientId={visit.client_id}
           brandId={visit.brand_id}
+          visit={visit}
           initialData={initialWizardData}
           onSave={handleSaveAssessment}
           onComplete={handleCompleteAssessment}

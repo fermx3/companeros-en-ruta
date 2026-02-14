@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Save, Package, X } from 'lucide-react'
+import { Save, Package, X, Loader2 } from 'lucide-react'
 
 interface InventoryItem {
   product_id: string
@@ -11,27 +11,73 @@ interface InventoryItem {
   notes?: string | null
 }
 
+interface Product {
+  id: string
+  name: string
+  sku?: string
+  product_variants?: Array<{
+    id: string
+    variant_name: string
+    size_value: number
+    size_unit: string
+  }>
+}
+
 interface VisitInventoryFormProps {
   visit: {
     id: string
     inventory?: InventoryItem[]
   }
+  brandId?: string
+  products?: Product[]
   onSave: (data: any) => Promise<void>
 }
 
-export function VisitInventoryForm({ visit, onSave }: VisitInventoryFormProps) {
+export function VisitInventoryForm({ visit, brandId, products: propProducts, onSave }: VisitInventoryFormProps) {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(
     visit.inventory || []
   )
-  const [skippedInventory, setSkippedInventory] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [loadingProducts, setLoadingProducts] = useState(false)
+  const [products, setProducts] = useState<Product[]>(propProducts || [])
 
-  // Mock products - en producción vendrían de una API
-  const availableProducts = [
-    { id: '1', name: 'Producto A - 500g' },
-    { id: '2', name: 'Producto B - 1kg' },
-    { id: '3', name: 'Producto C - 250g' },
-  ]
+  // Load products if not provided via props
+  useEffect(() => {
+    if (propProducts && propProducts.length > 0) {
+      setProducts(propProducts)
+      return
+    }
+
+    if (!brandId) return
+
+    const loadProducts = async () => {
+      setLoadingProducts(true)
+      try {
+        const response = await fetch(`/api/brand/products?brand_id=${brandId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setProducts(data.products || [])
+        }
+      } catch (error) {
+        console.error('Error loading products:', error)
+      } finally {
+        setLoadingProducts(false)
+      }
+    }
+
+    loadProducts()
+  }, [brandId, propProducts])
+
+  // Build a flat list of products (with variants if available)
+  const availableProducts = products.flatMap(product => {
+    if (product.product_variants && product.product_variants.length > 0) {
+      return product.product_variants.map(variant => ({
+        id: `${product.id}:${variant.id}`,
+        name: `${product.name} - ${variant.variant_name} (${variant.size_value}${variant.size_unit})`
+      }))
+    }
+    return [{ id: product.id, name: product.name }]
+  })
 
   const addInventoryItem = () => {
     setInventoryItems(prev => [
@@ -59,14 +105,10 @@ export function VisitInventoryForm({ visit, onSave }: VisitInventoryFormProps) {
     setSaving(true)
 
     try {
-      if (skippedInventory) {
-        await onSave({ inventory_skipped: true, items: [] })
-      } else {
-        const validItems = inventoryItems.filter(item =>
-          item.product_id && item.current_stock >= 0
-        )
-        await onSave({ inventory_skipped: false, items: validItems })
-      }
+      const validItems = inventoryItems.filter(item =>
+        item.product_id && item.current_stock >= 0
+      )
+      await onSave({ inventory_skipped: false, items: validItems })
     } catch (error) {
       console.error('Error saving inventory:', error)
     } finally {
@@ -74,41 +116,27 @@ export function VisitInventoryForm({ visit, onSave }: VisitInventoryFormProps) {
     }
   }
 
-  return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
-          Inventario de Productos
-        </h2>
-        <p className="text-sm text-gray-600">
-          Registra el stock actual de productos en el punto de venta (opcional)
-        </p>
+  if (loadingProducts) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+        <span className="ml-2 text-gray-600">Cargando productos...</span>
       </div>
+    )
+  }
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Skip inventory option */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={skippedInventory}
-              onChange={(e) => setSkippedInventory(e.target.checked)}
-              className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <span className="text-sm font-medium text-gray-700">
-              No se tomó inventario en esta visita
-            </span>
-          </label>
-          <p className="text-xs text-gray-500 mt-1 ml-7">
-            Marcar si no fue posible realizar el conteo de productos
-          </p>
+  return (
+    <div className="space-y-4">
+      {products.length === 0 ? (
+        <div className="text-center py-6 text-gray-500">
+          <Package className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+          <p className="text-sm">No hay productos configurados para esta marca</p>
         </div>
-
-        {!skippedInventory && (
-          <>
-            {/* Inventory items */}
-            <div className="space-y-4">
-              {inventoryItems.map((item, index) => (
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Inventory items */}
+          <div className="space-y-3">
+            {inventoryItems.map((item, index) => (
                 <div key={index} className="p-4 border border-gray-200 rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
                     {/* Product selection */}
@@ -176,33 +204,32 @@ export function VisitInventoryForm({ visit, onSave }: VisitInventoryFormProps) {
               ))}
             </div>
 
-            {/* Add item button */}
-            <div>
+          {/* Add item button */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addInventoryItem}
+            className="w-full border-dashed"
+          >
+            <Package className="mr-2 h-4 w-4" />
+            Agregar producto al inventario
+          </Button>
+
+          {/* Submit button */}
+          {inventoryItems.length > 0 && (
+            <div className="pt-4 border-t border-gray-200">
               <Button
-                type="button"
-                variant="outline"
-                onClick={addInventoryItem}
-                className="w-full border-dashed"
+                type="submit"
+                disabled={saving}
+                className="w-full sm:w-auto"
               >
-                <Package className="mr-2 h-4 w-4" />
-                Agregar producto al inventario
+                <Save className="mr-2 h-4 w-4" />
+                {saving ? 'Guardando...' : 'Guardar Inventario'}
               </Button>
             </div>
-          </>
-        )}
-
-        {/* Submit button */}
-        <div className="pt-4 border-t border-gray-200">
-          <Button
-            type="submit"
-            disabled={saving}
-            className="w-full sm:w-auto"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {saving ? 'Guardando...' : 'Guardar Inventario'}
-          </Button>
-        </div>
-      </form>
+          )}
+        </form>
+      )}
     </div>
   )
 }

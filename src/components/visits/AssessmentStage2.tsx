@@ -16,6 +16,7 @@ interface AssessmentStage2Props {
   onDataChange: (updates: Partial<WizardData['stage2']>) => void
   visitId: string
   clientId: string
+  brandId?: string
   className?: string
 }
 
@@ -31,6 +32,7 @@ export function AssessmentStage2({
   onDataChange,
   visitId,
   clientId,
+  brandId,
   className
 }: AssessmentStage2Props) {
   const [promotions, setPromotions] = useState<ClientPromotion[]>([])
@@ -176,6 +178,7 @@ export function AssessmentStage2({
           <CardContent>
             <VisitInventoryForm
               visit={{ id: visitId }}
+              brandId={brandId}
               onSave={handleInventorySave}
             />
           </CardContent>
@@ -217,6 +220,7 @@ export function AssessmentStage2({
               capturedAt: new Date()
             }))}
             onPhotosChange={handleEvidenceChange}
+            visitId={visitId}
             evidenceStage="inventory"
             evidenceTypes={INVENTORY_EVIDENCE_TYPES}
             minPhotos={0}

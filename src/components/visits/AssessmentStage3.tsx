@@ -61,6 +61,7 @@ interface AssessmentStage3Props {
   data: WizardData['stage3']
   onDataChange: (updates: Partial<WizardData['stage3']>) => void
   brandId: string
+  visitId?: string
   className?: string
 }
 
@@ -94,6 +95,7 @@ export function AssessmentStage3({
   data,
   onDataChange,
   brandId,
+  visitId,
   className
 }: AssessmentStage3Props) {
   const [communicationPlans, setCommunicationPlans] = useState<CommunicationPlan[]>([])
@@ -508,6 +510,7 @@ export function AssessmentStage3({
               capturedAt: new Date()
             }))}
             onPhotosChange={handleEvidenceChange}
+            visitId={visitId}
             evidenceStage="communication"
             evidenceTypes={COMMUNICATION_EVIDENCE_TYPES}
             minPhotos={0}
