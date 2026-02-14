@@ -1,8 +1,18 @@
 // API Types
 export * from './api';
-export * from './visits';
 
-// Database Types
+// Visit API types (excluding Visit interface which is in database.ts)
+export type {
+  CreateVisitRequest,
+  CreateVisitResponse,
+  UpdateAssessmentRequest,
+  UpdateAssessmentResponse,
+  CreatePurchaseRequest,
+  CreatePurchaseResponse,
+  VisitAssessment
+} from './visits';
+
+// Database Types (authoritative source for Visit, Order, etc.)
 export * from './database';
 
 // Enum Types
