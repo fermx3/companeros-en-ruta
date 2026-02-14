@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-02-12
+**Last Updated:** 2026-02-13
 **Target:** Implementación requerimientos PerfectApp según especificaciones cliente
 
 ---
@@ -14,9 +14,9 @@
 | Admin | Funciones actuales | Sin cambios | Yes |
 | Brand Manager | Funciones actuales | Sin cambios + Config Assessment | Yes |
 | Supervisor | Funciones actuales | + Roles activos configurables | Yes |
-| **Promotor** | Advisor (renombrar) | RENOMBRAR de Advisor + Assessment 3 secciones | Pending |
-| **Asesor de Ventas** | No existe | ROL NUEVO - Para distribuidores | Pending |
-| Client (M&P) | Funciones actuales | Rediseño Home + QR + Loyalty | Yes |
+| **Promotor** | ✅ Assessment Wizard | RENOMBRAR de Advisor + Assessment 3 secciones | Ready |
+| **Asesor de Ventas** | ✅ Implementado | Dashboard, Órdenes, QR, Historial, Billing | Ready |
+| Client (M&P) | ✅ QR con Promociones | QR generado, selección promociones, tracking | Ready |
 
 ### Sistemas Core
 
@@ -25,14 +25,14 @@
 | Brand Affiliation | Complete | Complete | None |
 | Tier System | Complete | Complete | None |
 | Points System | Complete | Complete | None |
-| **Sistema QR** | No implementado | Generación + Escaneo + Redención | Full |
-| **Promociones UI** | Tabla existe | Formulario + Banners + Workflow | Major |
-| **Carga Evidencia** | No implementado | Fotos + GPS + Storage | Full |
-| **Flujo Visita Assessment** | Check-in/out básico | 3 secciones assessment | Major |
+| **Sistema QR** | ✅ Completo | Generación + Escaneo + Redención + Billing | None |
+| **Promociones UI** | ✅ Workflow Admin | Formulario + Banners + Aprobación Admin | Minor |
+| **Carga Evidencia** | ✅ Componente implementado | Fotos + GPS + Storage | Minor |
+| **Flujo Visita Assessment** | ✅ Wizard 3 secciones | 3 secciones assessment | None |
 | **Notificaciones** | No implementado | In-app + Email | Major |
 | **Encuestas** | No implementado | Builder + Segmentación | Full |
 
-**Overall MVP Progress:** ~60% hacia requerimientos PerfectApp
+**Overall MVP Progress:** ~80% hacia requerimientos PerfectApp
 
 ---
 
@@ -250,8 +250,8 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-002b | ~~Crear route group /asesor-ventas con dashboard clientes asignados~~ | REQ-030 | 3 | TASK-002 | **DONE** |
 | TASK-002c | ~~Crear módulo órdenes para Asesor de Ventas~~ | REQ-031 | 4 | TASK-002b | **DONE** |
 | TASK-002d | ~~Crear módulo cliente (acceso perfil para validar promociones)~~ | REQ-032 | 3 | TASK-002b | **DONE** |
-| TASK-002e | Crear módulo "Entregar Promoción" (QR descuento/material) | REQ-033 | 3 | TASK-013, TASK-002b |
-| TASK-002f | Implementar tracking QRs para facturación distribuidor→marca | REQ-035 | 2 | TASK-002e |
+| TASK-002e | ~~Crear módulo "Entregar Promoción" (QR descuento/material)~~ | REQ-033 | 3 | TASK-013, TASK-002b | **DONE** |
+| TASK-002f | ~~Implementar tracking QRs para facturación distribuidor→marca~~ | REQ-035 | 2 | TASK-002e | **DONE** |
 | TASK-003 | Actualizar middleware routing para ambos roles | REQ-001, REQ-001b | 1 | TASK-001, TASK-002 |
 | TASK-004 | Configurar Supabase Storage buckets (evidencia, qr) | REQ-002, REQ-090 | 1 | - |
 | TASK-005 | Crear hook useGeolocation | REQ-003 | 1 | - |
@@ -271,7 +271,7 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-020 | Extender schema promotions | REQ-060 | 2 | - |
 | TASK-021 | Crear formulario creación promoción | REQ-011 | 5 | TASK-020 |
 | TASK-022 | Crear UI targeting promoción | REQ-012, REQ-062 | 3 | TASK-021 |
-| TASK-023 | Crear workflow aprobación | REQ-012 | 4 | TASK-020 |
+| TASK-023 | ~~Crear workflow aprobación~~ | REQ-012 | 4 | TASK-020 | **DONE** |
 | TASK-024 | Crear API redención promoción | REQ-064 | 3 | TASK-020, TASK-014 |
 | TASK-025 | Crear carrusel promociones semanales | REQ-042 | 2 | TASK-020 |
 | TASK-030 | Rediseñar layout dashboard cliente | REQ-040 | 4 | - |
@@ -304,12 +304,12 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-060 | Actualizar dashboard Promotor (antes Advisor) | REQ-020 | 2 | TASK-001c |
 | TASK-061 | Crear vista campañas asignadas para Promotor | REQ-021 | 2 | TASK-020 |
 | TASK-062 | Crear vista plan trabajo semanal | REQ-024 | 3 | TASK-060 |
-| TASK-063 | **VISITA Sección 1:** Assessment Producto-Empaque-Precio *(Wizard Step 1)* | REQ-022a | 4 | TASK-006 |
-| TASK-063b | UI dinámica por marca/sub-marca + agregar competidor | REQ-025 | 3 | TASK-063 |
-| TASK-064 | **VISITA Sección 2:** Promoción del mes (inventario, orden compra) *(Wizard Step 2)* | REQ-022b | 3 | TASK-063 |
-| TASK-065 | **VISITA Sección 3:** Plan comunicación (materiales, exhibiciones) *(Wizard Step 3)* | REQ-022c | 3 | TASK-064 |
-| TASK-066 | **Integrar 3 secciones como WIZARD SECUENCIAL** en flujo check-in/check-out. Ver UX-001 para referencia de implementación (similar a `/brand/promotions/create`) | REQ-022 | 3 | TASK-063, 064, 065 |
-| TASK-066b | Integrar carga de pedidos dentro del flujo de visita (Promotor) | REQ-026 | 3 | TASK-066 |
+| TASK-063 | ~~**VISITA Sección 1:** Assessment Producto-Empaque-Precio *(Wizard Step 1)*~~ | REQ-022a | 4 | TASK-006 | **DONE** |
+| TASK-063b | ~~UI dinámica por marca/sub-marca + agregar competidor~~ | REQ-025 | 3 | TASK-063 | **DONE** |
+| TASK-064 | ~~**VISITA Sección 2:** Promoción del mes (inventario, orden compra) *(Wizard Step 2)*~~ | REQ-022b | 3 | TASK-063 | **DONE** |
+| TASK-065 | ~~**VISITA Sección 3:** Plan comunicación (materiales, exhibiciones) *(Wizard Step 3)*~~ | REQ-022c | 3 | TASK-064 | **DONE** |
+| TASK-066 | ~~**Integrar 3 secciones como WIZARD SECUENCIAL** en flujo check-in/check-out~~ | REQ-022 | 3 | TASK-063, 064, 065 | **DONE** |
+| TASK-066b | ~~Integrar carga de pedidos dentro del flujo de visita (Promotor)~~ | REQ-026 | 3 | TASK-066 | **DONE** |
 | TASK-067 | Brand Manager: Configuración sub-marcas para assessment | REQ-025 | 3 | - |
 | TASK-070 | Integrar visitas/documentación en Asesor de Ventas | REQ-034 | 3 | TASK-002b |
 | TASK-071 | Supervisor: UI condicional basada en roles asignados (user_roles) | REQ-037, REQ-038, REQ-039 | 2 | TASK-001c, TASK-002b |
@@ -326,8 +326,8 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 
 | ID | Tarea | Descripción | Esfuerzo | Prioridad | Estado |
 |----|-------|-------------|----------|-----------|--------|
-| UX-001 | **Flujo Visita con Wizard Secuencial** | Implementar el flujo de visita (Assessment 3 secciones) como wizard multi-step similar al formulario de promociones (`/brand/promotions/create`). **IMPORTANTE:** El orden de los pasos es crítico porque el proceso debe seguirse secuencialmente. Referencia de implementación: `/src/app/(dashboard)/brand/promotions/create/page.tsx`. Incluir: (1) Progress indicator visual, (2) Validación por paso antes de avanzar, (3) Botones Anterior/Siguiente, (4) Resumen final antes de completar | 4 | Alta | Pendiente |
-| UX-001b | **Integrar Wizard en Check-in/Check-out** | El wizard de TASK-063/064/065 debe integrarse dentro del flujo existente de visitas. Secuencia: Check-in → Sección 1 (Producto-Empaque-Precio) → Sección 2 (Promoción del mes) → Sección 3 (Comunicación) → Check-out. No permitir check-out sin completar todas las secciones | 3 | Alta | Pendiente |
+| UX-001 | ~~**Flujo Visita con Wizard Secuencial**~~ | ~~Implementar el flujo de visita (Assessment 3 secciones) como wizard multi-step similar al formulario de promociones. Incluye: (1) Progress indicator visual, (2) Validación por paso, (3) Botones Anterior/Siguiente, (4) Resumen final~~ | 4 | Alta | **DONE** |
+| UX-001b | ~~**Integrar Wizard en Check-in/Check-out**~~ | ~~El wizard se integra dentro del flujo existente de visitas. Secuencia: Check-in → Sección 1 → Sección 2 → Sección 3 → Check-out. No permite check-out sin completar todas las secciones~~ | 3 | Alta | **DONE** |
 
 ---
 
@@ -396,23 +396,47 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
   - qr/history/route.ts (historial para facturación)
 ```
 
-### FLUJO VISITA (3 Secciones Assessment - WIZARD SECUENCIAL)
+### FLUJO VISITA (3 Secciones Assessment - WIZARD SECUENCIAL) ✅ IMPLEMENTADO
 ```
-REFERENCIA DE IMPLEMENTACIÓN WIZARD:
-  /src/app/(dashboard)/brand/promotions/create/page.tsx
-  (Usar mismo patrón de wizard multi-step con progress indicator)
-
+COMPONENTES CREADOS:
 /src/components/visits/
-  - VisitAssessmentWizard.tsx (wizard 3 pasos - SECUENCIAL, orden importa)
-  - AssessmentProductoPrecio.tsx (Sección 1 / Step 1)
-  - AssessmentPromocionMes.tsx (Sección 2 / Step 2)
-  - AssessmentComunicacion.tsx (Sección 3 / Step 3)
-/src/app/(dashboard)/promotor/visitas/[visitId]/assessment/
-  - page.tsx (flujo integrado check-in → wizard assessment → check-out)
+  - VisitAssessmentWizard.tsx (orquestador del wizard 3 pasos)
+  - WizardProgress.tsx (indicador de progreso visual)
+  - AssessmentStage1.tsx (Pricing & Category Audit)
+  - AssessmentStage2.tsx (Purchase, Inventory & Loyalty)
+  - AssessmentStage3.tsx (Communication & POP Execution)
+  - PhotoEvidenceUpload.tsx (captura de fotos con GPS)
+  - CompetitorProductsForm.tsx (form precios competencia)
+  - ClientPromotionsPanel.tsx (panel promociones disponibles)
+  - OrderQuickAccess.tsx (acceso rápido a crear órdenes)
+  - OrderModal.tsx (modal creación de órdenes)
 
-FLUJO SECUENCIAL:
-  Check-in → Step 1 → Step 2 → Step 3 → Resumen → Check-out
-  (No permitir saltar pasos ni check-out sin completar todas las secciones)
+/src/app/(dashboard)/promotor/visitas/[visitId]/
+  - page.tsx (wizard integrado en check-in/check-out)
+
+APIS CREADAS:
+/src/app/api/promotor/visits/[id]/
+  - assessment/route.ts (GET/POST/PUT assessment data)
+  - orders/route.ts (órdenes de la visita)
+/src/app/api/brand/
+  - products/route.ts (productos de marca)
+  - competitors/route.ts (competidores)
+  - pop-materials/route.ts (materiales POP)
+  - communication-plans/route.ts (planes comunicación)
+  - exhibitions/route.ts (exhibiciones)
+/src/app/api/client/[clientId]/
+  - promotions/route.ts (promociones del cliente)
+
+BRAND DASHBOARD PAGES:
+/src/app/(dashboard)/brand/
+  - competitors/page.tsx (gestión competidores)
+  - pop-materials/page.tsx (gestión materiales POP)
+  - communication-plans/page.tsx (planes comunicación)
+  - exhibitions/page.tsx (exhibiciones)
+
+FLUJO IMPLEMENTADO:
+  Check-in → Stage 1 (Precios) → Stage 2 (Compra/Inventario) → Stage 3 (POP) → Check-out
+  (No permite check-out sin completar todas las secciones)
 ```
 
 ### CONFIGURACIÓN SUB-MARCAS
@@ -649,9 +673,9 @@ Para validar la implementación:
 - [x] Start visit (check-in)
 - [x] Complete visit (check-out)
 - [x] Add visit notes
-- [ ] **NUEVO:** Assessment 3 secciones (REQ-022)
-- [ ] **NUEVO:** Carga evidencia con GPS (REQ-023)
-- [ ] Upload visit photos
+- [x] **IMPLEMENTADO:** Assessment 3 secciones (REQ-022) - Wizard integrado
+- [x] **IMPLEMENTADO:** Carga evidencia con GPS (REQ-023) - PhotoEvidenceUpload component
+- [x] Upload visit photos con metadata GPS
 
 ---
 
@@ -666,7 +690,7 @@ Para validar la implementación:
 - [ ] **NUEVO:** Banner Promociones Semanales (REQ-042)
 - [ ] **NUEVO:** Grid Productos Sugeridos (REQ-043)
 - [ ] **NUEVO:** Display Tier Mejorado (REQ-045)
-- [ ] **NUEVO:** Descarga QR Personal (REQ-046)
+- [x] **NUEVO:** Descarga QR Personal con selección de promociones (REQ-046)
 
 #### Brand Memberships
 - [x] My Brands page (`/client/brands`)
@@ -716,8 +740,20 @@ Para validar la implementación:
 - [ ] `surveys` - Encuestas
 - [ ] `survey_questions` - Preguntas encuestas
 - [ ] `survey_responses` - Respuestas encuestas
-- [ ] `visit_assessments` - Assessment 7Ps de visitas
-- [ ] `visit_evidence` - Fotos/evidencia de visitas
+- [x] `visit_stage_assessments` - Assessment de visitas (3 stages)
+- [x] `visit_evidence` - Fotos/evidencia de visitas con GPS
+- [x] `visit_brand_product_assessments` - Precios productos de marca
+- [x] `visit_competitor_assessments` - Precios competencia
+- [x] `visit_pop_material_checks` - Verificación materiales POP
+- [x] `visit_exhibition_checks` - Verificación exhibiciones
+- [x] `brand_competitors` - Competidores por marca
+- [x] `brand_competitor_products` - Productos competidor
+- [x] `brand_competitor_product_sizes` - Tamaños productos competidor
+- [x] `brand_pop_materials` - Materiales POP (sistema + custom)
+- [x] `brand_communication_plans` - Planes comunicación por marca
+- [x] `brand_communication_plan_materials` - Materiales del plan
+- [x] `brand_communication_plan_activities` - Actividades del plan
+- [x] `brand_exhibitions` - Exhibiciones negociadas
 
 ---
 
