@@ -40,21 +40,34 @@ interface ClientMembership {
   membership_status: string
 }
 
+interface Promotion {
+  id: string
+  public_id: string
+  name: string
+  description: string | null
+  promotion_type: string
+  discount_percentage: number | null
+  discount_amount: number | null
+  start_date: string
+  end_date: string
+  status: string
+  terms_and_conditions: string | null
+  brand: { id: string; name: string; logo_url: string | null } | null
+}
+
 function formatDiscount(type: string | null, value: number | null, description: string | null) {
   if (description) return description
-  if (!type || !value) return 'Cupón de descuento'
+  if (!type || !value) return 'QR de cliente'
 
   switch (type) {
     case 'percentage':
       return `${value}% de descuento`
     case 'fixed_amount':
-      return `$${value.toFixed(2)} de descuento`
+      return `$${value} de descuento`
     case 'points':
       return `${value} puntos`
-    case 'free_product':
-      return 'Producto gratis'
     default:
-      return `Descuento: ${value}`
+      return 'QR de cliente'
   }
 }
 
@@ -67,6 +80,11 @@ export default function ClientQRPage() {
   const [memberships, setMemberships] = useState<ClientMembership[]>([])
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'activos' | 'usados'>('activos')
+
+  // Promotion states
+  const [promotions, setPromotions] = useState<Promotion[]>([])
+  const [selectedPromotionId, setSelectedPromotionId] = useState<string | null>(null)
+  const [loadingPromotions, setLoadingPromotions] = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -109,6 +127,36 @@ export default function ClientQRPage() {
     loadData()
   }, [loadData])
 
+  // Load promotions when brand is selected
+  useEffect(() => {
+    const loadPromotions = async () => {
+      if (!selectedBrandId) {
+        setPromotions([])
+        setSelectedPromotionId(null)
+        return
+      }
+
+      try {
+        setLoadingPromotions(true)
+        const response = await fetch(`/api/client/promotions?brand_id=${selectedBrandId}`)
+
+        if (response.ok) {
+          const data = await response.json()
+          setPromotions(data.promotions || [])
+        } else {
+          setPromotions([])
+        }
+      } catch (err) {
+        console.error('Error loading promotions:', err)
+        setPromotions([])
+      } finally {
+        setLoadingPromotions(false)
+      }
+    }
+
+    loadPromotions()
+  }, [selectedBrandId])
+
   const generateQR = async () => {
     try {
       setGenerating(true)
@@ -129,6 +177,7 @@ export default function ClientQRPage() {
         body: JSON.stringify({
           client_id: profileData.id,
           brand_id: selectedBrandId,
+          promotion_id: selectedPromotionId, // Include selected promotion
           qr_type: 'promotion',
           max_redemptions: 1,
           // Default 30 day validity
@@ -142,6 +191,8 @@ export default function ClientQRPage() {
       }
 
       setSuccess('Código QR generado exitosamente')
+      // Reset promotion selection
+      setSelectedPromotionId(null)
       // Reload QR codes
       await loadData()
     } catch (err) {
@@ -226,28 +277,89 @@ export default function ClientQRPage() {
         {memberships.length > 0 && (
           <Card className="mb-6">
             <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h3 className="font-medium text-gray-900">Generar nuevo cupón</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Crea un código QR para obtener descuentos
-                  </p>
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h3 className="font-medium text-gray-900">Generar nuevo cupón</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Crea un código QR para obtener descuentos
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {memberships.length > 1 && (
+                      <select
+                        value={selectedBrandId || ''}
+                        onChange={(e) => setSelectedBrandId(e.target.value || null)}
+                        className="px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                      >
+                        <option value="">Selecciona marca...</option>
+                        {memberships.map((m) => (
+                          <option key={m.brand_id} value={m.brand_id}>
+                            {m.brand_name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {memberships.length > 1 && (
-                    <select
-                      value={selectedBrandId || ''}
-                      onChange={(e) => setSelectedBrandId(e.target.value || null)}
-                      className="px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-                    >
-                      <option value="">Selecciona marca...</option>
-                      {memberships.map((m) => (
-                        <option key={m.brand_id} value={m.brand_id}>
-                          {m.brand_name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+
+                {/* Promotions Section */}
+                {selectedBrandId && (
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Promociones disponibles (opcional)</h4>
+                    {loadingPromotions ? (
+                      <div className="flex justify-center py-4">
+                        <LoadingSpinner size="sm" />
+                      </div>
+                    ) : promotions.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-2 mb-4">
+                        {promotions.map((promo) => {
+                          const isSelected = selectedPromotionId === promo.id
+
+                          // Format discount display
+                          let discountDisplay = 'Promoción especial'
+                          if (promo.promotion_type === 'discount_percentage' && promo.discount_percentage) {
+                            discountDisplay = `${promo.discount_percentage}% OFF`
+                          } else if (promo.promotion_type === 'discount_amount' && promo.discount_amount) {
+                            discountDisplay = `$${promo.discount_amount} OFF`
+                          } else if (promo.promotion_type === 'points_multiplier' && promo.discount_percentage) {
+                            discountDisplay = `${promo.discount_percentage}x puntos`
+                          }
+
+                          return (
+                            <button
+                              key={promo.id}
+                              onClick={() => setSelectedPromotionId(isSelected ? null : promo.id)}
+                              className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected
+                                ? 'border-primary bg-primary/5'
+                                : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm text-gray-900">{promo.name}</p>
+                                  {promo.description && (
+                                    <p className="text-xs text-gray-600 mt-1">{promo.description}</p>
+                                  )}
+                                </div>
+                                <div className="ml-3 flex-shrink-0">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    {discountDisplay}
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 py-2">No hay promociones disponibles para esta marca</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Generate Button */}
+                <div className="flex justify-end">
                   <Button
                     onClick={generateQR}
                     disabled={generating || (memberships.length > 1 && !selectedBrandId)}
