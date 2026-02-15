@@ -37,6 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profileError, setProfileError] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const isLoadingUserDataRef = useRef(false)
+  // Track whether we already have valid user data to avoid clobbering it on transient errors
+  const hasValidDataRef = useRef(false)
+  const currentUserIdRef = useRef<string | null>(null)
 
   const supabase = createClient()
 
@@ -107,6 +110,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isMounted) return
 
       if (profileLoadError) {
+        if (hasValidDataRef.current) {
+          // Already have valid profile/roles from a previous successful load.
+          // Don't overwrite good state with a transient error (e.g. token refresh timeout).
+          debugLog('Profile re-fetch failed but existing data is valid, keeping current state')
+          return
+        }
         console.error('Error loading user profile:', profileLoadError)
         setProfileError(true)
         const errorMsg = profileLoadError instanceof Error
@@ -118,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profile) {
         setUserProfile(profile)
+        currentUserIdRef.current = userId
         const profileId = (profile as { id: string }).id
 
         // Cargar roles del usuario (user_roles uses user_profile_id, not user_id)
@@ -140,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (roles && roles.length > 0) {
           const rolesList = roles.map(r => r.role)
           setUserRoles(rolesList)
+          hasValidDataRef.current = true
           debugLog('Roles set:', rolesList)
         } else {
           // No user_roles found — check if user is a client.
@@ -162,6 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (clientRecord && clientRecord.status === 'active') {
             setUserRoles(['client'] as UserRole[])
+            hasValidDataRef.current = true
             debugLog('User identified as client')
           } else {
             setUserRoles([])
@@ -170,9 +182,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error) {
-      console.error('Error loading user data:', error)
-      setProfileError(true)
-      setErrorMessage(error instanceof Error ? error.message : 'Error desconocido')
+      if (hasValidDataRef.current) {
+        debugLog('loadUserData threw but existing data is valid, keeping current state')
+      } else {
+        console.error('Error loading user data:', error)
+        setProfileError(true)
+        setErrorMessage(error instanceof Error ? error.message : 'Error desconocido')
+      }
     } finally {
       isLoadingUserDataRef.current = false
     }
@@ -243,6 +259,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
 
+        // Token refresh doesn't change user data — just update the user object
+        // (which contains the refreshed token) and skip the full data reload.
+        // Also skip SIGNED_IN from _recoverAndRefresh for the same user.
+        if (
+          (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') &&
+          session?.user?.id === currentUserIdRef.current &&
+          hasValidDataRef.current
+        ) {
+          debugLog(`Skipping ${event} for same user (data already loaded)`)
+          setUser(session?.user ?? null)
+          return
+        }
+
         try {
           setUser(session?.user ?? null)
 
@@ -281,6 +310,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserRoles([])
     setErrorMessage(null)
     setProfileError(false)
+    hasValidDataRef.current = false
+    currentUserIdRef.current = null
   }
 
   /**
