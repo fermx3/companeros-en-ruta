@@ -42,6 +42,7 @@ interface PromotorStats {
  * Muestra información personal, estadísticas y accesos rápidos
  */
 export default function PromotorProfilePage() {
+  // Role protection is handled by the layout (promotor/layout.tsx)
   const [profile, setProfile] = useState<PromotorProfile | null>(null);
   const [stats, setStats] = useState<PromotorStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -312,9 +313,8 @@ export default function PromotorProfilePage() {
                           {[...Array(5)].map((_, i) => (
                             <svg
                               key={i}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(profile.performance_rating!) ? 'text-yellow-400' : 'text-gray-300'
-                              }`}
+                              className={`w-4 h-4 ${i < Math.floor(profile.performance_rating!) ? 'text-yellow-400' : 'text-gray-300'
+                                }`}
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >

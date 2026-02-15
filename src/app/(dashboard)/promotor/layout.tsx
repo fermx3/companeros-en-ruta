@@ -3,21 +3,23 @@
 import React from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
 
-interface BrandLayoutProps {
+interface PromotorLayoutProps {
   children: React.ReactNode;
 }
 
 /**
- * Layout para el panel de Marca
+ * Layout específico para las rutas del promotor
  * Maneja la verificación de rol de forma centralizada
  *
  * Note: Role protection is handled by useRequireRole hook which redirects
  * unauthorized users to /unauthorized
+ *
+ * Admin users can also access promotor routes via allowMultipleRoles
  */
-export default function BrandLayout({ children }: BrandLayoutProps) {
-  // Note: allowMultipleRoles removed because /api/brand/* endpoints
-  // require the actual 'brand_manager' role, not just admin access
-  const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('brand_manager');
+export default function PromotorLayout({ children }: PromotorLayoutProps) {
+  // Note: allowMultipleRoles removed because /api/promotor/* endpoints
+  // require the actual 'promotor' role, not just admin access
+  const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('promotor');
 
   // Show loading while auth is initializing or checking role
   if (roleLoading) {
@@ -60,9 +62,5 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
     return null;
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <main>{children}</main>
-    </div>
-  );
+  return <>{children}</>;
 }

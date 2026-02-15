@@ -7,14 +7,14 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { adminService } from '@/lib/services/adminService'
-import type { UserProfile, UserRole, Brand, Distributor } from '@/lib/types/admin'
+import type { UserProfile, UserRoleRecord, Brand, Distributor } from '@/lib/types/admin'
 
 // ===========================================
 // Types
 // ===========================================
 
 interface UserWithRoles extends UserProfile {
-  user_roles?: UserRole[]
+  user_roles?: UserRoleRecord[]
 }
 
 interface NewRoleData {
@@ -499,7 +499,7 @@ export default function UserRolesPage() {
 
           <div className="space-y-4">
             {user.user_roles && user.user_roles.length > 0 ? (
-              user.user_roles.map((role: UserRole, index: number) => (
+              user.user_roles.map((role: UserRoleRecord, index: number) => (
                 <div key={role.id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">

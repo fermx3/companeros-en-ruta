@@ -6,7 +6,7 @@ import type {
   Brand,
   Client,
   UserProfile,
-  UserRole,
+  UserRoleRecord,
   Zone,
   Market,
   ClientType,
@@ -547,7 +547,7 @@ export class AdminService {
   /**
    * User Management
    */
-  async getUsers(page = 1, limit = 20): Promise<PaginatedResponse<UserProfile & { user_roles?: UserRole[] }>> {
+  async getUsers(page = 1, limit = 20): Promise<PaginatedResponse<UserProfile & { user_roles?: UserRoleRecord[] }>> {
     const tenantId = await this.getCurrentTenantId();
     const from = (page - 1) * limit;
     const to = from + limit - 1;
@@ -589,7 +589,7 @@ export class AdminService {
     };
   }
 
-  async getUserById(userId: string): Promise<UserProfile & { user_roles?: UserRole[] }> {
+  async getUserById(userId: string): Promise<UserProfile & { user_roles?: UserRoleRecord[] }> {
     const tenantId = await this.getCurrentTenantId();
 
     // Obtener el perfil del usuario
@@ -838,7 +838,7 @@ export class AdminService {
       zone_id?: string | null;
       distributor_id?: string; // Para asesor_de_ventas
     }
-  ): Promise<UserRole> {
+  ): Promise<UserRoleRecord> {
     const tenantId = await this.getCurrentTenantId();
 
     // Verificar que el usuario pertenece al tenant
@@ -1086,7 +1086,7 @@ export class AdminService {
     zone_id: string | null;
     distributor_id?: string;
     send_email: boolean;
-  }): Promise<{ user: UserProfile; role: UserRole }> {
+  }): Promise<{ user: UserProfile; role: UserRoleRecord }> {
     const response = await fetch('/api/admin/users/invite', {
       method: 'POST',
       headers: {

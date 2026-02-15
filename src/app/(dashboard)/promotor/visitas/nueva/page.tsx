@@ -7,7 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -47,6 +46,7 @@ const visitFormSchema = z.object({
 type VisitFormValues = z.infer<typeof visitFormSchema>
 
 export default function NuevaVisitaPage() {
+  // Role protection is handled by the layout (promotor/layout.tsx)
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)

@@ -3,23 +3,17 @@
 import React from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
 
-interface BrandLayoutProps {
+interface AsesorVentasLayoutProps {
   children: React.ReactNode;
 }
 
 /**
- * Layout para el panel de Marca
+ * Layout para las rutas del asesor de ventas
  * Maneja la verificación de rol de forma centralizada
- *
- * Note: Role protection is handled by useRequireRole hook which redirects
- * unauthorized users to /unauthorized
  */
-export default function BrandLayout({ children }: BrandLayoutProps) {
-  // Note: allowMultipleRoles removed because /api/brand/* endpoints
-  // require the actual 'brand_manager' role, not just admin access
-  const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('brand_manager');
+export default function AsesorVentasLayout({ children }: AsesorVentasLayoutProps) {
+  const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('asesor_de_ventas');
 
-  // Show loading while auth is initializing or checking role
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -31,7 +25,6 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
     );
   }
 
-  // Show error state with retry option
   if (error && !hasAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -54,15 +47,9 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
     );
   }
 
-  // If not loading but no access, redirect is in progress (handled by useRequireRole)
-  // Show nothing to avoid flash of content
   if (!hasAccess) {
     return null;
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <main>{children}</main>
-    </div>
-  );
+  return <>{children}</>;
 }

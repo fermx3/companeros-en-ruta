@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -26,13 +26,99 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>
 
+// Role priority order for determining primary role
+const roleOrder = ['admin', 'supervisor', 'brand_manager', 'promotor', 'asesor_de_ventas'] as const
+
+// Get redirect path based on primary role
+function getRedirectPath(roles: string[]): string {
+    for (const role of roleOrder) {
+        if (roles.includes(role)) {
+            switch (role) {
+                case 'admin':
+                    return '/admin'
+                case 'supervisor':
+                    return '/supervisor'
+                case 'brand_manager':
+                    return '/brand'
+                case 'promotor':
+                    return '/promotor'
+                case 'asesor_de_ventas':
+                    return '/asesor-ventas'
+            }
+        }
+    }
+    return '/unauthorized'
+}
+
 export function LoginForm() {
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [checkingSession, setCheckingSession] = useState(true)
     const [error, setError] = useState('')
 
     const router = useRouter()
     const supabase = createClient()
+
+    // Check if user is already logged in
+    useEffect(() => {
+        const checkExistingSession = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession()
+
+                if (!session?.user) {
+                    setCheckingSession(false)
+                    return
+                }
+
+                // Check if user is a client
+                const { data: clientAccount } = await supabase
+                    .from('clients')
+                    .select('id, status')
+                    .eq('user_id', session.user.id)
+                    .is('deleted_at', null)
+                    .single()
+
+                if (clientAccount && clientAccount.status === 'active') {
+                    router.replace('/client')
+                    return
+                }
+
+                // Check for staff roles
+                const { data: userProfile } = await supabase
+                    .from('user_profiles')
+                    .select('id')
+                    .eq('user_id', session.user.id)
+                    .single()
+
+                if (!userProfile) {
+                    setCheckingSession(false)
+                    return
+                }
+
+                // Get user roles
+                const { data: userRoles } = await supabase
+                    .from('user_roles')
+                    .select('role')
+                    .eq('user_profile_id', userProfile.id)
+                    .eq('status', 'active')
+                    .is('deleted_at', null)
+
+                if (!userRoles || userRoles.length === 0) {
+                    setCheckingSession(false)
+                    return
+                }
+
+                const roles = userRoles.map(r => r.role)
+                const redirectPath = getRedirectPath(roles)
+                router.replace(redirectPath)
+            } catch (err) {
+                console.error('Error checking session:', err)
+                setCheckingSession(false)
+            }
+        }
+
+        checkExistingSession()
+    }, [supabase, router])
 
     const form = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
@@ -92,9 +178,10 @@ export function LoginForm() {
             // Get user roles
             const { data: userRoles } = await supabase
                 .from('user_roles')
-                .select('role, brand_id, status')
+                .select('role')
                 .eq('user_profile_id', userProfile.id)
                 .eq('status', 'active')
+                .is('deleted_at', null)
 
             if (!userRoles || userRoles.length === 0) {
                 setError('No tienes roles asignados. Contacta al administrador.')
@@ -102,43 +189,27 @@ export function LoginForm() {
                 return
             }
 
-            // Determine primary role
-            const roleOrder = ['admin', 'supervisor', 'brand_manager', 'promotor', 'asesor_de_ventas']
+            // Redirect based on primary role
             const roles = userRoles.map(r => r.role)
-
-            let primaryRole = 'unauthorized'
-            for (const role of roleOrder) {
-                if (roles.includes(role)) {
-                    primaryRole = role
-                    break
-                }
-            }
-
-            // Redirect based on role
-            switch (primaryRole) {
-                case 'admin':
-                    router.push('/admin')
-                    break
-                case 'supervisor':
-                    router.push('/supervisor')
-                    break
-                case 'brand_manager':
-                    router.push('/brand')
-                    break
-                case 'promotor':
-                    router.push('/promotor')
-                    break
-                case 'asesor_de_ventas':
-                    router.push('/asesor-ventas')
-                    break
-                default:
-                    router.push('/unauthorized')
-            }
+            const redirectPath = getRedirectPath(roles)
+            router.push(redirectPath)
         } catch (err) {
             console.error('Error durante la redirección:', err)
             setError('Error durante el inicio de sesión')
             setLoading(false)
         }
+    }
+
+    // Show loading while checking existing session
+    if (checkingSession) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Verificando sesión...</p>
+                </div>
+            </div>
+        )
     }
 
     return (

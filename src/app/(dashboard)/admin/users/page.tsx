@@ -7,11 +7,11 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
 import { adminService } from '@/lib/services/adminService';
-import type { UserProfile, UserRole } from '@/lib/types/admin';
+import type { UserProfile, UserRoleRecord } from '@/lib/types/admin';
 
 interface UserWithRoles extends UserProfile {
-  user_roles?: UserRole[];
-  roles?: UserRole[];
+  user_roles?: UserRoleRecord[];
+  roles?: UserRoleRecord[];
 }
 
 /**

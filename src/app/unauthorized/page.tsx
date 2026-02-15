@@ -1,55 +1,74 @@
-'use client';
+'use client'
 
-import React from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link'
+import { ShieldX, ArrowLeft, LogOut } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 
-/**
- * Página de error para acceso denegado
- */
 export default function UnauthorizedPage() {
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUserEmail(user?.email ?? null)
+    }
+    getUser()
+  }, [supabase.auth])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
-        <div className="mb-6">
-          <svg
-            className="w-16 h-16 mx-auto text-red-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-            />
-          </svg>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="max-w-md w-full text-center">
+        <div className="bg-white rounded-lg shadow-sm border p-8">
+          <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
+            <ShieldX className="w-8 h-8 text-red-600" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            No autorizado
+          </h1>
+
+          <p className="text-gray-600 mb-6">
+            No tienes permisos para acceder a esta sección.
+            {userEmail && (
+              <span className="block mt-2 text-sm text-gray-500">
+                Sesión iniciada como: {userEmail}
+              </span>
+            )}
+          </p>
+
+          <div className="flex flex-col gap-3">
+            <Link href="/">
+              <Button variant="default" className="w-full">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver al inicio
+              </Button>
+            </Link>
+
+            {userEmail && (
+              <Button
+                variant="outline"
+                onClick={handleSignOut}
+                className="w-full"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Cerrar sesión
+              </Button>
+            )}
+          </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          Acceso Denegado
-        </h1>
-
-        <p className="text-gray-600 mb-6">
-          No tienes permisos para acceder a esta página.
-          Contacta al administrador si crees que esto es un error.
+        <p className="mt-6 text-sm text-gray-500">
+          Si crees que deberías tener acceso, contacta al administrador.
         </p>
-
-        <div className="space-y-3">
-          <Link href="/login" className="block">
-            <Button className="w-full">
-              Volver a Iniciar Sesión
-            </Button>
-          </Link>
-
-          <Link href="/" className="block">
-            <Button variant="outline" className="w-full">
-              Ir al Inicio
-            </Button>
-          </Link>
-        </div>
       </div>
     </div>
-  );
+  )
 }

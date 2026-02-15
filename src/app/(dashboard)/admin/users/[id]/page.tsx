@@ -8,10 +8,10 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { adminService } from '@/lib/services/adminService';
-import type { UserProfile, UserRole, Brand } from '@/lib/types/admin';
+import type { UserProfile, UserRoleRecord, Brand } from '@/lib/types/admin';
 
 interface UserWithDetails extends UserProfile {
-  user_roles?: UserRole[];
+  user_roles?: UserRoleRecord[];
   brands?: Brand[];
 }
 

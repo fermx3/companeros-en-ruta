@@ -111,8 +111,9 @@ export interface UserProfile {
   deleted_at: string | null;
 }
 
-// User Role types
-export interface UserRole {
+// User Role types (database row representation)
+// Note: The role name type is exported from index.ts as 'UserRole'
+export interface UserRoleRecord {
   id: string;
   user_profile_id: string;
   tenant_id: string;

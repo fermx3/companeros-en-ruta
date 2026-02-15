@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 
 export default function VisitasPage() {
+  // Role protection is handled by the layout (promotor/layout.tsx)
   const router = useRouter()
   const { user } = useAuth()
   const [filters, setFilters] = useState({
@@ -38,10 +39,6 @@ export default function VisitasPage() {
     }
   }, [user])
 
-  if (!user) {
-    return <div>Cargando...</div>
-  }
-
   return (
     <>
       {/* Header con métricas del promotor */}
@@ -50,7 +47,7 @@ export default function VisitasPage() {
           <div className="mb-6 flex justify-between items-start">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Promotor: {promotorName || user.email?.split('@')[0]}
+                Promotor: {promotorName || user?.email?.split('@')[0]}
               </h1>
               <p className="text-gray-600">
                 {new Date().toLocaleDateString('es-ES', {
