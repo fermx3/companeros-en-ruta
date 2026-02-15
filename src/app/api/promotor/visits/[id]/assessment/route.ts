@@ -350,11 +350,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Verify visit belongs to the promotor
+  // Get user profile to filter by promotor_id
+  const { data: userProfile } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!userProfile) {
+    return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
+  }
+
+  // Verify visit belongs to the promotor (visit_status, not status)
   const { data: visit, error: visitError } = await supabase
     .from('visits')
-    .select('id, status')
+    .select('id, visit_status')
     .eq('id', visitId)
+    .eq('promotor_id', userProfile.id)
+    .is('deleted_at', null)
     .single()
 
   if (visitError || !visit) {
