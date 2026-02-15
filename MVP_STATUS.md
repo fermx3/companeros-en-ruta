@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-02-13
+**Last Updated:** 2026-02-15
 **Target:** Implementación requerimientos PerfectApp según especificaciones cliente
 
 ---
@@ -11,12 +11,12 @@
 
 | Rol | Estado Actual | Cambio Requerido | Ready for Testing |
 |-----|---------------|------------------|-------------------|
-| Admin | Funciones actuales | Sin cambios | Yes |
-| Brand Manager | Funciones actuales | Sin cambios + Config Assessment | Yes |
-| Supervisor | Funciones actuales | + Roles activos configurables | Yes |
-| **Promotor** | ✅ Assessment Wizard | RENOMBRAR de Advisor + Assessment 3 secciones | Ready |
-| **Asesor de Ventas** | ✅ Implementado | Dashboard, Órdenes, QR, Historial, Billing | Ready |
-| Client (M&P) | ✅ QR con Promociones | QR generado, selección promociones, tracking | Ready |
+| Admin | ✅ Protegido con useRequireRole | Sin cambios | Yes |
+| Brand Manager | ✅ Protegido con useRequireRole | Config Assessment pendiente | Yes |
+| Supervisor | ✅ Protegido con useRequireRole | + Roles activos configurables | Yes |
+| **Promotor** | ✅ Assessment Wizard + useRequireRole | Assessment 3 secciones completo | Ready |
+| **Asesor de Ventas** | ✅ Implementado + useRequireRole | Dashboard, Órdenes, QR, Historial, Billing | Ready |
+| Client (M&P) | ✅ QR con Promociones + useRequireRole | QR generado, selección promociones, tracking | Ready |
 
 ### Sistemas Core
 
@@ -25,14 +25,15 @@
 | Brand Affiliation | Complete | Complete | None |
 | Tier System | Complete | Complete | None |
 | Points System | Complete | Complete | None |
+| **Auth & Role Guards** | ✅ Complete | useRequireRole hook + all 6 layouts | None |
 | **Sistema QR** | ✅ Completo | Generación + Escaneo + Redención + Billing | None |
 | **Promociones UI** | ✅ Workflow Admin | Formulario + Banners + Aprobación Admin | Minor |
-| **Carga Evidencia** | ✅ Componente implementado | Fotos + GPS + Storage | Minor |
+| **Carga Evidencia** | ✅ Complete | PhotoEvidenceUpload con GPS, integrado en wizard | None |
 | **Flujo Visita Assessment** | ✅ Wizard 3 secciones | 3 secciones assessment | None |
 | **Notificaciones** | No implementado | In-app + Email | Major |
 | **Encuestas** | No implementado | Builder + Segmentación | Full |
 
-**Overall MVP Progress:** ~80% hacia requerimientos PerfectApp
+**Overall MVP Progress:** ~85% hacia requerimientos PerfectApp
 
 ---
 
@@ -252,7 +253,7 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-002d | ~~Crear módulo cliente (acceso perfil para validar promociones)~~ | REQ-032 | 3 | TASK-002b | **DONE** |
 | TASK-002e | ~~Crear módulo "Entregar Promoción" (QR descuento/material)~~ | REQ-033 | 3 | TASK-013, TASK-002b | **DONE** |
 | TASK-002f | ~~Implementar tracking QRs para facturación distribuidor→marca~~ | REQ-035 | 2 | TASK-002e | **DONE** |
-| TASK-003 | Actualizar middleware routing para ambos roles | REQ-001, REQ-001b | 1 | TASK-001, TASK-002 |
+| TASK-003 | ~~Actualizar middleware routing para ambos roles~~ | REQ-001, REQ-001b | 1 | TASK-001, TASK-002 | **DONE** (via useRequireRole en layouts) |
 | TASK-004 | Configurar Supabase Storage buckets (evidencia, qr) | REQ-002, REQ-090 | 1 | - |
 | TASK-005 | Crear hook useGeolocation | REQ-003 | 1 | - |
 | TASK-006 | Crear componente CameraCapture con preview | REQ-004, REQ-091 | 3 | - |
@@ -310,7 +311,7 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-065 | ~~**VISITA Sección 3:** Plan comunicación (materiales, exhibiciones) *(Wizard Step 3)*~~ | REQ-022c | 3 | TASK-064 | **DONE** |
 | TASK-066 | ~~**Integrar 3 secciones como WIZARD SECUENCIAL** en flujo check-in/check-out~~ | REQ-022 | 3 | TASK-063, 064, 065 | **DONE** |
 | TASK-066b | ~~Integrar carga de pedidos dentro del flujo de visita (Promotor)~~ | REQ-026 | 3 | TASK-066 | **DONE** |
-| TASK-067 | Brand Manager: Configuración sub-marcas para assessment | REQ-025 | 3 | - |
+| TASK-067 | ~~Brand Manager: Página productos~~ + Configuración sub-marcas para assessment | REQ-025 | 3 | - | **PARTIAL** (products page done, assessment config pending) |
 | TASK-070 | Integrar visitas/documentación en Asesor de Ventas | REQ-034 | 3 | TASK-002b |
 | TASK-071 | Supervisor: UI condicional basada en roles asignados (user_roles) | REQ-037, REQ-038, REQ-039 | 2 | TASK-001c, TASK-002b |
 | TASK-072 | Testing integración end-to-end | - | 3 | All |
@@ -513,24 +514,35 @@ Para validar la implementación:
 
 ---
 
+## Recent Fixes (2026-02-15)
+
+| Fix | Description | Commit |
+|-----|-------------|--------|
+| Auth race condition | `getSession()` + `onAuthStateChange(INITIAL_SESSION)` race caused empty roles to appear "ready". Fixed by deduplicating initialization paths. | `fcb42d0` |
+| Client role detection | Client users have no `user_roles` entry. AuthProvider now checks `clients.user_id` as fallback for role resolution. | `fcb42d0` |
+| Assessment PUT handler | Used wrong column name (`status` instead of `visit_status`) and missing RLS filters in assessment PUT route handler. | `f03ccaf` |
+
+---
+
 ## Próximos Pasos Inmediatos
 
-1. **Renombrar Advisor → Promotor** (TASK-001 a TASK-001c)
-   - Migración DB para renombrar enum value
-   - Actualizar todas las rutas `/asesor` → `/promotor`
-   - Actualizar labels en UI
+### Tier 1 — Bugs / Blockers
+1. **FINDING-001: Fix hardcoded tenant UUID in RLS policies** — 3 policies use hardcoded UUID, blocking multi-tenant. Requires migration to dynamic resolution via `user_roles`.
 
-2. **Crear rol Asesor de Ventas** (TASK-002 a TASK-002f)
-   - Agregar enum value en DB
-   - Crear dashboard con clientes asignados
-   - Módulo órdenes (cargar pedidos)
-   - Módulo cliente (validar promociones)
-   - Módulo "Entregar Promoción" (QR)
-   - Tracking para facturación distribuidor→marca
+### Tier 2 — P0 Features Still Missing
+2. **Notification system** (REQ-080/081) — Table + in-app bell + API. Required for promotion workflow.
+3. **Survey system** (REQ-100-105) — Full build: schema, builder, approval, segmentation, form.
+4. **Client dashboard redesign** (REQ-040-045) — LoyaltyPlansSection, WeeklyPromotionsBanner, SuggestedProductsGrid, TierDisplay.
+5. **Promotion creation form** (REQ-011) — Brand-side form for creating promotions with targeting.
 
-3. **Implementar flujo visita con 3 secciones assessment**
-   - Integrar dentro del check-in/check-out existente
-   - Componentes para cada sección según screenshots
+### Tier 3 — P0-P1 Polish
+6. **Storage buckets setup** (TASK-004) — Version-control Supabase Storage config for evidence/QR.
+7. **Extract useGeolocation hook** (TASK-005) — Currently inline in PhotoEvidenceUpload.
+8. **Supervisor UI** (TASK-071) — Conditional buttons based on assigned roles.
+9. **Brand assessment config** (TASK-067) — Sub-brands configurable by brand manager.
+
+### Tier 4 — Optimization
+10. **OPT-001:** Optimize asesor-ventas orders API (separate paginated + summary queries).
 
 ---
 
