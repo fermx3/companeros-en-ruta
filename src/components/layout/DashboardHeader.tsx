@@ -12,7 +12,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
+          <div className="h-8 w-8 rounded-lg border-1 border-blue-600 flex items-center justify-center shadow-sm">
             <Image
               src="/perfect-logo-icon.png"
               alt="CR"

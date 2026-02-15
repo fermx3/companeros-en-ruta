@@ -129,86 +129,83 @@ export class AdminService {
     try {
       const tenantId = await this.getCurrentTenantId();
 
-      // Consultar audit_logs para obtener actividad reciente
-      const { data, error } = await this.supabase
-        .from('audit_logs')
-        .select(`
-          id,
-          user_id,
-          action,
-          resource_type,
-          resource_id,
-          new_values,
-          created_at,
-          user_profiles(first_name, last_name)
-        `)
-        .eq('tenant_id', tenantId)
-        .in('action', ['CREATE', 'UPDATE'])
-        .in('resource_type', ['brands', 'users', 'clients', 'visits', 'orders'])
-        .order('created_at', { ascending: false })
-        .limit(limit);
+      // Query recent events from existing tables in parallel
+      const [visitsRes, ordersRes, clientsRes] = await Promise.all([
+        this.supabase
+          .from('visits')
+          .select('id, visit_status, created_at, client:clients(business_name)')
+          .eq('tenant_id', tenantId)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false })
+          .limit(limit),
+        this.supabase
+          .from('orders')
+          .select('id, order_number, order_status, total_amount, created_at')
+          .eq('tenant_id', tenantId)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false })
+          .limit(limit),
+        this.supabase
+          .from('clients')
+          .select('id, business_name, created_at')
+          .eq('tenant_id', tenantId)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false })
+          .limit(limit),
+      ]);
 
-      if (error) {
-        throw new Error(`Error al obtener actividad reciente: ${error.message}`);
-      }
+      const activities: RecentActivity[] = [];
 
-      if (!data) {
-        return { data: [] };
-      }
-
-      // Mapear los datos a formato de RecentActivity
-      const activities: RecentActivity[] = data.map((log: any) => {
-        const entityName = log.new_values?.name || log.new_values?.business_name || log.new_values?.first_name || 'Elemento';
-        const userName = log.user_profiles ? `${log.user_profiles.first_name} ${log.user_profiles.last_name}`.trim() : undefined;
-
-        // Determinar el tipo de acción y descripción
-        let actionType: RecentActivity['action_type'];
-        let description: string;
-
-        const resourceType = log.resource_type.slice(0, -1); // Quitar 's' del plural
-        const actionVerb = log.action === 'CREATE' ? 'creó' : 'actualizó';
-
-        switch (resourceType) {
-          case 'brand':
-            actionType = log.action === 'CREATE' ? 'brand_created' : 'brand_updated';
-            description = `Se ${actionVerb} la marca ${entityName}`;
-            break;
-          case 'user':
-            actionType = log.action === 'CREATE' ? 'user_created' : 'user_role_assigned';
-            description = `Se ${actionVerb} el usuario ${entityName}`;
-            break;
-          case 'client':
-            actionType = log.action === 'CREATE' ? 'client_created' : 'client_updated';
-            description = `Se ${actionVerb} el cliente ${entityName}`;
-            break;
-          case 'visit':
-            actionType = 'visit_created';
-            description = `Se ${actionVerb} una visita`;
-            break;
-          case 'order':
-            actionType = 'order_created';
-            description = `Se ${actionVerb} una orden`;
-            break;
-          default:
-            actionType = 'brand_created';
-            description = `Se ${actionVerb} ${entityName}`;
-        }
-
-        return {
-          id: log.id,
+      // Map visits
+      for (const v of visitsRes.data || []) {
+        const clientName = (v.client as any)?.business_name || 'Cliente';
+        activities.push({
+          id: v.id,
           tenant_id: tenantId,
-          user_id: log.user_id,
-          action: log.action,
-          resource_type: log.resource_type,
-          resource_id: log.resource_id,
-          user_name: userName,
-          created_at: log.created_at,
-          action_type: actionType,
-          description
-        };
-      });
+          user_id: '',
+          action: 'CREATE',
+          resource_type: 'visits',
+          resource_id: v.id,
+          created_at: v.created_at,
+          action_type: 'visit_created',
+          description: `Visita ${v.visit_status === 'completed' ? 'completada' : 'registrada'} para ${clientName}`
+        });
+      }
 
-      return { data: activities };
+      // Map orders
+      for (const o of ordersRes.data || []) {
+        activities.push({
+          id: o.id,
+          tenant_id: tenantId,
+          user_id: '',
+          action: 'CREATE',
+          resource_type: 'orders',
+          resource_id: o.id,
+          created_at: o.created_at,
+          action_type: 'order_created',
+          description: `Orden ${o.order_number || ''} creada por $${(o.total_amount || 0).toLocaleString('es-MX')}`
+        });
+      }
+
+      // Map clients
+      for (const c of clientsRes.data || []) {
+        activities.push({
+          id: c.id,
+          tenant_id: tenantId,
+          user_id: '',
+          action: 'CREATE',
+          resource_type: 'clients',
+          resource_id: c.id,
+          created_at: c.created_at,
+          action_type: 'client_created',
+          description: `Cliente ${c.business_name} registrado`
+        });
+      }
+
+      // Sort by created_at descending and take top N
+      activities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return { data: activities.slice(0, limit) };
 
     } catch (error) {
       console.error('Error fetching recent activity:', error);

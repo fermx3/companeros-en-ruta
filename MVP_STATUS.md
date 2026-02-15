@@ -322,6 +322,7 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 |----|-------|-------------|----------|-----------|--------|
 | OPT-001 | Optimizar API `/api/asesor-ventas/orders` | Actualmente obtiene TODAS las órdenes para calcular resumen, luego pagina en JS. Separar en 2 queries: una para datos paginados y otra para summary. Reduce tiempo de 6-12s a <1s | 2 | Media | Pendiente |
 | OPT-002 | ~~Optimizar API `/api/admin/metrics`~~ | ~~Traía TODAS las visitas y órdenes, luego filtraba en JS. Ahora usa filtros SQL `.gte('created_at', monthStart)` y `head: true` para counts. Llamadas paralelizadas en frontend.~~ | 1 | Alta | **DONE** |
+| OPT-003 | Actividad reciente admin con Supabase Realtime | Actualmente `getRecentActivity()` hace queries compuestas (visits, orders, clients) on-load. Migrar a Supabase Realtime subscriptions para que el feed se actualice en tiempo real sin refresh. | 3 | Media | Pendiente |
 
 ### Backlog: UX/UI Enhancements
 

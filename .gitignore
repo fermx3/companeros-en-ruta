@@ -106,6 +106,7 @@ supabase/.branches/
 
 .env.export
 scripts/exports/
+snippets/
 
 # ===================
 # Project-specific: Documentation (auto-generated)
