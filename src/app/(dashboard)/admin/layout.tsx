@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -234,7 +235,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <h1 className="text-lg font-semibold text-gray-900">
             Admin Panel
           </h1>
-          <div className="w-10" /> {/* Spacer */}
+          <NotificationBell />
         </div>
 
         {/* Page Content */}

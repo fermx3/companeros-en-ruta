@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { DashboardHeader } from '@/components/layout/DashboardHeader';
 
 interface BrandLayoutProps {
   children: React.ReactNode;
@@ -19,7 +20,6 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
   // require the actual 'brand_manager' role, not just admin access
   const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('brand_manager');
 
-  // Show loading while auth is initializing or checking role
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -31,7 +31,6 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
     );
   }
 
-  // Show error state with retry option
   if (error && !hasAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -54,14 +53,13 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
     );
   }
 
-  // If not loading but no access, redirect is in progress (handled by useRequireRole)
-  // Show nothing to avoid flash of content
   if (!hasAccess) {
     return null;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <DashboardHeader title="Brand Manager" />
       <main>{children}</main>
     </div>
   );

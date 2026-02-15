@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createBulkNotifications } from '@/lib/notifications'
 
 // Helper to get brand profile from auth
 async function getBrandProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -63,7 +64,7 @@ export async function POST(
       )
     }
 
-    const { brandId } = result
+    const { brandId, tenantId } = result
 
     // Get current promotion
     const { data: currentPromotion, error: fetchError } = await supabase
@@ -103,6 +104,35 @@ export async function POST(
 
     if (updateError) {
       throw new Error(`Error al enviar promoción: ${updateError.message}`)
+    }
+
+    // Notify all tenant admins about the new pending promotion
+    try {
+      const serviceClient = createServiceClient()
+      const { data: adminProfiles } = await serviceClient
+        .from('user_roles')
+        .select('user_profile_id, tenant_id')
+        .eq('tenant_id', tenantId)
+        .in('role', ['admin', 'tenant_admin', 'super_admin'])
+        .eq('status', 'active')
+        .is('deleted_at', null)
+
+      if (adminProfiles && adminProfiles.length > 0) {
+        const uniqueAdminIds = [...new Set(adminProfiles.map(a => a.user_profile_id))]
+        await createBulkNotifications(
+          uniqueAdminIds.map(adminProfileId => ({
+            tenant_id: tenantId!,
+            user_profile_id: adminProfileId,
+            title: 'Nueva promoción pendiente',
+            message: `La promoción "${currentPromotion.name}" fue enviada para aprobación`,
+            notification_type: 'new_promotion' as const,
+            action_url: `/admin/promotions`,
+            metadata: { promotion_id: id },
+          }))
+        )
+      }
+    } catch (notifError) {
+      console.error('Error creating submit notification:', notifError)
     }
 
     return NextResponse.json({

@@ -339,3 +339,41 @@ export interface VisitStageAssessment {
   created_at: string;
   updated_at?: string;
 }
+
+// =============================================================================
+// NOTIFICATION TYPES
+// =============================================================================
+
+/**
+ * Notification type enum values
+ * Column: notifications.notification_type
+ */
+export type NotificationType =
+  | 'promotion_approved'
+  | 'promotion_rejected'
+  | 'new_promotion'
+  | 'visit_completed'
+  | 'order_created'
+  | 'qr_redeemed'
+  | 'tier_upgrade'
+  | 'survey_assigned'
+  | 'system';
+
+/**
+ * notifications table
+ */
+export interface Notification {
+  id: string;
+  tenant_id: string;
+  user_profile_id: string;
+  title: string;
+  message: string;
+  notification_type: NotificationType;
+  is_read: boolean;
+  read_at?: string;
+  action_url?: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at?: string;
+  deleted_at?: string;
+}

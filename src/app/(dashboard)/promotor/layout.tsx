@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { DashboardHeader } from '@/components/layout/DashboardHeader';
 
 interface PromotorLayoutProps {
   children: React.ReactNode;
@@ -62,5 +63,10 @@ export default function PromotorLayout({ children }: PromotorLayoutProps) {
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <DashboardHeader title="Promotor" />
+      {children}
+    </>
+  );
 }

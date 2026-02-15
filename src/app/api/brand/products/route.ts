@@ -26,18 +26,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
   }
 
-  // Get all brands available to this user
+  // Get user roles to determine brand access
   const { data: userRoles } = await supabase
     .from('user_roles')
-    .select('brand_id')
+    .select('brand_id, role, scope')
     .eq('user_profile_id', userProfile.id)
     .eq('status', 'active')
     .is('deleted_at', null)
-    .not('brand_id', 'is', null)
 
   const userBrandIds = [...new Set((userRoles || []).map(r => r.brand_id).filter(Boolean))]
 
-  // Fetch brand details
+  // Fetch brand details for roles with explicit brand_id
   let availableBrands: Array<{ id: string; name: string }> = []
   if (userBrandIds.length > 0) {
     const { data: brandsData } = await supabase
@@ -50,26 +49,33 @@ export async function GET(request: NextRequest) {
     availableBrands = brandsData || []
   }
 
-  // If no brands from roles, try tenant brands
+  // Only global admins can fall back to all tenant brands
   if (availableBrands.length === 0) {
-    const { data: tenantBrands } = await supabase
-      .from('brands')
-      .select('id, name')
-      .eq('tenant_id', userProfile.tenant_id)
-      .is('deleted_at', null)
-      .order('name')
+    const isGlobalAdmin = (userRoles || []).some(r => r.role === 'admin' && r.scope === 'global')
+    if (isGlobalAdmin) {
+      const { data: tenantBrands } = await supabase
+        .from('brands')
+        .select('id, name')
+        .eq('tenant_id', userProfile.tenant_id)
+        .is('deleted_at', null)
+        .order('name')
 
-    availableBrands = tenantBrands || []
+      availableBrands = tenantBrands || []
+    } else {
+      return NextResponse.json({ error: 'No tienes marcas asignadas' }, { status: 403 })
+    }
   }
 
-  // Use provided brandId or default to first available
+  // Use provided brandId (if user has access) or default to first available
   let effectiveBrandId = brandId
-  if (!effectiveBrandId && availableBrands.length > 0) {
+  if (effectiveBrandId) {
+    // Verify the requested brand is in the user's allowed brands
+    if (!availableBrands.some(b => b.id === effectiveBrandId)) {
+      return NextResponse.json({ error: 'No tienes acceso a esta marca' }, { status: 403 })
+    }
+  } else if (availableBrands.length > 0) {
     effectiveBrandId = availableBrands[0].id
   }
-
-  console.log('[Products API] Available brands:', availableBrands.map(b => b.name))
-  console.log('[Products API] Using brand:', effectiveBrandId)
 
   if (!effectiveBrandId) {
     return NextResponse.json({ error: 'No tienes marcas asignadas' }, { status: 400 })
@@ -234,39 +240,40 @@ export async function POST(request: NextRequest) {
     const { name, code, description, category_id, base_price, cost, barcode, variants, brand_id: requestBrandId } = body
     const sku = code  // Map to correct column name
 
-    // Get user's brands for validation
+    // Get user's roles to determine brand access
     const { data: userRoles } = await supabase
       .from('user_roles')
-      .select('brand_id')
+      .select('brand_id, role, scope')
       .eq('user_profile_id', userProfile.id)
       .eq('status', 'active')
       .is('deleted_at', null)
-      .not('brand_id', 'is', null)
 
     const userBrandIds = [...new Set((userRoles || []).map(r => r.brand_id).filter(Boolean))]
 
-    // Use brand_id from request if valid, otherwise use first available
-    let brandId: string | null = null
-    if (requestBrandId && userBrandIds.includes(requestBrandId)) {
-      brandId = requestBrandId
-    } else if (userBrandIds.length > 0) {
-      brandId = userBrandIds[0]
-    } else {
-      // Fallback: get first brand in tenant
-      const { data: tenantBrand } = await supabase
-        .from('brands')
-        .select('id')
-        .eq('tenant_id', userProfile.tenant_id)
-        .is('deleted_at', null)
-        .limit(1)
-        .single()
+    // Determine allowed brand IDs
+    let allowedBrandIds = userBrandIds as string[]
 
-      if (tenantBrand) {
-        brandId = tenantBrand.id
+    // Only global admins can fall back to all tenant brands
+    if (allowedBrandIds.length === 0) {
+      const isGlobalAdmin = (userRoles || []).some(r => r.role === 'admin' && r.scope === 'global')
+      if (isGlobalAdmin) {
+        const { data: tenantBrands } = await supabase
+          .from('brands')
+          .select('id')
+          .eq('tenant_id', userProfile.tenant_id)
+          .is('deleted_at', null)
+
+        allowedBrandIds = (tenantBrands || []).map(b => b.id)
       }
     }
 
-    console.log('[Products API POST] Request brand_id:', requestBrandId, 'Using brand:', brandId)
+    // Use brand_id from request if valid, otherwise use first allowed
+    let brandId: string | null = null
+    if (requestBrandId && allowedBrandIds.includes(requestBrandId)) {
+      brandId = requestBrandId
+    } else if (allowedBrandIds.length > 0) {
+      brandId = allowedBrandIds[0]
+    }
 
     if (!brandId) {
       return NextResponse.json({ error: 'No brand access' }, { status: 403 })

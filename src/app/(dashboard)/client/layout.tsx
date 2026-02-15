@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { DashboardHeader } from '@/components/layout/DashboardHeader';
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -51,5 +52,10 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <DashboardHeader title="Mi Portal" />
+      {children}
+    </>
+  );
 }

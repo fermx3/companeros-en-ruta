@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createNotification } from '@/lib/notifications'
 
 // Helper to get admin profile from auth
 async function getAdminProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -77,7 +78,7 @@ export async function POST(
     // Get current promotion
     const { data: currentPromotion, error: fetchError } = await supabase
       .from('promotions')
-      .select('id, status, name')
+      .select('id, status, name, created_by, tenant_id')
       .eq('id', id)
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
@@ -115,6 +116,21 @@ export async function POST(
 
     if (updateError) {
       throw new Error(`Error al rechazar promoción: ${updateError.message}`)
+    }
+
+    // Notify the brand manager who created the promotion
+    try {
+      await createNotification({
+        tenant_id: currentPromotion.tenant_id,
+        user_profile_id: currentPromotion.created_by,
+        title: 'Promoción rechazada',
+        message: `La promoción "${currentPromotion.name}" fue rechazada. Motivo: ${rejection_reason.trim()}`,
+        notification_type: 'promotion_rejected',
+        action_url: `/brand/promotions`,
+        metadata: { promotion_id: id, rejection_reason: rejection_reason.trim() },
+      })
+    } catch (notifError) {
+      console.error('Error creating rejection notification:', notifError)
     }
 
     return NextResponse.json({

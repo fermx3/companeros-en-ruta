@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { DashboardHeader } from '@/components/layout/DashboardHeader';
 
 interface AsesorVentasLayoutProps {
   children: React.ReactNode;
@@ -51,5 +52,10 @@ export default function AsesorVentasLayout({ children }: AsesorVentasLayoutProps
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <DashboardHeader title="Asesor de Ventas" />
+      {children}
+    </>
+  );
 }
