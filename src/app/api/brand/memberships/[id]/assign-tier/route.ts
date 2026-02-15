@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createNotification, getClientUserProfileId } from '@/lib/notifications'
 
 export async function POST(
   request: NextRequest,
@@ -71,7 +72,7 @@ export async function POST(
     // 4. Verify membership exists and belongs to this brand
     const { data: membership, error: membershipError } = await supabase
       .from('client_brand_memberships')
-      .select('id, brand_id, membership_status')
+      .select('id, brand_id, client_id, membership_status')
       .eq('id', membershipId)
       .is('deleted_at', null)
       .single()
@@ -167,6 +168,25 @@ export async function POST(
 
     if (updateError) {
       throw new Error(`Error al actualizar membresía: ${updateError.message}`)
+    }
+
+    // Notify the client about the tier upgrade
+    try {
+      const serviceClient = createServiceClient()
+      const clientProfileId = await getClientUserProfileId(serviceClient, membership.client_id)
+      if (clientProfileId) {
+        await createNotification({
+          tenant_id: tenantId,
+          user_profile_id: clientProfileId,
+          title: 'Nivel asignado',
+          message: `Has sido asignado al nivel "${tier.name}"`,
+          notification_type: 'tier_upgrade',
+          action_url: '/client/brands',
+          metadata: { membership_id: membershipId, tier_id: tier.id },
+        })
+      }
+    } catch (notifError) {
+      console.error('Error creating tier upgrade notification:', notifError)
     }
 
     return NextResponse.json({

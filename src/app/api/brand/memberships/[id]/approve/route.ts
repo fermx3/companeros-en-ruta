@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createNotification, getClientUserProfileId } from '@/lib/notifications'
 
 export async function PUT(
   request: NextRequest,
@@ -155,6 +156,25 @@ export async function PUT(
           assigned_by: userProfile.id,
           assigned_date: now
         })
+    }
+
+    // Notify the client about the membership approval
+    try {
+      const serviceClient = createServiceClient()
+      const clientProfileId = await getClientUserProfileId(serviceClient, membership.client_id)
+      if (clientProfileId) {
+        await createNotification({
+          tenant_id: membership.tenant_id,
+          user_profile_id: clientProfileId,
+          title: 'Membresía aprobada',
+          message: 'Tu membresía ha sido aprobada',
+          notification_type: 'system',
+          action_url: '/client/brands',
+          metadata: { membership_id: membershipId },
+        })
+      }
+    } catch (notifError) {
+      console.error('Error creating membership approval notification:', notifError)
     }
 
     return NextResponse.json({

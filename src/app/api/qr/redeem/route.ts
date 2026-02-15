@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createBulkNotifications } from '@/lib/notifications'
 
 /**
  * POST /api/qr/redeem
@@ -98,6 +99,42 @@ export async function POST(request: NextRequest) {
         { error: result.message, success: false },
         { status: 400 }
       )
+    }
+
+    // Notify brand managers about the QR redemption
+    try {
+      const serviceClient = createServiceClient()
+      const brandId = result.qr_data?.brand_id as string | undefined
+
+      // Find brand_manager(s) for the tenant (optionally filtered by brand_id)
+      let bmQuery = serviceClient
+        .from('user_roles')
+        .select('user_profile_id')
+        .eq('tenant_id', userProfile.tenant_id)
+        .in('role', ['brand_manager', 'brand_admin'])
+        .eq('status', 'active')
+
+      if (brandId) {
+        bmQuery = bmQuery.eq('brand_id', brandId)
+      }
+
+      const { data: brandManagers } = await bmQuery
+
+      if (brandManagers && brandManagers.length > 0) {
+        await createBulkNotifications(
+          brandManagers.map(bm => ({
+            tenant_id: userProfile.tenant_id!,
+            user_profile_id: bm.user_profile_id,
+            title: 'Código QR canjeado',
+            message: 'Un código QR ha sido canjeado',
+            notification_type: 'qr_redeemed' as const,
+            action_url: '/brand/promotions',
+            metadata: { redemption_id: result.redemption_id },
+          }))
+        )
+      }
+    } catch (notifError) {
+      console.error('Error creating QR redemption notification:', notifError)
     }
 
     return NextResponse.json({

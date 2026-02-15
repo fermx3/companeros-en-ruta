@@ -1,5 +1,31 @@
 import { createServiceClient } from '@/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { NotificationType } from '@/lib/types/database';
+
+/**
+ * Resolves a client_id to its corresponding user_profile_id.
+ * Returns null if the client has no linked user account (user_id is null).
+ */
+export async function getClientUserProfileId(
+  serviceClient: SupabaseClient,
+  clientId: string
+): Promise<string | null> {
+  const { data: client } = await serviceClient
+    .from('clients')
+    .select('user_id')
+    .eq('id', clientId)
+    .single();
+
+  if (!client?.user_id) return null;
+
+  const { data: profile } = await serviceClient
+    .from('user_profiles')
+    .select('id')
+    .eq('user_id', client.user_id)
+    .single();
+
+  return profile?.id ?? null;
+}
 
 interface CreateNotificationParams {
   tenant_id: string;

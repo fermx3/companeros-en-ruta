@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createNotification, getClientUserProfileId } from '@/lib/notifications'
 
 interface AsesorOrder {
   id: string
@@ -450,6 +451,25 @@ export async function POST(request: NextRequest) {
         warning: 'Orden creada pero hubo un error al agregar algunos items',
         details: itemsError.message
       }, { status: 201 })
+    }
+
+    // Notify the client about the new order
+    try {
+      const serviceClient = createServiceClient()
+      const clientProfileId = await getClientUserProfileId(serviceClient, client_id)
+      if (clientProfileId) {
+        await createNotification({
+          tenant_id: asesorVentasRole.tenant_id,
+          user_profile_id: clientProfileId,
+          title: 'Nueva orden creada',
+          message: `Se ha creado la orden ${newOrder.order_number} para tu negocio`,
+          notification_type: 'order_created',
+          action_url: '/client/orders',
+          metadata: { order_id: newOrder.id },
+        })
+      }
+    } catch (notifError) {
+      console.error('Error creating order notification:', notifError)
     }
 
     return NextResponse.json({

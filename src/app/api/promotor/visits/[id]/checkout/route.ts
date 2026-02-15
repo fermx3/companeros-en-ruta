@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createBulkNotifications } from '@/lib/notifications'
 
 // Helper to get promotor profile from auth
 async function getPromotorProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -145,6 +146,34 @@ export async function POST(
         .eq('id', updatedVisit.brand_id)
         .single()
       brandInfo = brand
+    }
+
+    // Notify supervisors of completed visit
+    try {
+      const serviceClient = createServiceClient()
+      const { data: supervisors } = await serviceClient
+        .from('user_roles')
+        .select('user_profile_id')
+        .eq('tenant_id', result.tenantId)
+        .eq('role', 'supervisor')
+        .eq('status', 'active')
+
+      if (supervisors && supervisors.length > 0) {
+        const clientName = updatedVisit.client?.business_name ?? 'un cliente'
+        await createBulkNotifications(
+          supervisors.map(s => ({
+            tenant_id: result.tenantId!,
+            user_profile_id: s.user_profile_id,
+            title: 'Visita completada',
+            message: `Visita completada en ${clientName}`,
+            notification_type: 'visit_completed' as const,
+            action_url: '/supervisor',
+            metadata: { visit_id: id },
+          }))
+        )
+      }
+    } catch (notifError) {
+      console.error('Error creating visit checkout notification:', notifError)
     }
 
     // Calculate visit duration
