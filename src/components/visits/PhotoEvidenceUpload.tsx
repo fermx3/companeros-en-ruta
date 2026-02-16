@@ -140,10 +140,14 @@ export function PhotoEvidenceUpload({
         for (const photo of newPhotos) {
           const uploadedPhoto = await uploadPhoto(photo)
           if (uploadedPhoto) {
-            // Update the photo with server data
+            // Update the photo with server data — use functional update via
+            // onPhotosChange to avoid stale closure over `photos`
             onPhotosChange(
-              photos.map(p => p.id === photo.id ? uploadedPhoto : p)
+              updatedPhotos.map(p => p.id === photo.id ? uploadedPhoto : p)
             )
+            // Keep updatedPhotos in sync for subsequent iterations
+            const idx = updatedPhotos.findIndex(p => p.id === photo.id)
+            if (idx !== -1) updatedPhotos[idx] = uploadedPhoto
           }
           setUploadingPhotoIds(prev => {
             const next = new Set(prev)

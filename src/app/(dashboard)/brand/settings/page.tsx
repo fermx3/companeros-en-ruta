@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { ImageUpload } from '@/components/ui/image-upload';
 import type { Brand } from '@/lib/types/admin';
 
 /**
@@ -17,7 +18,6 @@ export default function BrandSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [logoError, setLogoError] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -82,6 +82,22 @@ export default function BrandSettingsPage() {
       [field]: value
     }));
   };
+
+  const handleLogoUpload = useCallback(async (file: File): Promise<string> => {
+    const body = new FormData();
+    body.append('file', file);
+
+    const response = await fetch('/api/brand/logo', { method: 'POST', body });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Error al subir logo');
+    }
+
+    const data = await response.json();
+    setFormData(prev => ({ ...prev, logo_url: data.logo_url }));
+    return data.logo_url;
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,41 +281,19 @@ export default function BrandSettingsPage() {
                 Identidad Visual
               </h3>
 
-              {/* Logo URL */}
+              {/* Logo Upload */}
               <div className="mb-6">
-                <label htmlFor="logo_url" className="block text-sm font-medium text-gray-700 mb-2">
-                  URL del logo
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Logo de la marca
                 </label>
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden bg-gray-50">
-                    {formData.logo_url && !logoError ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={formData.logo_url}
-                        alt="Logo de marca"
-                        className="w-full h-full object-contain"
-                        onError={() => setLogoError(true)}
-                      />
-                    ) : (
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="url"
-                      id="logo_url"
-                      value={formData.logo_url}
-                      onChange={(e) => { setLogoError(false); handleInputChange('logo_url', e.target.value); }}
-                      placeholder="https://ejemplo.com/logo.png"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Ingresa la URL de la imagen del logo de tu marca
-                    </p>
-                  </div>
-                </div>
+                <ImageUpload
+                  currentImageUrl={formData.logo_url || undefined}
+                  onUpload={handleLogoUpload}
+                  maxSizeMB={2}
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Sube una imagen PNG, JPG, SVG o WebP (max 2MB). El logo se guarda inmediatamente al seleccionarlo.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
