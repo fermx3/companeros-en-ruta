@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -70,7 +70,18 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
+
+  // Extract the dashboard prefix (e.g. "/promotor", "/client", "/brand") from the current path
+  const dashboardPrefix = pathname.match(/^\/(promotor|asesor-ventas|client|admin|brand|supervisor)/)?.[0] ?? '';
+
+  // Resolve action_url: if it starts with a known dashboard prefix, use as-is;
+  // otherwise prepend the current user's dashboard prefix
+  const resolveActionUrl = useCallback((url: string) => {
+    if (/^\/(promotor|asesor-ventas|client|admin|brand|supervisor)\//.test(url)) return url;
+    return `${dashboardPrefix}${url}`;
+  }, [dashboardPrefix]);
 
   // Close on click outside
   useEffect(() => {
@@ -100,7 +111,7 @@ export function NotificationBell() {
     }
     if (notification.action_url) {
       setOpen(false);
-      router.push(notification.action_url);
+      router.push(resolveActionUrl(notification.action_url));
     }
   };
 
