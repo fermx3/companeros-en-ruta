@@ -1,57 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
+    const { searchParams } = new URL(request.url)
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+    const { brandId } = result
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado', details: authError?.message },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener user_profile y brand_id
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select(`
-        id,
-        user_roles!user_roles_user_profile_id_fkey(
-          brand_id,
-          role,
-          status
-        )
-      `)
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado', details: profileError?.message },
-        { status: 404 }
-      )
-    }
-
-    // Validar que tenga rol de marca activo
-    const brandRole = userProfile.user_roles.find(role =>
-      role.status === 'active' &&
-      ['brand_manager', 'brand_admin'].includes(role.role)
-    )
-
-    if (!brandRole || !brandRole.brand_id) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene permisos de marca activos' },
-        { status: 403 }
-      )
-    }
-
-    const targetBrandId = brandRole.brand_id
-
-    // 3. Obtener información de la marca
+    // Obtener información de la marca
     const { data: brandInfo, error: brandError } = await supabase
       .from('brands')
       .select(`
@@ -76,17 +36,14 @@ export async function GET() {
           slug
         )
       `)
-      .eq('id', targetBrandId)
+      .eq('id', brandId)
       .single()
 
-    if (brandError) {
-      console.error('Error al obtener marca:', brandError)
-      throw new Error(`Error al obtener información de marca: ${brandError.message}`)
-    }
-
-    if (!brandInfo) {
-      console.error('Marca no encontrada para brand_id:', targetBrandId)
-      throw new Error('Información de marca no encontrada')
+    if (brandError || !brandInfo) {
+      return NextResponse.json(
+        { error: 'Información de marca no encontrada' },
+        { status: 404 }
+      )
     }
 
     return NextResponse.json({
@@ -128,54 +85,13 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createClient()
+    const { searchParams } = new URL(request.url)
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+    const { brandId } = result
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado', details: authError?.message },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener user_profile y brand_id
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select(`
-        id,
-        user_roles!user_roles_user_profile_id_fkey(
-          brand_id,
-          role,
-          status
-        )
-      `)
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado', details: profileError?.message },
-        { status: 404 }
-      )
-    }
-
-    // Validar que tenga rol de marca activo
-    const brandRole = userProfile.user_roles.find(role =>
-      role.status === 'active' &&
-      ['brand_manager', 'brand_admin'].includes(role.role)
-    )
-
-    if (!brandRole || !brandRole.brand_id) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene permisos de marca activos' },
-        { status: 403 }
-      )
-    }
-
-    const targetBrandId = brandRole.brand_id
-
-    // 3. Obtener datos del body
+    // Obtener datos del body
     const body = await request.json()
     const {
       name,
@@ -189,7 +105,7 @@ export async function PUT(request: NextRequest) {
       settings
     } = body
 
-    // 4. Actualizar marca
+    // Actualizar marca
     const { data: updatedBrand, error: updateError } = await supabase
       .from('brands')
       .update({
@@ -204,7 +120,7 @@ export async function PUT(request: NextRequest) {
         settings,
         updated_at: new Date().toISOString()
       })
-      .eq('id', targetBrandId)
+      .eq('id', brandId)
       .select(`
         id,
         public_id,

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
@@ -29,6 +30,7 @@ interface CommunicationPlan {
 }
 
 export default function BrandExhibitionsPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
   const [plans, setPlans] = useState<CommunicationPlan[]>([])
   const [loading, setLoading] = useState(true)
@@ -53,8 +55,8 @@ export default function BrandExhibitionsPage() {
 
     try {
       const [exhibitionsRes, plansRes] = await Promise.all([
-        fetch('/api/brand/exhibitions'),
-        fetch('/api/brand/communication-plans?active_only=true')
+        brandFetch('/api/brand/exhibitions'),
+        brandFetch('/api/brand/communication-plans?active_only=true')
       ])
 
       if (!exhibitionsRes.ok) throw new Error('Error al cargar exhibiciones')
@@ -74,7 +76,7 @@ export default function BrandExhibitionsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [brandFetch, currentBrandId])
 
   useEffect(() => {
     loadData()
@@ -90,7 +92,7 @@ export default function BrandExhibitionsPage() {
         ? `/api/brand/exhibitions/${editingExhibition.id}`
         : '/api/brand/exhibitions'
 
-      const response = await fetch(url, {
+      const response = await brandFetch(url, {
         method: editingExhibition ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -121,7 +123,7 @@ export default function BrandExhibitionsPage() {
 
     setDeleting(id)
     try {
-      const response = await fetch(`/api/brand/exhibitions/${id}`, {
+      const response = await brandFetch(`/api/brand/exhibitions/${id}`, {
         method: 'DELETE'
       })
 

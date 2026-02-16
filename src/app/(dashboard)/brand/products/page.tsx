@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
@@ -63,6 +64,7 @@ interface Brand {
 }
 
 export default function BrandProductsPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [availableBrands, setAvailableBrands] = useState<Brand[]>([])
@@ -115,7 +117,7 @@ export default function BrandProductsPage() {
         params.set('brand_id', targetBrandId)
       }
 
-      const response = await fetch(`/api/brand/products?${params}`)
+      const response = await brandFetch(`/api/brand/products?${params}`)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -144,7 +146,7 @@ export default function BrandProductsPage() {
     } finally {
       setLoading(false)
     }
-  }, [includeInactive, selectedBrandId])
+  }, [includeInactive, selectedBrandId, brandFetch, currentBrandId])
 
   const handleBrandChange = (newBrandId: string) => {
     setSelectedBrandId(newBrandId)
@@ -178,7 +180,7 @@ export default function BrandProductsPage() {
         }))
       }
 
-      const response = await fetch(url, {
+      const response = await brandFetch(url, {
         method: editingProduct ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -206,7 +208,7 @@ export default function BrandProductsPage() {
 
     setDeleting(id)
     try {
-      const response = await fetch(`/api/brand/products/${id}`, {
+      const response = await brandFetch(`/api/brand/products/${id}`, {
         method: 'DELETE'
       })
 

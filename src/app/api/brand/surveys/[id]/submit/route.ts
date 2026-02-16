@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 export async function POST(
   request: NextRequest,
@@ -9,40 +10,17 @@ export async function POST(
   try {
     const { id } = await params
     const supabase = await createClient()
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 })
-    }
-
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select(`
-        id,
-        tenant_id,
-        user_roles!user_roles_user_profile_id_fkey(brand_id, role, status, tenant_id)
-      `)
-      .eq('user_id', user.id)
-      .single()
-
-    if (!userProfile) {
-      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
-    }
-
-    const brandRole = userProfile.user_roles.find(r =>
-      r.status === 'active' && ['brand_manager', 'brand_admin'].includes(r.role)
-    )
-
-    if (!brandRole?.brand_id) {
-      return NextResponse.json({ error: 'Sin permisos de marca' }, { status: 403 })
-    }
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+    const { brandId, tenantId } = result
 
     // Get survey
     const { data: survey, error: fetchError } = await supabase
       .from('surveys')
       .select('id, survey_status, title, tenant_id, brand_id')
       .eq('id', id)
-      .eq('brand_id', brandRole.brand_id)
+      .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
 
@@ -90,7 +68,7 @@ export async function POST(
       const { data: adminProfiles } = await supabase
         .from('user_roles')
         .select('user_profile_id')
-        .eq('tenant_id', survey.tenant_id)
+        .eq('tenant_id', tenantId)
         .in('role', ['tenant_admin', 'admin', 'super_admin'])
         .eq('status', 'active')
         .is('deleted_at', null)
@@ -99,7 +77,7 @@ export async function POST(
         const uniqueIds = [...new Set(adminProfiles.map(a => a.user_profile_id))]
         await createBulkNotifications(
           uniqueIds.map(profileId => ({
-            tenant_id: survey.tenant_id,
+            tenant_id: tenantId!,
             user_profile_id: profileId,
             title: 'Nueva encuesta pendiente de aprobación',
             message: `La encuesta "${survey.title}" requiere tu revisión y aprobación.`,

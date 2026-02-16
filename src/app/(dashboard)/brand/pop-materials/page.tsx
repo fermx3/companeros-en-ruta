@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
@@ -37,6 +38,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 export default function BrandPOPMaterialsPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [materials, setMaterials] = useState<POPMaterial[]>([])
   const [systemTemplates, setSystemTemplates] = useState<POPMaterial[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,7 +58,7 @@ export default function BrandPOPMaterialsPage() {
     setError(null)
 
     try {
-      const response = await fetch('/api/brand/pop-materials?include_system=true')
+      const response = await brandFetch('/api/brand/pop-materials?include_system=true')
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -74,7 +76,7 @@ export default function BrandPOPMaterialsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [brandFetch, currentBrandId])
 
   useEffect(() => {
     loadMaterials()
@@ -90,7 +92,7 @@ export default function BrandPOPMaterialsPage() {
         ? `/api/brand/pop-materials/${editingMaterial.id}`
         : '/api/brand/pop-materials'
 
-      const response = await fetch(url, {
+      const response = await brandFetch(url, {
         method: editingMaterial ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -118,7 +120,7 @@ export default function BrandPOPMaterialsPage() {
 
     setDeleting(id)
     try {
-      const response = await fetch(`/api/brand/pop-materials/${id}`, {
+      const response = await brandFetch(`/api/brand/pop-materials/${id}`, {
         method: 'DELETE'
       })
 

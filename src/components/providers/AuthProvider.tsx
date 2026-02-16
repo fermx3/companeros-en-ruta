@@ -10,10 +10,18 @@ const debugLog = (message: string, data?: unknown) => {
   console.log(`[AuthProvider] ${message}`, data !== undefined ? data : '')
 }
 
+export interface UserBrandRole {
+  role: string
+  brandId: string
+  isPrimary: boolean
+}
+
 interface AuthContextType {
   user: User | null
   userProfile: unknown | null
   userRoles: UserRole[]
+  /** Brand-specific roles with brand_id and is_primary info */
+  userBrandRoles: UserBrandRole[]
   loading: boolean
   /** True after the initial profile/roles fetch has completed (even if it failed) */
   initialized: boolean
@@ -32,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [userProfile, setUserProfile] = useState<unknown>(null)
   const [userRoles, setUserRoles] = useState<UserRole[]>([])
+  const [userBrandRoles, setUserBrandRoles] = useState<UserBrandRole[]>([])
   const [loading, setLoading] = useState(true)
   const [initialized, setInitialized] = useState(false)
   const [profileError, setProfileError] = useState(false)
@@ -133,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Cargar roles del usuario (user_roles uses user_profile_id, not user_id)
         const { data: roles, error: rolesError } = await supabase
           .from('user_roles')
-          .select('role')
+          .select('role, brand_id, is_primary')
           .eq('user_profile_id', profileId)
           .eq('status', 'active')
           .is('deleted_at', null)
@@ -150,8 +159,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (roles && roles.length > 0) {
           const rolesList = roles.map(r => r.role)
           setUserRoles(rolesList)
+
+          // Build brand-specific roles array
+          const brandRolesList: UserBrandRole[] = roles
+            .filter(r => r.brand_id)
+            .map(r => ({
+              role: r.role,
+              brandId: r.brand_id as string,
+              isPrimary: r.is_primary ?? false,
+            }))
+          setUserBrandRoles(brandRolesList)
+
           hasValidDataRef.current = true
           debugLog('Roles set:', rolesList)
+          debugLog('Brand roles set:', brandRolesList)
         } else {
           // No user_roles found — check if user is a client.
           // Client users are linked via clients.user_id (auth.users.id),
@@ -280,6 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             setUserProfile(null)
             setUserRoles([])
+            setUserBrandRoles([])
           }
 
           if (isMounted) {
@@ -308,6 +330,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut()
     setUserProfile(null)
     setUserRoles([])
+    setUserBrandRoles([])
     setErrorMessage(null)
     setProfileError(false)
     hasValidDataRef.current = false
@@ -353,6 +376,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       userProfile,
       userRoles,
+      userBrandRoles,
       loading,
       initialized,
       profileError,

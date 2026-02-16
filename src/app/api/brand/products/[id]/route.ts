@@ -1,53 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { SupabaseClient } from '@supabase/supabase-js'
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 interface RouteParams {
   params: Promise<{ id: string }>
-}
-
-/**
- * Resolves the brand IDs the current user is allowed to access.
- * Returns null if the user profile is not found.
- */
-async function getAllowedBrandIds(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<{ allowedBrandIds: string[]; userProfile: { id: string; tenant_id: string } } | null> {
-  const { data: userProfile } = await supabase
-    .from('user_profiles')
-    .select('id, tenant_id')
-    .eq('user_id', userId)
-    .single()
-
-  if (!userProfile) return null
-
-  const { data: userRoles } = await supabase
-    .from('user_roles')
-    .select('brand_id, role, scope')
-    .eq('user_profile_id', userProfile.id)
-    .eq('status', 'active')
-    .is('deleted_at', null)
-
-  const userBrandIds = [...new Set((userRoles || []).map(r => r.brand_id).filter(Boolean))] as string[]
-
-  if (userBrandIds.length > 0) {
-    return { allowedBrandIds: userBrandIds, userProfile }
-  }
-
-  // Only global admins can access all tenant brands
-  const isGlobalAdmin = (userRoles || []).some(r => r.role === 'admin' && r.scope === 'global')
-  if (isGlobalAdmin) {
-    const { data: tenantBrands } = await supabase
-      .from('brands')
-      .select('id')
-      .eq('tenant_id', userProfile.tenant_id)
-      .is('deleted_at', null)
-
-    return { allowedBrandIds: (tenantBrands || []).map(b => b.id), userProfile }
-  }
-
-  return { allowedBrandIds: [], userProfile }
 }
 
 // GET: Get single product with variants
@@ -55,14 +11,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { id: productId } = await params
   const supabase = await createClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const { searchParams } = new URL(request.url)
+  const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+  if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
 
-  const result = await getAllowedBrandIds(supabase, user.id)
-  if (!result) {
-    return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
+  const allowedBrandIds = result.allBrandRoles.map(r => r.brand_id)
+  // Include the resolved brandId in case user is global admin with no brand roles
+  if (!allowedBrandIds.includes(result.brandId)) {
+    allowedBrandIds.push(result.brandId)
   }
 
   const { data: product, error } = await supabase
@@ -87,7 +43,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 
   // Verify user has access to this product's brand
-  if (!result.allowedBrandIds.includes(product.brand_id)) {
+  if (!allowedBrandIds.includes(product.brand_id)) {
     return NextResponse.json({ error: 'No tienes acceso a esta marca' }, { status: 403 })
   }
 
@@ -99,23 +55,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { id: productId } = await params
   const supabase = await createClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const { searchParams } = new URL(request.url)
+  const authResult = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+  if (isBrandAuthError(authResult)) return brandAuthErrorResponse(authResult)
+  const { tenantId } = authResult
 
-  const result = await getAllowedBrandIds(supabase, user.id)
-  if (!result) {
-    return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
+  const allowedBrandIds = authResult.allBrandRoles.map(r => r.brand_id)
+  if (!allowedBrandIds.includes(authResult.brandId)) {
+    allowedBrandIds.push(authResult.brandId)
   }
-  const { userProfile } = result
 
   // Verify product exists and user has tenant + brand access
   const { data: existingProduct } = await supabase
     .from('products')
     .select('id, brand_id')
     .eq('id', productId)
-    .eq('tenant_id', userProfile.tenant_id)
+    .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .single()
 
@@ -123,7 +78,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Product not found' }, { status: 404 })
   }
 
-  if (!result.allowedBrandIds.includes(existingProduct.brand_id)) {
+  if (!allowedBrandIds.includes(existingProduct.brand_id)) {
     return NextResponse.json({ error: 'No tienes acceso a esta marca' }, { status: 403 })
   }
 
@@ -198,7 +153,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           await supabase
             .from('product_variants')
             .insert({
-              tenant_id: userProfile.tenant_id,
+              tenant_id: tenantId,
               product_id: productId,
               variant_name: variant.variant_name,
               variant_code: variant.variant_code,
@@ -227,23 +182,22 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { id: productId } = await params
   const supabase = await createClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const { searchParams } = new URL(request.url)
+  const authResult = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+  if (isBrandAuthError(authResult)) return brandAuthErrorResponse(authResult)
+  const { tenantId } = authResult
 
-  const result = await getAllowedBrandIds(supabase, user.id)
-  if (!result) {
-    return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
+  const allowedBrandIds = authResult.allBrandRoles.map(r => r.brand_id)
+  if (!allowedBrandIds.includes(authResult.brandId)) {
+    allowedBrandIds.push(authResult.brandId)
   }
-  const { userProfile } = result
 
   // Verify product exists and get its brand
   const { data: existingProduct } = await supabase
     .from('products')
     .select('id, brand_id')
     .eq('id', productId)
-    .eq('tenant_id', userProfile.tenant_id)
+    .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .single()
 
@@ -251,7 +205,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Product not found' }, { status: 404 })
   }
 
-  if (!result.allowedBrandIds.includes(existingProduct.brand_id)) {
+  if (!allowedBrandIds.includes(existingProduct.brand_id)) {
     return NextResponse.json({ error: 'No tienes acceso a esta marca' }, { status: 403 })
   }
 
@@ -260,7 +214,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     .from('products')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', productId)
-    .eq('tenant_id', userProfile.tenant_id)
+    .eq('tenant_id', tenantId)
 
   if (deleteError) {
     console.error('Error deleting product:', deleteError)

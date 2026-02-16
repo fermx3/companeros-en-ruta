@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
@@ -38,6 +39,7 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 export default function BrandSurveysPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [surveys, setSurveys] = useState<SurveyListItem[]>([])
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(true)
@@ -59,7 +61,7 @@ export default function BrandSurveysPage() {
         search: searchTerm
       })
 
-      const res = await fetch(`/api/brand/surveys?${params}`)
+      const res = await brandFetch(`/api/brand/surveys?${params}`)
       if (!res.ok) throw new Error('Error al cargar encuestas')
 
       const data = await res.json()
@@ -71,7 +73,7 @@ export default function BrandSurveysPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, selectedStatus, searchTerm])
+  }, [page, selectedStatus, searchTerm, brandFetch, currentBrandId])
 
   useEffect(() => {
     fetchSurveys()

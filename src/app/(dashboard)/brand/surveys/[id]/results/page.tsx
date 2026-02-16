@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
@@ -42,6 +43,7 @@ export default function SurveyResultsPage() {
   const router = useRouter()
   const params = useParams()
   const surveyId = params.id as string
+  const { brandFetch, currentBrandId } = useBrandFetch()
 
   const [data, setData] = useState<ResultsData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -49,7 +51,7 @@ export default function SurveyResultsPage() {
 
   const fetchResults = useCallback(async () => {
     try {
-      const res = await fetch(`/api/brand/surveys/${surveyId}/results`)
+      const res = await brandFetch(`/api/brand/surveys/${surveyId}/results`)
       if (!res.ok) throw new Error('Error al cargar resultados')
       setData(await res.json())
     } catch (err) {
@@ -57,7 +59,7 @@ export default function SurveyResultsPage() {
     } finally {
       setLoading(false)
     }
-  }, [surveyId])
+  }, [surveyId, brandFetch, currentBrandId])
 
   useEffect(() => {
     fetchResults()

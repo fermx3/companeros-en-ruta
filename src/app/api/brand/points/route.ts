@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 interface PointsTransactionRequest {
   membership_id: string
@@ -16,50 +17,18 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // 1. Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // 1. Resolve brand auth
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+    const { userProfileId, allBrandRoles } = result
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado', details: authError?.message },
-        { status: 401 }
-      )
-    }
-
-    // 2. Get user_profile and brand_id
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select(`
-        id,
-        user_roles!user_roles_user_profile_id_fkey(
-          brand_id,
-          tenant_id,
-          role,
-          status
-        )
-      `)
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado', details: profileError?.message },
-        { status: 404 }
-      )
-    }
-
-    // Validate active brand role (brand_manager, brand_admin, supervisor, or promotor)
-    const validRole = userProfile.user_roles.find(role =>
-      role.status === 'active' &&
-      ['brand_manager', 'brand_admin', 'supervisor', 'promotor'].includes(role.role)
-    )
-
-    if (!validRole) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene permisos para gestionar puntos' },
-        { status: 403 }
-      )
-    }
+    // 2. Validate that user has a valid role for points management
+    // The resolveBrandAuth already validates brand access, but we also need to check
+    // for supervisor/promotor roles which have special permission rules
+    // Note: resolveBrandAuth covers brand_manager, brand_admin, and also
+    // promotor/supervisor roles (step 7 of resolveBrandAuth). If the user got
+    // through resolveBrandAuth, they have at least one valid brand role.
 
     // 3. Get request body
     const body: PointsTransactionRequest = await request.json()
@@ -114,26 +83,19 @@ export async function POST(request: NextRequest) {
 
     // Check if user has permission for this brand/client
     // Look for a brand_manager or brand_admin role for this specific brand
-    const brandRole = userProfile.user_roles.find(role =>
-      role.status === 'active' &&
+    const brandRole = allBrandRoles.find(role =>
       role.brand_id === membership.brand_id &&
       ['brand_manager', 'brand_admin'].includes(role.role)
     )
 
-    // Look for supervisor/promotor role in the same tenant
-    const supervisorOrPromotorRole = userProfile.user_roles.find(role =>
-      role.status === 'active' &&
-      role.tenant_id === membership.tenant_id &&
-      ['supervisor', 'promotor'].includes(role.role)
-    )
-
+    // If no brand manager/admin role, check for supervisor/promotor with client assignment
     let hasClientPermission = false
-    if (supervisorOrPromotorRole && !brandRole) {
+    if (!brandRole) {
       // Check if client is assigned to this user
       const { data: assignment } = await supabase
         .from('client_assignments')
         .select('id')
-        .eq('user_profile_id', userProfile.id)
+        .eq('user_profile_id', userProfileId)
         .eq('client_id', membership.client_id)
         .eq('is_active', true)
         .is('deleted_at', null)
@@ -266,53 +228,13 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // 1. Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado', details: authError?.message },
-        { status: 401 }
-      )
-    }
-
-    // 2. Get user_profile and brand_id
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select(`
-        id,
-        user_roles!user_roles_user_profile_id_fkey(
-          brand_id,
-          tenant_id,
-          role,
-          status
-        )
-      `)
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado', details: profileError?.message },
-        { status: 404 }
-      )
-    }
-
-    // Validate active brand role
-    const brandRole = userProfile.user_roles.find(role =>
-      role.status === 'active' &&
-      ['brand_manager', 'brand_admin'].includes(role.role)
-    )
-
-    if (!brandRole || !brandRole.brand_id) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene permisos de marca activos' },
-        { status: 403 }
-      )
-    }
+    // 1. Resolve brand auth
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+    const { brandId } = result
 
     // 3. Get query parameters
-    const { searchParams } = new URL(request.url)
     const membershipId = searchParams.get('membership_id')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -331,7 +253,7 @@ export async function GET(request: NextRequest) {
       .from('client_brand_memberships')
       .select('id, brand_id, points_balance, lifetime_points')
       .eq('id', membershipId)
-      .eq('brand_id', brandRole.brand_id)
+      .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
 

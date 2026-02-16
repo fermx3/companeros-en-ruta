@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 interface BrandTier {
   id: string
@@ -18,55 +19,15 @@ interface BrandTier {
   member_count: number
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // 1. Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado', details: authError?.message },
-        { status: 401 }
-      )
-    }
-
-    // 2. Get user_profile and brand_id
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select(`
-        id,
-        user_roles!user_roles_user_profile_id_fkey(
-          brand_id,
-          role,
-          status
-        )
-      `)
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado', details: profileError?.message },
-        { status: 404 }
-      )
-    }
-
-    // Validate active brand role
-    const brandRole = userProfile.user_roles.find(role =>
-      role.status === 'active' &&
-      ['brand_manager', 'brand_admin'].includes(role.role)
-    )
-
-    if (!brandRole || !brandRole.brand_id) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene permisos de marca activos' },
-        { status: 403 }
-      )
-    }
-
-    const targetBrandId = brandRole.brand_id
+    // 1. Resolve brand auth
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+    const { brandId: targetBrandId } = result
 
     // 3. Get all tiers for this brand
     const { data: tiers, error: tiersError } = await supabase
@@ -141,53 +102,11 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // 1. Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado', details: authError?.message },
-        { status: 401 }
-      )
-    }
-
-    // 2. Get user_profile and brand_id
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select(`
-        id,
-        user_roles!user_roles_user_profile_id_fkey(
-          brand_id,
-          tenant_id,
-          role,
-          status
-        )
-      `)
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado', details: profileError?.message },
-        { status: 404 }
-      )
-    }
-
-    // Validate active brand role
-    const brandRole = userProfile.user_roles.find(role =>
-      role.status === 'active' &&
-      ['brand_manager', 'brand_admin'].includes(role.role)
-    )
-
-    if (!brandRole || !brandRole.brand_id) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene permisos de marca activos' },
-        { status: 403 }
-      )
-    }
-
-    const targetBrandId = brandRole.brand_id
-    const tenantId = brandRole.tenant_id
+    // 1. Resolve brand auth
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+    const { brandId: targetBrandId, tenantId } = result
 
     // 3. Get request body
     const body = await request.json()

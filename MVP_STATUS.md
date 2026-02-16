@@ -526,6 +526,9 @@ Para validar la implementación:
 | Survey PUT empty update | `.update({}).select().single()` failed with "Cannot coerce to single JSON object" when only questions were sent. Now skips update when no survey-level fields changed. | `ba2ce7d` |
 | Notification action_url 404 | Survey notification `action_url` was `/surveys/{id}` (no dashboard prefix), causing 404. NotificationBell now resolves relative URLs by prepending the current dashboard prefix from pathname. Works for all roles. | `0d0c695` |
 | Admin mobile sidebar | Clicking a nav item in the mobile sidebar didn't close it, requiring manual dismiss. | `b72aa31` |
+| Brand logo upload | Replaced URL field with Supabase Storage uploader (bucket `brand-logos`). Includes preview, type/size validation, and progress indicator. | `d05cb31` |
+| Visit evidence save | PhotoEvidenceUpload was failing to save evidence records due to missing fields in the API insert. | `d05cb31` |
+| Notification visit_completed URL | `action_url: '/supervisor'` didn't match the dashboard prefix regex (needs trailing `/`), causing brand managers to see `/brand/supervisor`. Fixed to `/supervisor/`. | `e5d25b4` |
 
 ---
 
@@ -542,7 +545,7 @@ Para validar la implementación:
 6. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044 (registro extendido / encuesta cliente).
 
 ### Tier 3 — P0-P1 Polish
-7. **Implementar upload de logo con Supabase Storage** — Reemplazar el campo URL temporal en `/brand/settings` con un uploader de imagen que suba a Supabase Storage (bucket `brand-logos`). Incluir preview, validación de tipo/tamaño, y crop/resize.
+7. ~~**Implementar upload de logo con Supabase Storage**~~ — ✅ COMPLETO (commit `d05cb31`). Uploader con preview, validación y Supabase Storage bucket `brand-logos`.
 8. **Storage buckets setup** (TASK-004) — Version-control Supabase Storage config for evidence/QR.
 9. **Extract useGeolocation hook** (TASK-005) — Currently inline in PhotoEvidenceUpload.
 10. **Supervisor UI** (TASK-071) — Conditional buttons based on assigned roles.

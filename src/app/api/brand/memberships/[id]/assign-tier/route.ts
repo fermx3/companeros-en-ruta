@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createNotification, getClientUserProfileId } from '@/lib/notifications'
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 export async function POST(
   request: NextRequest,
@@ -10,55 +11,13 @@ export async function POST(
     const supabase = await createClient()
     const { id: membershipId } = await params
 
-    // 1. Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // 1. Resolve brand auth
+    const { searchParams } = new URL(request.url)
+    const authResult = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(authResult)) return brandAuthErrorResponse(authResult)
+    const { brandId, tenantId, userProfileId } = authResult
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado', details: authError?.message },
-        { status: 401 }
-      )
-    }
-
-    // 2. Get user_profile and brand_id
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select(`
-        id,
-        user_roles!user_roles_user_profile_id_fkey(
-          brand_id,
-          tenant_id,
-          role,
-          status
-        )
-      `)
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado', details: profileError?.message },
-        { status: 404 }
-      )
-    }
-
-    // Validate active brand role
-    const brandRole = userProfile.user_roles.find(role =>
-      role.status === 'active' &&
-      ['brand_manager', 'brand_admin'].includes(role.role)
-    )
-
-    if (!brandRole || !brandRole.brand_id) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene permisos de marca activos' },
-        { status: 403 }
-      )
-    }
-
-    const targetBrandId = brandRole.brand_id
-    const tenantId = brandRole.tenant_id
-
-    // 3. Get request body
+    // 2. Get request body
     const body = await request.json()
     const { tier_id, assignment_type = 'manual', effective_until = null } = body
 
@@ -69,7 +28,7 @@ export async function POST(
       )
     }
 
-    // 4. Verify membership exists and belongs to this brand
+    // 3. Verify membership exists and belongs to this brand
     const { data: membership, error: membershipError } = await supabase
       .from('client_brand_memberships')
       .select('id, brand_id, client_id, membership_status')
@@ -84,14 +43,14 @@ export async function POST(
       )
     }
 
-    if (membership.brand_id !== targetBrandId) {
+    if (membership.brand_id !== brandId) {
       return NextResponse.json(
         { error: 'No tienes permisos para modificar esta membresía' },
         { status: 403 }
       )
     }
 
-    // 5. Verify membership is active
+    // 4. Verify membership is active
     if (membership.membership_status !== 'active') {
       return NextResponse.json(
         { error: 'Solo se pueden asignar niveles a membresías activas' },
@@ -99,7 +58,7 @@ export async function POST(
       )
     }
 
-    // 6. Verify tier exists and belongs to this brand
+    // 5. Verify tier exists and belongs to this brand
     const { data: tier, error: tierError } = await supabase
       .from('tiers')
       .select('id, brand_id, name, is_active')
@@ -114,7 +73,7 @@ export async function POST(
       )
     }
 
-    if (tier.brand_id !== targetBrandId) {
+    if (tier.brand_id !== brandId) {
       return NextResponse.json(
         { error: 'El nivel no pertenece a esta marca' },
         { status: 400 }
@@ -128,14 +87,14 @@ export async function POST(
       )
     }
 
-    // 7. Unset current tier assignment
+    // 6. Unset current tier assignment
     await supabase
       .from('client_tier_assignments')
       .update({ is_current: false })
       .eq('client_brand_membership_id', membershipId)
       .eq('is_current', true)
 
-    // 8. Create new tier assignment
+    // 7. Create new tier assignment
     const now = new Date().toISOString()
     const { data: newAssignment, error: assignmentError } = await supabase
       .from('client_tier_assignments')
@@ -147,7 +106,7 @@ export async function POST(
         is_current: true,
         effective_from: now,
         effective_until: effective_until,
-        assigned_by: userProfile.id,
+        assigned_by: userProfileId,
         assigned_date: now
       })
       .select()
@@ -157,7 +116,7 @@ export async function POST(
       throw new Error(`Error al crear asignación de nivel: ${assignmentError.message}`)
     }
 
-    // 9. Update membership with current tier
+    // 8. Update membership with current tier
     const { error: updateError } = await supabase
       .from('client_brand_memberships')
       .update({

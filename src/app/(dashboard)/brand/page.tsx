@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
 import { Users, TrendingUp, MapPin, Star, Settings, Building2, UserCheck, Layers, Gift, ChevronRight, ClipboardList } from "lucide-react"
 import Link from 'next/link'
-import Image from 'next/image'
 
 // Interfaces basadas en la vista brand_dashboard_metrics
 interface BrandDashboardMetrics {
@@ -51,6 +51,7 @@ interface BrandDashboardMetrics {
 }
 
 export default function BrandDashboard() {
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [metrics, setMetrics] = useState<BrandDashboardMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -60,7 +61,7 @@ export default function BrandDashboard() {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/brand/metrics')
+      const response = await brandFetch('/api/brand/metrics')
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -76,7 +77,7 @@ export default function BrandDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [brandFetch, currentBrandId])
 
   useEffect(() => {
     loadBrandMetrics()
@@ -133,11 +134,9 @@ export default function BrandDashboard() {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div className="flex items-center space-x-4">
                 {metrics.logo_url ? (
-                  <Image
+                  <img
                     src={metrics.logo_url}
                     alt={`${metrics.brand_name} logo`}
-                    width={64}
-                    height={64}
                     className="h-16 w-16 object-contain"
                   />
                 ) : (

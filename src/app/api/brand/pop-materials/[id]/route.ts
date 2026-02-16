@@ -1,46 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-
-async function getBrandProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    return { error: { message: 'Usuario no autenticado', status: 401 } }
-  }
-
-  const { data: userProfile, error: profileError } = await supabase
-    .from('user_profiles')
-    .select(`
-      id,
-      tenant_id,
-      user_roles!user_roles_user_profile_id_fkey(
-        brand_id,
-        role,
-        status,
-        tenant_id
-      )
-    `)
-    .eq('user_id', user.id)
-    .single()
-
-  if (profileError || !userProfile) {
-    return { error: { message: 'Perfil de usuario no encontrado', status: 404 } }
-  }
-
-  const brandRole = userProfile.user_roles.find((role: { status: string; role: string }) =>
-    role.status === 'active' &&
-    ['brand_manager', 'brand_admin'].includes(role.role)
-  )
-
-  if (!brandRole || !brandRole.brand_id) {
-    return { error: { message: 'Usuario no tiene permisos de marca activos', status: 403 } }
-  }
-
-  return {
-    brandId: brandRole.brand_id,
-    tenantId: brandRole.tenant_id || userProfile.tenant_id
-  }
-}
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -48,16 +8,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
     const supabase = await createClient()
-    const result = await getBrandProfile(supabase)
-
-    if ('error' in result && result.error) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: result.error.status }
-      )
-    }
-
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId } = result
+
     const body = await request.json()
 
     // Verify material belongs to brand (not system template)
@@ -119,15 +74,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
     const supabase = await createClient()
-    const result = await getBrandProfile(supabase)
-
-    if ('error' in result && result.error) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: result.error.status }
-      )
-    }
-
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId } = result
 
     // Verify material belongs to brand

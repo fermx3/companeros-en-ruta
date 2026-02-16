@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/feedback'
@@ -62,6 +63,7 @@ function formatNumber(num: number): string {
 
 export default function BrandReportsPage() {
   const { user } = useAuth()
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [metrics, setMetrics] = useState<BrandMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -74,7 +76,7 @@ export default function BrandReportsPage() {
     setError(null)
 
     try {
-      const response = await fetch('/api/brand/metrics')
+      const response = await brandFetch('/api/brand/metrics')
       const data = await response.json()
 
       if (!response.ok) {
@@ -88,7 +90,7 @@ export default function BrandReportsPage() {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [user, brandFetch, currentBrandId])
 
   useEffect(() => {
     fetchMetrics()

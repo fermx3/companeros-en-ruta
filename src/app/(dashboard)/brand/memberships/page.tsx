@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Users, Search, Check, Award, ChevronLeft, ChevronRight, X, Plus, UserPlus, Coins, TrendingUp, TrendingDown } from 'lucide-react'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 
 interface MembershipTier {
   id: string
@@ -164,22 +165,17 @@ function AddMembersModal({
   onSubmit: (clientIds: string[]) => void
   saving: boolean
 }) {
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [clients, setClients] = useState<AvailableClient[]>([])
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    if (isOpen) {
-      loadAvailableClients()
-    }
-  }, [isOpen])
-
-  const loadAvailableClients = async () => {
+  const loadAvailableClients = useCallback(async () => {
     try {
       setLoading(true)
       // Get all clients from brand/clients endpoint
-      const response = await fetch('/api/brand/clients?limit=100')
+      const response = await brandFetch('/api/brand/clients?limit=100')
       if (response.ok) {
         const data = await response.json()
         // Filter out clients that already have membership (we'll need to check this)
@@ -190,7 +186,13 @@ function AddMembersModal({
     } finally {
       setLoading(false)
     }
-  }
+  }, [brandFetch])
+
+  useEffect(() => {
+    if (isOpen) {
+      loadAvailableClients()
+    }
+  }, [isOpen, loadAvailableClients, currentBrandId])
 
   const toggleClient = (clientId: string) => {
     const newSelected = new Set(selectedClients)
@@ -477,9 +479,11 @@ export default function BrandMembershipsPage() {
   const [addMembersModal, setAddMembersModal] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
+  const { brandFetch, currentBrandId } = useBrandFetch()
+
   const loadTiers = useCallback(async () => {
     try {
-      const response = await fetch('/api/brand/tiers')
+      const response = await brandFetch('/api/brand/tiers')
       if (response.ok) {
         const data = await response.json()
         setTiers(data.tiers || [])
@@ -487,7 +491,7 @@ export default function BrandMembershipsPage() {
     } catch (err) {
       console.error('Error loading tiers:', err)
     }
-  }, [])
+  }, [brandFetch])
 
   const loadMemberships = useCallback(async (page = 1) => {
     try {
@@ -503,7 +507,7 @@ export default function BrandMembershipsPage() {
         ...(selectedTierId && { tier_id: selectedTierId })
       })
 
-      const response = await fetch(`/api/brand/memberships?${params}`)
+      const response = await brandFetch(`/api/brand/memberships?${params}`)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -519,7 +523,7 @@ export default function BrandMembershipsPage() {
     } finally {
       setLoading(false)
     }
-  }, [activeTab, searchTerm, selectedTierId])
+  }, [activeTab, searchTerm, selectedTierId, brandFetch])
 
   useEffect(() => {
     loadTiers()
@@ -537,7 +541,7 @@ export default function BrandMembershipsPage() {
     try {
       setActionLoading(membership.id)
 
-      const response = await fetch(`/api/brand/memberships/${membership.id}/approve`, {
+      const response = await brandFetch(`/api/brand/memberships/${membership.id}/approve`, {
         method: 'PUT'
       })
 
@@ -563,7 +567,7 @@ export default function BrandMembershipsPage() {
     try {
       setActionLoading(assignModal.membership.id)
 
-      const response = await fetch(`/api/brand/memberships/${assignModal.membership.id}/assign-tier`, {
+      const response = await brandFetch(`/api/brand/memberships/${assignModal.membership.id}/assign-tier`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier_id: tierId })
@@ -598,7 +602,7 @@ export default function BrandMembershipsPage() {
     try {
       setActionLoading('adding')
 
-      const response = await fetch('/api/brand/memberships', {
+      const response = await brandFetch('/api/brand/memberships', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ client_ids: clientIds })
@@ -631,7 +635,7 @@ export default function BrandMembershipsPage() {
       // Map UI values to database enum values
       const dbTransactionType = data.transaction_type === 'award' ? 'earned' : 'penalty'
 
-      const response = await fetch('/api/brand/points', {
+      const response = await brandFetch('/api/brand/points', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
@@ -51,6 +52,7 @@ interface CompetitorFormData {
 }
 
 export default function BrandCompetitorsPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [competitors, setCompetitors] = useState<Competitor[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -71,7 +73,7 @@ export default function BrandCompetitorsPage() {
     setError(null)
 
     try {
-      const response = await fetch('/api/brand/competitors?include_products=true')
+      const response = await brandFetch('/api/brand/competitors?include_products=true')
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -88,7 +90,7 @@ export default function BrandCompetitorsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [brandFetch, currentBrandId])
 
   useEffect(() => {
     loadCompetitors()
@@ -104,7 +106,7 @@ export default function BrandCompetitorsPage() {
         ? `/api/brand/competitors/${editingCompetitor.id}`
         : '/api/brand/competitors'
 
-      const response = await fetch(url, {
+      const response = await brandFetch(url, {
         method: editingCompetitor ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -132,7 +134,7 @@ export default function BrandCompetitorsPage() {
 
     setDeleting(id)
     try {
-      const response = await fetch(`/api/brand/competitors/${id}`, {
+      const response = await brandFetch(`/api/brand/competitors/${id}`, {
         method: 'DELETE'
       })
 

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/feedback'
@@ -60,6 +61,7 @@ const MEXICAN_STATES = [
 
 export default function BrandCreateClientPage() {
   const router = useRouter()
+  const { brandFetch } = useBrandFetch()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -130,7 +132,7 @@ export default function BrandCreateClientPage() {
     setError(null)
 
     try {
-      const response = await fetch('/api/brand/clients', {
+      const response = await brandFetch('/api/brand/clients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

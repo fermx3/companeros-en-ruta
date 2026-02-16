@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/form-legacy'
@@ -84,6 +85,7 @@ const STEPS = [
 
 export default function CreatePromotionPage() {
   const router = useRouter()
+  const { brandFetch } = useBrandFetch()
   const [currentStep, setCurrentStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -223,7 +225,7 @@ export default function CreatePromotionPage() {
         submit_for_approval: submitForApproval
       }
 
-      const response = await fetch('/api/brand/promotions', {
+      const response = await brandFetch('/api/brand/promotions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

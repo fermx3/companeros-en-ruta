@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
@@ -25,6 +26,7 @@ interface Client {
  * Página de gestión de clientes para usuarios de marca
  */
 export default function BrandClientsPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export default function BrandClientsPage() {
           ...(selectedType && { type: selectedType })
         })
 
-        const response = await fetch(`/api/brand/clients?${params}`, {
+        const response = await brandFetch(`/api/brand/clients?${params}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -117,7 +119,7 @@ export default function BrandClientsPage() {
     };
 
     loadClients();
-  }, [page, searchTerm, selectedType]);
+  }, [page, searchTerm, selectedType, brandFetch, currentBrandId]);
 
   const filteredClients = clients.filter(client => {
     const matchesSearch = !searchTerm ||

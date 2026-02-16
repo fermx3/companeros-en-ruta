@@ -1,101 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-
-// Helper to get brand profile from auth
-async function getBrandProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    return { error: { message: 'Usuario no autenticado', status: 401 } }
-  }
-
-  const { data: userProfile, error: profileError } = await supabase
-    .from('user_profiles')
-    .select(`
-      id,
-      tenant_id,
-      user_roles!user_roles_user_profile_id_fkey(
-        brand_id,
-        role,
-        status,
-        scope,
-        tenant_id
-      )
-    `)
-    .eq('user_id', user.id)
-    .single()
-
-  if (profileError || !userProfile) {
-    return { error: { message: 'Perfil de usuario no encontrado', status: 404 } }
-  }
-
-  // Filter active roles
-  const activeRoles = userProfile.user_roles.filter(role => role.status === 'active')
-
-  if (activeRoles.length === 0) {
-    return { error: { message: 'Usuario no tiene roles activos', status: 403 } }
-  }
-
-  // Priority 1: Look for brand-specific role (brand_manager, brand_admin)
-  const brandRole = activeRoles.find(role =>
-    role.brand_id &&
-    ['brand_manager', 'brand_admin'].includes(role.role)
-  )
-
-  if (brandRole) {
-    return {
-      user,
-      userProfile,
-      brandRole,
-      brandId: brandRole.brand_id,
-      tenantId: brandRole.tenant_id || userProfile.tenant_id
-    }
-  }
-
-  // Priority 2: Global admin - get first brand from tenant
-  const adminRole = activeRoles.find(role =>
-    role.role === 'admin' && role.scope === 'global'
-  )
-
-  if (adminRole) {
-    const { data: firstBrand } = await supabase
-      .from('brands')
-      .select('id')
-      .eq('tenant_id', adminRole.tenant_id || userProfile.tenant_id)
-      .is('deleted_at', null)
-      .limit(1)
-      .single()
-
-    if (firstBrand) {
-      return {
-        user,
-        userProfile,
-        brandRole: adminRole,
-        brandId: firstBrand.id,
-        tenantId: adminRole.tenant_id || userProfile.tenant_id
-      }
-    }
-  }
-
-  return { error: { message: 'Usuario no tiene permisos de marca activos', status: 403 } }
-}
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
-    const result = await getBrandProfile(supabase)
 
-    if ('error' in result && result.error) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: result.error.status }
-      )
-    }
-
+    // 1. Resolve brand auth
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId, tenantId } = result
 
     // Get search params
-    const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const search = searchParams.get('search') || ''

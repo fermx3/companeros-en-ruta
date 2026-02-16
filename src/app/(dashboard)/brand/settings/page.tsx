@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
@@ -13,6 +14,7 @@ import type { Brand } from '@/lib/types/admin';
  * Permite a los brand managers editar la información de su marca
  */
 export default function BrandSettingsPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch();
   const [brand, setBrand] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,7 +39,7 @@ export default function BrandSettingsPage() {
 
       try {
         // Obtener datos reales de la marca
-        const response = await fetch('/api/brand/info', {
+        const response = await brandFetch('/api/brand/info', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -74,7 +76,7 @@ export default function BrandSettingsPage() {
     };
 
     loadBrandData();
-  }, []);
+  }, [brandFetch, currentBrandId]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -87,7 +89,7 @@ export default function BrandSettingsPage() {
     const body = new FormData();
     body.append('file', file);
 
-    const response = await fetch('/api/brand/logo', { method: 'POST', body });
+    const response = await brandFetch('/api/brand/logo', { method: 'POST', body });
 
     if (!response.ok) {
       const data = await response.json();
@@ -97,7 +99,7 @@ export default function BrandSettingsPage() {
     const data = await response.json();
     setFormData(prev => ({ ...prev, logo_url: data.logo_url }));
     return data.logo_url;
-  }, []);
+  }, [brandFetch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +109,7 @@ export default function BrandSettingsPage() {
 
     try {
       // Actualizar marca con datos reales
-      const response = await fetch('/api/brand/info', {
+      const response = await brandFetch('/api/brand/info', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

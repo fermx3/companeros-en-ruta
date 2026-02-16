@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
@@ -36,6 +37,7 @@ interface SurveyDetail {
 export default function BrandSurveyDetailPage() {
   const router = useRouter()
   const params = useParams()
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const surveyId = params.id as string
 
   const [survey, setSurvey] = useState<SurveyDetail | null>(null)
@@ -48,7 +50,7 @@ export default function BrandSurveyDetailPage() {
   const fetchSurvey = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/brand/surveys/${surveyId}`)
+      const res = await brandFetch(`/api/brand/surveys/${surveyId}`)
       if (!res.ok) throw new Error('Error al cargar encuesta')
       const data = await res.json()
       setSurvey(data.survey)
@@ -58,7 +60,7 @@ export default function BrandSurveyDetailPage() {
     } finally {
       setLoading(false)
     }
-  }, [surveyId])
+  }, [surveyId, brandFetch, currentBrandId])
 
   useEffect(() => {
     fetchSurvey()
@@ -68,7 +70,7 @@ export default function BrandSurveyDetailPage() {
     setActionLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/brand/surveys/${surveyId}/submit`, { method: 'POST' })
+      const res = await brandFetch(`/api/brand/surveys/${surveyId}/submit`, { method: 'POST' })
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || 'Error al enviar')
@@ -85,7 +87,7 @@ export default function BrandSurveyDetailPage() {
     setActionLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/brand/surveys/${surveyId}`, {
+      const res = await brandFetch(`/api/brand/surveys/${surveyId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -115,7 +117,7 @@ export default function BrandSurveyDetailPage() {
     if (!confirm('¿Eliminar esta encuesta? Esta acción no se puede deshacer.')) return
     setActionLoading(true)
     try {
-      const res = await fetch(`/api/brand/surveys/${surveyId}`, { method: 'DELETE' })
+      const res = await brandFetch(`/api/brand/surveys/${surveyId}`, { method: 'DELETE' })
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || 'Error al eliminar')

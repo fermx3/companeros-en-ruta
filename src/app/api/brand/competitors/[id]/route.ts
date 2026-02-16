@@ -1,49 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-
-// Helper to get brand profile from auth
-async function getBrandProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    return { error: { message: 'Usuario no autenticado', status: 401 } }
-  }
-
-  const { data: userProfile, error: profileError } = await supabase
-    .from('user_profiles')
-    .select(`
-      id,
-      tenant_id,
-      user_roles!user_roles_user_profile_id_fkey(
-        brand_id,
-        role,
-        status,
-        tenant_id
-      )
-    `)
-    .eq('user_id', user.id)
-    .single()
-
-  if (profileError || !userProfile) {
-    return { error: { message: 'Perfil de usuario no encontrado', status: 404 } }
-  }
-
-  const brandRole = userProfile.user_roles.find((role: { status: string; role: string }) =>
-    role.status === 'active' &&
-    ['brand_manager', 'brand_admin'].includes(role.role)
-  )
-
-  if (!brandRole || !brandRole.brand_id) {
-    return { error: { message: 'Usuario no tiene permisos de marca activos', status: 403 } }
-  }
-
-  return {
-    user,
-    userProfileId: userProfile.id,
-    brandId: brandRole.brand_id,
-    tenantId: brandRole.tenant_id || userProfile.tenant_id
-  }
-}
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -54,15 +11,9 @@ export async function GET(
   try {
     const { id } = await context.params
     const supabase = await createClient()
-    const result = await getBrandProfile(supabase)
-
-    if ('error' in result && result.error) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: result.error.status }
-      )
-    }
-
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId } = result
 
     const { data: competitor, error } = await supabase
@@ -119,16 +70,11 @@ export async function PUT(
   try {
     const { id } = await context.params
     const supabase = await createClient()
-    const result = await getBrandProfile(supabase)
-
-    if ('error' in result && result.error) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: result.error.status }
-      )
-    }
-
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId, tenantId } = result
+
     const body = await request.json()
 
     // Verify competitor belongs to brand
@@ -303,15 +249,9 @@ export async function DELETE(
   try {
     const { id } = await context.params
     const supabase = await createClient()
-    const result = await getBrandProfile(supabase)
-
-    if ('error' in result && result.error) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: result.error.status }
-      )
-    }
-
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId } = result
 
     // Verify competitor belongs to brand

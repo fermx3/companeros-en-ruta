@@ -1,43 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 // GET: Retrieve products for a brand
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { searchParams } = new URL(request.url)
-  const brandId = searchParams.get('brand_id')
+  const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+  if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+  const { brandId: effectiveBrandId, tenantId } = result
+
   const includeInactive = searchParams.get('include_inactive') === 'true'
   const forDashboard = searchParams.get('dashboard') === 'true'
 
-  // Get user profile to determine brand access
-  const { data: userProfile } = await supabase
-    .from('user_profiles')
-    .select('id, tenant_id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (!userProfile) {
-    return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
-  }
-
-  // Get user roles to determine brand access
-  const { data: userRoles } = await supabase
-    .from('user_roles')
-    .select('brand_id, role, scope')
-    .eq('user_profile_id', userProfile.id)
-    .eq('status', 'active')
-    .is('deleted_at', null)
-
-  const userBrandIds = [...new Set((userRoles || []).map(r => r.brand_id).filter(Boolean))]
-
-  // Fetch brand details for roles with explicit brand_id
+  // Build available brands list from user's roles
+  const userBrandIds = [...new Set(result.allBrandRoles.map(r => r.brand_id))]
   let availableBrands: Array<{ id: string; name: string }> = []
+
   if (userBrandIds.length > 0) {
     const { data: brandsData } = await supabase
       .from('brands')
@@ -49,36 +29,16 @@ export async function GET(request: NextRequest) {
     availableBrands = brandsData || []
   }
 
-  // Only global admins can fall back to all tenant brands
+  // Fallback for global admins
   if (availableBrands.length === 0) {
-    const isGlobalAdmin = (userRoles || []).some(r => r.role === 'admin' && r.scope === 'global')
-    if (isGlobalAdmin) {
-      const { data: tenantBrands } = await supabase
-        .from('brands')
-        .select('id, name')
-        .eq('tenant_id', userProfile.tenant_id)
-        .is('deleted_at', null)
-        .order('name')
+    const { data: tenantBrands } = await supabase
+      .from('brands')
+      .select('id, name')
+      .eq('tenant_id', tenantId)
+      .is('deleted_at', null)
+      .order('name')
 
-      availableBrands = tenantBrands || []
-    } else {
-      return NextResponse.json({ error: 'No tienes marcas asignadas' }, { status: 403 })
-    }
-  }
-
-  // Use provided brandId (if user has access) or default to first available
-  let effectiveBrandId = brandId
-  if (effectiveBrandId) {
-    // Verify the requested brand is in the user's allowed brands
-    if (!availableBrands.some(b => b.id === effectiveBrandId)) {
-      return NextResponse.json({ error: 'No tienes acceso a esta marca' }, { status: 403 })
-    }
-  } else if (availableBrands.length > 0) {
-    effectiveBrandId = availableBrands[0].id
-  }
-
-  if (!effectiveBrandId) {
-    return NextResponse.json({ error: 'No tienes marcas asignadas' }, { status: 400 })
+    availableBrands = tenantBrands || []
   }
 
   // For dashboard: fetch full product details with variants and category
@@ -110,8 +70,6 @@ export async function GET(request: NextRequest) {
 
     const { data: products, error } = await query
 
-    console.log('[Products API] Products query result:', products?.length || 0, 'products, error:', error)
-
     if (error) {
       console.error('[Products API] Error fetching products:', error)
       return NextResponse.json({ error: 'Error fetching products', details: error.message }, { status: 500 })
@@ -122,7 +80,7 @@ export async function GET(request: NextRequest) {
     let variants: any[] = []
 
     if (productIds.length > 0) {
-      const { data: variantData, error: variantError } = await supabase
+      const { data: variantData } = await supabase
         .from('product_variants')
         .select(`
           id,
@@ -143,7 +101,6 @@ export async function GET(request: NextRequest) {
         .is('deleted_at', null)
         .order('sort_order')
 
-      console.log('[Products API] Variants query for productIds:', productIds, 'result:', variantData?.length || 0, 'error:', variantError)
       variants = variantData || []
     }
 
@@ -218,21 +175,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Get user profile and brand
-  const { data: userProfile } = await supabase
-    .from('user_profiles')
-    .select('id, tenant_id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (!userProfile) {
-    return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
-  }
+  const { searchParams } = new URL(request.url)
+  const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+  if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+  const { brandId, tenantId } = result
 
   try {
     const body = await request.json()
@@ -240,43 +186,13 @@ export async function POST(request: NextRequest) {
     const { name, code, description, category_id, base_price, cost, barcode, variants, brand_id: requestBrandId } = body
     const sku = code  // Map to correct column name
 
-    // Get user's roles to determine brand access
-    const { data: userRoles } = await supabase
-      .from('user_roles')
-      .select('brand_id, role, scope')
-      .eq('user_profile_id', userProfile.id)
-      .eq('status', 'active')
-      .is('deleted_at', null)
-
-    const userBrandIds = [...new Set((userRoles || []).map(r => r.brand_id).filter(Boolean))]
-
-    // Determine allowed brand IDs
-    let allowedBrandIds = userBrandIds as string[]
-
-    // Only global admins can fall back to all tenant brands
-    if (allowedBrandIds.length === 0) {
-      const isGlobalAdmin = (userRoles || []).some(r => r.role === 'admin' && r.scope === 'global')
-      if (isGlobalAdmin) {
-        const { data: tenantBrands } = await supabase
-          .from('brands')
-          .select('id')
-          .eq('tenant_id', userProfile.tenant_id)
-          .is('deleted_at', null)
-
-        allowedBrandIds = (tenantBrands || []).map(b => b.id)
+    // If a specific brand_id was requested in the body, validate access
+    let effectiveBrandId = brandId
+    if (requestBrandId && requestBrandId !== brandId) {
+      const userBrandIds = result.allBrandRoles.map(r => r.brand_id)
+      if (userBrandIds.includes(requestBrandId)) {
+        effectiveBrandId = requestBrandId
       }
-    }
-
-    // Use brand_id from request if valid, otherwise use first allowed
-    let brandId: string | null = null
-    if (requestBrandId && allowedBrandIds.includes(requestBrandId)) {
-      brandId = requestBrandId
-    } else if (allowedBrandIds.length > 0) {
-      brandId = allowedBrandIds[0]
-    }
-
-    if (!brandId) {
-      return NextResponse.json({ error: 'No brand access' }, { status: 403 })
     }
 
     if (!name || !sku || !category_id || !base_price) {
@@ -289,8 +205,8 @@ export async function POST(request: NextRequest) {
     const { data: product, error: productError } = await supabase
       .from('products')
       .insert({
-        tenant_id: userProfile.tenant_id,
-        brand_id: brandId,
+        tenant_id: tenantId,
+        brand_id: effectiveBrandId,
         category_id,
         name,
         sku,
@@ -309,10 +225,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create variants if provided
-    console.log('[Products API POST] Variants received:', variants?.length || 0, 'variants:', JSON.stringify(variants))
     if (variants && variants.length > 0) {
       const variantRecords = variants.map((v: any, index: number) => ({
-        tenant_id: userProfile.tenant_id,
+        tenant_id: tenantId,
         product_id: product.id,
         variant_name: v.variant_name,
         variant_code: v.variant_code || `${sku}-${index + 1}`,
@@ -326,16 +241,13 @@ export async function POST(request: NextRequest) {
         is_active: true
       }))
 
-      console.log('[Products API POST] Creating variant records:', JSON.stringify(variantRecords))
-      const { data: createdVariants, error: variantError } = await supabase
+      const { error: variantError } = await supabase
         .from('product_variants')
         .insert(variantRecords)
         .select()
 
       if (variantError) {
         console.error('[Products API POST] Error creating variants:', variantError)
-      } else {
-        console.log('[Products API POST] Variants created:', createdVariants?.length)
       }
     }
 

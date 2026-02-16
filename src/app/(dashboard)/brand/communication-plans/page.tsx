@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
@@ -50,6 +51,7 @@ interface POPMaterial {
 }
 
 export default function BrandCommunicationPlansPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [plans, setPlans] = useState<CommunicationPlan[]>([])
   const [materials, setMaterials] = useState<POPMaterial[]>([])
   const [loading, setLoading] = useState(true)
@@ -76,8 +78,8 @@ export default function BrandCommunicationPlansPage() {
 
     try {
       const [plansRes, materialsRes] = await Promise.all([
-        fetch('/api/brand/communication-plans'),
-        fetch('/api/brand/pop-materials?include_system=true')
+        brandFetch('/api/brand/communication-plans'),
+        brandFetch('/api/brand/pop-materials?include_system=true')
       ])
 
       if (!plansRes.ok) throw new Error('Error al cargar planes')
@@ -99,7 +101,7 @@ export default function BrandCommunicationPlansPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [brandFetch, currentBrandId])
 
   useEffect(() => {
     loadData()
@@ -115,7 +117,7 @@ export default function BrandCommunicationPlansPage() {
         ? `/api/brand/communication-plans/${editingPlan.id}`
         : '/api/brand/communication-plans'
 
-      const response = await fetch(url, {
+      const response = await brandFetch(url, {
         method: editingPlan ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -143,7 +145,7 @@ export default function BrandCommunicationPlansPage() {
 
     setDeleting(id)
     try {
-      const response = await fetch(`/api/brand/communication-plans/${id}`, {
+      const response = await brandFetch(`/api/brand/communication-plans/${id}`, {
         method: 'DELETE'
       })
 

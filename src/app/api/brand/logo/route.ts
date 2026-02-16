@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 const ALLOWED_MIME_TYPES = [
   'image/png',
@@ -14,42 +15,13 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // 1. Auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-    }
+    // 1. Resolve brand auth
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+    const { brandId } = result
 
-    // 2. Get user profile + brand role
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select(`
-        id,
-        user_roles!user_roles_user_profile_id_fkey(
-          brand_id,
-          role,
-          status
-        )
-      `)
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
-    }
-
-    const brandRole = userProfile.user_roles.find(
-      (r: { role: string; status: string }) =>
-        r.status === 'active' && ['brand_manager', 'brand_admin'].includes(r.role)
-    )
-
-    if (!brandRole || !brandRole.brand_id) {
-      return NextResponse.json({ error: 'Sin permisos de marca' }, { status: 403 })
-    }
-
-    const brandId = brandRole.brand_id
-
-    // 3. Parse FormData
+    // 2. Parse FormData
     const formData = await request.formData()
     const file = formData.get('file') as File | null
 
@@ -57,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Archivo requerido' }, { status: 400 })
     }
 
-    // 4. Validate file type
+    // 3. Validate file type
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: 'Tipo de archivo no permitido. Usa PNG, JPEG, SVG o WebP.' },
@@ -65,7 +37,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 5. Validate file size
+    // 4. Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { error: 'El archivo excede el tamaño máximo de 2MB.' },
@@ -73,14 +45,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 6. Get current brand to check for existing logo in storage
+    // 5. Get current brand to check for existing logo in storage
     const { data: currentBrand } = await supabase
       .from('brands')
       .select('logo_url')
       .eq('id', brandId)
       .single()
 
-    // 7. Upload file
+    // 6. Upload file
     const fileExt = file.name.split('.').pop() || 'png'
     const timestamp = Date.now()
     const fileName = `${brandId}/${timestamp}-logo.${fileExt}`
@@ -103,14 +75,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 8. Get public URL
+    // 7. Get public URL
     const { data: urlData } = supabase.storage
       .from('brand-logos')
       .getPublicUrl(uploadData.path)
 
     const newLogoUrl = urlData.publicUrl
 
-    // 9. Update brand record
+    // 8. Update brand record
     const { error: updateError } = await supabase
       .from('brands')
       .update({ logo_url: newLogoUrl, updated_at: new Date().toISOString() })
@@ -126,7 +98,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 10. Delete old logo from storage (if it was in our bucket)
+    // 9. Delete old logo from storage (if it was in our bucket)
     if (currentBrand?.logo_url && currentBrand.logo_url.includes('/brand-logos/')) {
       try {
         const oldPath = currentBrand.logo_url.split('/brand-logos/')[1]

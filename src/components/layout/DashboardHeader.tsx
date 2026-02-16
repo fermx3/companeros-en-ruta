@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
@@ -10,9 +10,10 @@ import { useAuth } from '@/components/providers/AuthProvider';
 interface DashboardHeaderProps {
   title: string;
   displayName?: string;
+  headerExtra?: ReactNode;
 }
 
-export function DashboardHeader({ title, displayName }: DashboardHeaderProps) {
+export function DashboardHeader({ title, displayName, headerExtra }: DashboardHeaderProps) {
   const router = useRouter();
   const { signOut, userProfile } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,6 +56,7 @@ export function DashboardHeader({ title, displayName }: DashboardHeaderProps) {
             />
           </div>
           <h1 className="text-lg font-bold text-gray-900">{title}</h1>
+          {headerExtra}
         </div>
         <div className="flex items-center gap-2">
           <NotificationBell />

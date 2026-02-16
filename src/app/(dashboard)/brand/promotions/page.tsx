@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
@@ -68,6 +69,7 @@ const PROMOTION_TYPE_ICONS: Record<string, string> = {
 }
 
 export default function BrandPromotionsPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
@@ -90,7 +92,7 @@ export default function BrandPromotionsPage() {
         ...(selectedStatus !== 'all' && { status: selectedStatus })
       })
 
-      const response = await fetch(`/api/brand/promotions?${params}`)
+      const response = await brandFetch(`/api/brand/promotions?${params}`)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -109,7 +111,7 @@ export default function BrandPromotionsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, searchTerm, selectedStatus])
+  }, [page, searchTerm, selectedStatus, brandFetch, currentBrandId])
 
   useEffect(() => {
     loadPromotions()
@@ -119,7 +121,7 @@ export default function BrandPromotionsPage() {
     setActionLoading(promotionId)
     try {
       const action = currentStatus === 'active' ? { pause: true } : { resume: true }
-      const response = await fetch(`/api/brand/promotions/${promotionId}`, {
+      const response = await brandFetch(`/api/brand/promotions/${promotionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(action)
@@ -143,7 +145,7 @@ export default function BrandPromotionsPage() {
   const handleSubmitForApproval = async (promotionId: string) => {
     setActionLoading(promotionId)
     try {
-      const response = await fetch(`/api/brand/promotions/${promotionId}/submit`, {
+      const response = await brandFetch(`/api/brand/promotions/${promotionId}/submit`, {
         method: 'POST'
       })
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
@@ -253,6 +254,7 @@ function TierFormModal({
 }
 
 export default function BrandTiersPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [tiers, setTiers] = useState<BrandTier[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -267,7 +269,7 @@ export default function BrandTiersPage() {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/brand/tiers')
+      const response = await brandFetch('/api/brand/tiers')
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -282,7 +284,7 @@ export default function BrandTiersPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [brandFetch, currentBrandId])
 
   useEffect(() => {
     loadTiers()
@@ -304,7 +306,7 @@ export default function BrandTiersPage() {
     }
 
     try {
-      const response = await fetch(`/api/brand/tiers/${tier.id}`, {
+      const response = await brandFetch(`/api/brand/tiers/${tier.id}`, {
         method: 'DELETE'
       })
 
@@ -332,7 +334,7 @@ export default function BrandTiersPage() {
         : '/api/brand/tiers'
       const method = editingTier ? 'PUT' : 'POST'
 
-      const response = await fetch(url, {
+      const response = await brandFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

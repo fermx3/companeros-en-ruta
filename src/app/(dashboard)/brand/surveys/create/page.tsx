@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/feedback'
@@ -33,6 +34,7 @@ const CLIENT_CATEGORIES = [
 
 export default function CreateSurveyPage() {
   const router = useRouter()
+  const { brandFetch } = useBrandFetch()
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -75,7 +77,7 @@ export default function CreateSurveyPage() {
     setError(null)
 
     try {
-      const res = await fetch('/api/brand/surveys', {
+      const res = await brandFetch('/api/brand/surveys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
@@ -25,6 +26,7 @@ interface TeamMember {
  * Página de gestión de equipos de venta para usuarios de marca
  */
 export default function BrandTeamPage() {
+  const { brandFetch, currentBrandId } = useBrandFetch();
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export default function BrandTeamPage() {
           ...(selectedStatus && { status: selectedStatus })
         });
 
-        const response = await fetch(`/api/brand/team?${params}`);
+        const response = await brandFetch(`/api/brand/team?${params}`);
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -68,7 +70,7 @@ export default function BrandTeamPage() {
     };
 
     loadTeam();
-  }, [page, searchTerm, selectedRole, selectedStatus]);
+  }, [page, searchTerm, selectedRole, selectedStatus, brandFetch, currentBrandId]);
 
   const filteredTeam = team.filter(member => {
     const matchesSearch = !searchTerm ||

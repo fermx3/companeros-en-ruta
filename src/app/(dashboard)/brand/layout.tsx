@@ -6,6 +6,8 @@ import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { SideNavigation } from '@/components/layout/SideNavigation';
 import { BottomNavigation } from '@/components/layout/bottom-navigation';
 import { brandNavConfig } from '@/lib/navigation-config';
+import { TenantProvider } from '@/components/providers/TenantProvider';
+import { BrandSwitcher } from '@/components/brand/BrandSwitcher';
 
 interface BrandLayoutProps {
   children: React.ReactNode;
@@ -43,7 +45,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Error de autenticación</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Error de autenticacion</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={retry}
@@ -61,13 +63,15 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SideNavigation items={brandNavConfig.items} title={brandNavConfig.title} />
-      <div className="lg:pl-64">
-        <DashboardHeader title={brandNavConfig.title} />
-        <main className="pb-20 lg:pb-0">{children}</main>
+    <TenantProvider>
+      <div className="min-h-screen bg-gray-50">
+        <SideNavigation items={brandNavConfig.items} title={brandNavConfig.title} />
+        <div className="lg:pl-64">
+          <DashboardHeader title={brandNavConfig.title} headerExtra={<BrandSwitcher />} />
+          <main className="pb-20 lg:pb-0">{children}</main>
+        </div>
+        <BottomNavigation items={brandNavConfig.items.slice(0, 5)} />
       </div>
-      <BottomNavigation items={brandNavConfig.items.slice(0, 5)} />
-    </div>
+    </TenantProvider>
   );
 }

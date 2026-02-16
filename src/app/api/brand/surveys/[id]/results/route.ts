@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 export async function GET(
   request: NextRequest,
@@ -8,40 +9,17 @@ export async function GET(
   try {
     const { id } = await params
     const supabase = await createClient()
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 })
-    }
-
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select(`
-        id,
-        tenant_id,
-        user_roles!user_roles_user_profile_id_fkey(brand_id, role, status)
-      `)
-      .eq('user_id', user.id)
-      .single()
-
-    if (!userProfile) {
-      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
-    }
-
-    const brandRole = userProfile.user_roles.find(r =>
-      r.status === 'active' && ['brand_manager', 'brand_admin'].includes(r.role)
-    )
-
-    if (!brandRole?.brand_id) {
-      return NextResponse.json({ error: 'Sin permisos de marca' }, { status: 403 })
-    }
+    const { searchParams } = new URL(request.url)
+    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
+    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
+    const { brandId } = result
 
     // Verify survey belongs to brand
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
       .select('id, title, survey_status, target_roles')
       .eq('id', id)
-      .eq('brand_id', brandRole.brand_id)
+      .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
 
@@ -136,7 +114,7 @@ export async function GET(
           const yesCount = answers.filter(a => a.answer_boolean === true).length
           const noCount = answers.filter(a => a.answer_boolean === false).length
           analytics.distribution = [
-            { value: 'Sí', count: yesCount, percentage: answers.length > 0 ? Math.round((yesCount / answers.length) * 100) : 0 },
+            { value: 'Si', count: yesCount, percentage: answers.length > 0 ? Math.round((yesCount / answers.length) * 100) : 0 },
             { value: 'No', count: noCount, percentage: answers.length > 0 ? Math.round((noCount / answers.length) * 100) : 0 }
           ]
           break
