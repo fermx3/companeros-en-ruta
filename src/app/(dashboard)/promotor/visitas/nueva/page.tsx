@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { ArrowLeft, MapPin, Play } from 'lucide-react'
+import { useGeolocation } from '@/hooks/useGeolocation'
 
 interface Client {
   id: string
@@ -28,11 +29,6 @@ interface Client {
   address: string
   phone: string
   brands: Array<{ id: string; name: string; logo_url: string | null }>
-}
-
-interface LocationData {
-  latitude: number
-  longitude: number
 }
 
 /**
@@ -52,10 +48,8 @@ export default function NuevaVisitaPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Location state (separate from form)
-  const [location, setLocation] = useState<LocationData | null>(null)
-  const [locationError, setLocationError] = useState<string | null>(null)
-  const [gettingLocation, setGettingLocation] = useState(false)
+  // Location (separate from form)
+  const { location, loading: gettingLocation, error: locationError, getLocation } = useGeolocation()
 
   // Initialize React Hook Form with Zod validation
   const form = useForm<VisitFormValues>({
@@ -91,36 +85,6 @@ export default function NuevaVisitaPage() {
     fetchClients()
   }, [])
 
-
-  // Get current location
-  const getLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocalización no soportada en este navegador')
-      return
-    }
-
-    setGettingLocation(true)
-    setLocationError(null)
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        })
-        setGettingLocation(false)
-      },
-      (err) => {
-        setLocationError(
-          err.code === 1
-            ? 'Permiso de ubicación denegado'
-            : 'Error al obtener ubicación'
-        )
-        setGettingLocation(false)
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
-  }
 
   /**
    * Handle form submission

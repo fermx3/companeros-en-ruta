@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from 'react'
 import { Camera, X, Upload, MapPin, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useGeolocation } from '@/hooks/useGeolocation'
 
 export interface EvidencePhoto {
   id: string
@@ -39,9 +40,9 @@ export function PhotoEvidenceUpload({
   className
 }: PhotoEvidenceUploadProps) {
   const [isCapturing, setIsCapturing] = useState(false)
-  const [capturingLocation, setCapturingLocation] = useState(false)
   const [uploadingPhotoIds, setUploadingPhotoIds] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { loading: capturingLocation, getLocation } = useGeolocation()
 
   // Upload photo to server
   const uploadPhoto = useCallback(async (photo: EvidencePhoto): Promise<EvidencePhoto | null> => {
@@ -80,28 +81,6 @@ export function PhotoEvidenceUpload({
     }
   }, [visitId, evidenceStage])
 
-  const captureLocation = useCallback(async (): Promise<{ latitude: number; longitude: number } | null> => {
-    setCapturingLocation(true)
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        })
-      })
-      return {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude
-      }
-    } catch (error) {
-      console.warn('Could not capture location:', error)
-      return null
-    } finally {
-      setCapturingLocation(false)
-    }
-  }, [])
-
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files || files.length === 0) return
@@ -109,7 +88,7 @@ export function PhotoEvidenceUpload({
     setIsCapturing(true)
 
     try {
-      const location = await captureLocation()
+      const location = await getLocation()
       const newPhotos: EvidencePhoto[] = []
 
       for (const file of Array.from(files)) {

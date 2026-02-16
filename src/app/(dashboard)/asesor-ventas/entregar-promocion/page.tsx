@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,7 @@ import {
   RefreshCw,
   MapPin
 } from 'lucide-react'
+import { useGeolocation } from '@/hooks/useGeolocation'
 
 interface QRValidationResult {
   valid: boolean
@@ -84,24 +85,7 @@ export default function EntregarPromocionPage() {
   const [redemptionResult, setRedemptionResult] = useState<RedemptionResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
-
-  // Get user location
-  useEffect(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          })
-        },
-        (err) => {
-          console.warn('Could not get location:', err)
-        }
-      )
-    }
-  }, [])
+  const { location: geoLocation } = useGeolocation({ autoFetch: true })
 
   // Handle QR scan
   const handleScan = useCallback(async (code: string) => {
@@ -143,8 +127,8 @@ export default function EntregarPromocionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           qr_code: scannedCode,
-          latitude: location?.lat,
-          longitude: location?.lng
+          latitude: geoLocation?.latitude,
+          longitude: geoLocation?.longitude
         })
       })
 
@@ -163,7 +147,7 @@ export default function EntregarPromocionPage() {
     } finally {
       setLoading(false)
     }
-  }, [scannedCode, location])
+  }, [scannedCode, geoLocation])
 
   // Reset to scan again
   const handleReset = useCallback(() => {
@@ -360,7 +344,7 @@ export default function EntregarPromocionPage() {
                   </div>
 
                   {/* Location */}
-                  {location && (
+                  {geoLocation && (
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
                       <MapPin className="h-4 w-4" />
                       <span>Ubicacion registrada</span>
