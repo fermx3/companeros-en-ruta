@@ -26,6 +26,7 @@ import type {
 
 export class AdminService {
   private supabase = createClient();
+  private cachedTenantId: string | null = null;
 
   // Generar contraseña temporal para invitaciones
   private generateTempPassword(): string {
@@ -37,8 +38,10 @@ export class AdminService {
     return password;
   }
 
-  // Obtener tenant_id del usuario actual (para MVP usamos tenant demo)
+  // Obtener tenant_id del usuario actual (cached per instance)
   private async getCurrentTenantId(): Promise<string> {
+    if (this.cachedTenantId) return this.cachedTenantId;
+
     try {
       // En el cliente, obtener del perfil del usuario autenticado
       const { data: { user } } = await this.supabase.auth.getUser();
@@ -58,6 +61,7 @@ export class AdminService {
         throw new Error('No se pudo obtener el perfil del usuario autenticado');
       }
 
+      this.cachedTenantId = profile.tenant_id;
       return profile.tenant_id;
 
     } catch (error) {
@@ -73,13 +77,12 @@ export class AdminService {
    */
   async getDashboardMetrics(): Promise<ApiResponse<AdminDashboardMetrics>> {
     try {
-      const tenantId = await this.getCurrentTenantId();
-
       // Crear AbortController para timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
 
-      const response = await fetch(`/api/admin/metrics?tenant_id=${tenantId}`, {
+      // No need to resolve tenantId client-side — the API route handles auth independently
+      const response = await fetch(`/api/admin/metrics`, {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',

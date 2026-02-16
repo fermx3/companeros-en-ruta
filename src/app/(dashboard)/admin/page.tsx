@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
-import { AdminService } from '@/lib/services/adminService'
 import type { AdminDashboardMetrics, RecentActivity } from '@/lib/types/admin'
 
 // Componente AlertDescription simple
@@ -23,39 +22,53 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const loadMetrics = useCallback(async (signal?: AbortSignal) => {
+  const loadDashboard = useCallback(async (signal?: AbortSignal) => {
     setLoading(true)
     setError(null)
 
     try {
-      const adminService = new AdminService();
-
-      // Check if aborted before making requests
       if (signal?.aborted) return
 
-      // Ejecutar AMBAS llamadas en paralelo para mejor rendimiento
-      const [metricsResponse, activityResponse] = await Promise.all([
-        adminService.getDashboardMetrics(),
-        adminService.getRecentActivity(5)
-      ])
+      // Single API call — metrics + activity are returned together
+      const response = await fetch('/api/admin/metrics', { signal })
 
       if (signal?.aborted) return
 
-      if (metricsResponse.error) {
-        throw new Error(metricsResponse.error);
+      if (!response.ok) {
+        let errorMessage = 'Error al obtener métricas';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      if (activityResponse.error) {
-        console.warn('Error loading recent activity:', activityResponse.error);
-      }
+      const data = await response.json()
 
-      if (!signal?.aborted) {
-        setMetrics(metricsResponse.data || null);
-        setRecentActivity(activityResponse.data || []);
-      }
+      if (signal?.aborted) return
+
+      // Extract activity from combined response
+      const { recentActivity: activityData, ...metricsData } = data
+      setMetrics(metricsData)
+      setRecentActivity(
+        (activityData || []).map((a: Record<string, unknown>) => ({
+          id: a.id as string,
+          tenant_id: '',
+          user_id: '',
+          action: 'CREATE',
+          resource_type: a.resource_type as string,
+          resource_id: a.id as string,
+          created_at: a.created_at as string,
+          action_type: a.action_type as string,
+          description: a.description as string,
+        }))
+      )
     } catch (err) {
       if (signal?.aborted) return
-      console.error('Error loading dashboard metrics:', err)
+      console.error('Error loading dashboard:', err)
+      if (err instanceof DOMException && err.name === 'AbortError') return
       setError(err instanceof Error ? err.message : 'Error al cargar las métricas del dashboard')
     } finally {
       if (!signal?.aborted) {
@@ -66,23 +79,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const controller = new AbortController()
-
-    // Timeout de seguridad
-    const timeoutId = setTimeout(() => {
-      if (!controller.signal.aborted) {
-        controller.abort()
-        setLoading(false)
-        setError('Timeout: La petición tardó demasiado. Por favor, recarga la página.')
-      }
-    }, 15000)
-
-    loadMetrics(controller.signal)
-
-    return () => {
-      clearTimeout(timeoutId)
-      controller.abort()
-    }
-  }, [loadMetrics])
+    loadDashboard(controller.signal)
+    return () => controller.abort()
+  }, [loadDashboard])
 
   if (loading) {
     return (
@@ -102,7 +101,7 @@ export default function AdminDashboard() {
           <AlertDescription>
             <p>{error}</p>
             <Button
-              onClick={() => loadMetrics()}
+              onClick={() => loadDashboard()}
               className="mt-4"
               variant="outline"
             >
