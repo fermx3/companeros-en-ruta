@@ -523,6 +523,9 @@ Para validar la implementación:
 | Auth race condition | `getSession()` + `onAuthStateChange(INITIAL_SESSION)` race caused empty roles to appear "ready". Fixed by deduplicating initialization paths. | `fcb42d0` |
 | Client role detection | Client users have no `user_roles` entry. AuthProvider now checks `clients.user_id` as fallback for role resolution. | `fcb42d0` |
 | Assessment PUT handler | Used wrong column name (`status` instead of `visit_status`) and missing RLS filters in assessment PUT route handler. | `f03ccaf` |
+| Survey PUT empty update | `.update({}).select().single()` failed with "Cannot coerce to single JSON object" when only questions were sent. Now skips update when no survey-level fields changed. | `ba2ce7d` |
+| Notification action_url 404 | Survey notification `action_url` was `/surveys/{id}` (no dashboard prefix), causing 404. NotificationBell now resolves relative URLs by prepending the current dashboard prefix from pathname. Works for all roles. | `0d0c695` |
+| Admin mobile sidebar | Clicking a nav item in the mobile sidebar didn't close it, requiring manual dismiss. | `b72aa31` |
 
 ---
 
