@@ -182,15 +182,20 @@ export async function PUT(
     if (end_date !== undefined) updateData.end_date = end_date
     if (max_responses_per_user !== undefined) updateData.max_responses_per_user = max_responses_per_user
 
-    const { data: updatedSurvey, error: updateError } = await supabase
-      .from('surveys')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single()
+    let updatedSurvey = currentSurvey
+    if (Object.keys(updateData).length > 0) {
+      updateData.updated_at = new Date().toISOString()
+      const { data, error: updateError } = await supabase
+        .from('surveys')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single()
 
-    if (updateError) {
-      throw new Error(`Error al actualizar encuesta: ${updateError.message}`)
+      if (updateError) {
+        throw new Error(`Error al actualizar encuesta: ${updateError.message}`)
+      }
+      updatedSurvey = data
     }
 
     // Update questions if provided
