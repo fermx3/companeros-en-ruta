@@ -33,7 +33,7 @@
 | **Notificaciones** | ✅ Completo | In-app Bell + API + integrado en 8 flujos | None |
 | **Encuestas** | ✅ Completo | Schema + Builder + Aprobación + Segmentación + Form + Resultados | None |
 
-**Overall MVP Progress:** ~92% hacia requerimientos PerfectApp
+**Overall MVP Progress:** ~94% hacia requerimientos PerfectApp
 
 ---
 
@@ -153,12 +153,12 @@
 
 | ID | Requerimiento | Fuente | Prioridad |
 |----|---------------|--------|-----------|
-| REQ-040 | Home Rediseñado - Loyalty Plans, Promociones, Sugeridos | PDF_B p.3-4 | P0 |
-| REQ-041 | Loyalty Plans Display - Máximo 6 planes activos | PDF_B p.3 | P0 |
-| REQ-042 | Banner Promociones Semanales - 5 banners carrusel | PDF_B p.3 | P0 |
+| ~~REQ-040~~ | ~~Home Rediseñado - Loyalty Plans, Promociones, Sugeridos~~ | PDF_B p.3-4 | ✅ DONE |
+| ~~REQ-041~~ | ~~Loyalty Plans Display - Máximo 6 planes activos~~ | PDF_B p.3 | ✅ DONE |
+| ~~REQ-042~~ | ~~Banner Promociones Semanales - 5 banners carrusel~~ | PDF_B p.3 | ✅ DONE |
 | REQ-043 | Grid Productos Sugeridos - 8 productos | PDF_B p.3 | P1 |
 | REQ-044 | Registro Extendido - Datos negocio + encuesta | PDF_B p.2 | P1 |
-| REQ-045 | Display Tier Mejorado - Monedas + metas visuales | PDF_B p.3 | P0 |
+| ~~REQ-045~~ | ~~Display Tier Mejorado - Monedas + metas visuales~~ | PDF_B p.3 | ✅ DONE |
 | REQ-046 | Descarga QR Personal - Generar QR para promociones | PDF_B p.3 | P0 |
 | REQ-047 | Carga Evidencia - Upload fotos con cámara | PDF_B p.5 | P1 |
 | REQ-048 | Sección Cupones/Email - QR con tracking estado | PDF_B p.6 | P1 |
@@ -275,9 +275,9 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-023 | ~~Crear workflow aprobación~~ | REQ-012 | 4 | TASK-020 | **DONE** |
 | TASK-024 | Crear API redención promoción | REQ-064 | 3 | TASK-020, TASK-014 |
 | TASK-025 | Crear carrusel promociones semanales | REQ-042 | 2 | TASK-020 |
-| TASK-030 | Rediseñar layout dashboard cliente | REQ-040 | 4 | - |
-| TASK-031 | Crear componente LoyaltyPlansSection | REQ-041 | 3 | - |
-| TASK-032 | Crear componente WeeklyPromotionsBanner | REQ-042 | 2 | TASK-025 |
+| TASK-030 | ~~Rediseñar layout dashboard cliente~~ | REQ-040 | 4 | - | **DONE** |
+| TASK-031 | ~~Crear componente LoyaltyPlansSection~~ | REQ-041 | 3 | - | **DONE** |
+| TASK-032 | ~~Crear componente WeeklyPromotionsBanner~~ | REQ-042 | 2 | TASK-025 | **DONE** |
 | TASK-033 | Crear componente SuggestedProductsGrid | REQ-043 | 2 | - |
 | TASK-034 | Crear página descarga QR personal | REQ-046 | 2 | TASK-012 |
 
@@ -487,12 +487,13 @@ FLUJO IMPLEMENTADO:
 /src/app/api/notifications/route.ts
 ```
 
-### CLIENTE (REDISEÑO HOME)
+### CLIENTE (REDISEÑO HOME) ✅ IMPLEMENTADO
 ```
-/src/app/(dashboard)/client/page.tsx (rediseño)
-/src/components/client/LoyaltyPlansSection.tsx
-/src/components/client/WeeklyPromotionsBanner.tsx
-/src/components/client/SuggestedProductsGrid.tsx
+/src/app/(dashboard)/client/page.tsx (rediseñado - 6 secciones)
+/src/components/client/TierProgressCard.tsx ✅
+/src/components/client/LoyaltyPlansSection.tsx ✅
+/src/components/client/WeeklyPromotionsBanner.tsx ✅
+/src/components/client/SuggestedProductsGrid.tsx (P1 - pendiente)
 ```
 
 ---
@@ -533,7 +534,7 @@ Para validar la implementación:
 ### Tier 2 — P0 Features Still Missing
 2. ~~**Notification system**~~ (REQ-080/081) — ✅ COMPLETO. Table + in-app bell + API + integrado en 8 flujos.
 3. ~~**Survey system**~~ (REQ-100-105) — ✅ COMPLETO. Schema + Builder + Approval + Segmentation + Form + Results.
-4. **Client dashboard redesign** (REQ-040-045) — LoyaltyPlansSection, WeeklyPromotionsBanner, SuggestedProductsGrid, TierDisplay.
+4. ~~**Client dashboard redesign**~~ (REQ-040-042, 045) — ✅ COMPLETO. LoyaltyPlansSection, WeeklyPromotionsBanner, TierProgressCard. (REQ-043 SuggestedProducts diferido P1).
 5. **Promotion creation form** (REQ-011) — Brand-side form for creating promotions with targeting.
 
 ### Tier 3 — P0-P1 Polish
@@ -699,10 +700,10 @@ Para validar la implementación:
 - [x] Welcome message
 - [x] Points balance
 - [x] Business info display
-- [ ] **NUEVO:** Loyalty Plans Section (REQ-041)
-- [ ] **NUEVO:** Banner Promociones Semanales (REQ-042)
-- [ ] **NUEVO:** Grid Productos Sugeridos (REQ-043)
-- [ ] **NUEVO:** Display Tier Mejorado (REQ-045)
+- [x] **NUEVO:** Loyalty Plans Section (REQ-041)
+- [x] **NUEVO:** Banner Promociones Semanales (REQ-042)
+- [ ] **NUEVO:** Grid Productos Sugeridos (REQ-043) — P1, diferido
+- [x] **NUEVO:** Display Tier Mejorado (REQ-045)
 - [x] **NUEVO:** Descarga QR Personal con selección de promociones (REQ-046)
 
 #### Brand Memberships
