@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { createClient } from '@/lib/supabase/client';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { SideNavigation } from '@/components/layout/SideNavigation';
 import { BottomNavigation } from '@/components/layout/bottom-navigation';
@@ -17,6 +19,22 @@ interface ClientLayoutProps {
  */
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('client');
+  const { user } = useAuth();
+  const [ownerName, setOwnerName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const supabase = createClient();
+    supabase
+      .from('clients')
+      .select('owner_name')
+      .eq('user_id', user.id)
+      .is('deleted_at', null)
+      .single()
+      .then(({ data }) => {
+        if (data?.owner_name) setOwnerName(data.owner_name);
+      });
+  }, [user]);
 
   if (roleLoading) {
     return (
@@ -57,9 +75,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SideNavigation items={clientNavConfig.items} title={clientNavConfig.title} />
+      <SideNavigation items={clientNavConfig.items} title={clientNavConfig.title} displayName={ownerName ?? undefined} />
       <div className="lg:pl-64">
-        <DashboardHeader title={clientNavConfig.title} />
+        <DashboardHeader title={clientNavConfig.title} displayName={ownerName ?? undefined} />
         <main className="pb-20 lg:pb-0">{children}</main>
       </div>
       <BottomNavigation items={clientNavConfig.items.slice(0, 5)} />

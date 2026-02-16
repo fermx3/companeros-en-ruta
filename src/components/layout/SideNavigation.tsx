@@ -10,18 +10,18 @@ import type { NavItem } from '@/lib/navigation-config'
 interface SideNavigationProps {
   items: NavItem[]
   title: string
+  displayName?: string
 }
 
-export function SideNavigation({ items, title }: SideNavigationProps) {
+export function SideNavigation({ items, title, displayName }: SideNavigationProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { signOut, userProfile, userRoles } = useAuth()
 
   const profile = userProfile as { first_name?: string; last_name?: string } | null
-  const firstName = profile?.first_name ?? ''
-  const lastName = profile?.last_name ?? ''
-  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?'
-  const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Usuario'
+  const defaultName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ')
+  const fullName = displayName || defaultName || 'Usuario'
+  const initials = fullName.split(' ').map(w => w.charAt(0)).join('').toUpperCase().slice(0, 2) || '?'
   const roleLabel = userRoles[0] ?? ''
 
   const handleLogout = async () => {

@@ -9,19 +9,19 @@ import { useAuth } from '@/components/providers/AuthProvider';
 
 interface DashboardHeaderProps {
   title: string;
+  displayName?: string;
 }
 
-export function DashboardHeader({ title }: DashboardHeaderProps) {
+export function DashboardHeader({ title, displayName }: DashboardHeaderProps) {
   const router = useRouter();
   const { signOut, userProfile } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const profile = userProfile as { first_name?: string; last_name?: string } | null;
-  const firstName = profile?.first_name ?? '';
-  const lastName = profile?.last_name ?? '';
-  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?';
-  const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Usuario';
+  const defaultName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
+  const fullName = displayName || defaultName || 'Usuario';
+  const initials = fullName.split(' ').map(w => w.charAt(0)).join('').toUpperCase().slice(0, 2) || '?';
 
   const handleLogout = async () => {
     setMenuOpen(false);
