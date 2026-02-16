@@ -27,7 +27,7 @@
 | Points System | Complete | Complete | None |
 | **Auth & Role Guards** | ✅ Complete | useRequireRole hook + all 6 layouts | None |
 | **Sistema QR** | ✅ Completo | Generación + Escaneo + Redención + Billing | None |
-| **Promociones UI** | ✅ Workflow Admin | Formulario + Banners + Aprobación Admin | Minor |
+| **Promociones UI** | ✅ Formulario + Workflow | Formulario + Banners + Aprobación Admin + Targeting | Targeting/segmentación (TASK-022, depende REQ-044) |
 | **Carga Evidencia** | ✅ Complete | PhotoEvidenceUpload con GPS, integrado en wizard | None |
 | **Flujo Visita Assessment** | ✅ Wizard 3 secciones | 3 secciones assessment | None |
 | **Notificaciones** | ✅ Completo | In-app Bell + API + integrado en 8 flujos | None |
@@ -270,7 +270,7 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | ID | Tarea | Implementa | Esfuerzo | Dependencias |
 |----|-------|------------|----------|--------------|
 | TASK-020 | Extender schema promotions | REQ-060 | 2 | - |
-| TASK-021 | Crear formulario creación promoción | REQ-011 | 5 | TASK-020 |
+| TASK-021 | ~~Crear formulario creación promoción~~ | REQ-011 | 5 | TASK-020 | **DONE** |
 | TASK-022 | Crear UI targeting promoción | REQ-012, REQ-062 | 3 | TASK-021 |
 | TASK-023 | ~~Crear workflow aprobación~~ | REQ-012 | 4 | TASK-020 | **DONE** |
 | TASK-024 | Crear API redención promoción | REQ-064 | 3 | TASK-020, TASK-014 |
@@ -538,16 +538,17 @@ Para validar la implementación:
 2. ~~**Notification system**~~ (REQ-080/081) — ✅ COMPLETO. Table + in-app bell + API + integrado en 8 flujos.
 3. ~~**Survey system**~~ (REQ-100-105) — ✅ COMPLETO. Schema + Builder + Approval + Segmentation + Form + Results.
 4. ~~**Client dashboard redesign**~~ (REQ-040-042, 045) — ✅ COMPLETO. LoyaltyPlansSection, WeeklyPromotionsBanner, TierProgressCard. (REQ-043 SuggestedProducts diferido P1).
-5. **Promotion creation form** (REQ-011) — Brand-side form for creating promotions with targeting.
+5. ~~**Promotion creation form**~~ (REQ-011) — ✅ COMPLETO. Formulario + API + submit para aprobación.
+6. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044 (registro extendido / encuesta cliente).
 
 ### Tier 3 — P0-P1 Polish
-6. **Storage buckets setup** (TASK-004) — Version-control Supabase Storage config for evidence/QR.
-7. **Extract useGeolocation hook** (TASK-005) — Currently inline in PhotoEvidenceUpload.
-8. **Supervisor UI** (TASK-071) — Conditional buttons based on assigned roles.
-9. **Brand assessment config** (TASK-067) — Sub-brands configurable by brand manager.
+7. **Storage buckets setup** (TASK-004) — Version-control Supabase Storage config for evidence/QR.
+8. **Extract useGeolocation hook** (TASK-005) — Currently inline in PhotoEvidenceUpload.
+9. **Supervisor UI** (TASK-071) — Conditional buttons based on assigned roles.
+10. **Brand assessment config** (TASK-067) — Sub-brands configurable by brand manager.
 
 ### Tier 4 — Optimization
-10. **OPT-001:** Optimize asesor-ventas orders API (separate paginated + summary queries).
+11. **OPT-001:** Optimize asesor-ventas orders API (separate paginated + summary queries).
 
 ---
 
