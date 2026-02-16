@@ -120,7 +120,8 @@ interface VisitAssessmentWizardProps {
   renderStage: (
     stage: number,
     data: WizardData,
-    updateData: (updates: Partial<WizardData>) => void
+    updateData: (updates: Partial<WizardData>) => void,
+    updateStage: <K extends keyof WizardData>(stageKey: K, updates: Partial<WizardData[K]>) => void
   ) => React.ReactNode
   className?: string
 }
@@ -201,6 +202,16 @@ export function VisitAssessmentWizard({
 
   const updateData = useCallback((updates: Partial<WizardData>) => {
     setData(prev => ({ ...prev, ...updates }))
+  }, [])
+
+  const updateStage = useCallback(<K extends keyof WizardData>(
+    stageKey: K,
+    updates: Partial<WizardData[K]>
+  ) => {
+    setData(prev => ({
+      ...prev,
+      [stageKey]: { ...prev[stageKey], ...updates }
+    }))
   }, [])
 
   const handleSaveStage = async () => {
@@ -366,7 +377,7 @@ export function VisitAssessmentWizard({
 
       {/* Stage content */}
       <div className="flex-1 overflow-auto p-4">
-        {renderStage(currentStage, data, updateData)}
+        {renderStage(currentStage, data, updateData, updateStage)}
       </div>
 
       {/* Navigation buttons */}

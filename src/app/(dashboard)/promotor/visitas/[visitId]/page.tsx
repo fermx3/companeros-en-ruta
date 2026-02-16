@@ -172,7 +172,8 @@ export default function VisitDetailPage() {
   const renderStage = useCallback((
     stage: number,
     data: WizardData,
-    updateData: (updates: Partial<WizardData>) => void
+    _updateData: (updates: Partial<WizardData>) => void,
+    updateStage: <K extends keyof WizardData>(stageKey: K, updates: Partial<WizardData[K]>) => void
   ) => {
     if (!visit) return null
 
@@ -181,7 +182,7 @@ export default function VisitDetailPage() {
         return (
           <AssessmentStage1
             data={data.stage1}
-            onDataChange={(updates) => updateData({ stage1: { ...data.stage1, ...updates } })}
+            onDataChange={(updates) => updateStage('stage1', updates)}
             brandId={visit.brand_id}
             visitId={visitId}
           />
@@ -190,7 +191,7 @@ export default function VisitDetailPage() {
         return (
           <AssessmentStage2
             data={data.stage2}
-            onDataChange={(updates) => updateData({ stage2: { ...data.stage2, ...updates } })}
+            onDataChange={(updates) => updateStage('stage2', updates)}
             visitId={visitId}
             clientId={visit.client_id}
             brandId={visit.brand_id}
@@ -200,7 +201,7 @@ export default function VisitDetailPage() {
         return (
           <AssessmentStage3
             data={data.stage3}
-            onDataChange={(updates) => updateData({ stage3: { ...data.stage3, ...updates } })}
+            onDataChange={(updates) => updateStage('stage3', updates)}
             brandId={visit.brand_id}
             visitId={visitId}
           />
