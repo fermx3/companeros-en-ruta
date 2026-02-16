@@ -324,14 +324,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Save evidence photos (for any stage)
-    if (data.evidence?.length > 0) {
-      const evidenceStage = stage === 1 ? 'pricing' : stage === 2 ? 'inventory' : 'communication'
-
-      // We only soft-delete existing evidence for this stage and add new ones
-      // For now, we'll handle evidence with file uploads separately
-      // This just stores the metadata
-    }
+    // Note: Evidence photos are saved separately via the
+    // POST /api/promotor/visits/[id]/evidence endpoint (file upload).
+    // No additional handling needed here.
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -37,40 +37,57 @@ export default function VisitDetailPage() {
           // Transform the data to WizardData format
           const wizardData: Partial<WizardData> = {}
 
+          // Map DB evidence (snake_case) to wizard format (camelCase)
+          const mapEvidence = (stage: string) =>
+            (data.evidence || [])
+              .filter((e: { evidence_stage: string }) => e.evidence_stage === stage)
+              .map((e: Record<string, unknown>) => ({
+                id: e.id as string,
+                previewUrl: (e.file_url as string) || '',
+                fileUrl: e.file_url as string,
+                caption: (e.caption as string) || '',
+                evidenceType: (e.evidence_type as string) || 'general',
+                captureLatitude: e.capture_latitude as number | undefined,
+                captureLongitude: e.capture_longitude as number | undefined,
+              }))
+
           // Stage 1 data
-          if (data.brandProductAssessments?.length > 0 || data.competitorAssessments?.length > 0) {
+          const pricingEvidence = mapEvidence('pricing')
+          if (data.brandProductAssessments?.length > 0 || data.competitorAssessments?.length > 0 || data.stageAssessment?.stage1_completed_at || pricingEvidence.length > 0) {
             wizardData.stage1 = {
               brandProductAssessments: data.brandProductAssessments || [],
               competitorAssessments: data.competitorAssessments || [],
               pricingAuditNotes: data.stageAssessment?.pricing_audit_notes || '',
-              evidence: data.evidence?.filter((e: { evidence_stage: string }) => e.evidence_stage === 'pricing') || [],
+              evidence: pricingEvidence,
               completedAt: data.stageAssessment?.stage1_completed_at ? new Date(data.stageAssessment.stage1_completed_at) : undefined
             }
           }
 
           // Stage 2 data
-          if (data.stageAssessment) {
+          const inventoryEvidence = mapEvidence('inventory')
+          if (data.stageAssessment || inventoryEvidence.length > 0) {
             wizardData.stage2 = {
-              hasInventory: data.stageAssessment.has_inventory || false,
-              hasPurchaseOrder: data.stageAssessment.has_purchase_order || false,
-              purchaseOrderNumber: data.stageAssessment.purchase_order_number || '',
-              orderId: data.stageAssessment.order_id,
-              whyNotBuying: data.stageAssessment.why_not_buying || null,
-              purchaseInventoryNotes: data.stageAssessment.purchase_inventory_notes || '',
-              evidence: data.evidence?.filter((e: { evidence_stage: string }) => e.evidence_stage === 'inventory') || [],
+              hasInventory: data.stageAssessment?.has_inventory || false,
+              hasPurchaseOrder: data.stageAssessment?.has_purchase_order || false,
+              purchaseOrderNumber: data.stageAssessment?.purchase_order_number || '',
+              orderId: data.stageAssessment?.order_id,
+              whyNotBuying: data.stageAssessment?.why_not_buying || null,
+              purchaseInventoryNotes: data.stageAssessment?.purchase_inventory_notes || '',
+              evidence: inventoryEvidence,
               completedAt: data.stageAssessment?.stage2_completed_at ? new Date(data.stageAssessment.stage2_completed_at) : undefined
             }
           }
 
           // Stage 3 data
-          if (data.stageAssessment || data.popMaterialChecks?.length > 0 || data.exhibitionChecks?.length > 0) {
+          const communicationEvidence = mapEvidence('communication')
+          if (data.stageAssessment || data.popMaterialChecks?.length > 0 || data.exhibitionChecks?.length > 0 || communicationEvidence.length > 0) {
             wizardData.stage3 = {
               communicationPlanId: data.stageAssessment?.communication_plan_id || null,
               communicationCompliance: data.stageAssessment?.communication_compliance || null,
               popMaterialChecks: data.popMaterialChecks || [],
               exhibitionChecks: data.exhibitionChecks || [],
               popExecutionNotes: data.stageAssessment?.pop_execution_notes || '',
-              evidence: data.evidence?.filter((e: { evidence_stage: string }) => e.evidence_stage === 'communication') || [],
+              evidence: communicationEvidence,
               completedAt: data.stageAssessment?.stage3_completed_at ? new Date(data.stageAssessment.stage3_completed_at) : undefined
             }
           }
