@@ -2,10 +2,10 @@ import React from 'react'
 import { DashboardHeader } from './dashboard-header'
 import { BottomNavigation } from './bottom-navigation'
 import { cn } from '@/lib/utils'
-import type { UserRole } from '@/types/ui'
+import type { NavItem } from '@/lib/navigation-config'
 
 export interface DashboardLayoutProps {
-    role: UserRole
+    items?: NavItem[]
     brandName?: string
     subtitle?: string
     children: React.ReactNode
@@ -13,7 +13,7 @@ export interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({
-    role,
+    items,
     brandName,
     subtitle,
     children,
@@ -21,16 +21,13 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
     return (
         <div className="min-h-screen bg-background pb-20 md:pb-0">
-            {/* Header con branding y notificaciones */}
             <DashboardHeader brandName={brandName} subtitle={subtitle} />
 
-            {/* Main content */}
             <main className={cn("p-4 space-y-6", className)}>
                 {children}
             </main>
 
-            {/* Bottom Navigation - Solo en móvil */}
-            <BottomNavigation role={role} />
+            {items && <BottomNavigation items={items} />}
         </div>
     )
 }

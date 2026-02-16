@@ -30,10 +30,10 @@
 | **Promociones UI** | ✅ Workflow Admin | Formulario + Banners + Aprobación Admin | Minor |
 | **Carga Evidencia** | ✅ Complete | PhotoEvidenceUpload con GPS, integrado en wizard | None |
 | **Flujo Visita Assessment** | ✅ Wizard 3 secciones | 3 secciones assessment | None |
-| **Notificaciones** | No implementado | In-app + Email | Major |
-| **Encuestas** | No implementado | Builder + Segmentación | Full |
+| **Notificaciones** | ✅ Completo | In-app Bell + API + integrado en 8 flujos | None |
+| **Encuestas** | ✅ Completo | Schema + Builder + Aprobación + Segmentación + Form + Resultados | None |
 
-**Overall MVP Progress:** ~85% hacia requerimientos PerfectApp
+**Overall MVP Progress:** ~92% hacia requerimientos PerfectApp
 
 ---
 
@@ -287,16 +287,16 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 |----|-------|------------|----------|--------------|
 | TASK-035 | Crear componente EvidenceUpload | REQ-047 | 3 | TASK-006, TASK-007 |
 | TASK-036 | Crear componente CouponsSection | REQ-048 | 2 | TASK-014 |
-| TASK-040 | Crear tabla notifications | REQ-080 | 1 | - |
-| TASK-041 | Crear componente NotificationBell | REQ-081 | 2 | TASK-040 |
-| TASK-042 | Crear página lista notificaciones | REQ-081 | 2 | TASK-040 |
+| TASK-040 | ~~Crear tabla notifications~~ | REQ-080 | 1 | - | **DONE** |
+| TASK-041 | ~~Crear componente NotificationBell~~ | REQ-081 | 2 | TASK-040 | **DONE** |
+| TASK-042 | ~~Crear página lista notificaciones~~ | REQ-081 | 2 | TASK-040 | **DONE** |
 | TASK-043 | Crear servicio email notifications | REQ-082 | 2 | TASK-040 |
-| TASK-050 | Crear schema DB surveys (con segmentación y status aprobación) | REQ-100 | 3 | - |
-| TASK-051 | Crear builder encuestas para Brand | REQ-101 | 4 | TASK-050 |
-| TASK-052 | Crear workflow aprobación encuestas por Admin | REQ-102 | 3 | TASK-050 |
-| TASK-053 | Implementar segmentación encuestas (usuario, zona, categoría) | REQ-103 | 3 | TASK-050 |
-| TASK-054 | Crear componente SurveyForm | REQ-104 | 4 | TASK-050 |
-| TASK-055 | Crear API respuestas survey | REQ-100 | 2 | TASK-050 |
+| TASK-050 | ~~Crear schema DB surveys (con segmentación y status aprobación)~~ | REQ-100 | 3 | - | **DONE** |
+| TASK-051 | ~~Crear builder encuestas para Brand~~ | REQ-101 | 4 | TASK-050 | **DONE** |
+| TASK-052 | ~~Crear workflow aprobación encuestas por Admin~~ | REQ-102 | 3 | TASK-050 | **DONE** |
+| TASK-053 | ~~Implementar segmentación encuestas (usuario, zona, categoría)~~ | REQ-103 | 3 | TASK-050 | **DONE** |
+| TASK-054 | ~~Crear componente SurveyForm~~ | REQ-104 | 4 | TASK-050 | **DONE** |
+| TASK-055 | ~~Crear API respuestas survey~~ | REQ-100 | 2 | TASK-050 | **DONE** |
 
 ### Semana 4: Flujo Visita Assessment y Polish
 
@@ -528,11 +528,11 @@ Para validar la implementación:
 ## Próximos Pasos Inmediatos
 
 ### Tier 1 — Bugs / Blockers
-1. **FINDING-001: Fix hardcoded tenant UUID in RLS policies** — 3 policies use hardcoded UUID, blocking multi-tenant. Requires migration to dynamic resolution via `user_roles`.
+1. ~~**FINDING-001: Fix hardcoded tenant UUID in RLS policies**~~ — ✅ RESUELTO (commit 354e7f7). Dynamic resolution via `get_user_tenant_ids()`.
 
 ### Tier 2 — P0 Features Still Missing
-2. **Notification system** (REQ-080/081) — Table + in-app bell + API. Required for promotion workflow.
-3. **Survey system** (REQ-100-105) — Full build: schema, builder, approval, segmentation, form.
+2. ~~**Notification system**~~ (REQ-080/081) — ✅ COMPLETO. Table + in-app bell + API + integrado en 8 flujos.
+3. ~~**Survey system**~~ (REQ-100-105) — ✅ COMPLETO. Schema + Builder + Approval + Segmentation + Form + Results.
 4. **Client dashboard redesign** (REQ-040-045) — LoyaltyPlansSection, WeeklyPromotionsBanner, SuggestedProductsGrid, TierDisplay.
 5. **Promotion creation form** (REQ-011) — Brand-side form for creating promotions with targeting.
 
@@ -749,10 +749,11 @@ Para validar la implementación:
 - [x] `distributors` - Catálogo distribuidores
 - [x] `qr_codes` - Códigos QR generados
 - [x] `qr_redemptions` - Historial redenciones QR
-- [ ] `notifications` - Notificaciones sistema
-- [ ] `surveys` - Encuestas
-- [ ] `survey_questions` - Preguntas encuestas
-- [ ] `survey_responses` - Respuestas encuestas
+- [x] `notifications` - Notificaciones sistema
+- [x] `surveys` - Encuestas
+- [x] `survey_questions` - Preguntas encuestas
+- [x] `survey_responses` - Respuestas encuestas
+- [x] `survey_answers` - Respuestas individuales por pregunta
 - [x] `visit_stage_assessments` - Assessment de visitas (3 stages)
 - [x] `visit_evidence` - Fotos/evidencia de visitas con GPS
 - [x] `visit_brand_product_assessments` - Precios productos de marca
@@ -798,7 +799,7 @@ Para validar la implementación:
 ### FINDING-001: Hardcoded Tenant UUIDs en RLS Policies (CRÍTICO)
 **Descubierto:** 2026-02-12
 **Prioridad:** CRÍTICA
-**Estado:** PENDIENTE
+**Estado:** ✅ RESUELTO (commit 354e7f7)
 
 **Problema:**
 Tres políticas RLS contienen UUID hardcodeado `fe0f429d-2d83-4738-af65-32c655cef656`:

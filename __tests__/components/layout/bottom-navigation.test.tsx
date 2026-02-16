@@ -1,106 +1,98 @@
 import { render, screen } from '@testing-library/react'
 import { BottomNavigation } from '@/components/layout/bottom-navigation'
+import { promotorNavConfig, clientNavConfig, brandNavConfig, supervisorNavConfig } from '@/lib/navigation-config'
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
-    usePathname: jest.fn(() => '/dashboard'),
+    usePathname: jest.fn(() => '/promotor'),
     useRouter: jest.fn()
 }))
 
 describe('BottomNavigation', () => {
-    it('renders navigation for admin role with all items', () => {
-        render(<BottomNavigation role="admin" />)
-
-        expect(screen.getByText('Inicio')).toBeInTheDocument()
-        expect(screen.getByText('Reportes')).toBeInTheDocument()
-        expect(screen.getByText('Ajustes')).toBeInTheDocument()
-    })
-
-    it('renders navigation for promotor role with filtered items', () => {
-        render(<BottomNavigation role="promotor" />)
-
-        expect(screen.getByText('Inicio')).toBeInTheDocument()
-        expect(screen.getByText('Visitas')).toBeInTheDocument()
-        expect(screen.getByText('Clientes')).toBeInTheDocument()
-        expect(screen.queryByText('Lealtad')).not.toBeInTheDocument()
-    })
-
-    it('renders navigation for client role with loyalty', () => {
-        render(<BottomNavigation role="client" />)
-
-        expect(screen.getByText('Inicio')).toBeInTheDocument()
-        expect(screen.getByText('Lealtad')).toBeInTheDocument()
-        expect(screen.getByText('Ajustes')).toBeInTheDocument()
-        expect(screen.queryByText('Visitas')).not.toBeInTheDocument()
-    })
-
-    it('renders navigation for brand role', () => {
-        render(<BottomNavigation role="brand" />)
-
-        expect(screen.getByText('Inicio')).toBeInTheDocument()
-        expect(screen.getByText('Clientes')).toBeInTheDocument()
-        expect(screen.getByText('Reportes')).toBeInTheDocument()
-    })
-
-    it('renders navigation for supervisor role', () => {
-        render(<BottomNavigation role="supervisor" />)
+    it('renders navigation items passed as props', () => {
+        render(<BottomNavigation items={promotorNavConfig.items.slice(0, 5)} />)
 
         expect(screen.getByText('Inicio')).toBeInTheDocument()
         expect(screen.getByText('Visitas')).toBeInTheDocument()
         expect(screen.getByText('Clientes')).toBeInTheDocument()
     })
 
-    it('renders navigation for asesor_de_ventas role', () => {
-        render(<BottomNavigation role="asesor_de_ventas" />)
+    it('renders client navigation items', () => {
+        const usePathname = require('next/navigation').usePathname
+        usePathname.mockReturnValue('/client')
+
+        render(<BottomNavigation items={clientNavConfig.items.slice(0, 5)} />)
 
         expect(screen.getByText('Inicio')).toBeInTheDocument()
-        expect(screen.getByText('Visitas')).toBeInTheDocument()
-        expect(screen.getByText('Ajustes')).toBeInTheDocument()
+        expect(screen.getByText('Mi QR')).toBeInTheDocument()
+        expect(screen.getByText('Pedidos')).toBeInTheDocument()
     })
 
-    it('limits to 4 items maximum', () => {
-        const { container } = render(<BottomNavigation role="admin" />)
+    it('renders brand navigation items', () => {
+        const usePathname = require('next/navigation').usePathname
+        usePathname.mockReturnValue('/brand')
 
-        const links = container.querySelectorAll('a')
-        expect(links.length).toBeLessThanOrEqual(4)
+        render(<BottomNavigation items={brandNavConfig.items.slice(0, 5)} />)
+
+        expect(screen.getByText('Inicio')).toBeInTheDocument()
+        expect(screen.getByText('Clientes')).toBeInTheDocument()
+        expect(screen.getByText('Productos')).toBeInTheDocument()
+    })
+
+    it('renders supervisor navigation items', () => {
+        const usePathname = require('next/navigation').usePathname
+        usePathname.mockReturnValue('/supervisor')
+
+        render(<BottomNavigation items={supervisorNavConfig.items} />)
+
+        expect(screen.getByText('Inicio')).toBeInTheDocument()
+        expect(screen.getByText('Equipo')).toBeInTheDocument()
+        expect(screen.getByText('Clientes')).toBeInTheDocument()
+    })
+
+    it('limits to 5 items maximum', () => {
+        render(<BottomNavigation items={brandNavConfig.items} />)
+
+        const links = screen.getAllByRole('link')
+        expect(links.length).toBeLessThanOrEqual(5)
     })
 
     it('highlights active route', () => {
         const usePathname = require('next/navigation').usePathname
-        usePathname.mockReturnValue('/dashboard')
+        usePathname.mockReturnValue('/promotor')
 
-        render(<BottomNavigation role="admin" />)
+        render(<BottomNavigation items={promotorNavConfig.items.slice(0, 5)} />)
 
-        const dashboardLink = screen.getByText('Inicio').closest('a')
-        expect(dashboardLink).toHaveClass('text-primary', 'bg-primary/5')
+        const homeLink = screen.getByText('Inicio').closest('a')
+        expect(homeLink).toHaveClass('text-primary', 'bg-primary/5')
     })
 
     it('has correct styling for inactive items', () => {
         const usePathname = require('next/navigation').usePathname
-        usePathname.mockReturnValue('/dashboard')
+        usePathname.mockReturnValue('/promotor')
 
-        render(<BottomNavigation role="admin" />)
+        render(<BottomNavigation items={promotorNavConfig.items.slice(0, 5)} />)
 
-        const reportsLink = screen.getByText('Reportes').closest('a')
-        expect(reportsLink).toHaveClass('text-muted-foreground')
+        const visitsLink = screen.getByText('Visitas').closest('a')
+        expect(visitsLink).toHaveClass('text-muted-foreground')
     })
 
     it('is fixed at bottom with correct z-index', () => {
-        const { container } = render(<BottomNavigation role="admin" />)
+        const { container } = render(<BottomNavigation items={promotorNavConfig.items.slice(0, 5)} />)
 
         const nav = container.querySelector('nav')
         expect(nav).toHaveClass('fixed', 'bottom-0', 'left-0', 'right-0', 'z-40')
     })
 
-    it('is hidden on desktop (md:hidden)', () => {
-        const { container } = render(<BottomNavigation role="admin" />)
+    it('is hidden on desktop (lg:hidden)', () => {
+        const { container } = render(<BottomNavigation items={promotorNavConfig.items.slice(0, 5)} />)
 
         const nav = container.querySelector('nav')
-        expect(nav).toHaveClass('md:hidden')
+        expect(nav).toHaveClass('lg:hidden')
     })
 
     it('renders icons for each nav item', () => {
-        const { container } = render(<BottomNavigation role="admin" />)
+        const { container } = render(<BottomNavigation items={promotorNavConfig.items.slice(0, 5)} />)
 
         const icons = container.querySelectorAll('svg')
         expect(icons.length).toBeGreaterThan(0)

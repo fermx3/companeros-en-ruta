@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
-import { Users, TrendingUp, MapPin, Star, Settings, Building2, UserCheck, Layers, Gift, ChevronRight } from "lucide-react"
+import { Users, TrendingUp, MapPin, Star, Settings, Building2, UserCheck, Layers, Gift, ChevronRight, ClipboardList } from "lucide-react"
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -287,6 +287,13 @@ export default function BrandDashboard() {
                       <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
                         <TrendingUp className="h-4 w-4 mr-1" />
                         Reportes
+                        <ChevronRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </Link>
+                    <Link href="/brand/surveys">
+                      <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+                        <ClipboardList className="h-4 w-4 mr-1" />
+                        Encuestas
                         <ChevronRight className="h-3 w-3 ml-1" />
                       </Button>
                     </Link>

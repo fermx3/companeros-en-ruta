@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
-import { Store, ShoppingCart, Star, MapPin, Phone, Mail, Gift, Award, TrendingUp, Building2, QrCode } from "lucide-react"
+import { Store, ShoppingCart, Star, MapPin, Phone, Mail, Gift, Award, TrendingUp, Building2, QrCode, ClipboardList } from "lucide-react"
 import Link from 'next/link'
 
 interface ClientProfile {
@@ -450,6 +450,13 @@ export default function ClientPortal() {
                     <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
                       <Store className="h-8 w-8 text-green-600" />
                       <span className="text-sm font-medium">Mi Perfil</span>
+                    </Button>
+                  </Link>
+
+                  <Link href="/client/surveys">
+                    <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+                      <ClipboardList className="h-8 w-8 text-indigo-600" />
+                      <span className="text-sm font-medium">Encuestas</span>
                     </Button>
                   </Link>
                 </div>

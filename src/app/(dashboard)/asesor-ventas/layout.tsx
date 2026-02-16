@@ -3,6 +3,9 @@
 import React from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
+import { SideNavigation } from '@/components/layout/SideNavigation';
+import { BottomNavigation } from '@/components/layout/bottom-navigation';
+import { asesorVentasNavConfig } from '@/lib/navigation-config';
 
 interface AsesorVentasLayoutProps {
   children: React.ReactNode;
@@ -53,9 +56,13 @@ export default function AsesorVentasLayout({ children }: AsesorVentasLayoutProps
   }
 
   return (
-    <>
-      <DashboardHeader title="Asesor de Ventas" />
-      {children}
-    </>
+    <div className="min-h-screen bg-gray-50">
+      <SideNavigation items={asesorVentasNavConfig.items} title={asesorVentasNavConfig.title} />
+      <div className="lg:pl-64">
+        <DashboardHeader title={asesorVentasNavConfig.title} />
+        <main className="pb-20 lg:pb-0">{children}</main>
+      </div>
+      <BottomNavigation items={asesorVentasNavConfig.items.slice(0, 5)} />
+    </div>
   );
 }

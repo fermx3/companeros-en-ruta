@@ -3,6 +3,9 @@
 import React from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
+import { SideNavigation } from '@/components/layout/SideNavigation';
+import { BottomNavigation } from '@/components/layout/bottom-navigation';
+import { supervisorNavConfig } from '@/lib/navigation-config';
 
 interface SupervisorLayoutProps {
   children: React.ReactNode;
@@ -53,9 +56,13 @@ export default function SupervisorLayout({ children }: SupervisorLayoutProps) {
   }
 
   return (
-    <>
-      <DashboardHeader title="Supervisor" />
-      {children}
-    </>
+    <div className="min-h-screen bg-gray-50">
+      <SideNavigation items={supervisorNavConfig.items} title={supervisorNavConfig.title} />
+      <div className="lg:pl-64">
+        <DashboardHeader title={supervisorNavConfig.title} />
+        <main className="pb-20 lg:pb-0">{children}</main>
+      </div>
+      <BottomNavigation items={supervisorNavConfig.items} />
+    </div>
   );
 }

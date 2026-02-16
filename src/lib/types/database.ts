@@ -357,6 +357,9 @@ export type NotificationType =
   | 'qr_redeemed'
   | 'tier_upgrade'
   | 'survey_assigned'
+  | 'survey_approved'
+  | 'survey_rejected'
+  | 'new_survey_pending'
   | 'system';
 
 /**
@@ -376,4 +379,130 @@ export interface Notification {
   created_at: string;
   updated_at?: string;
   deleted_at?: string;
+}
+
+// =============================================================================
+// SURVEY TYPES
+// =============================================================================
+
+/**
+ * Survey status enum values
+ * Column: surveys.survey_status (NOT status!)
+ */
+export type SurveyStatusEnum =
+  | 'draft'
+  | 'pending_approval'
+  | 'approved'
+  | 'active'
+  | 'closed'
+  | 'archived';
+
+/**
+ * Survey question type enum values
+ */
+export type SurveyQuestionTypeEnum =
+  | 'text'
+  | 'number'
+  | 'multiple_choice'
+  | 'scale'
+  | 'yes_no';
+
+/**
+ * Survey target role enum values
+ */
+export type SurveyTargetRoleEnum =
+  | 'promotor'
+  | 'asesor_de_ventas'
+  | 'client';
+
+/**
+ * Multiple choice option shape (stored in JSONB)
+ */
+export interface MultipleChoiceOption {
+  value: string;
+  label: string;
+}
+
+/**
+ * Scale question options (stored in JSONB)
+ */
+export interface ScaleOptions {
+  min: number;
+  max: number;
+  min_label?: string;
+  max_label?: string;
+}
+
+/**
+ * surveys table
+ */
+export interface Survey {
+  id: string;
+  public_id: string;
+  tenant_id: string;
+  brand_id: string;
+  title: string;
+  description?: string;
+  survey_status: SurveyStatusEnum;  // NOT "status"!
+  target_roles: SurveyTargetRoleEnum[];
+  target_zone_ids?: string[] | null;
+  target_client_type_categories?: string[] | null;
+  start_date: string;
+  end_date: string;
+  created_by: string;
+  approved_by?: string;
+  approved_at?: string;
+  approval_notes?: string;
+  rejection_reason?: string;
+  max_responses_per_user: number;
+  created_at: string;
+  updated_at?: string;
+  deleted_at?: string;
+}
+
+/**
+ * survey_questions table
+ */
+export interface SurveyQuestion {
+  id: string;
+  public_id: string;
+  survey_id: string;
+  tenant_id: string;
+  question_text: string;
+  question_type: SurveyQuestionTypeEnum;
+  is_required: boolean;
+  sort_order: number;
+  options?: MultipleChoiceOption[] | ScaleOptions | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+/**
+ * survey_responses table
+ */
+export interface SurveyResponse {
+  id: string;
+  public_id: string;
+  survey_id: string;
+  tenant_id: string;
+  respondent_id: string;
+  respondent_role: SurveyTargetRoleEnum;
+  submitted_at: string;
+  created_at: string;
+}
+
+/**
+ * survey_answers table
+ */
+export interface SurveyAnswer {
+  id: string;
+  response_id: string;
+  question_id: string;
+  tenant_id: string;
+  answer_text?: string;
+  answer_number?: number;
+  answer_choice?: string;
+  answer_scale?: number;
+  answer_boolean?: boolean;
+  created_at: string;
 }

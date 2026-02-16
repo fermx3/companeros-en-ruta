@@ -3,6 +3,9 @@
 import React from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
+import { SideNavigation } from '@/components/layout/SideNavigation';
+import { BottomNavigation } from '@/components/layout/bottom-navigation';
+import { promotorNavConfig } from '@/lib/navigation-config';
 
 interface PromotorLayoutProps {
   children: React.ReactNode;
@@ -22,7 +25,6 @@ export default function PromotorLayout({ children }: PromotorLayoutProps) {
   // require the actual 'promotor' role, not just admin access
   const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('promotor');
 
-  // Show loading while auth is initializing or checking role
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -34,7 +36,6 @@ export default function PromotorLayout({ children }: PromotorLayoutProps) {
     );
   }
 
-  // Show error state with retry option
   if (error && !hasAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -57,16 +58,18 @@ export default function PromotorLayout({ children }: PromotorLayoutProps) {
     );
   }
 
-  // If not loading but no access, redirect is in progress (handled by useRequireRole)
-  // Show nothing to avoid flash of content
   if (!hasAccess) {
     return null;
   }
 
   return (
-    <>
-      <DashboardHeader title="Promotor" />
-      {children}
-    </>
+    <div className="min-h-screen bg-gray-50">
+      <SideNavigation items={promotorNavConfig.items} title={promotorNavConfig.title} />
+      <div className="lg:pl-64">
+        <DashboardHeader title={promotorNavConfig.title} />
+        <main className="pb-20 lg:pb-0">{children}</main>
+      </div>
+      <BottomNavigation items={promotorNavConfig.items.slice(0, 5)} />
+    </div>
   );
 }

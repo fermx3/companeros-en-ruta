@@ -3,6 +3,9 @@
 import React from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
+import { SideNavigation } from '@/components/layout/SideNavigation';
+import { BottomNavigation } from '@/components/layout/bottom-navigation';
+import { brandNavConfig } from '@/lib/navigation-config';
 
 interface BrandLayoutProps {
   children: React.ReactNode;
@@ -59,8 +62,12 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader title="Brand Manager" />
-      <main>{children}</main>
+      <SideNavigation items={brandNavConfig.items} title={brandNavConfig.title} />
+      <div className="lg:pl-64">
+        <DashboardHeader title={brandNavConfig.title} />
+        <main className="pb-20 lg:pb-0">{children}</main>
+      </div>
+      <BottomNavigation items={brandNavConfig.items.slice(0, 5)} />
     </div>
   );
 }
