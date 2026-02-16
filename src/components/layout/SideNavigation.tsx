@@ -2,7 +2,9 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { LogOut } from 'lucide-react'
+import { useAuth } from '@/components/providers/AuthProvider'
 import type { NavItem } from '@/lib/navigation-config'
 
 interface SideNavigationProps {
@@ -12,6 +14,20 @@ interface SideNavigationProps {
 
 export function SideNavigation({ items, title }: SideNavigationProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { signOut, userProfile, userRoles } = useAuth()
+
+  const profile = userProfile as { first_name?: string; last_name?: string } | null
+  const firstName = profile?.first_name ?? ''
+  const lastName = profile?.last_name ?? ''
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?'
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Usuario'
+  const roleLabel = userRoles[0] ?? ''
+
+  const handleLogout = async () => {
+    await signOut()
+    router.push('/login')
+  }
 
   const isCurrentPath = (href: string) => {
     // Exact match for the root dashboard route (e.g. /brand, /promotor)
@@ -66,6 +82,28 @@ export function SideNavigation({ items, title }: SideNavigationProps) {
           )
         })}
       </nav>
+
+      {/* User Footer */}
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+            <span className="text-gray-600 font-medium text-sm">{initials}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{fullName}</p>
+            {roleLabel && (
+              <p className="text-xs text-gray-500 truncate">{roleLabel}</p>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="mt-3 flex items-center text-xs text-gray-500 hover:text-red-600 transition-colors"
+        >
+          <LogOut className="w-3 h-3 mr-1" />
+          Cerrar sesión
+        </button>
+      </div>
     </aside>
   )
 }

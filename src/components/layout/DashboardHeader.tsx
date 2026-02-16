@@ -1,13 +1,46 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { LogOut } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 interface DashboardHeaderProps {
   title: string;
 }
 
 export function DashboardHeader({ title }: DashboardHeaderProps) {
+  const router = useRouter();
+  const { signOut, userProfile } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const profile = userProfile as { first_name?: string; last_name?: string } | null;
+  const firstName = profile?.first_name ?? '';
+  const lastName = profile?.last_name ?? '';
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?';
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Usuario';
+
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    await signOut();
+    router.push('/login');
+  };
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
+
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
       <div className="flex items-center justify-between p-4">
@@ -23,7 +56,32 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
           </div>
           <h1 className="text-lg font-bold text-gray-900">{title}</h1>
         </div>
-        <NotificationBell />
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          {/* User avatar with dropdown */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center hover:bg-gray-400 transition-colors"
+            >
+              <span className="text-gray-600 font-medium text-xs">{initials}</span>
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div className="px-3 py-2 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900 truncate">{fullName}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center px-3 py-2 text-sm text-gray-500 hover:text-red-600 hover:bg-gray-50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </header>
   );

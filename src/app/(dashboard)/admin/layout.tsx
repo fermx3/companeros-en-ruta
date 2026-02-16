@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { LogOut } from 'lucide-react';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface AdminLayoutProps {
@@ -20,8 +22,21 @@ interface AdminLayoutProps {
  */
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('admin');
+  const { signOut, userProfile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const profile = userProfile as { first_name?: string; last_name?: string } | null;
+  const adminFirstName = profile?.first_name ?? '';
+  const adminLastName = profile?.last_name ?? '';
+  const adminInitials = `${adminFirstName.charAt(0)}${adminLastName.charAt(0)}`.toUpperCase() || '?';
+  const adminFullName = [adminFirstName, adminLastName].filter(Boolean).join(' ') || 'Admin';
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   // Show loading while auth is initializing or checking role
   if (roleLoading) {
@@ -195,18 +210,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="p-4 border-t border-gray-200">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-gray-600 font-medium text-sm">FR</span>
+                <span className="text-gray-600 font-medium text-sm">{adminInitials}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  Fernando Rios
+                  {adminFullName}
                 </p>
                 <p className="text-xs text-gray-500 truncate">
                   Administrador
                 </p>
               </div>
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex items-center justify-between">
               <Link
                 href="/admin/profile"
                 className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
@@ -216,6 +231,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </svg>
                 Ver perfil
               </Link>
+              <button
+                onClick={handleLogout}
+                className="text-xs text-gray-500 hover:text-red-600 flex items-center transition-colors"
+              >
+                <LogOut className="w-3 h-3 mr-1" />
+                Cerrar sesión
+              </button>
             </div>
           </div>
         </div>
