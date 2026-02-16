@@ -529,6 +529,7 @@ Para validar la implementación:
 | Brand logo upload | Replaced URL field with Supabase Storage uploader (bucket `brand-logos`). Includes preview, type/size validation, and progress indicator. | `d05cb31` |
 | Visit evidence save | PhotoEvidenceUpload was failing to save evidence records due to missing fields in the API insert. | `d05cb31` |
 | Notification visit_completed URL | `action_url: '/supervisor'` didn't match the dashboard prefix regex (needs trailing `/`), causing brand managers to see `/brand/supervisor`. Fixed to `/supervisor/`. | `e5d25b4` |
+| Brand manager wrong brand | Multi-brand managers saw data from arbitrary brand (`.find()` on `user_roles` returned first match). Centralized brand resolution via `resolveBrandAuth()`, migrated 28 API routes and 19 pages, added BrandSwitcher UI and `useBrandFetch` hook. Uses `is_primary` flag + localStorage persistence. | `b960556` |
 
 ---
 
