@@ -167,7 +167,7 @@ export async function POST(
             title: 'Visita completada',
             message: `Visita completada en ${clientName}`,
             notification_type: 'visit_completed' as const,
-            action_url: '/supervisor',
+            action_url: '/supervisor/',
             metadata: { visit_id: id },
           }))
         )
