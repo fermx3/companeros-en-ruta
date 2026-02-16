@@ -189,6 +189,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <Link
                   key={item.name}
                   href={item.href}
+                  onClick={() => setSidebarOpen(false)}
                   className={`
                     group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
                     ${current
