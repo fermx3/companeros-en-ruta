@@ -183,6 +183,7 @@ export async function PUT(request: NextRequest) {
       contact_email,
       contact_phone,
       website,
+      logo_url,
       brand_color_primary,
       brand_color_secondary,
       settings
@@ -197,6 +198,7 @@ export async function PUT(request: NextRequest) {
         contact_email,
         contact_phone,
         website,
+        logo_url,
         brand_color_primary,
         brand_color_secondary,
         settings,

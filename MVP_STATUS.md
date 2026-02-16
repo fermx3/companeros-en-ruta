@@ -542,13 +542,14 @@ Para validar la implementación:
 6. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044 (registro extendido / encuesta cliente).
 
 ### Tier 3 — P0-P1 Polish
-7. **Storage buckets setup** (TASK-004) — Version-control Supabase Storage config for evidence/QR.
-8. **Extract useGeolocation hook** (TASK-005) — Currently inline in PhotoEvidenceUpload.
-9. **Supervisor UI** (TASK-071) — Conditional buttons based on assigned roles.
-10. **Brand assessment config** (TASK-067) — Sub-brands configurable by brand manager.
+7. **Implementar upload de logo con Supabase Storage** — Reemplazar el campo URL temporal en `/brand/settings` con un uploader de imagen que suba a Supabase Storage (bucket `brand-logos`). Incluir preview, validación de tipo/tamaño, y crop/resize.
+8. **Storage buckets setup** (TASK-004) — Version-control Supabase Storage config for evidence/QR.
+9. **Extract useGeolocation hook** (TASK-005) — Currently inline in PhotoEvidenceUpload.
+10. **Supervisor UI** (TASK-071) — Conditional buttons based on assigned roles.
+11. **Brand assessment config** (TASK-067) — Sub-brands configurable by brand manager.
 
 ### Tier 4 — Optimization
-11. **OPT-001:** Optimize asesor-ventas orders API (separate paginated + summary queries).
+12. **OPT-001:** Optimize asesor-ventas orders API (separate paginated + summary queries).
 
 ---
 
