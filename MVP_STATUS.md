@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-02-16
+**Last Updated:** 2026-02-17
 **Target:** Implementación requerimientos PerfectApp según especificaciones cliente
 
 ---
@@ -12,8 +12,8 @@
 | Rol | Estado Actual | Cambio Requerido | Ready for Testing |
 |-----|---------------|------------------|-------------------|
 | Admin | ✅ Protegido con useRequireRole | Sin cambios | Yes |
-| Brand Manager | ✅ Protegido con useRequireRole | Config Assessment pendiente | Yes |
-| Supervisor | ✅ Protegido + UI condicional roles | Nav + dashboard dinámico según roles | Yes |
+| Brand Manager | ✅ Protegido con useRequireRole | ✅ Client detail/edit/visits + /brand/visits implementados | Yes |
+| Supervisor | ✅ Protegido + UI condicional roles | ✅ team, team/[id], clients, visits, reports implementados | Yes |
 | **Promotor** | ✅ Assessment Wizard + useRequireRole | Assessment 3 secciones completo | Ready |
 | **Asesor de Ventas** | ✅ Implementado + useRequireRole | Dashboard, Órdenes, QR, Historial, Billing | Ready |
 | Client (M&P) | ✅ QR con Promociones + useRequireRole | QR generado, selección promociones, tracking | Ready |
@@ -33,8 +33,9 @@
 | **Notificaciones** | ✅ Completo | In-app Bell + API + integrado en 8 flujos | None |
 | **Encuestas** | ✅ Completo | Schema + Builder + Aprobación + Segmentación + Form + Resultados | None |
 
-**Overall MVP Progress:** ~96% P0 features | ~80% total (incluyendo P1 y polish)
-**Audit Status:** 31 hallazgos documentados (8 P0, 15 P1, 8 P2) across 6 perfiles — 58/69 páginas funcionales, 73/73 APIs OK
+**Overall MVP Progress:** ~99% P0 features | ~88% total (incluyendo P1 y polish)
+**Audit Status:** 31 hallazgos documentados (1 P0 pendiente, 15 P1, 8 P2) across 6 perfiles — 71/82 páginas funcionales, 85/85 APIs OK
+**Cambios 2026-02-17:** SUPV-001/002/003 ✅, ADMIN-002 ✅, BRAND-001/002/003 ✅ (commits fd4b58b, c0fdfb5, 1f56248)
 
 ---
 
@@ -598,8 +599,8 @@ El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users
 ## Auditoría: Brand Manager — Cambios Pendientes
 
 **Descubierto:** 2026-02-16
-**Estado:** Documentado, pendiente de implementación
-**Cobertura:** 17/20 páginas funcionales, 28/28 APIs
+**Estado:** ✅ BRAND-001/002/003 RESUELTOS (2026-02-17, commit 1f56248) — BRAND-004/005 P1 pendientes
+**Cobertura:** 21/21 páginas funcionales, 31/31 APIs
 
 El perfil Brand Manager (`/brand`) tiene la mayoría de funcionalidades implementadas (dashboard, clients, reports, tiers, memberships, promotions, surveys, assessment config), pero presenta links rotos a páginas no creadas y datos mock que ocultan empty states.
 
@@ -647,8 +648,8 @@ El perfil Brand Manager (`/brand`) tiene la mayoría de funcionalidades implemen
 ## Auditoría: Supervisor — Cambios Pendientes
 
 **Descubierto:** 2026-02-16
-**Estado:** Documentado, pendiente de implementación
-**Cobertura:** 1/6 páginas funcionales, 1/1 API
+**Estado:** ✅ SUPV-001/002/003 RESUELTOS (2026-02-17, commit fd4b58b) — SUPV-004/005 P1 pendientes
+**Cobertura:** 6/6 páginas funcionales, 5/5 APIs
 
 El perfil Supervisor (`/supervisor`) tiene solo el dashboard funcional. Las 5 páginas restantes del sidebar (team, clients, visits, reports) no existen, y todas las quick actions del dashboard llevan a 404.
 
@@ -815,26 +816,28 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 
 | Perfil | Páginas OK | APIs OK | P0 | P1 | P2 | Total |
 |--------|-----------|---------|----|----|----|----|
-| Admin | 14/16 | 18/18 | 1 pendiente | 4 | 4 | 9 (2 done) |
-| Brand Manager | 17/20 | 28/28 | 3 | 2 | 1 | 6 |
-| Supervisor | 1/6 | 1/1 | 3 | 2 | 0 | 5 |
-| Promotor | 8/8 | 10/10 | 0 | 2 | 1 | 3 |
-| Asesor de Ventas | 11/11 | 9/9 | 0 | 2 | 1 | 3 |
-| Cliente | 7/7 | 7/7 | 1 | 3 | 1 | 5 |
-| **TOTAL** | **58/69** | **73/73** | **8** | **15** | **8** | **31** |
+| Admin | 18/20 | 22/22 | 0 ✅ | 4 | 4 | 8 |
+| Brand Manager | 21/21 | 31/31 | 0 ✅ | 2 | 1 | 3 |
+| Supervisor | 6/6 ✅ | 5/5 ✅ | 0 ✅ | 2 | 0 | 2 |
+| Promotor | 8/8 ✅ | 10/10 ✅ | 0 | 2 | 1 | 3 |
+| Asesor de Ventas | 11/11 ✅ | 9/9 ✅ | 0 | 2 | 1 | 3 |
+| Cliente | 7/8 | 7/7 | 1 | 3 | 1 | 5 |
+| **TOTAL** | **71/82** | **85/85** | **1** | **15** | **8** | **24** |
+
+> Actualizado 2026-02-17 tras commits fd4b58b (Supervisor), c0fdfb5 (Admin Zones), 1f56248 (Brand client pages + security_invoker migration)
 
 ### Todos los P0 pendientes (por orden de impacto)
 
-| ID | Perfil | Problema |
-|----|--------|----------|
-| BRAND-001 | Brand Manager | Links rotos en lista clientes (3 páginas 404) |
-| BRAND-002 | Brand Manager | Mock clients fallback en vez de empty state |
-| BRAND-003 | Brand Manager | Quick action "Visitas" causa 404 |
-| SUPV-001 | Supervisor | 5 de 6 links del sidebar son 404 |
-| SUPV-002 | Supervisor | Quick actions del dashboard todos 404 |
-| SUPV-003 | Supervisor | "Ver detalle" de equipo es 404 |
-| CLI-001 | Cliente | Link "/client/profile" causa 404 |
-| ADMIN-002 | Admin | Zonas sin CRUD (pendiente de Admin audit) |
+| ID | Perfil | Problema | Estado |
+|----|--------|----------|--------|
+| ~~BRAND-001~~ | ~~Brand Manager~~ | ~~Links rotos en lista clientes (3 páginas 404)~~ | ✅ RESUELTO (commit 1f56248) |
+| ~~BRAND-002~~ | ~~Brand Manager~~ | ~~Mock clients fallback en vez de empty state~~ | ✅ RESUELTO (commit 1f56248) |
+| ~~BRAND-003~~ | ~~Brand Manager~~ | ~~Quick action "Visitas" causa 404~~ | ✅ RESUELTO (commit 1f56248, `/brand/visits` creada) |
+| ~~SUPV-001~~ | ~~Supervisor~~ | ~~5 de 6 links del sidebar son 404~~ | ✅ RESUELTO (commit fd4b58b) |
+| ~~SUPV-002~~ | ~~Supervisor~~ | ~~Quick actions del dashboard todos 404~~ | ✅ RESUELTO (commit fd4b58b) |
+| ~~SUPV-003~~ | ~~Supervisor~~ | ~~"Ver detalle" de equipo es 404~~ | ✅ RESUELTO (commit fd4b58b, `/supervisor/team/[id]` creada) |
+| CLI-001 | Cliente | Link "/client/profile" causa 404 | ⏳ Pendiente |
+| ~~ADMIN-002~~ | ~~Admin~~ | ~~Zonas sin CRUD~~ | ✅ RESUELTO (commit c0fdfb5, CRUD completo) |
 
 ---
 
@@ -854,17 +857,17 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 
 ### Tier 3 — All Profiles Audit (P0 — Links rotos y 404s)
 9. ~~**Supervisor UI** (TASK-071) — UI condicional roles.~~ ✅ DONE (commit `92e67a8`)
-10. ~~**Brand assessment config** (TASK-067) — Productos configurables por Brand Manager para assessment.~~ **DONE**
-11. ~~**ADMIN-001:** Agregar Promociones al sidebar admin.~~ **DONE**
-12. **ADMIN-002:** Crear CRUD de Zonas + sidebar link. Esfuerzo: 3.
-13. ~~**ADMIN-003:** Fix /admin/profile 404.~~ **DONE**
-14. **BRAND-001:** Crear 3 páginas clientes Brand (detail, visits, edit). Esfuerzo: 3.
-15. **BRAND-002:** Remover mock clients fallback, usar EmptyState. Esfuerzo: 1.
-16. **BRAND-003:** Crear `/brand/visits` o remover link del dashboard. Esfuerzo: 2.
-17. **SUPV-001:** Crear 4 páginas faltantes del sidebar Supervisor (team, clients, visits, reports). Esfuerzo: 5.
-18. **SUPV-002:** Resolver quick actions 404 del dashboard Supervisor. Esfuerzo: 1 (si se deshabilitan) o incluido en SUPV-001.
-19. **SUPV-003:** Crear `/supervisor/team/[id]` (detalle equipo). Esfuerzo: 2.
-20. **CLI-001:** Crear `/client/profile` page. Esfuerzo: 2.
+10. ~~**Brand assessment config** (TASK-067) — Productos configurables por Brand Manager para assessment.~~ ✅ DONE
+11. ~~**ADMIN-001:** Agregar Promociones al sidebar admin.~~ ✅ DONE
+12. ~~**ADMIN-002:** Crear CRUD de Zonas + sidebar link.~~ ✅ DONE (commit `c0fdfb5` — list, create, detail, edit + 4 APIs)
+13. ~~**ADMIN-003:** Fix /admin/profile 404.~~ ✅ DONE
+14. ~~**BRAND-001:** Crear 3 páginas clientes Brand (detail, visits, edit).~~ ✅ DONE (commit `1f56248`)
+15. ~~**BRAND-002:** Remover mock clients fallback, usar EmptyState.~~ ✅ DONE (commit `1f56248`)
+16. ~~**BRAND-003:** Crear `/brand/visits` o remover link del dashboard.~~ ✅ DONE (commit `1f56248`, página + API creados)
+17. ~~**SUPV-001:** Crear 4 páginas faltantes del sidebar Supervisor (team, clients, visits, reports).~~ ✅ DONE (commit `fd4b58b`)
+18. ~~**SUPV-002:** Resolver quick actions 404 del dashboard Supervisor.~~ ✅ DONE (commit `fd4b58b`)
+19. ~~**SUPV-003:** Crear `/supervisor/team/[id]` (detalle equipo).~~ ✅ DONE (commit `fd4b58b`)
+20. **CLI-001:** Crear `/client/profile` page. Esfuerzo: 2. ⏳ **PENDIENTE — único P0 restante**
 
 ### Tier 4 — All Profiles Audit (P1 — Features faltantes) + Admin P1
 21. **ADMIN-004:** Settings — reemplazar placeholder con config tenant. Esfuerzo: 3.
