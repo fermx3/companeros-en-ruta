@@ -11,8 +11,8 @@ type Visit = {
   promotor_id: string
   visit_number: string
   visit_date: string
-  start_time: string | null
-  end_time: string | null
+  check_in_time: string | null
+  check_out_time: string | null
   status: 'planned' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'
   notes: string | null
   latitude: number | null

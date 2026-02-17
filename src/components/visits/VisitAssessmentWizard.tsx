@@ -18,7 +18,7 @@ interface VisitInfo {
   brand?: {
     name?: string
   } | null
-  start_time?: string | null
+  check_in_time?: string | null
 }
 
 export interface WizardData {
@@ -173,7 +173,7 @@ export function VisitAssessmentWizard({
   const ownerName = visit?.client?.owner_name
   const clientAddress = [visit?.client?.address_street, visit?.client?.address_neighborhood].filter(Boolean).join(', ')
   const brandName = visit?.brand?.name
-  const startTime = visit?.start_time ? new Date(visit.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null
+  const startTime = visit?.check_in_time ? new Date(visit.check_in_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null
   const [currentStage, setCurrentStage] = useState(0)
   const [data, setData] = useState<WizardData>(() => ({
     ...getInitialData(),

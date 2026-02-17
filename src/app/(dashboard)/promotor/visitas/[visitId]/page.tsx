@@ -242,10 +242,10 @@ export default function VisitDetailPage() {
 
   // Format duration if visit is in progress or completed
   const formatDuration = () => {
-    if (!visit.start_time) return null
+    if (!visit.check_in_time) return null
 
-    const start = new Date(visit.start_time)
-    const end = visit.end_time ? new Date(visit.end_time) : new Date()
+    const start = new Date(visit.check_in_time)
+    const end = visit.check_out_time ? new Date(visit.check_out_time) : new Date()
     const diffMs = end.getTime() - start.getTime()
     const diffMins = Math.round(diffMs / 60000)
 
@@ -318,26 +318,26 @@ export default function VisitDetailPage() {
                   <div>
                     <p className="text-xs text-gray-500">Hora inicio</p>
                     <p className="text-sm font-medium">
-                      {visit.start_time
-                        ? new Date(visit.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                      {visit.check_in_time
+                        ? new Date(visit.check_in_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
                         : 'No iniciada'}
                     </p>
                   </div>
                 </div>
 
-                {visit.end_time && (
+                {visit.check_out_time && (
                   <div className="flex items-center space-x-3">
                     <Clock className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="text-xs text-gray-500">Hora fin</p>
                       <p className="text-sm font-medium">
-                        {new Date(visit.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(visit.check_out_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
                 )}
 
-                {visit.start_time && (
+                {visit.check_in_time && (
                   <div className="flex items-center space-x-3">
                     <Clock className="h-5 w-5 text-gray-400" />
                     <div>
@@ -390,7 +390,7 @@ export default function VisitDetailPage() {
                 Assessment completado
               </h3>
               <p className="text-sm">
-                Esta visita fue completada el {visit.end_time ? new Date(visit.end_time).toLocaleDateString('es-ES', { dateStyle: 'full' }) : 'N/A'}
+                Esta visita fue completada el {visit.check_out_time ? new Date(visit.check_out_time).toLocaleDateString('es-ES', { dateStyle: 'full' }) : 'N/A'}
               </p>
             </div>
           </Card>
