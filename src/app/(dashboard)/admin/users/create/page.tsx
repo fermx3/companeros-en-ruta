@@ -520,7 +520,6 @@ export default function CreateUserPage() {
                     >
                       <option value="">Todas las zonas</option>
                       {availableZones
-                        .filter(zone => zone.brand_id === formData.brand_id)
                         .map(zone => (
                           <option key={zone.id} value={zone.id}>
                             {zone.name}

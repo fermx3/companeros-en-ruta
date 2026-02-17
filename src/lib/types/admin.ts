@@ -159,15 +159,22 @@ export interface Distributor {
 // Geographic and organizational types
 export interface Zone {
   id: string;
+  public_id: string;
   tenant_id: string;
-  brand_id: string;
   name: string;
   code: string;
   description: string | null;
-  supervisor_id: string | null;
+  country: string;
+  state: string | null;
+  cities: string[] | null;
+  postal_codes: string[] | null;
+  coordinates: Record<string, unknown> | null;
+  parent_zone_id: string | null;
+  zone_type: 'country' | 'region' | 'state' | 'city' | 'district' | 'custom';
   is_active: boolean;
+  sort_order: number;
   created_at: string;
-  updated_at: string;
+  updated_at: string | null;
   deleted_at: string | null;
 }
 
