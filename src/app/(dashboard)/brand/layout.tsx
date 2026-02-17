@@ -70,7 +70,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           <DashboardHeader title={brandNavConfig.title} headerExtra={<BrandSwitcher />} />
           <main className="pb-20 lg:pb-0">{children}</main>
         </div>
-        <BottomNavigation items={brandNavConfig.items.slice(0, 5)} />
+        <BottomNavigation items={brandNavConfig.items} />
       </div>
     </TenantProvider>
   );

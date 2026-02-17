@@ -94,6 +94,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       barcode,
       is_active,
       is_featured,
+      include_in_assessment,
       variants
     } = body
 
@@ -111,6 +112,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (barcode !== undefined) updateData.barcode = barcode
     if (is_active !== undefined) updateData.is_active = is_active
     if (is_featured !== undefined) updateData.is_featured = is_featured
+    if (include_in_assessment !== undefined) updateData.include_in_assessment = include_in_assessment
 
     const { data: product, error: updateError } = await supabase
       .from('products')

@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
         cost,
         is_active,
         is_featured,
+        include_in_assessment,
         category_id,
         created_at
       `)
@@ -150,6 +151,7 @@ export async function GET(request: NextRequest) {
     `)
     .eq('brand_id', effectiveBrandId)
     .eq('is_active', true)
+    .eq('include_in_assessment', true)
     .is('deleted_at', null)
     .order('name')
 
