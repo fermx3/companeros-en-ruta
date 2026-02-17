@@ -234,6 +234,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="mt-3 flex items-center justify-between">
               <Link
                 href="/admin/profile"
+                onClick={() => setSidebarOpen(false)}
                 className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
               >
                 <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
