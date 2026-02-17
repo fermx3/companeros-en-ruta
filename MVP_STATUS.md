@@ -311,7 +311,7 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-065 | ~~**VISITA Sección 3:** Plan comunicación (materiales, exhibiciones) *(Wizard Step 3)*~~ | REQ-022c | 3 | TASK-064 | **DONE** |
 | TASK-066 | ~~**Integrar 3 secciones como WIZARD SECUENCIAL** en flujo check-in/check-out~~ | REQ-022 | 3 | TASK-063, 064, 065 | **DONE** |
 | TASK-066b | ~~Integrar carga de pedidos dentro del flujo de visita (Promotor)~~ | REQ-026 | 3 | TASK-066 | **DONE** |
-| TASK-067 | ~~Brand Manager: Página productos~~ + Configuración sub-marcas para assessment | REQ-025 | 3 | - | **PARTIAL** (products page done, assessment config pending) |
+| TASK-067 | ~~Brand Manager: Página productos + Configuración productos para assessment~~ | REQ-025 | 3 | - | **DONE** |
 | TASK-070 | Integrar visitas/documentación en Asesor de Ventas | REQ-034 | 3 | TASK-002b |
 | TASK-071 | ~~Supervisor: UI condicional basada en roles asignados (user_roles)~~ | REQ-037, REQ-038, REQ-039 | 2 | TASK-001c, TASK-002b | **DONE** |
 | TASK-072 | Testing integración end-to-end | - | 3 | All |
@@ -441,12 +441,11 @@ FLUJO IMPLEMENTADO:
   (No permite check-out sin completar todas las secciones)
 ```
 
-### CONFIGURACIÓN SUB-MARCAS
+### CONFIGURACIÓN PRODUCTOS PARA ASSESSMENT
 ```
 /src/app/(dashboard)/brand/assessment-config/
-  - page.tsx (configurar marcas/sub-marcas para assessment)
-/src/app/api/brand/assessment-config/
-  - route.ts
+  - page.tsx (configurar productos para assessment — toggle include_in_assessment)
+  - Usa PUT /api/brand/products/[id] (no necesita API separada)
 ```
 
 ### DISTRIBUIDORES
@@ -536,6 +535,65 @@ Para validar la implementación:
 
 ---
 
+## Auditoría: Panel de Administración — Cambios Pendientes
+
+**Descubierto:** 2026-02-16
+**Estado:** Documentado, pendiente de implementación
+
+El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users, brands, clients, surveys, promotions), pero una auditoría contra los requerimientos revela gaps funcionales: items faltantes en la navegación, páginas placeholder y features no implementados.
+
+### ADMIN-P0 — Bugs / Gaps funcionales (bloquean flujo existente)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| ADMIN-001 | **Promociones sin link en sidebar** — Las páginas `/admin/promotions` y `/admin/promotions/[id]` existen y funcionan (list + approve/reject + detalle), pero NO hay link en la navegación. Admin no puede llegar sin URL directa. | `src/app/(dashboard)/admin/layout.tsx` | Agregar `{ name: 'Promociones', href: '/admin/promotions', icon: Gift }` al array `navigation` (entre Clientes y Encuestas). |
+| ADMIN-002 | **Zonas sin CRUD** — Las zonas (`zones`) se usan extensivamente en clients, supervisors y surveys como filtro/asignación, pero el admin no puede crear ni editar zonas — solo existen como datos seed en la DB. | Crear: `admin/zones/page.tsx`, `api/admin/zones/route.ts`, `api/admin/zones/[id]/route.ts` | Crear CRUD (list + create + edit + soft delete) + agregar link en sidebar nav. |
+| ADMIN-003 | **Link "/admin/profile" causa 404** — El sidebar tiene link a `/admin/profile` pero no hay página. | `src/app/(dashboard)/admin/layout.tsx:227` | Crear página básica de perfil admin o redirigir a la página de edición de perfil existente. |
+
+### ADMIN-P1 — Features faltantes (no bloquean pero afectan completitud)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| ADMIN-004 | **Settings: placeholder "Página en Construcción"** — Muestra icono amarillo y texto placeholder, sin funcionalidad real. | `src/app/(dashboard)/admin/settings/page.tsx` | Implementar formulario GET/PUT contra `/api/admin/settings` que lea/escriba `tenants` table (nombre, email, teléfono, zona horaria, país). |
+| ADMIN-005 | **Distribuidores sin CRUD** — `adminService.getDistributors()` existe y se usa en role assignment (asesor_de_ventas), pero no hay UI para crear/editar distribuidores. Si no existen distribuidores, no se puede asignar el rol asesor_de_ventas. | Crear: `admin/distributors/page.tsx`, `api/admin/distributors/route.ts`, `api/admin/distributors/[id]/route.ts` | Crear CRUD + agregar link en sidebar nav. |
+| ADMIN-006 | **Catálogos sin administración (Markets, Client Types, Commercial Structures)** — Se usan como filtros/asignación en clientes pero no son administrables por el admin. | Crear: `admin/catalogs/page.tsx` + API routes para markets, client_types, commercial_structures | Página con tabs por catálogo, CRUD por cada uno. O bien secciones dentro de Settings. |
+| ADMIN-007 | **Estadísticas de cliente: placeholders** — La sección de estadísticas (visitas, órdenes, última orden) en detalle de cliente muestra guiones "-" como placeholder. | `src/app/(dashboard)/admin/clients/[clientId]/page.tsx` | Queries reales contra `visits` y `orders` tables filtrando por `client_id`. |
+
+### ADMIN-P2 — Nice to have (polish, no bloquean MVP)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| ADMIN-008 | **Editar perfil de usuario incompleto** — Admin puede ver usuario y gestionar roles, pero no puede editar campos como nombre, teléfono, posición desde la UI. | `src/app/(dashboard)/admin/users/[id]/page.tsx` | Asegurar que la página de detalle tenga modo edición completo con PUT al API. |
+| ADMIN-009 | **Soft delete de clientes sin botón** — La API soporta soft delete pero la UI no tiene botón de eliminar/archivar. | `src/app/(dashboard)/admin/clients/[clientId]/page.tsx` | Agregar botón con confirmación modal. |
+| ADMIN-010 | **Verificar preview de encuesta antes de aprobar** — La página carga `survey_questions` pero verificar que se rendericen como preview (read-only) antes de aprobar. | `src/app/(dashboard)/admin/surveys/[id]/page.tsx` | Verificar/implementar renderizado de preguntas como preview. |
+| ADMIN-011 | **Indicador de ventana 48h en promociones** — REQ-012 menciona validación en 48 horas. No hay indicador visual de cuánto tiempo lleva pendiente una promoción. | `src/app/(dashboard)/admin/promotions/page.tsx` | Calcular `hours_pending = now - created_at` y mostrar badge de urgencia si > 24h. |
+
+### Resumen de archivos a tocar
+
+| ID | Acción | Archivos |
+|----|--------|----------|
+| ADMIN-001 | Editar | `admin/layout.tsx` — agregar Promociones al nav |
+| ADMIN-002 | Crear | `admin/zones/page.tsx`, `api/admin/zones/route.ts`, `api/admin/zones/[id]/route.ts` |
+| ADMIN-003 | Crear | `admin/profile/page.tsx` (o redirect) |
+| ADMIN-004 | Reescribir | `admin/settings/page.tsx` + crear `api/admin/settings/route.ts` |
+| ADMIN-005 | Crear | `admin/distributors/page.tsx`, `api/admin/distributors/route.ts`, `[id]/route.ts` |
+| ADMIN-006 | Crear | `admin/catalogs/page.tsx` + API routes para markets, client_types, commercial_structures |
+| ADMIN-007 | Editar | `admin/clients/[clientId]/page.tsx` — queries reales para stats |
+| ADMIN-008 | Editar | `admin/users/[id]/page.tsx` — modo edición completo |
+| ADMIN-009 | Editar | `admin/clients/[clientId]/page.tsx` — botón eliminar |
+| ADMIN-010 | Verificar | `admin/surveys/[id]/page.tsx` — preview de preguntas |
+| ADMIN-011 | Editar | `admin/promotions/page.tsx` — badge de urgencia |
+
+### Criterios de verificación
+
+1. Todos los links del sidebar navegan a páginas funcionales (no 404, no placeholder)
+2. Admin puede crear zona, distribuidor, market, client type
+3. Admin puede acceder a Promociones desde el sidebar
+4. Settings muestra y guarda info del tenant
+5. `npm run build` pasa sin errores
+
+---
+
 ## Próximos Pasos Inmediatos
 
 ### Tier 1 — Bugs / Blockers
@@ -550,21 +608,34 @@ Para validar la implementación:
 7. ~~**useGeolocation hook**~~ (TASK-005) — ✅ COMPLETO (commit `a6a46e8`).
 8. ~~**Evidence upload fix**~~ — ✅ COMPLETO (commit `637ebf9`). Snake→camelCase mapping.
 
-### Tier 3 — Remaining P0-P1 Features
+### Tier 3 — Admin Panel Audit (ADMIN-P0)
 9. ~~**Supervisor UI** (TASK-071) — UI condicional roles.~~ ✅ DONE (commit `92e67a8`)
-10. **Brand assessment config** (TASK-067) — Sub-marcas configurables por Brand Manager para assessment. Esfuerzo: 3.
-11. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.
-12. **Promotor dashboard mejorado** (TASK-060) — Plan trabajo semanal, campañas asignadas. Esfuerzo: 2.
-13. **SuggestedProductsGrid** (TASK-033) — Grid 8 productos sugeridos en home cliente. Esfuerzo: 2.
-14. **CouponsSection** (TASK-036) — Sección cupones/email con tracking estado QR. Esfuerzo: 2.
+10. ~~**Brand assessment config** (TASK-067) — Productos configurables por Brand Manager para assessment.~~ **DONE**
+11. **ADMIN-001:** Agregar Promociones al sidebar admin. Esfuerzo: 1.
+12. **ADMIN-002:** Crear CRUD de Zonas + sidebar link. Esfuerzo: 3.
+13. **ADMIN-003:** Fix /admin/profile 404. Esfuerzo: 1.
 
-### Tier 4 — P1 Polish & Optimization
-15. **Vista campañas promotor** (TASK-061) — Campañas asignadas al promotor. Esfuerzo: 2.
-16. **Calendario plan trabajo** (TASK-062) — Vista semanal para promotor. Esfuerzo: 3.
-17. **Integrar visitas en Asesor de Ventas** (TASK-070) — Documentar ejecución similar a Promotor. Esfuerzo: 3.
-18. **Email notifications** (TASK-043) — Notificaciones por email. Esfuerzo: 2.
-19. **OPT-001:** Optimize asesor-ventas orders API. Esfuerzo: 2.
-20. **E2E testing** (TASK-072) — Testing integración end-to-end. Esfuerzo: 3.
+### Tier 4 — Admin Panel Audit (ADMIN-P1) + Remaining Features
+14. **ADMIN-004:** Settings — reemplazar placeholder con config tenant. Esfuerzo: 3.
+15. **ADMIN-005:** CRUD de Distribuidores. Esfuerzo: 3.
+16. **ADMIN-006:** CRUD de Catálogos (Markets, Client Types, Commercial Structures). Esfuerzo: 3.
+17. **ADMIN-007:** Estadísticas reales en detalle cliente. Esfuerzo: 2.
+18. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.
+19. **Promotor dashboard mejorado** (TASK-060) — Plan trabajo semanal, campañas asignadas. Esfuerzo: 2.
+20. **SuggestedProductsGrid** (TASK-033) — Grid 8 productos sugeridos en home cliente. Esfuerzo: 2.
+21. **CouponsSection** (TASK-036) — Sección cupones/email con tracking estado QR. Esfuerzo: 2.
+
+### Tier 5 — Admin Panel Audit (ADMIN-P2) + P1 Polish & Optimization
+22. **ADMIN-008:** Editar perfil usuario desde admin. Esfuerzo: 2.
+23. **ADMIN-009:** Soft delete clientes desde UI. Esfuerzo: 1.
+24. **ADMIN-010:** Verificar preview encuesta antes de aprobar. Esfuerzo: 1.
+25. **ADMIN-011:** Indicador ventana 48h en promociones. Esfuerzo: 1.
+26. **Vista campañas promotor** (TASK-061) — Campañas asignadas al promotor. Esfuerzo: 2.
+27. **Calendario plan trabajo** (TASK-062) — Vista semanal para promotor. Esfuerzo: 3.
+28. **Integrar visitas en Asesor de Ventas** (TASK-070) — Documentar ejecución similar a Promotor. Esfuerzo: 3.
+29. **Email notifications** (TASK-043) — Notificaciones por email. Esfuerzo: 2.
+30. **OPT-001:** Optimize asesor-ventas orders API. Esfuerzo: 2.
+31. **E2E testing** (TASK-072) — Testing integración end-to-end. Esfuerzo: 3.
 
 ---
 
