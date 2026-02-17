@@ -341,7 +341,7 @@ export default function SupervisorDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Link href="/supervisor/visits">
                   <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
                     <MapPin className="h-6 w-6 text-green-600" />
@@ -353,13 +353,6 @@ export default function SupervisorDashboard() {
                   <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
                     <Users className="h-6 w-6 text-blue-600" />
                     <span className="text-sm font-medium">Clientes</span>
-                  </Button>
-                </Link>
-
-                <Link href="/supervisor/assignments">
-                  <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                    <CheckCircle className="h-6 w-6 text-purple-600" />
-                    <span className="text-sm font-medium">Asignaciones</span>
                   </Button>
                 </Link>
 
