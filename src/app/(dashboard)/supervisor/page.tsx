@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
-import { Users, MapPin, CheckCircle, Clock, Star, TrendingUp } from "lucide-react"
+import { Users, MapPin, CheckCircle, Clock, Star, TrendingUp, ShoppingCart, ArrowRight } from "lucide-react"
 import Link from 'next/link'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 interface TeamMember {
   id: string
@@ -29,9 +30,14 @@ interface SupervisorMetrics {
 }
 
 export default function SupervisorDashboard() {
+  const { userRoles } = useAuth()
   const [metrics, setMetrics] = useState<SupervisorMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const hasPromotorRole = userRoles.includes('promotor')
+  const hasAsesorRole = userRoles.includes('asesor_de_ventas')
+  const hasExtraRoles = hasPromotorRole || hasAsesorRole
 
   const loadMetrics = useCallback(async () => {
     try {
@@ -366,6 +372,44 @@ export default function SupervisorDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Other Modules (conditional on extra roles) */}
+          {hasExtraRoles && (
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Mis Otros Módulos</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Accede a tus otros módulos asignados
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {hasPromotorRole && (
+                    <Link href="/promotor">
+                      <Button variant="outline" className="w-full h-16 flex items-center justify-between px-4 hover:bg-gray-50">
+                        <div className="flex items-center gap-3">
+                          <MapPin className="h-5 w-5 text-green-600" />
+                          <span className="text-sm font-medium">Ir a Módulo Promotor</span>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-gray-400" />
+                      </Button>
+                    </Link>
+                  )}
+                  {hasAsesorRole && (
+                    <Link href="/asesor-ventas">
+                      <Button variant="outline" className="w-full h-16 flex items-center justify-between px-4 hover:bg-gray-50">
+                        <div className="flex items-center gap-3">
+                          <ShoppingCart className="h-5 w-5 text-blue-600" />
+                          <span className="text-sm font-medium">Ir a Módulo Asesor de Ventas</span>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-gray-400" />
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -1,11 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { MapPin, ShoppingCart } from 'lucide-react';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { SideNavigation } from '@/components/layout/SideNavigation';
 import { BottomNavigation } from '@/components/layout/bottom-navigation';
 import { supervisorNavConfig } from '@/lib/navigation-config';
+import type { NavItem } from '@/lib/navigation-config';
 
 interface SupervisorLayoutProps {
   children: React.ReactNode;
@@ -17,6 +20,20 @@ interface SupervisorLayoutProps {
  */
 export default function SupervisorLayout({ children }: SupervisorLayoutProps) {
   const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('supervisor');
+  const { userRoles } = useAuth();
+
+  const navItems = useMemo(() => {
+    const items: NavItem[] = [...supervisorNavConfig.items];
+
+    if (userRoles.includes('promotor')) {
+      items.push({ id: 'module-promotor', label: 'Promotor', icon: MapPin, href: '/promotor' });
+    }
+    if (userRoles.includes('asesor_de_ventas')) {
+      items.push({ id: 'module-asesor', label: 'Asesor Ventas', icon: ShoppingCart, href: '/asesor-ventas' });
+    }
+
+    return items;
+  }, [userRoles]);
 
   if (roleLoading) {
     return (
@@ -57,12 +74,12 @@ export default function SupervisorLayout({ children }: SupervisorLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SideNavigation items={supervisorNavConfig.items} title={supervisorNavConfig.title} />
+      <SideNavigation items={navItems} title={supervisorNavConfig.title} />
       <div className="lg:pl-64">
         <DashboardHeader title={supervisorNavConfig.title} />
         <main className="pb-20 lg:pb-0">{children}</main>
       </div>
-      <BottomNavigation items={supervisorNavConfig.items} />
+      <BottomNavigation items={navItems} />
     </div>
   );
 }
