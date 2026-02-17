@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-02-16
 **Target:** Implementación requerimientos PerfectApp según especificaciones cliente
 
 ---
@@ -13,7 +13,7 @@
 |-----|---------------|------------------|-------------------|
 | Admin | ✅ Protegido con useRequireRole | Sin cambios | Yes |
 | Brand Manager | ✅ Protegido con useRequireRole | Config Assessment pendiente | Yes |
-| Supervisor | ✅ Protegido con useRequireRole | + Roles activos configurables | Yes |
+| Supervisor | ✅ Protegido + UI condicional roles | Nav + dashboard dinámico según roles | Yes |
 | **Promotor** | ✅ Assessment Wizard + useRequireRole | Assessment 3 secciones completo | Ready |
 | **Asesor de Ventas** | ✅ Implementado + useRequireRole | Dashboard, Órdenes, QR, Historial, Billing | Ready |
 | Client (M&P) | ✅ QR con Promociones + useRequireRole | QR generado, selección promociones, tracking | Ready |
@@ -33,7 +33,7 @@
 | **Notificaciones** | ✅ Completo | In-app Bell + API + integrado en 8 flujos | None |
 | **Encuestas** | ✅ Completo | Schema + Builder + Aprobación + Segmentación + Form + Resultados | None |
 
-**Overall MVP Progress:** ~94% hacia requerimientos PerfectApp
+**Overall MVP Progress:** ~96% P0 features | ~80% total (incluyendo P1 y polish)
 
 ---
 
@@ -254,10 +254,10 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-002e | ~~Crear módulo "Entregar Promoción" (QR descuento/material)~~ | REQ-033 | 3 | TASK-013, TASK-002b | **DONE** |
 | TASK-002f | ~~Implementar tracking QRs para facturación distribuidor→marca~~ | REQ-035 | 2 | TASK-002e | **DONE** |
 | TASK-003 | ~~Actualizar middleware routing para ambos roles~~ | REQ-001, REQ-001b | 1 | TASK-001, TASK-002 | **DONE** (via useRequireRole en layouts) |
-| TASK-004 | Configurar Supabase Storage buckets (evidencia, qr) | REQ-002, REQ-090 | 1 | - |
-| TASK-005 | Crear hook useGeolocation | REQ-003 | 1 | - |
-| TASK-006 | Crear componente CameraCapture con preview | REQ-004, REQ-091 | 3 | - |
-| TASK-007 | Crear servicio file upload a Supabase Storage | REQ-092 | 2 | TASK-004 |
+| TASK-004 | ~~Configurar Supabase Storage buckets (evidencia, qr)~~ | REQ-002, REQ-090 | 1 | - | **DONE** (migration + RLS policies for visit-evidence, brand-logos) |
+| TASK-005 | ~~Crear hook useGeolocation~~ | REQ-003 | 1 | - | **DONE** (commit a6a46e8) |
+| TASK-006 | ~~Crear componente CameraCapture con preview~~ | REQ-004, REQ-091 | 3 | - | **DONE** (integrado en PhotoEvidenceUpload via `<input capture="environment">`) |
+| TASK-007 | ~~Crear servicio file upload a Supabase Storage~~ | REQ-092 | 2 | TASK-004 | **DONE** (inline en API routes evidence + logo) |
 | TASK-010 | ~~Crear tabla qr_codes (migration) con max_redemptions~~ | REQ-071, REQ-075 | 2 | - | **DONE** |
 | TASK-010b | ~~Crear tabla qr_redemptions (track múltiples redenciones)~~ | REQ-071b | 2 | TASK-010 | **DONE** |
 | TASK-011 | ~~Crear servicio generación QR (qrcode.react)~~ | REQ-070 | 2 | TASK-010 | **DONE** |
@@ -274,18 +274,18 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-022 | Crear UI targeting promoción | REQ-012, REQ-062 | 3 | TASK-021 |
 | TASK-023 | ~~Crear workflow aprobación~~ | REQ-012 | 4 | TASK-020 | **DONE** |
 | TASK-024 | Crear API redención promoción | REQ-064 | 3 | TASK-020, TASK-014 |
-| TASK-025 | Crear carrusel promociones semanales | REQ-042 | 2 | TASK-020 |
+| TASK-025 | ~~Crear carrusel promociones semanales~~ | REQ-042 | 2 | TASK-020 | **DONE** (WeeklyPromotionsBanner component) |
 | TASK-030 | ~~Rediseñar layout dashboard cliente~~ | REQ-040 | 4 | - | **DONE** |
 | TASK-031 | ~~Crear componente LoyaltyPlansSection~~ | REQ-041 | 3 | - | **DONE** |
 | TASK-032 | ~~Crear componente WeeklyPromotionsBanner~~ | REQ-042 | 2 | TASK-025 | **DONE** |
 | TASK-033 | Crear componente SuggestedProductsGrid | REQ-043 | 2 | - |
-| TASK-034 | Crear página descarga QR personal | REQ-046 | 2 | TASK-012 |
+| TASK-034 | ~~Crear página descarga QR personal~~ | REQ-046 | 2 | TASK-012 | **DONE** (client/qr/page.tsx) |
 
 ### Semana 3: Evidencia y Encuestas (P0-P1)
 
 | ID | Tarea | Implementa | Esfuerzo | Dependencias |
 |----|-------|------------|----------|--------------|
-| TASK-035 | Crear componente EvidenceUpload | REQ-047 | 3 | TASK-006, TASK-007 |
+| TASK-035 | ~~Crear componente EvidenceUpload~~ | REQ-047 | 3 | TASK-006, TASK-007 | **DONE** (implementado como PhotoEvidenceUpload) |
 | TASK-036 | Crear componente CouponsSection | REQ-048 | 2 | TASK-014 |
 | TASK-040 | ~~Crear tabla notifications~~ | REQ-080 | 1 | - | **DONE** |
 | TASK-041 | ~~Crear componente NotificationBell~~ | REQ-081 | 2 | TASK-040 | **DONE** |
@@ -313,7 +313,7 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | TASK-066b | ~~Integrar carga de pedidos dentro del flujo de visita (Promotor)~~ | REQ-026 | 3 | TASK-066 | **DONE** |
 | TASK-067 | ~~Brand Manager: Página productos~~ + Configuración sub-marcas para assessment | REQ-025 | 3 | - | **PARTIAL** (products page done, assessment config pending) |
 | TASK-070 | Integrar visitas/documentación en Asesor de Ventas | REQ-034 | 3 | TASK-002b |
-| TASK-071 | Supervisor: UI condicional basada en roles asignados (user_roles) | REQ-037, REQ-038, REQ-039 | 2 | TASK-001c, TASK-002b |
+| TASK-071 | ~~Supervisor: UI condicional basada en roles asignados (user_roles)~~ | REQ-037, REQ-038, REQ-039 | 2 | TASK-001c, TASK-002b | **DONE** |
 | TASK-072 | Testing integración end-to-end | - | 3 | All |
 
 ### Backlog: Optimizaciones
@@ -516,7 +516,7 @@ Para validar la implementación:
 
 ---
 
-## Recent Fixes (2026-02-15)
+## Recent Fixes & Changes (2026-02-15 — 2026-02-17)
 
 | Fix | Description | Commit |
 |-----|-------------|--------|
@@ -530,6 +530,9 @@ Para validar la implementación:
 | Visit evidence save | PhotoEvidenceUpload was failing to save evidence records due to missing fields in the API insert. | `d05cb31` |
 | Notification visit_completed URL | `action_url: '/supervisor'` didn't match the dashboard prefix regex (needs trailing `/`), causing brand managers to see `/brand/supervisor`. Fixed to `/supervisor/`. | `e5d25b4` |
 | Brand manager wrong brand | Multi-brand managers saw data from arbitrary brand (`.find()` on `user_roles` returned first match). Centralized brand resolution via `resolveBrandAuth()`, migrated 28 API routes and 19 pages, added BrandSwitcher UI and `useBrandFetch` hook. Uses `is_primary` flag + localStorage persistence. | `b960556` |
+| Extract useGeolocation hook | Consolidated geolocation logic from 3 files (PhotoEvidenceUpload, nueva visita, entregar-promocion) into reusable `useGeolocation` hook with `autoFetch` option. | `a6a46e8` |
+| Evidence not loading on revisit | Evidence photos uploaded successfully but didn't show on page load — snake_case DB fields (`file_url`, `evidence_type`) weren't mapped to camelCase wizard fields (`fileUrl`, `evidenceType`). Added `mapEvidence()` mapper + broadened stage loading conditions. | `637ebf9` |
+| Supervisor conditional nav | Supervisors with extra roles (promotor, asesor_de_ventas) now see module links in nav + "Mis Otros Módulos" dashboard card. Dynamic `navItems` via `useMemo` + `useAuth().userRoles`. | `92e67a8` |
 
 ---
 
@@ -538,22 +541,30 @@ Para validar la implementación:
 ### Tier 1 — Bugs / Blockers
 1. ~~**FINDING-001: Fix hardcoded tenant UUID in RLS policies**~~ — ✅ RESUELTO (commit 354e7f7). Dynamic resolution via `get_user_tenant_ids()`.
 
-### Tier 2 — P0 Features Still Missing
-2. ~~**Notification system**~~ (REQ-080/081) — ✅ COMPLETO. Table + in-app bell + API + integrado en 8 flujos.
-3. ~~**Survey system**~~ (REQ-100-105) — ✅ COMPLETO. Schema + Builder + Approval + Segmentation + Form + Results.
-4. ~~**Client dashboard redesign**~~ (REQ-040-042, 045) — ✅ COMPLETO. LoyaltyPlansSection, WeeklyPromotionsBanner, TierProgressCard. (REQ-043 SuggestedProducts diferido P1).
-5. ~~**Promotion creation form**~~ (REQ-011) — ✅ COMPLETO. Formulario + API + submit para aprobación.
-6. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044 (registro extendido / encuesta cliente).
+### Tier 2 — P0 Features Done
+2. ~~**Notification system**~~ (REQ-080/081) — ✅ COMPLETO.
+3. ~~**Survey system**~~ (REQ-100-105) — ✅ COMPLETO.
+4. ~~**Client dashboard redesign**~~ (REQ-040-042, 045) — ✅ COMPLETO.
+5. ~~**Promotion creation form**~~ (REQ-011) — ✅ COMPLETO.
+6. ~~**Storage buckets**~~ (TASK-004) — ✅ COMPLETO. Migration + RLS policies.
+7. ~~**useGeolocation hook**~~ (TASK-005) — ✅ COMPLETO (commit `a6a46e8`).
+8. ~~**Evidence upload fix**~~ — ✅ COMPLETO (commit `637ebf9`). Snake→camelCase mapping.
 
-### Tier 3 — P0-P1 Polish
-7. ~~**Implementar upload de logo con Supabase Storage**~~ — ✅ COMPLETO (commit `d05cb31`). Uploader con preview, validación y Supabase Storage bucket `brand-logos`.
-8. **Storage buckets setup** (TASK-004) — Version-control Supabase Storage config for evidence/QR.
-9. **Extract useGeolocation hook** (TASK-005) — Currently inline in PhotoEvidenceUpload.
-10. **Supervisor UI** (TASK-071) — Conditional buttons based on assigned roles.
-11. **Brand assessment config** (TASK-067) — Sub-brands configurable by brand manager.
+### Tier 3 — Remaining P0-P1 Features
+9. ~~**Supervisor UI** (TASK-071) — UI condicional roles.~~ ✅ DONE (commit `92e67a8`)
+10. **Brand assessment config** (TASK-067) — Sub-marcas configurables por Brand Manager para assessment. Esfuerzo: 3.
+11. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.
+12. **Promotor dashboard mejorado** (TASK-060) — Plan trabajo semanal, campañas asignadas. Esfuerzo: 2.
+13. **SuggestedProductsGrid** (TASK-033) — Grid 8 productos sugeridos en home cliente. Esfuerzo: 2.
+14. **CouponsSection** (TASK-036) — Sección cupones/email con tracking estado QR. Esfuerzo: 2.
 
-### Tier 4 — Optimization
-12. **OPT-001:** Optimize asesor-ventas orders API (separate paginated + summary queries).
+### Tier 4 — P1 Polish & Optimization
+15. **Vista campañas promotor** (TASK-061) — Campañas asignadas al promotor. Esfuerzo: 2.
+16. **Calendario plan trabajo** (TASK-062) — Vista semanal para promotor. Esfuerzo: 3.
+17. **Integrar visitas en Asesor de Ventas** (TASK-070) — Documentar ejecución similar a Promotor. Esfuerzo: 3.
+18. **Email notifications** (TASK-043) — Notificaciones por email. Esfuerzo: 2.
+19. **OPT-001:** Optimize asesor-ventas orders API. Esfuerzo: 2.
+20. **E2E testing** (TASK-072) — Testing integración end-to-end. Esfuerzo: 3.
 
 ---
 
