@@ -183,6 +183,29 @@ export function VisitAssessmentWizard({
   const [savingStage, setSavingStage] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Validation: check if a stage has missing required fields
+  const getStageWarning = (stageIndex: number): boolean => {
+    switch (stageIndex) {
+      case 0: {
+        // Stage 1: needs at least one product assessment with a price
+        const s = data.stage1
+        if (s.brandProductAssessments.length === 0) return true
+        return s.brandProductAssessments.some(a => a.current_price === null)
+      }
+      case 1: {
+        // Stage 2: if no purchase order, must have a reason selected
+        const s = data.stage2
+        if (!s.hasPurchaseOrder && !s.whyNotBuying) return true
+        return false
+      }
+      case 2:
+        // Stage 3: no strict requirements
+        return false
+      default:
+        return false
+    }
+  }
+
   // Build wizard stages with completion status
   const wizardStages: WizardStage[] = STAGES.map((stage, index) => {
     const stageData = data[`stage${index + 1}` as keyof WizardData]
@@ -193,12 +216,13 @@ export function VisitAssessmentWizard({
       label: stage.label,
       shortLabel: stage.shortLabel,
       isCompleted,
+      hasWarning: isCompleted && getStageWarning(index),
       isActive: currentStage === index,
       isSaving: savingStage === index
     }
   })
 
-  const allStagesCompleted = wizardStages.every(s => s.isCompleted)
+  const allStagesCompleted = wizardStages.every(s => s.isCompleted && !s.hasWarning)
 
   const updateData = useCallback((updates: Partial<WizardData>) => {
     setData(prev => ({ ...prev, ...updates }))

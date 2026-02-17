@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle2, Circle, Loader2 } from 'lucide-react'
+import { CheckCircle2, Circle, Loader2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export interface WizardStage {
@@ -8,6 +8,7 @@ export interface WizardStage {
   label: string
   shortLabel: string
   isCompleted: boolean
+  hasWarning: boolean
   isActive: boolean
   isSaving?: boolean
 }
@@ -62,13 +63,16 @@ export function WizardProgress({
                     <span
                       className={cn(
                         'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-colors',
-                        stage.isCompleted && 'bg-blue-600 border-blue-600',
+                        stage.isCompleted && !stage.hasWarning && 'bg-blue-600 border-blue-600',
+                        stage.isCompleted && stage.hasWarning && 'bg-red-500 border-red-500',
                         stage.isActive && !stage.isCompleted && 'border-blue-600 bg-white',
                         !stage.isActive && !stage.isCompleted && 'border-gray-300 bg-white'
                       )}
                     >
                       {stage.isSaving ? (
                         <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                      ) : stage.isCompleted && stage.hasWarning ? (
+                        <AlertCircle className="w-5 h-5 text-white" />
                       ) : stage.isCompleted ? (
                         <CheckCircle2 className="w-5 h-5 text-white" />
                       ) : (
@@ -117,13 +121,16 @@ export function WizardProgress({
               <span
                 className={cn(
                   'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-colors',
-                  stage.isCompleted && 'bg-blue-600 border-blue-600',
+                  stage.isCompleted && !stage.hasWarning && 'bg-blue-600 border-blue-600',
+                  stage.isCompleted && stage.hasWarning && 'bg-red-500 border-red-500',
                   stage.isActive && !stage.isCompleted && 'border-blue-600 bg-white',
                   !stage.isActive && !stage.isCompleted && 'border-gray-300 bg-white'
                 )}
               >
                 {stage.isSaving ? (
                   <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                ) : stage.isCompleted && stage.hasWarning ? (
+                  <AlertCircle className="w-5 h-5 text-white" />
                 ) : stage.isCompleted ? (
                   <CheckCircle2 className="w-5 h-5 text-white" />
                 ) : (
