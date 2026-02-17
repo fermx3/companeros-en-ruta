@@ -546,9 +546,9 @@ El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| ADMIN-001 | **Promociones sin link en sidebar** — Las páginas `/admin/promotions` y `/admin/promotions/[id]` existen y funcionan (list + approve/reject + detalle), pero NO hay link en la navegación. Admin no puede llegar sin URL directa. | `src/app/(dashboard)/admin/layout.tsx` | Agregar `{ name: 'Promociones', href: '/admin/promotions', icon: Gift }` al array `navigation` (entre Clientes y Encuestas). |
+| ~~ADMIN-001~~ | ~~**Promociones sin link en sidebar**~~ | `src/app/(dashboard)/admin/layout.tsx` | ✅ **DONE** — Agregado link "Promociones" al sidebar (entre Encuestas y Configuración). |
 | ADMIN-002 | **Zonas sin CRUD** — Las zonas (`zones`) se usan extensivamente en clients, supervisors y surveys como filtro/asignación, pero el admin no puede crear ni editar zonas — solo existen como datos seed en la DB. | Crear: `admin/zones/page.tsx`, `api/admin/zones/route.ts`, `api/admin/zones/[id]/route.ts` | Crear CRUD (list + create + edit + soft delete) + agregar link en sidebar nav. |
-| ADMIN-003 | **Link "/admin/profile" causa 404** — El sidebar tiene link a `/admin/profile` pero no hay página. | `src/app/(dashboard)/admin/layout.tsx:227` | Crear página básica de perfil admin o redirigir a la página de edición de perfil existente. |
+| ~~ADMIN-003~~ | ~~**Link "/admin/profile" causa 404**~~ | `src/app/(dashboard)/admin/profile/page.tsx` | ✅ **DONE** — Creada página de perfil admin (read-only: nombre, email, rol, fecha). |
 
 ### ADMIN-P1 — Features faltantes (no bloquean pero afectan completitud)
 
@@ -611,9 +611,9 @@ El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users
 ### Tier 3 — Admin Panel Audit (ADMIN-P0)
 9. ~~**Supervisor UI** (TASK-071) — UI condicional roles.~~ ✅ DONE (commit `92e67a8`)
 10. ~~**Brand assessment config** (TASK-067) — Productos configurables por Brand Manager para assessment.~~ **DONE**
-11. **ADMIN-001:** Agregar Promociones al sidebar admin. Esfuerzo: 1.
+11. ~~**ADMIN-001:** Agregar Promociones al sidebar admin.~~ **DONE**
 12. **ADMIN-002:** Crear CRUD de Zonas + sidebar link. Esfuerzo: 3.
-13. **ADMIN-003:** Fix /admin/profile 404. Esfuerzo: 1.
+13. ~~**ADMIN-003:** Fix /admin/profile 404.~~ **DONE**
 
 ### Tier 4 — Admin Panel Audit (ADMIN-P1) + Remaining Features
 14. **ADMIN-004:** Settings — reemplazar placeholder con config tenant. Esfuerzo: 3.
