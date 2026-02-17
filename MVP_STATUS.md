@@ -34,6 +34,7 @@
 | **Encuestas** | ✅ Completo | Schema + Builder + Aprobación + Segmentación + Form + Resultados | None |
 
 **Overall MVP Progress:** ~96% P0 features | ~80% total (incluyendo P1 y polish)
+**Audit Status:** 31 hallazgos documentados (8 P0, 15 P1, 8 P2) across 6 perfiles — 58/69 páginas funcionales, 73/73 APIs OK
 
 ---
 
@@ -594,6 +595,249 @@ El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users
 
 ---
 
+## Auditoría: Brand Manager — Cambios Pendientes
+
+**Descubierto:** 2026-02-16
+**Estado:** Documentado, pendiente de implementación
+**Cobertura:** 17/20 páginas funcionales, 28/28 APIs
+
+El perfil Brand Manager (`/brand`) tiene la mayoría de funcionalidades implementadas (dashboard, clients, reports, tiers, memberships, promotions, surveys, assessment config), pero presenta links rotos a páginas no creadas y datos mock que ocultan empty states.
+
+### BRAND-P0 — Bugs / Gaps funcionales (bloquean flujo existente)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| BRAND-001 | **Links rotos en lista clientes** — "Ver Detalle", "Visitas", "Editar" llevan a 404. Las páginas `/brand/clients/[id]`, `/brand/clients/[id]/visits`, `/brand/clients/[id]/edit` NO existen. | `src/app/(dashboard)/brand/clients/page.tsx:409,418,428` | Crear 3 páginas: detail, visits, edit |
+| BRAND-002 | **Mock clients fallback** — Cuando API retorna vacío, muestra 3 clientes hardcodeados (Supermercado Central, Tienda La Esquina, Distribuidora Regional) en vez de empty state. | `src/app/(dashboard)/brand/clients/page.tsx:69-111` | Remover mock data, usar EmptyState existente (línea 258) |
+| BRAND-003 | **Quick action "Visitas" causa 404** — Dashboard tiene botón a `/brand/visits` que no existe. | `src/app/(dashboard)/brand/page.tsx:266` | Crear página o remover link |
+
+### BRAND-P1 — Features faltantes (no bloquean pero afectan completitud)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| BRAND-004 | **Dashboard KPIs incompletos** (REQ-010) — Solo muestra 4 de 9 KPIs: faltan Volumen, Reach, Mix, Market Share, Price positioning. | `src/app/(dashboard)/brand/page.tsx:176-233`, `src/app/api/brand/metrics/route.ts` | Expandir métricas |
+| BRAND-005 | **Team performance básico** (REQ-014) — Lista equipo pero sin rankings, métricas individuales, ni trends. | `src/app/(dashboard)/brand/team/page.tsx` | Agregar performance metrics |
+
+### BRAND-P2 — Nice to have (polish, no bloquean MVP)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| BRAND-006 | **Incentivos RTM/M&P no implementados** (REQ-013) — No hay página ni API para configurar incentivos. | — | Crear página config incentivos |
+
+### Resumen de archivos a tocar
+
+| ID | Acción | Archivos |
+|----|--------|----------|
+| BRAND-001 | Crear | `brand/clients/[id]/page.tsx`, `brand/clients/[id]/visits/page.tsx`, `brand/clients/[id]/edit/page.tsx` |
+| BRAND-002 | Editar | `brand/clients/page.tsx` — remover mock data lines 69-111 |
+| BRAND-003 | Crear o Editar | `brand/visits/page.tsx` (crear) o `brand/page.tsx:266` (remover link) |
+| BRAND-004 | Editar | `brand/page.tsx`, `api/brand/metrics/route.ts` — expandir KPIs |
+| BRAND-005 | Editar | `brand/team/page.tsx` — agregar rankings y métricas individuales |
+| BRAND-006 | Crear | `brand/incentives/page.tsx`, `api/brand/incentives/route.ts` |
+
+### Criterios de verificación
+
+1. Todos los links en `/brand/clients` navegan a páginas funcionales
+2. Lista de clientes vacía muestra EmptyState, no datos mock
+3. Quick action "Visitas" no produce 404
+4. `npm run build` pasa sin errores
+
+---
+
+## Auditoría: Supervisor — Cambios Pendientes
+
+**Descubierto:** 2026-02-16
+**Estado:** Documentado, pendiente de implementación
+**Cobertura:** 1/6 páginas funcionales, 1/1 API
+
+El perfil Supervisor (`/supervisor`) tiene solo el dashboard funcional. Las 5 páginas restantes del sidebar (team, clients, visits, reports) no existen, y todas las quick actions del dashboard llevan a 404.
+
+### SUP-P0 — Bugs / Gaps funcionales (bloquean flujo existente)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| SUPV-001 | **5 de 6 links del sidebar son 404** — team, clients, visits, reports NO existen. Solo el dashboard funciona. | `src/lib/navigation-config.ts:91-101` | Crear las 4 páginas faltantes |
+| SUPV-002 | **Quick actions del dashboard todos 404** — 4 botones (Visitas del Equipo, Clientes, Asignaciones, Reportes) llevan a páginas inexistentes. | `src/app/(dashboard)/supervisor/page.tsx:345-371` | Crear páginas o deshabilitar botones |
+| SUPV-003 | **"Ver detalle" de equipo es 404** — Link a `/supervisor/team/{id}` no existe. | `src/app/(dashboard)/supervisor/page.tsx:312` | Crear `/supervisor/team/[id]/page.tsx` |
+
+### SUP-P1 — Features faltantes (no bloquean pero afectan completitud)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| SUPV-004 | **"Asignaciones" no está en sidebar** — Botón quick action va a `/supervisor/assignments` pero no aparece en nav config. | `src/app/(dashboard)/supervisor/page.tsx:359` | Agregar a nav o remover botón |
+| SUPV-005 | **API usa tabla posiblemente renombrada** — `client_assignments` puede haberse renombrado a `promotor_client_assignments` durante refactor advisor→promotor. | `src/app/api/supervisor/metrics/route.ts:104` | Verificar tabla en DB |
+
+### Resumen de archivos a tocar
+
+| ID | Acción | Archivos |
+|----|--------|----------|
+| SUPV-001 | Crear | `supervisor/team/page.tsx`, `supervisor/clients/page.tsx`, `supervisor/visits/page.tsx`, `supervisor/reports/page.tsx` + APIs correspondientes |
+| SUPV-002 | Editar o Crear | Crear las 4 páginas destino o deshabilitar botones en `supervisor/page.tsx:345-371` |
+| SUPV-003 | Crear | `supervisor/team/[id]/page.tsx` |
+| SUPV-004 | Editar | `navigation-config.ts` (agregar) o `supervisor/page.tsx:359` (remover) |
+| SUPV-005 | Verificar | `api/supervisor/metrics/route.ts:104` — verificar nombre tabla en DB |
+
+### Criterios de verificación
+
+1. Todos los links del sidebar navegan a páginas funcionales
+2. Quick actions del dashboard no producen 404
+3. "Ver detalle" de equipo navega a página funcional
+4. Tabla `client_assignments` vs `promotor_client_assignments` verificada en DB
+5. `npm run build` pasa sin errores
+
+---
+
+## Auditoría: Promotor — Cambios Pendientes
+
+**Descubierto:** 2026-02-16
+**Estado:** Documentado, pendiente de implementación
+**Cobertura:** 8/8 páginas funcionales, 10/10 APIs
+
+El perfil Promotor (`/promotor`) es el más completo — todas las páginas y APIs funcionan. Los hallazgos son features faltantes y inconsistencias de tipo.
+
+### PROM-P1 — Features faltantes (no bloquean pero afectan completitud)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| PROM-001 | **Campañas asignadas no implementado** (REQ-021, TASK-061) — No hay página ni link en sidebar para ver campañas asignadas al promotor. | — | Crear `promotor/campaigns/page.tsx` + API + sidebar link |
+| PROM-002 | **Reportes con stats hardcodeados** — "Desglose de Desempeño" muestra porcentajes estáticos (40%, 30%, 20%, 10%) en vez de datos calculados. | `src/app/(dashboard)/promotor/reports/page.tsx:390-405` | Implementar cálculo real |
+
+### PROM-P2 — Nice to have (polish, no bloquean MVP)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| PROM-003 | **`full_name` field inconsistency** — Múltiples archivos usan `full_name` pero DB tiene `first_name`/`last_name`. API lo computa, pero type safety rota. | `src/app/(dashboard)/promotor/page.tsx:13,146`, `src/app/(dashboard)/promotor/visitas/page.tsx:31`, `src/app/(dashboard)/promotor/profile/edit/page.tsx:250` | Usar `first_name`+`last_name` directamente |
+
+### Resumen de archivos a tocar
+
+| ID | Acción | Archivos |
+|----|--------|----------|
+| PROM-001 | Crear | `promotor/campaigns/page.tsx`, `api/promotor/campaigns/route.ts`, agregar a `navigation-config.ts` |
+| PROM-002 | Editar | `promotor/reports/page.tsx:390-405` — reemplazar percentages hardcodeados con cálculo |
+| PROM-003 | Editar | `promotor/page.tsx`, `promotor/visitas/page.tsx`, `promotor/profile/edit/page.tsx` — usar `first_name`+`last_name` |
+
+### Criterios de verificación
+
+1. Campañas asignadas accesible desde sidebar y muestra datos reales
+2. Reportes muestran datos calculados, no porcentajes estáticos
+3. No hay referencias a `full_name` como campo directo de DB
+4. `npm run build` pasa sin errores
+
+---
+
+## Auditoría: Asesor de Ventas — Cambios Pendientes
+
+**Descubierto:** 2026-02-16
+**Estado:** Documentado, pendiente de implementación
+**Cobertura:** 11/11 páginas funcionales, 9/9 APIs
+
+El perfil Asesor de Ventas (`/asesor-ventas`) tiene todas las páginas y APIs funcionales. Los hallazgos son un link 404 y features faltantes de integración.
+
+### ADV-P1 — Features faltantes (no bloquean pero afectan completitud)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| ADV-001 | **Link "Editar Perfil" causa 404** — Dashboard tiene link a `/asesor-ventas/profile/edit` que no existe. | `src/app/(dashboard)/asesor-ventas/page.tsx:155` | Crear página o remover link |
+| ADV-002 | **Visitas/documentación no integrado** (TASK-070, REQ-034) — No tiene módulo de visitas paralelo al de Promotor. | — | Implementar flujo visitas para asesor |
+
+### ADV-P2 — Nice to have (polish, no bloquean MVP)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| ADV-003 | **`full_name` field inconsistency** — Usa `profile.full_name` (computado por API) pero no hay fallback si API cambia. | `src/app/(dashboard)/asesor-ventas/page.tsx:135` | Agregar fallback `first_name`+`last_name` |
+
+### Resumen de archivos a tocar
+
+| ID | Acción | Archivos |
+|----|--------|----------|
+| ADV-001 | Crear o Editar | `asesor-ventas/profile/edit/page.tsx` (crear) o `asesor-ventas/page.tsx:155` (remover link) |
+| ADV-002 | Crear | `asesor-ventas/visits/page.tsx`, `api/asesor-ventas/visits/route.ts` + componentes del flujo |
+| ADV-003 | Editar | `asesor-ventas/page.tsx:135` — agregar fallback |
+
+### Criterios de verificación
+
+1. Link "Editar Perfil" navega a página funcional o está removido
+2. Flujo de visitas accesible (si se implementa)
+3. No hay dependencia de `full_name` sin fallback
+4. `npm run build` pasa sin errores
+
+---
+
+## Auditoría: Cliente — Cambios Pendientes
+
+**Descubierto:** 2026-02-16
+**Estado:** Documentado, pendiente de implementación
+**Cobertura:** 7/7 páginas funcionales, 7/7 APIs
+
+El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los hallazgos son un link 404, componentes no implementados y debug logging en producción.
+
+### CLI-P0 — Bugs / Gaps funcionales (bloquean flujo existente)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| CLI-001 | **Link "/client/profile" causa 404** — Quick action en home lleva a página inexistente. API `/api/client/profile` sí existe. | `src/app/(dashboard)/client/page.tsx:272` | Crear `client/profile/page.tsx` |
+
+### CLI-P1 — Features faltantes (no bloquean pero afectan completitud)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| CLI-002 | **SuggestedProductsGrid no implementado** (REQ-043, TASK-033) — Componente falta completamente. Debería mostrar 8 productos sugeridos en home. | — | Crear `components/client/SuggestedProductsGrid.tsx` + integrar en home |
+| CLI-003 | **CouponsSection no implementado** (REQ-048, TASK-036) — Sección cupones/email con tracking QR no existe. | — | Crear `components/client/CouponsSection.tsx` |
+| CLI-004 | **Registro extendido no implementado** (REQ-044) — No hay formulario de datos de negocio extendidos ni encuesta de onboarding. | — | Crear flujo registro extendido |
+
+### CLI-P2 — Nice to have (polish, no bloquean MVP)
+
+| ID | Problema | Archivo(s) | Fix |
+|----|----------|------------|-----|
+| CLI-005 | **Debug logging en API promotions** — `console.log` en producción. | `src/app/api/client/promotions/route.ts:55,68,74,121-125` | Remover console.log |
+
+### Resumen de archivos a tocar
+
+| ID | Acción | Archivos |
+|----|--------|----------|
+| CLI-001 | Crear | `client/profile/page.tsx` |
+| CLI-002 | Crear | `components/client/SuggestedProductsGrid.tsx`, editar `client/page.tsx` |
+| CLI-003 | Crear | `components/client/CouponsSection.tsx` |
+| CLI-004 | Crear | `client/register/extended/page.tsx` o flujo dentro de onboarding existente |
+| CLI-005 | Editar | `api/client/promotions/route.ts` — remover console.log lines 55,68,74,121-125 |
+
+### Criterios de verificación
+
+1. Link "/client/profile" navega a página funcional
+2. SuggestedProductsGrid renderiza en home (si se implementa)
+3. CouponsSection renderiza en home (si se implementa)
+4. No hay `console.log` en API de producción
+5. `npm run build` pasa sin errores
+
+---
+
+## Resumen Consolidado de Auditorías (Todos los Perfiles)
+
+| Perfil | Páginas OK | APIs OK | P0 | P1 | P2 | Total |
+|--------|-----------|---------|----|----|----|----|
+| Admin | 14/16 | 18/18 | 1 pendiente | 4 | 4 | 9 (2 done) |
+| Brand Manager | 17/20 | 28/28 | 3 | 2 | 1 | 6 |
+| Supervisor | 1/6 | 1/1 | 3 | 2 | 0 | 5 |
+| Promotor | 8/8 | 10/10 | 0 | 2 | 1 | 3 |
+| Asesor de Ventas | 11/11 | 9/9 | 0 | 2 | 1 | 3 |
+| Cliente | 7/7 | 7/7 | 1 | 3 | 1 | 5 |
+| **TOTAL** | **58/69** | **73/73** | **8** | **15** | **8** | **31** |
+
+### Todos los P0 pendientes (por orden de impacto)
+
+| ID | Perfil | Problema |
+|----|--------|----------|
+| BRAND-001 | Brand Manager | Links rotos en lista clientes (3 páginas 404) |
+| BRAND-002 | Brand Manager | Mock clients fallback en vez de empty state |
+| BRAND-003 | Brand Manager | Quick action "Visitas" causa 404 |
+| SUPV-001 | Supervisor | 5 de 6 links del sidebar son 404 |
+| SUPV-002 | Supervisor | Quick actions del dashboard todos 404 |
+| SUPV-003 | Supervisor | "Ver detalle" de equipo es 404 |
+| CLI-001 | Cliente | Link "/client/profile" causa 404 |
+| ADMIN-002 | Admin | Zonas sin CRUD (pendiente de Admin audit) |
+
+---
+
 ## Próximos Pasos Inmediatos
 
 ### Tier 1 — Bugs / Blockers
@@ -608,34 +852,51 @@ El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users
 7. ~~**useGeolocation hook**~~ (TASK-005) — ✅ COMPLETO (commit `a6a46e8`).
 8. ~~**Evidence upload fix**~~ — ✅ COMPLETO (commit `637ebf9`). Snake→camelCase mapping.
 
-### Tier 3 — Admin Panel Audit (ADMIN-P0)
+### Tier 3 — All Profiles Audit (P0 — Links rotos y 404s)
 9. ~~**Supervisor UI** (TASK-071) — UI condicional roles.~~ ✅ DONE (commit `92e67a8`)
 10. ~~**Brand assessment config** (TASK-067) — Productos configurables por Brand Manager para assessment.~~ **DONE**
 11. ~~**ADMIN-001:** Agregar Promociones al sidebar admin.~~ **DONE**
 12. **ADMIN-002:** Crear CRUD de Zonas + sidebar link. Esfuerzo: 3.
 13. ~~**ADMIN-003:** Fix /admin/profile 404.~~ **DONE**
+14. **BRAND-001:** Crear 3 páginas clientes Brand (detail, visits, edit). Esfuerzo: 3.
+15. **BRAND-002:** Remover mock clients fallback, usar EmptyState. Esfuerzo: 1.
+16. **BRAND-003:** Crear `/brand/visits` o remover link del dashboard. Esfuerzo: 2.
+17. **SUPV-001:** Crear 4 páginas faltantes del sidebar Supervisor (team, clients, visits, reports). Esfuerzo: 5.
+18. **SUPV-002:** Resolver quick actions 404 del dashboard Supervisor. Esfuerzo: 1 (si se deshabilitan) o incluido en SUPV-001.
+19. **SUPV-003:** Crear `/supervisor/team/[id]` (detalle equipo). Esfuerzo: 2.
+20. **CLI-001:** Crear `/client/profile` page. Esfuerzo: 2.
 
-### Tier 4 — Admin Panel Audit (ADMIN-P1) + Remaining Features
-14. **ADMIN-004:** Settings — reemplazar placeholder con config tenant. Esfuerzo: 3.
-15. **ADMIN-005:** CRUD de Distribuidores. Esfuerzo: 3.
-16. **ADMIN-006:** CRUD de Catálogos (Markets, Client Types, Commercial Structures). Esfuerzo: 3.
-17. **ADMIN-007:** Estadísticas reales en detalle cliente. Esfuerzo: 2.
-18. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.
-19. **Promotor dashboard mejorado** (TASK-060) — Plan trabajo semanal, campañas asignadas. Esfuerzo: 2.
-20. **SuggestedProductsGrid** (TASK-033) — Grid 8 productos sugeridos en home cliente. Esfuerzo: 2.
-21. **CouponsSection** (TASK-036) — Sección cupones/email con tracking estado QR. Esfuerzo: 2.
+### Tier 4 — All Profiles Audit (P1 — Features faltantes) + Admin P1
+21. **ADMIN-004:** Settings — reemplazar placeholder con config tenant. Esfuerzo: 3.
+22. **ADMIN-005:** CRUD de Distribuidores. Esfuerzo: 3.
+23. **ADMIN-006:** CRUD de Catálogos (Markets, Client Types, Commercial Structures). Esfuerzo: 3.
+24. **ADMIN-007:** Estadísticas reales en detalle cliente. Esfuerzo: 2.
+25. **BRAND-004:** Dashboard KPIs completos (Volumen, Reach, Mix, Market Share, Precios). Esfuerzo: 3.
+26. **BRAND-005:** Team performance con rankings y métricas individuales. Esfuerzo: 3.
+27. **SUPV-004:** Resolver inconsistencia "Asignaciones" (nav vs quick action). Esfuerzo: 1.
+28. **SUPV-005:** Verificar tabla `client_assignments` vs `promotor_client_assignments`. Esfuerzo: 1.
+29. **PROM-001:** Campañas asignadas al promotor (REQ-021, TASK-061). Esfuerzo: 2.
+30. **PROM-002:** Reportes con stats calculados (no hardcodeados). Esfuerzo: 2.
+31. **ADV-001:** Crear `/asesor-ventas/profile/edit` o remover link. Esfuerzo: 2.
+32. **ADV-002:** Integrar visitas/documentación en Asesor de Ventas (TASK-070). Esfuerzo: 3.
+33. **CLI-002:** SuggestedProductsGrid (TASK-033). Esfuerzo: 2.
+34. **CLI-003:** CouponsSection (TASK-036). Esfuerzo: 2.
+35. **CLI-004:** Registro extendido (REQ-044). Esfuerzo: 3.
+36. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.
 
-### Tier 5 — Admin Panel Audit (ADMIN-P2) + P1 Polish & Optimization
-22. **ADMIN-008:** Editar perfil usuario desde admin. Esfuerzo: 2.
-23. **ADMIN-009:** Soft delete clientes desde UI. Esfuerzo: 1.
-24. **ADMIN-010:** Verificar preview encuesta antes de aprobar. Esfuerzo: 1.
-25. **ADMIN-011:** Indicador ventana 48h en promociones. Esfuerzo: 1.
-26. **Vista campañas promotor** (TASK-061) — Campañas asignadas al promotor. Esfuerzo: 2.
-27. **Calendario plan trabajo** (TASK-062) — Vista semanal para promotor. Esfuerzo: 3.
-28. **Integrar visitas en Asesor de Ventas** (TASK-070) — Documentar ejecución similar a Promotor. Esfuerzo: 3.
-29. **Email notifications** (TASK-043) — Notificaciones por email. Esfuerzo: 2.
-30. **OPT-001:** Optimize asesor-ventas orders API. Esfuerzo: 2.
-31. **E2E testing** (TASK-072) — Testing integración end-to-end. Esfuerzo: 3.
+### Tier 5 — All Profiles Audit (P2 — Polish) + Optimization
+37. **ADMIN-008:** Editar perfil usuario desde admin. Esfuerzo: 2.
+38. **ADMIN-009:** Soft delete clientes desde UI. Esfuerzo: 1.
+39. **ADMIN-010:** Verificar preview encuesta antes de aprobar. Esfuerzo: 1.
+40. **ADMIN-011:** Indicador ventana 48h en promociones. Esfuerzo: 1.
+41. **BRAND-006:** Incentivos RTM/M&P (REQ-013). Esfuerzo: 3.
+42. **PROM-003:** Fix `full_name` inconsistency en Promotor. Esfuerzo: 1.
+43. **ADV-003:** Fix `full_name` inconsistency en Asesor de Ventas. Esfuerzo: 1.
+44. **CLI-005:** Remover `console.log` en API client promotions. Esfuerzo: 1.
+45. **Calendario plan trabajo** (TASK-062) — Vista semanal para promotor. Esfuerzo: 3.
+46. **Email notifications** (TASK-043) — Notificaciones por email. Esfuerzo: 2.
+47. **OPT-001:** Optimize asesor-ventas orders API. Esfuerzo: 2.
+48. **E2E testing** (TASK-072) — Testing integración end-to-end. Esfuerzo: 3.
 
 ---
 
