@@ -40,6 +40,7 @@ export const brandNavConfig: RoleNavConfig = {
     { id: 'clients', label: 'Clientes', icon: Users, href: '/brand/clients' },
     { id: 'products', label: 'Productos', icon: Package, href: '/brand/products' },
     { id: 'team', label: 'Equipo', icon: UsersRound, href: '/brand/team' },
+    { id: 'visits', label: 'Visitas', icon: MapPin, href: '/brand/visits' },
     { id: 'promotions', label: 'Promociones', icon: Tag, href: '/brand/promotions' },
     { id: 'tiers', label: 'Niveles', icon: Layers, href: '/brand/tiers' },
     { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/brand/reports' },

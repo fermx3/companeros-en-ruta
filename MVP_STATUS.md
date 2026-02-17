@@ -1287,3 +1287,27 @@ user_profiles:
 - `/src/app/api/admin/promotions/route.ts`
 - `/src/app/api/brand/metrics/route.ts`
 - Cualquier API que consulte user_profiles
+
+### FINDING-004: Views Running as SECURITY DEFINER (RLS Bypass)
+**Descubierto:** 2026-02-17
+**Prioridad:** CRITICA (seguridad multi-tenant)
+**Estado:** RESUELTO (migración `20260217100000_fix_views_security_invoker.sql`)
+
+**Problema:**
+Todas las ~43 vistas en el schema público corrían como `SECURITY DEFINER` (default de PostgreSQL). Esto bypasea completamente el RLS de las tablas subyacentes. Cualquier usuario autenticado podía ver datos de TODOS los tenants via las vistas.
+
+Referencia: Supabase lint `0010_security_definer_view`
+
+**Impacto:**
+- Fuga de datos cross-tenant en cualquier API que use vistas (ej: `brand_membership_stats`, `active_orders`, `active_promotions`)
+- Todas las vistas `active_*` y vistas de estadísticas afectadas
+
+**Resolución:**
+- Migración aplica `ALTER VIEW ... SET (security_invoker = on)` a todas las vistas
+- Después de la migración, queries a vistas respetan las políticas RLS de las tablas subyacentes
+- PostgreSQL 15+ feature, soportado en todas las instancias de Supabase
+
+**Mejora futura:**
+- [ ] Crear vista `brand_visit_stats` (similar a `brand_membership_stats`) que agrupe visits por brand_id
+- [ ] La vista `active_visits` actual NO tiene columna `brand_id` — considerar agregar al SELECT de la vista
+- [ ] Revocar grants de `anon` en vistas que no deberían ser accesibles sin autenticación

@@ -60,6 +60,61 @@ export async function GET(request: NextRequest) {
     const firstMembershipDate = membershipDates.length > 0 ? membershipDates[0].toISOString() : null
     const lastMembershipDate = membershipDates.length > 0 ? membershipDates[membershipDates.length - 1].toISOString() : null
 
+    // Visits — direct query (active_visits view does not have brand_id)
+    const { data: visitRows } = await supabase
+      .from('visits')
+      .select('id, visit_status, visit_date, client_satisfaction_rating')
+      .eq('brand_id', targetBrandId)
+      .is('deleted_at', null)
+
+    const totalVisits = visitRows?.length || 0
+    const activeVisitsCount = visitRows?.filter(v => v.visit_status === 'in_progress').length || 0
+
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+    const monthlyVisits = visitRows?.filter(v => v.visit_date && v.visit_date >= monthStart).length || 0
+
+    const visitRatings = visitRows?.filter(v => v.client_satisfaction_rating != null).map(v => v.client_satisfaction_rating as number) || []
+    const avgVisitRating = visitRatings.length > 0
+      ? Math.round((visitRatings.reduce((sum, r) => sum + r, 0) / visitRatings.length) * 10) / 10
+      : 0
+
+    const visitDates = visitRows?.filter(v => v.visit_date).map(v => v.visit_date as string).sort() || []
+    const lastVisitDate = visitDates.length > 0 ? visitDates[visitDates.length - 1] : null
+
+    // Orders — use active_orders view
+    const { data: orderRows } = await supabase
+      .from('active_orders')
+      .select('id, order_status, order_date, total_amount')
+      .eq('brand_id', targetBrandId)
+
+    const totalOrders = orderRows?.length || 0
+    const monthlyOrders = orderRows?.filter(o => o.order_date && o.order_date >= monthStart).length || 0
+    const totalRevenue = orderRows?.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) || 0
+    const monthlyRevenue = orderRows
+      ?.filter(o => o.order_date && o.order_date >= monthStart)
+      .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) || 0
+
+    const orderDates = orderRows?.filter(o => o.order_date).map(o => o.order_date as string).sort() || []
+    const lastOrderDate = orderDates.length > 0 ? orderDates[orderDates.length - 1] : null
+
+    // Promotions — use active_promotions view
+    const { data: promoRows } = await supabase
+      .from('active_promotions')
+      .select('id, status')
+      .eq('brand_id', targetBrandId)
+
+    const totalPromotions = promoRows?.length || 0
+    const activePromotions = promoRows?.filter(p => p.status === 'active').length || 0
+
+    // Derived metrics
+    const conversionRate = totalVisits > 0
+      ? Math.round((totalOrders / totalVisits) * 1000) / 10
+      : 0
+    const revenuePerClient = activeClients > 0
+      ? Math.round((totalRevenue / activeClients) * 100) / 100
+      : 0
+
     const realMetrics = {
       brand_id: brandInfo.id,
       brand_public_id: brandInfo.public_id,
@@ -85,26 +140,26 @@ export async function GET(request: NextRequest) {
       avg_client_points: avgClientPoints,
       total_points_balance: totalPointsBalance,
 
-      total_visits: 0,
-      monthly_visits: 0,
-      active_visits: 0,
-      avg_visit_rating: 0,
+      total_visits: totalVisits,
+      monthly_visits: monthlyVisits,
+      active_visits: activeVisitsCount,
+      avg_visit_rating: avgVisitRating,
 
-      total_orders: 0,
-      monthly_orders: 0,
-      total_revenue: 0,
-      monthly_revenue: 0,
+      total_orders: totalOrders,
+      monthly_orders: monthlyOrders,
+      total_revenue: totalRevenue,
+      monthly_revenue: monthlyRevenue,
 
-      active_promotions: 0,
-      total_promotions: 0,
+      active_promotions: activePromotions,
+      total_promotions: totalPromotions,
 
-      conversion_rate: 0,
-      revenue_per_client: 0,
+      conversion_rate: conversionRate,
+      revenue_per_client: revenuePerClient,
 
       first_membership_date: firstMembershipDate,
       last_membership_date: lastMembershipDate,
-      last_visit_date: null,
-      last_order_date: null
+      last_visit_date: lastVisitDate,
+      last_order_date: lastOrderDate,
     }
 
     return NextResponse.json(realMetrics)

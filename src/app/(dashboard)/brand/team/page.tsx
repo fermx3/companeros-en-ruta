@@ -35,6 +35,7 @@ export default function BrandTeamPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [sortBy, setSortBy] = useState<'visits' | 'orders' | 'activity' | 'name'>('visits');
 
   useEffect(() => {
     const loadTeam = async () => {
@@ -83,6 +84,27 @@ export default function BrandTeamPage() {
 
     return matchesSearch && matchesRole && matchesStatus;
   });
+
+  const sortedTeam = [...filteredTeam].sort((a, b) => {
+    switch (sortBy) {
+      case 'visits': return b.total_visits - a.total_visits;
+      case 'orders': return b.total_orders - a.total_orders;
+      case 'activity': return new Date(b.last_activity || 0).getTime() - new Date(a.last_activity || 0).getTime();
+      case 'name': return a.full_name.localeCompare(b.full_name);
+      default: return 0;
+    }
+  });
+
+  const topPerformers = [...filteredTeam]
+    .sort((a, b) => b.total_visits - a.total_visits)
+    .slice(0, 3);
+
+  const sortOptions = [
+    { value: 'visits', label: 'Más visitas' },
+    { value: 'orders', label: 'Más órdenes' },
+    { value: 'activity', label: 'Actividad reciente' },
+    { value: 'name', label: 'Nombre (A-Z)' }
+  ];
 
   const roles = [
     { value: '', label: 'Todos los roles' },
@@ -187,10 +209,38 @@ export default function BrandTeamPage() {
           </Card>
         </div>
 
+        {/* Top Performers */}
+        {topPerformers.length > 0 && (
+          <Card className="mb-6">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performers</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {topPerformers.map((member, index) => {
+                  const medalColors = [
+                    'bg-yellow-100 text-yellow-800 border-yellow-300',
+                    'bg-gray-100 text-gray-700 border-gray-300',
+                    'bg-orange-100 text-orange-800 border-orange-300',
+                  ];
+                  const medalLabels = ['#1', '#2', '#3'];
+                  return (
+                    <div key={member.id} className={`flex items-center space-x-3 p-3 rounded-lg border ${medalColors[index]}`}>
+                      <span className="text-lg font-bold">{medalLabels[index]}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{member.full_name}</p>
+                        <p className="text-xs">{member.total_visits} visitas · {member.total_orders} órdenes</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Filtros */}
         <Card className="mb-6">
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
                   Buscar miembro
@@ -241,12 +291,31 @@ export default function BrandTeamPage() {
                 </select>
               </div>
 
+              <div>
+                <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-2">
+                  Ordenar por
+                </label>
+                <select
+                  id="sortBy"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {sortOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="flex items-end">
                 <Button
                   onClick={() => {
                     setSearchTerm('');
                     setSelectedRole('');
                     setSelectedStatus('');
+                    setSortBy('visits');
                   }}
                   variant="outline"
                   className="w-full"
@@ -259,7 +328,7 @@ export default function BrandTeamPage() {
         </Card>
 
         {/* Lista de Miembros del Equipo */}
-        {filteredTeam.length === 0 && !loading ? (
+        {sortedTeam.length === 0 && !loading ? (
           <EmptyState
             icon={
               <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,8 +352,8 @@ export default function BrandTeamPage() {
           <div className="space-y-6">
             {/* Grid de Miembros */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredTeam.map((member) => (
-                <TeamMemberCard key={member.id} member={member} />
+              {sortedTeam.map((member, index) => (
+                <TeamMemberCard key={member.id} member={member} rank={index + 1} />
               ))}
             </div>
 
@@ -320,9 +389,19 @@ export default function BrandTeamPage() {
 // Componente para cada miembro del equipo
 interface TeamMemberCardProps {
   member: TeamMember;
+  rank: number;
 }
 
-function TeamMemberCard({ member }: TeamMemberCardProps) {
+function TeamMemberCard({ member, rank }: TeamMemberCardProps) {
+  const getRankBadge = (r: number) => {
+    if (r === 1) return { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300', label: '#1' };
+    if (r === 2) return { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-300', label: '#2' };
+    if (r === 3) return { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-300', label: '#3' };
+    return { bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200', label: `#${r}` };
+  };
+
+  const rankBadge = getRankBadge(rank);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-MX', {
       year: 'numeric',
@@ -370,6 +449,9 @@ function TeamMemberCard({ member }: TeamMemberCardProps) {
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
+              <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full border text-xs font-bold ${rankBadge.bg} ${rankBadge.text} ${rankBadge.border}`}>
+                {rankBadge.label}
+              </span>
               <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
                 <span className="text-sm font-medium text-gray-700">
                   {member.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}

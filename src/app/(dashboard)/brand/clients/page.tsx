@@ -64,51 +64,6 @@ export default function BrandClientsPage() {
         const data = await response.json()
         setClients(data.clients || [])
         setTotalPages(data.pagination?.totalPages || 1)
-
-        // Si no hay datos reales, mostrar placeholder
-        if (!data.clients || data.clients.length === 0) {
-          const mockClients: Client[] = [
-          {
-            id: '1',
-            public_id: 'CLI-001',
-            name: 'Supermercado Central',
-            contact_email: 'gerencia@centralsuper.com',
-            contact_phone: '+52 55 1234 5678',
-            address: 'Av. Principal 123, Centro',
-            client_type: 'mayorista',
-            status: 'active',
-            created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            public_id: 'CLI-002',
-            name: 'Tienda La Esquina',
-            contact_email: 'info@laesquina.mx',
-            contact_phone: '+52 55 9876 5432',
-            address: 'Calle Secundaria 456, Colonia Norte',
-            client_type: 'minorista',
-            status: 'active',
-            created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: '3',
-            public_id: 'CLI-003',
-            name: 'Distribuidora Regional',
-            contact_email: 'ventas@distregional.com',
-            contact_phone: '+52 55 5555 1111',
-            address: 'Zona Industrial, Bodega 10',
-            client_type: 'distribuidor',
-            status: 'inactive',
-            created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          }
-          ];
-
-          setClients(mockClients);
-          setTotalPages(1);
-        }
       } catch (err) {
         console.error('Error loading clients:', err);
         const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
