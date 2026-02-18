@@ -3,6 +3,7 @@
 -- (clients_select_assigned_client_type, clients_select_assigned_market)
 -- Without this, the PostgREST join zones(name) returns null for client users
 
+DROP POLICY IF EXISTS "clients_select_assigned_zone" ON "public"."zones";
 CREATE POLICY "clients_select_assigned_zone"
   ON "public"."zones"
   FOR SELECT
