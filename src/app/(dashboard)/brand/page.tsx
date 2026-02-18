@@ -5,6 +5,7 @@ import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
 import { Users, TrendingUp, MapPin, Star, Settings, Building2, UserCheck, Layers, Gift, ChevronRight, ClipboardList } from "lucide-react"
+import { displayPhone } from '@/lib/utils/phone'
 import Link from 'next/link'
 
 // Interfaces basadas en la vista brand_dashboard_metrics
@@ -367,7 +368,7 @@ export default function BrandDashboard() {
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-gray-700">Teléfono</label>
                       <span className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md block">
-                        {metrics.contact_phone}
+                        {displayPhone(metrics.contact_phone)}
                       </span>
                     </div>
                   )}

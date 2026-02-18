@@ -7,6 +7,8 @@ import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { displayPhone } from '@/lib/utils/phone';
 import { adminService } from '@/lib/services/adminService';
 import type { UserProfile, UserRoleRecord, Brand } from '@/lib/types/admin';
 
@@ -295,17 +297,12 @@ export default function UserDetailPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Teléfono
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
+                    <PhoneInput
+                      value={formData.phone}
+                      onChange={(digits) => setFormData({...formData, phone: digits})}
+                      label="Teléfono"
+                      id="phone"
+                    />
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Posición
@@ -343,7 +340,7 @@ export default function UserDetailPage() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Teléfono</p>
-                      <p className="text-gray-900">{user.phone || 'No especificado'}</p>
+                      <p className="text-gray-900">{user.phone ? displayPhone(user.phone) : 'No especificado'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Posición</p>

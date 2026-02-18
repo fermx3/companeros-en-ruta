@@ -7,6 +7,8 @@ import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { isValidMxPhone } from '@/lib/utils/phone';
 
 interface FormData {
   business_name: string;
@@ -90,6 +92,17 @@ export default function BrandClientEditPage() {
 
     if (!formData.business_name.trim()) {
       setError('El nombre del negocio es requerido');
+      setSaving(false);
+      return;
+    }
+
+    if (!isValidMxPhone(formData.phone)) {
+      setError('El teléfono debe tener 10 dígitos');
+      setSaving(false);
+      return;
+    }
+    if (!isValidMxPhone(formData.whatsapp)) {
+      setError('El WhatsApp debe tener 10 dígitos');
       setSaving(false);
       return;
     }
@@ -240,30 +253,18 @@ export default function BrandClientEditPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                    Teléfono
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => handleChange('phone', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
-                    WhatsApp
-                  </label>
-                  <input
-                    type="tel"
-                    id="whatsapp"
-                    value={formData.whatsapp}
-                    onChange={(e) => handleChange('whatsapp', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                <PhoneInput
+                  value={formData.phone}
+                  onChange={(digits) => handleChange('phone', digits)}
+                  label="Teléfono"
+                  id="phone"
+                />
+                <PhoneInput
+                  value={formData.whatsapp}
+                  onChange={(digits) => handleChange('whatsapp', digits)}
+                  label="WhatsApp"
+                  id="whatsapp"
+                />
               </div>
             </div>
           </Card>

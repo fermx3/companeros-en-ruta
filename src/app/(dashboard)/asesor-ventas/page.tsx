@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, StatusBadge, Alert } from '@/components/ui/feedback';
+import { displayPhone } from '@/lib/utils/phone';
 
 interface AsesorVentasProfile {
   id: string;
@@ -283,7 +284,7 @@ export default function AsesorVentasPage() {
                   {profile.phone && (
                     <div>
                       <label className="block text-sm font-medium text-gray-500">Telefono</label>
-                      <p className="mt-1 text-sm text-gray-900">{profile.phone}</p>
+                      <p className="mt-1 text-sm text-gray-900">{displayPhone(profile.phone)}</p>
                     </div>
                   )}
 

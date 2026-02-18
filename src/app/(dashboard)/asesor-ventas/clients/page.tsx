@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, StatusBadge, Alert, EmptyState } from '@/components/ui/feedback'
+import { displayPhone } from '@/lib/utils/phone'
 import {
   Users,
   Building2,
@@ -199,7 +200,7 @@ export default function AsesorVentasClientsPage() {
                           {client.phone && (
                             <div className="flex items-center gap-1.5">
                               <Phone className="h-3.5 w-3.5 text-gray-400" />
-                              <span>{client.phone}</span>
+                              <span>{displayPhone(client.phone)}</span>
                             </div>
                           )}
                           {(client.address_city || client.address_state) && (

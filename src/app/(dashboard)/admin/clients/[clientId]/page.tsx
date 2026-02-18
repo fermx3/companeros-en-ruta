@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Client } from '@/lib/types/admin';
+import { displayPhone, extractDigits } from '@/lib/utils/phone';
 
 /**
  * Página de detalle de cliente
@@ -211,8 +212,8 @@ export default function ClientDetailPage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-500">Teléfono</label>
                       <p className="mt-1 text-sm text-gray-900">
-                        <a href={`tel:${client.phone}`} className="text-blue-600 hover:text-blue-800">
-                          {client.phone}
+                        <a href={`tel:+52${extractDigits(client.phone)}`} className="text-blue-600 hover:text-blue-800">
+                          {displayPhone(client.phone)}
                         </a>
                       </p>
                     </div>
@@ -222,12 +223,12 @@ export default function ClientDetailPage() {
                       <label className="block text-sm font-medium text-gray-500">WhatsApp</label>
                       <p className="mt-1 text-sm text-gray-900">
                         <a
-                          href={`https://wa.me/${client.whatsapp.replace(/[^\d]/g, '')}`}
+                          href={`https://wa.me/52${extractDigits(client.whatsapp)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-green-600 hover:text-green-800"
                         >
-                          {client.whatsapp}
+                          {displayPhone(client.whatsapp)}
                         </a>
                       </p>
                     </div>

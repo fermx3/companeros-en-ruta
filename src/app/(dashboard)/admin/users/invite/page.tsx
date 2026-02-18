@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { adminService } from '@/lib/services/adminService';
 import type { Brand, Zone, Distributor } from '@/lib/types/admin';
 
@@ -259,17 +260,12 @@ export default function InviteUserPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              <PhoneInput
+                value={formData.phone}
+                onChange={(digits) => setFormData(prev => ({ ...prev, phone: digits }))}
+                label="Teléfono"
+                id="phone"
+              />
             </div>
           </div>
 

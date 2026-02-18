@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { isValidMxPhone } from '@/lib/utils/phone';
 
 interface PromotorProfile {
   id: string;
@@ -115,8 +117,8 @@ export default function EditPromotorProfilePage() {
   const validateForm = () => {
     const errors: Record<string, string> = {};
 
-    if (formData.phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.phone.trim())) {
-      errors.phone = 'Formato de teléfono inválido';
+    if (!isValidMxPhone(formData.phone)) {
+      errors.phone = 'El teléfono debe tener 10 dígitos';
     }
 
     setValidationErrors(errors);
@@ -264,24 +266,13 @@ export default function EditPromotorProfilePage() {
             {/* Información Editable */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Teléfono */}
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="+52 55 1234 5678"
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    validationErrors.phone ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-                {validationErrors.phone && (
-                  <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
-                )}
-              </div>
+              <PhoneInput
+                value={formData.phone}
+                onChange={(digits) => handleInputChange('phone', digits)}
+                label="Teléfono"
+                id="phone"
+                error={validationErrors.phone}
+              />
 
               {/* Nivel de Experiencia */}
               <div>

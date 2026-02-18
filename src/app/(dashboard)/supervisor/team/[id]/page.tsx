@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Users, CheckCircle, Clock, Star, Mail, Phone } from 'lucide-react'
+import { displayPhone } from '@/lib/utils/phone'
 import Link from 'next/link'
 
 interface MemberProfile {
@@ -262,7 +263,7 @@ export default function SupervisorTeamMemberPage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {client.contact_email || client.contact_phone || '—'}
+                            {client.contact_email || (client.contact_phone ? displayPhone(client.contact_phone) : null) || '—'}
                           </td>
                         </tr>
                       ))}

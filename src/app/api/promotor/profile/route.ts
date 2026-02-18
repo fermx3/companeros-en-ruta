@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { extractDigits } from '@/lib/utils/phone'
 
 interface UserRole {
   id: string
@@ -233,12 +234,24 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // Validate phone (10 digits for Mexico)
+    if (phone) {
+      const phoneDigits = extractDigits(phone)
+      if (phoneDigits.length !== 10) {
+        return NextResponse.json(
+          { error: 'El teléfono debe tener 10 dígitos' },
+          { status: 400 }
+        )
+      }
+    }
+
     // 4. Actualizar user_profile
     if (phone) {
+      const phoneDigits = extractDigits(phone)
       const { error: updateProfileError } = await supabase
         .from('user_profiles')
         .update({
-          phone,
+          phone: phoneDigits,
           updated_at: new Date().toISOString()
         })
         .eq('id', userProfile.id)

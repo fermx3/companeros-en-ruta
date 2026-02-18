@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
 import { adminService } from '@/lib/services/adminService';
+import { displayPhone } from '@/lib/utils/phone';
 import type { UserProfile, UserRoleRecord } from '@/lib/types/admin';
 
 interface UserWithRoles extends UserProfile {
@@ -307,7 +308,7 @@ function UserCard({ user, onDeactivate, isDeleting }: UserCardProps) {
         {user.phone && (
           <div className="flex justify-between">
             <span>Teléfono:</span>
-            <span className="text-gray-900">{user.phone}</span>
+            <span className="text-gray-900">{displayPhone(user.phone)}</span>
           </div>
         )}
         {user.position && (

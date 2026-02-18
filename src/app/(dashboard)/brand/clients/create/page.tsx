@@ -7,6 +7,8 @@ import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/feedback'
+import { PhoneInput } from '@/components/ui/phone-input'
+import { isValidMxPhone } from '@/lib/utils/phone'
 import { ArrowLeft } from 'lucide-react'
 
 interface ClientCreateForm {
@@ -115,6 +117,13 @@ export default function BrandCreateClientPage() {
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = 'El email no es válido'
+    }
+
+    if (!isValidMxPhone(formData.phone)) {
+      errors.phone = 'El teléfono debe tener 10 dígitos'
+    }
+    if (!isValidMxPhone(formData.whatsapp)) {
+      errors.whatsapp = 'El WhatsApp debe tener 10 dígitos'
     }
 
     setValidationErrors(errors)
@@ -275,31 +284,21 @@ export default function BrandCreateClientPage() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Teléfono
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="+52 55 1234 5678"
-                  />
-                </div>
+                <PhoneInput
+                  value={formData.phone}
+                  onChange={(digits) => handleInputChange('phone', digits)}
+                  label="Teléfono"
+                  id="phone"
+                  error={validationErrors.phone}
+                />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    WhatsApp
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.whatsapp}
-                    onChange={(e) => handleInputChange('whatsapp', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="+52 55 1234 5678"
-                  />
-                </div>
+                <PhoneInput
+                  value={formData.whatsapp}
+                  onChange={(digits) => handleInputChange('whatsapp', digits)}
+                  label="WhatsApp"
+                  id="whatsapp"
+                  error={validationErrors.whatsapp}
+                />
               </div>
             </div>
           </Card>

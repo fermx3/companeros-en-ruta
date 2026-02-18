@@ -7,6 +7,7 @@ import { useAssignedClients } from '@/hooks/useVisits'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Search, MapPin, Phone, Mail, Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
+import { displayPhone } from '@/lib/utils/phone'
 
 export default function PromotorClientsPage() {
   const router = useRouter()
@@ -279,7 +280,7 @@ function ClientCard({ client, formatDate, formatPhoneForWhatsApp }: ClientCardPr
               {client.phone && (
                 <div className="flex items-center gap-2 text-gray-600">
                   <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  <span>{client.phone}</span>
+                  <span>{displayPhone(client.phone)}</span>
                   {whatsappNumber && (
                     <a
                       href={`https://wa.me/${whatsappNumber}`}

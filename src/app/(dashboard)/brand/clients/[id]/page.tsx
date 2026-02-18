@@ -7,6 +7,7 @@ import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { displayPhone } from '@/lib/utils/phone';
 
 interface ClientDetail {
   id: string;
@@ -215,11 +216,11 @@ export default function BrandClientDetailPage() {
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Teléfono</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{client.phone || 'N/A'}</dd>
+                    <dd className="mt-1 text-sm text-gray-900">{client.phone ? displayPhone(client.phone) : 'N/A'}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500">WhatsApp</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{client.whatsapp || 'N/A'}</dd>
+                    <dd className="mt-1 text-sm text-gray-900">{client.whatsapp ? displayPhone(client.whatsapp) : 'N/A'}</dd>
                   </div>
                 </dl>
               </div>

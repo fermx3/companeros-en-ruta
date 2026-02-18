@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { ImageUpload } from '@/components/ui/image-upload';
+import { PhoneInput } from '@/components/ui/phone-input';
 import type { Brand } from '@/lib/types/admin';
 
 /**
@@ -232,18 +233,12 @@ export default function BrandSettingsPage() {
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="contact_phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Teléfono de contacto
-                  </label>
-                  <input
-                    type="tel"
-                    id="contact_phone"
-                    value={formData.contact_phone}
-                    onChange={(e) => handleInputChange('contact_phone', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                <PhoneInput
+                  value={formData.contact_phone}
+                  onChange={(digits) => handleInputChange('contact_phone', digits)}
+                  label="Teléfono de contacto"
+                  id="contact_phone"
+                />
 
                 <div>
                   <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">

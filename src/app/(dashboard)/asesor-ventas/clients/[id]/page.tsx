@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert, StatusBadge, EmptyState } from '@/components/ui/feedback'
+import { displayPhone, extractDigits } from '@/lib/utils/phone'
 import {
   Building2,
   Phone,
@@ -317,8 +318,8 @@ export default function ClientDetailPage() {
                       <Phone className="h-4 w-4 text-gray-400" />
                       <div>
                         <p className="text-sm text-gray-500">Telefono</p>
-                        <a href={`tel:${client.phone}`} className="text-gray-900 hover:text-emerald-600">
-                          {client.phone}
+                        <a href={`tel:+52${extractDigits(client.phone)}`} className="text-gray-900 hover:text-emerald-600">
+                          {displayPhone(client.phone)}
                         </a>
                       </div>
                     </div>
@@ -330,12 +331,12 @@ export default function ClientDetailPage() {
                       <div>
                         <p className="text-sm text-gray-500">WhatsApp</p>
                         <a
-                          href={`https://wa.me/${client.whatsapp.replace(/\D/g, '')}`}
+                          href={`https://wa.me/52${extractDigits(client.whatsapp)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-gray-900 hover:text-emerald-600 flex items-center gap-1"
                         >
-                          {client.whatsapp}
+                          {displayPhone(client.whatsapp)}
                           <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>

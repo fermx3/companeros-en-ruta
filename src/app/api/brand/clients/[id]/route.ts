@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { extractDigits } from '@/lib/utils/phone'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -136,6 +137,20 @@ export async function PUT(
     }
 
     const body = await request.json()
+
+    // Validate phone fields (10 digits for Mexico)
+    for (const field of ['phone', 'whatsapp'] as const) {
+      if (body[field]) {
+        const digits = extractDigits(body[field])
+        if (digits.length !== 10) {
+          return NextResponse.json(
+            { error: `El ${field === 'phone' ? 'teléfono' : 'WhatsApp'} debe tener 10 dígitos` },
+            { status: 400 }
+          )
+        }
+        body[field] = digits
+      }
+    }
 
     // Brand managers can only edit basic info fields
     const allowedFields = [

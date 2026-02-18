@@ -6,7 +6,7 @@ import { User } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { displayPhone } from '@/lib/utils/phone'
 
-export default function AdminProfilePage() {
+export default function AsesorVentasProfilePage() {
   const { user, userProfile, userRoles } = useAuth()
 
   const profile = userProfile as {
@@ -27,7 +27,7 @@ export default function AdminProfilePage() {
             <nav className="flex mb-4" aria-label="Breadcrumb">
               <ol className="flex items-center space-x-2 text-sm">
                 <li>
-                  <Link href="/admin" className="text-gray-500 hover:text-gray-700">
+                  <Link href="/asesor-ventas" className="text-gray-500 hover:text-gray-700">
                     Dashboard
                   </Link>
                 </li>
@@ -46,7 +46,6 @@ export default function AdminProfilePage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Info personal */}
         <Card>
           <CardContent className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Informacion Personal</h2>
@@ -75,7 +74,6 @@ export default function AdminProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Rol y acceso */}
         <Card>
           <CardContent className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Rol y Acceso</h2>
@@ -83,8 +81,8 @@ export default function AdminProfilePage() {
               <div>
                 <dt className="text-sm font-medium text-gray-500">Rol</dt>
                 <dd className="mt-1">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    Administrador
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                    Asesor de Ventas
                   </span>
                 </dd>
               </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { extractDigits } from '@/lib/utils/phone'
 
 interface ClientProfile {
   id: string
@@ -162,10 +163,23 @@ export async function PATCH(request: Request) {
     const body = await request.json()
     const { phone, whatsapp } = body
 
+    // Validate phone fields (10 digits for Mexico)
+    for (const [field, value] of [['phone', phone], ['whatsapp', whatsapp]] as const) {
+      if (value) {
+        const digits = extractDigits(value)
+        if (digits.length !== 10) {
+          return NextResponse.json(
+            { error: `El ${field === 'phone' ? 'teléfono' : 'WhatsApp'} debe tener 10 dígitos` },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
     // Only allow updating contact fields the client owns
     const updates: Record<string, string | null> = {}
-    if (phone !== undefined) updates.phone = phone || null
-    if (whatsapp !== undefined) updates.whatsapp = whatsapp || null
+    if (phone !== undefined) updates.phone = extractDigits(phone) || null
+    if (whatsapp !== undefined) updates.whatsapp = extractDigits(whatsapp) || null
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'No hay campos para actualizar' }, { status: 400 })

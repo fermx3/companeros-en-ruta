@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { isValidMxPhone } from '@/lib/utils/phone';
 import { adminService } from '@/lib/services/adminService';
 import type { Brand, Zone, Distributor } from '@/lib/types/admin';
 
@@ -96,6 +98,10 @@ export default function CreateUserPage() {
 
     if (formData.password !== formData.confirm_password) {
       errors.confirm_password = 'Las contraseñas no coinciden';
+    }
+
+    if (!isValidMxPhone(formData.phone)) {
+      errors.phone = 'El teléfono debe tener 10 dígitos';
     }
 
     // Validar marca para roles que la requieren
@@ -311,18 +317,13 @@ export default function CreateUserPage() {
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="+57 300 123 4567"
-                />
-              </div>
+              <PhoneInput
+                value={formData.phone}
+                onChange={(digits) => handleInputChange('phone', digits)}
+                label="Teléfono"
+                id="phone"
+                error={validationErrors.phone}
+              />
             </div>
           </Card>
 

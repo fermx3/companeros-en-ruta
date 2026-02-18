@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { mxPhoneSchema } from '@/lib/utils/phone';
 
 /**
  * API Route para crear un nuevo cliente
@@ -16,8 +17,8 @@ const createClientSchema = z.object({
   legal_name: z.string().optional(),
   owner_name: z.string().min(1, 'Nombre del propietario es requerido').max(100),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  whatsapp: z.string().optional(),
+  phone: mxPhoneSchema,
+  whatsapp: mxPhoneSchema,
   tax_id: z.string().optional(),
   zone_id: z.string().uuid('Zona inválida'),
   market_id: z.string().uuid('Mercado inválido'),

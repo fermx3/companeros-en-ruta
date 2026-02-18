@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedServiceClient } from '@/lib/utils/tenant';
+import { extractDigits } from '@/lib/utils/phone';
 
 /**
  * API Route para invitar usuarios con permisos de administrador
@@ -31,6 +32,17 @@ export async function POST(request: NextRequest) {
         { error: 'Campos requeridos: first_name, last_name, email, role' },
         { status: 400 }
       );
+    }
+
+    // Validate phone (10 digits for Mexico)
+    if (phone) {
+      const phoneDigits = extractDigits(phone);
+      if (phoneDigits.length !== 10) {
+        return NextResponse.json(
+          { error: 'El teléfono debe tener 10 dígitos' },
+          { status: 400 }
+        );
+      }
     }
 
     // 1. Crear usuario en auth con contraseña temporal si no se envía email

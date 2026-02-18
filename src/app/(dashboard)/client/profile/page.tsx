@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
+import { PhoneInput } from '@/components/ui/phone-input'
+import { isValidMxPhone, displayPhone } from '@/lib/utils/phone'
 import {
   Store,
   Phone,
@@ -120,6 +122,8 @@ export default function ClientProfilePage() {
     setSaveError(null)
     setEditing(false)
   }
+
+  const canSave = isValidMxPhone(phone) && isValidMxPhone(whatsapp)
 
   const formatAddress = (p: ClientProfile) => {
     const parts = [
@@ -267,17 +271,18 @@ export default function ClientProfilePage() {
             <div className="flex items-center gap-3">
               <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
               <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Teléfono</span>
                 {editing ? (
-                  <input
-                    type="tel"
+                  <PhoneInput
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Ej. +52 55 1234 5678"
-                    className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={setPhone}
+                    label="Teléfono"
+                    id="phone"
                   />
                 ) : (
-                  <span className="text-sm text-gray-900">{profile.phone || '—'}</span>
+                  <>
+                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Teléfono</span>
+                    <span className="text-sm text-gray-900">{profile.phone ? displayPhone(profile.phone) : '—'}</span>
+                  </>
                 )}
               </div>
             </div>
@@ -286,17 +291,18 @@ export default function ClientProfilePage() {
             <div className="flex items-center gap-3">
               <MessageCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
               <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">WhatsApp</span>
                 {editing ? (
-                  <input
-                    type="tel"
+                  <PhoneInput
                     value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                    placeholder="Ej. +52 55 1234 5678"
-                    className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={setWhatsapp}
+                    label="WhatsApp"
+                    id="whatsapp"
                   />
                 ) : (
-                  <span className="text-sm text-gray-900">{profile.whatsapp || '—'}</span>
+                  <>
+                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">WhatsApp</span>
+                    <span className="text-sm text-gray-900">{profile.whatsapp ? displayPhone(profile.whatsapp) : '—'}</span>
+                  </>
                 )}
               </div>
             </div>
@@ -310,7 +316,7 @@ export default function ClientProfilePage() {
                 <div className="flex gap-2">
                   <Button
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || !canSave}
                     size="sm"
                     className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
                   >
@@ -345,7 +351,22 @@ export default function ClientProfilePage() {
           </CardHeader>
           <CardContent className="grid gap-4">
             <InfoRow label="Zona" value={profile.zone_name} />
-            <InfoRow label="Dirección" value={formatAddress(profile)} />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Dirección</span>
+              {formatAddress(profile) ? (
+                <div className="text-sm text-gray-900 space-y-0.5">
+                  {profile.address_street && <p>{profile.address_street}</p>}
+                  {(profile.address_neighborhood || profile.address_city) && (
+                    <p>{[profile.address_neighborhood, profile.address_city].filter(Boolean).join(', ')}</p>
+                  )}
+                  {(profile.address_state || profile.address_postal_code) && (
+                    <p>{[profile.address_state, profile.address_postal_code ? `C.P. ${profile.address_postal_code}` : null].filter(Boolean).join(', ')}</p>
+                  )}
+                </div>
+              ) : (
+                <span className="text-sm text-gray-900">—</span>
+              )}
+            </div>
           </CardContent>
         </Card>
 

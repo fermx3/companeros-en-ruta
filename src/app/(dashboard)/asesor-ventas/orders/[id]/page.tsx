@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { displayPhone, extractDigits } from '@/lib/utils/phone'
 import {
   ShoppingBag,
   Package,
@@ -511,8 +512,8 @@ export default function OrderDetailPage({
                   {order.client.phone && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Phone className="h-4 w-4" />
-                      <a href={`tel:${order.client.phone}`} className="hover:text-emerald-600">
-                        {order.client.phone}
+                      <a href={`tel:+52${extractDigits(order.client.phone)}`} className="hover:text-emerald-600">
+                        {displayPhone(order.client.phone)}
                       </a>
                     </div>
                   )}
