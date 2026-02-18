@@ -1314,3 +1314,117 @@ Referencia: Supabase lint `0010_security_definer_view`
 - [ ] Crear vista `brand_visit_stats` (similar a `brand_membership_stats`) que agrupe visits por brand_id
 - [ ] La vista `active_visits` actual NO tiene columna `brand_id` — considerar agregar al SELECT de la vista
 - [ ] Revocar grants de `anon` en vistas que no deberían ser accesibles sin autenticación
+
+---
+
+## Pendiente de Revisión Manual
+
+> **Fecha:** 2026-02-17
+> Los siguientes 4 cambios resuelven todos los P0 pendientes de la auditoría del 2026-02-16. Cada uno requiere revisión manual antes de considerarse validado en producción.
+
+### 1. Módulo Supervisor — `fd4b58b`
+
+**Resuelve:** SUPV-001, SUPV-002, SUPV-003
+
+**Archivos creados:**
+- `src/app/(dashboard)/supervisor/team/page.tsx` — Lista del equipo
+- `src/app/(dashboard)/supervisor/team/[id]/page.tsx` — Detalle miembro del equipo
+- `src/app/(dashboard)/supervisor/clients/page.tsx` — Clientes supervisados
+- `src/app/(dashboard)/supervisor/visits/page.tsx` — Visitas del equipo
+- `src/app/(dashboard)/supervisor/reports/page.tsx` — Reportes de supervisión
+- `src/app/api/supervisor/team/route.ts` — API lista equipo
+- `src/app/api/supervisor/team/[id]/route.ts` — API detalle miembro
+- `src/app/api/supervisor/clients/route.ts` — API clientes
+- `src/app/api/supervisor/visits/route.ts` — API visitas
+
+**Archivos modificados:**
+- `src/app/(dashboard)/supervisor/page.tsx` — Dashboard actualizado con links funcionales
+
+**Verificación manual:**
+- [ ] Todos los links del sidebar supervisor navegan a páginas funcionales
+- [ ] Quick actions del dashboard no producen 404
+- [ ] "Ver detalle" de un miembro del equipo muestra datos correctos
+- [ ] Lista de clientes muestra solo clientes del equipo supervisado
+- [ ] Lista de visitas filtra por equipo
+- [ ] Reportes cargan datos reales (no mock)
+
+---
+
+### 2. Admin Zones CRUD — `c0fdfb5`
+
+**Resuelve:** ADMIN-002
+
+**Archivos creados:**
+- `src/app/(dashboard)/admin/zones/page.tsx` — Lista de zonas
+- `src/app/(dashboard)/admin/zones/create/page.tsx` — Crear zona
+- `src/app/(dashboard)/admin/zones/[id]/page.tsx` — Detalle zona
+- `src/app/(dashboard)/admin/zones/[id]/edit/page.tsx` — Editar zona
+- `src/app/api/admin/zones/route.ts` — API lista zonas
+- `src/app/api/admin/zones/create/route.ts` — API crear zona
+- `src/app/api/admin/zones/[id]/route.ts` — API detalle zona
+- `src/app/api/admin/zones/[id]/edit/route.ts` — API editar zona
+
+**Archivos modificados:**
+- `src/app/(dashboard)/admin/layout.tsx` — Zones agregado al sidebar
+- `src/lib/types/admin.ts` — Tipos de zona agregados
+
+**Verificación manual:**
+- [ ] Link "Zonas" aparece en sidebar admin y navega correctamente
+- [ ] Lista de zonas carga datos del tenant actual
+- [ ] Crear zona funciona y redirige a la lista
+- [ ] Editar zona muestra datos existentes y guarda cambios
+- [ ] Detalle zona muestra info completa (nombre, clientes asignados, etc.)
+- [ ] No se puede crear zona duplicada o sin nombre
+
+---
+
+### 3. Brand Client Pages + Security Invoker — `1f56248`
+
+**Resuelve:** BRAND-001, BRAND-002, BRAND-003, BRAND-004, BRAND-005
+
+**Archivos creados:**
+- `src/app/(dashboard)/brand/clients/[id]/page.tsx` — Detalle cliente
+- `src/app/(dashboard)/brand/clients/[id]/edit/page.tsx` — Editar cliente
+- `src/app/(dashboard)/brand/clients/[id]/visits/page.tsx` — Historial visitas del cliente
+- `src/app/(dashboard)/brand/visits/page.tsx` — Visitas de la marca
+- `src/app/api/brand/clients/[id]/route.ts` — API detalle + editar cliente
+- `src/app/api/brand/clients/[id]/visits/route.ts` — API visitas del cliente
+- `src/app/api/brand/visits/route.ts` — API visitas de la marca
+- `supabase/migrations/20260217100000_fix_views_security_invoker.sql` — Migración security invoker
+
+**Archivos modificados:**
+- `src/app/(dashboard)/brand/clients/page.tsx` — Removido mock data fallback (BRAND-002)
+- `src/app/(dashboard)/brand/team/page.tsx` — Team performance mejorado (BRAND-005)
+- `src/app/api/brand/metrics/route.ts` — Métricas expandidas (BRAND-004)
+- `src/lib/navigation-config.ts` — Visits link agregado
+
+**Verificación manual:**
+- [ ] Click en cliente desde `/brand/clients` navega a `/brand/clients/[id]` con datos reales
+- [ ] Botón "Editar" en detalle cliente lleva a formulario funcional
+- [ ] Tab "Visitas" del cliente muestra historial real
+- [ ] `/brand/visits` carga todas las visitas de la marca
+- [ ] Lista de clientes vacía muestra EmptyState (no mock data)
+- [ ] Dashboard metrics muestran datos expandidos
+- [ ] Team page muestra rankings y métricas reales
+- [ ] Migración security_invoker aplicada: `SELECT security_invoker FROM pg_views` confirma `true`
+
+---
+
+### 4. Client Profile Page — `649af2a`
+
+**Resuelve:** CLI-001
+
+**Archivos creados:**
+- `src/app/(dashboard)/client/profile/page.tsx` — Perfil del cliente con edición de contacto
+
+**Archivos modificados:**
+- `src/app/api/client/profile/route.ts` — PATCH handler agregado (phone, whatsapp)
+- `src/lib/navigation-config.ts` — "Mi Perfil" agregado al clientNavConfig
+
+**Verificación manual:**
+- [ ] Quick action "Mi Perfil" desde home navega a `/client/profile` (no 404)
+- [ ] Página muestra información del negocio, contacto, ubicación, estadísticas
+- [ ] Botón "Editar" activa modo edición para teléfono y WhatsApp
+- [ ] Guardar persiste los cambios y actualiza la vista
+- [ ] Cancelar revierte los inputs al valor original
+- [ ] "Mi Perfil" aparece en sidebar (no en bottom nav)
