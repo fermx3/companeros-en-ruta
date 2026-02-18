@@ -33,9 +33,9 @@
 | **Notificaciones** | ✅ Completo | In-app Bell + API + integrado en 8 flujos | None |
 | **Encuestas** | ✅ Completo | Schema + Builder + Aprobación + Segmentación + Form + Resultados | None |
 
-**Overall MVP Progress:** ~99% P0 features | ~88% total (incluyendo P1 y polish)
-**Audit Status:** 31 hallazgos documentados (1 P0 pendiente, 15 P1, 8 P2) across 6 perfiles — 71/82 páginas funcionales, 85/85 APIs OK
-**Cambios 2026-02-17:** SUPV-001/002/003 ✅, ADMIN-002 ✅, BRAND-001/002/003 ✅ (commits fd4b58b, c0fdfb5, 1f56248)
+**Overall MVP Progress:** ✅ 100% P0 features | ~89% total (incluyendo P1 y polish)
+**Audit Status:** 31 hallazgos documentados (0 P0 pendientes ✅, 15 P1, 8 P2) across 6 perfiles — 72/83 páginas funcionales, 86/86 APIs OK
+**Cambios 2026-02-17:** SUPV-001/002/003 ✅, ADMIN-002 ✅, BRAND-001/002/003 ✅ (commits fd4b58b, c0fdfb5, 1f56248) · CLI-001 ✅ (client/profile page)
 
 ---
 
@@ -776,7 +776,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| CLI-001 | **Link "/client/profile" causa 404** — Quick action en home lleva a página inexistente. API `/api/client/profile` sí existe. | `src/app/(dashboard)/client/page.tsx:272` | Crear `client/profile/page.tsx` |
+| ~~CLI-001~~ | ~~**Link "/client/profile" causa 404**~~ | ~~`src/app/(dashboard)/client/page.tsx:272`~~ | ✅ RESUELTO 2026-02-17 — `client/profile/page.tsx` + PATCH API + nav |
 
 ### CLI-P1 — Features faltantes (no bloquean pero afectan completitud)
 
@@ -821,10 +821,10 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 | Supervisor | 6/6 ✅ | 5/5 ✅ | 0 ✅ | 2 | 0 | 2 |
 | Promotor | 8/8 ✅ | 10/10 ✅ | 0 | 2 | 1 | 3 |
 | Asesor de Ventas | 11/11 ✅ | 9/9 ✅ | 0 | 2 | 1 | 3 |
-| Cliente | 7/8 | 7/7 | 1 | 3 | 1 | 5 |
-| **TOTAL** | **71/82** | **85/85** | **1** | **15** | **8** | **24** |
+| Cliente | 8/8 ✅ | 8/8 ✅ | 0 ✅ | 3 | 1 | 4 |
+| **TOTAL** | **72/83** | **86/86** | **0 ✅** | **15** | **8** | **23** |
 
-> Actualizado 2026-02-17 tras commits fd4b58b (Supervisor), c0fdfb5 (Admin Zones), 1f56248 (Brand client pages + security_invoker migration)
+> Actualizado 2026-02-17 tras commits fd4b58b (Supervisor), c0fdfb5 (Admin Zones), 1f56248 (Brand client pages + security_invoker migration), CLI-001 (client/profile)
 
 ### Todos los P0 pendientes (por orden de impacto)
 
@@ -836,7 +836,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 | ~~SUPV-001~~ | ~~Supervisor~~ | ~~5 de 6 links del sidebar son 404~~ | ✅ RESUELTO (commit fd4b58b) |
 | ~~SUPV-002~~ | ~~Supervisor~~ | ~~Quick actions del dashboard todos 404~~ | ✅ RESUELTO (commit fd4b58b) |
 | ~~SUPV-003~~ | ~~Supervisor~~ | ~~"Ver detalle" de equipo es 404~~ | ✅ RESUELTO (commit fd4b58b, `/supervisor/team/[id]` creada) |
-| CLI-001 | Cliente | Link "/client/profile" causa 404 | ⏳ Pendiente |
+| ~~CLI-001~~ | ~~Cliente~~ | ~~Link "/client/profile" causa 404~~ | ✅ RESUELTO (2026-02-17 — página + PATCH API + nav implementados) |
 | ~~ADMIN-002~~ | ~~Admin~~ | ~~Zonas sin CRUD~~ | ✅ RESUELTO (commit c0fdfb5, CRUD completo) |
 
 ---
@@ -867,7 +867,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 17. ~~**SUPV-001:** Crear 4 páginas faltantes del sidebar Supervisor (team, clients, visits, reports).~~ ✅ DONE (commit `fd4b58b`)
 18. ~~**SUPV-002:** Resolver quick actions 404 del dashboard Supervisor.~~ ✅ DONE (commit `fd4b58b`)
 19. ~~**SUPV-003:** Crear `/supervisor/team/[id]` (detalle equipo).~~ ✅ DONE (commit `fd4b58b`)
-20. **CLI-001:** Crear `/client/profile` page. Esfuerzo: 2. ⏳ **PENDIENTE — único P0 restante**
+20. ~~**CLI-001:** Crear `/client/profile` page.~~ ✅ DONE (2026-02-17 — página + PATCH `/api/client/profile` + nav item)
 
 ### Tier 4 — All Profiles Audit (P1 — Features faltantes) + Admin P1
 21. **ADMIN-004:** Settings — reemplazar placeholder con config tenant. Esfuerzo: 3.

@@ -16,6 +16,7 @@ import {
   Star,
   Building2,
   Eye,
+  UserCircle,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -86,6 +87,7 @@ export const clientNavConfig: RoleNavConfig = {
     { id: 'brands', label: 'Marcas', icon: Building2, href: '/client/brands' },
     { id: 'points', label: 'Puntos', icon: Star, href: '/client/points' },
     { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/client/surveys' },
+    { id: 'profile', label: 'Mi Perfil', icon: UserCircle, href: '/client/profile' },
   ],
 }
 

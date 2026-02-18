@@ -149,3 +149,48 @@ export async function GET() {
     )
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const supabase = await createClient()
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { phone, whatsapp } = body
+
+    // Only allow updating contact fields the client owns
+    const updates: Record<string, string | null> = {}
+    if (phone !== undefined) updates.phone = phone || null
+    if (whatsapp !== undefined) updates.whatsapp = whatsapp || null
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No hay campos para actualizar' }, { status: 400 })
+    }
+
+    const { error: updateError } = await supabase
+      .from('clients')
+      .update(updates)
+      .eq('user_id', user.id)
+      .is('deleted_at', null)
+
+    if (updateError) {
+      return NextResponse.json(
+        { error: 'Error al actualizar el perfil', details: updateError.message },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ success: true })
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+    return NextResponse.json(
+      { error: 'Error interno del servidor', details: errorMessage },
+      { status: 500 }
+    )
+  }
+}
