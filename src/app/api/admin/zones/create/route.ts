@@ -35,15 +35,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Perfil de usuario no encontrado' }, { status: 400 });
     }
 
-    const { data: userRole, error: roleError } = await supabase
+    const { data: userRoles, error: roleError } = await supabase
       .from('user_roles')
-      .select('role')
+      .select('role, status')
       .eq('user_profile_id', profile.id)
       .eq('tenant_id', profile.tenant_id)
-      .is('deleted_at', null)
-      .single();
+      .is('deleted_at', null);
 
-    if (roleError || !userRole || userRole.role !== 'admin') {
+    const adminRole = userRoles?.find(
+      r => r.status === 'active' && r.role === 'admin'
+    );
+
+    if (roleError || !adminRole) {
       return NextResponse.json({ error: 'Sin permisos para crear zonas' }, { status: 403 });
     }
 

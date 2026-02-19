@@ -46,7 +46,9 @@ async function verifyAdmin(supabase: ReturnType<typeof createClient>) {
     .eq('tenant_id', profile.tenant_id)
     .is('deleted_at', null);
 
-  const adminRole = userRoles?.find(r => r.role === 'admin' && r.status === 'active');
+  const adminRole = userRoles?.find(
+    r => r.status === 'active' && r.role === 'admin'
+  );
 
   if (roleError || !adminRole) {
     return { error: NextResponse.json({ error: 'Sin permisos para gestionar zonas' }, { status: 403 }) };

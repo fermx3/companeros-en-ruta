@@ -32,7 +32,9 @@ export async function GET(request: NextRequest) {
       .select('role, status')
       .eq('user_profile_id', profile.id);
 
-    const adminRole = userRoles?.find(role => role.role === 'admin' && role.status === 'active');
+    const adminRole = userRoles?.find(
+      role => role.status === 'active' && role.role === 'admin'
+    );
 
     if (roleError || !adminRole) {
       return NextResponse.json({ error: 'Acceso denegado - Se requiere rol de administrador' }, { status: 403 });

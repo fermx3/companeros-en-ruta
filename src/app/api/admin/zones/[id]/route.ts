@@ -36,7 +36,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .eq('tenant_id', profile.tenant_id)
       .is('deleted_at', null);
 
-    const adminRole = userRoles?.find(r => r.role === 'admin' && r.status === 'active');
+    const adminRole = userRoles?.find(
+      r => r.status === 'active' && r.role === 'admin'
+    );
 
     if (roleError || !adminRole) {
       return NextResponse.json({ error: 'Sin permisos para ver zonas' }, { status: 403 });
@@ -63,11 +65,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Error al obtener la zona' }, { status: 500 });
     }
 
+    // Count active clients assigned to this zone
+    const { count: clientCount } = await serviceSupabase
+      .from('clients')
+      .select('id', { count: 'exact', head: true })
+      .eq('zone_id', id)
+      .eq('tenant_id', profile.tenant_id)
+      .is('deleted_at', null);
+
     const formattedZone = {
       ...zone,
       parent_zone_name: zone.parent_zone?.name || null,
       parent_zone_public_id: zone.parent_zone?.public_id || null,
-      parent_zone: undefined
+      parent_zone: undefined,
+      client_count: clientCount ?? 0
     };
 
     return NextResponse.json(

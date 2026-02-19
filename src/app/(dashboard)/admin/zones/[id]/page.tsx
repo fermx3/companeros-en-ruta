@@ -11,6 +11,7 @@ import type { Zone } from '@/lib/types/admin';
 type ZoneDetail = Zone & {
   parent_zone_name?: string | null;
   parent_zone_public_id?: string | null;
+  client_count?: number;
 };
 
 export default function ZoneDetailPage() {
@@ -222,6 +223,10 @@ export default function ZoneDetailPage() {
                     }`}>
                       {zone.is_active ? 'Sí' : 'No'}
                     </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Clientes asignados</span>
+                    <span className="text-sm font-medium text-gray-900">{zone.client_count ?? 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Orden</span>
