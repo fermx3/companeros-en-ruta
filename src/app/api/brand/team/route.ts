@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', brandId)
       .eq('tenant_id', tenantId)
       .in('role', ['promotor', 'supervisor'])
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
     // Filter by role if specified
@@ -68,6 +69,7 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', brandId)
       .eq('tenant_id', tenantId)
       .in('role', ['promotor', 'supervisor'])
+      .is('deleted_at', null)
 
     const { count, error: countError } = await countQuery
 
@@ -270,19 +272,30 @@ export async function GET(request: NextRequest) {
         )
       })
 
-    const totalPages = Math.ceil((count || transformedTeam.length) / limit)
+    // Deduplicate by profile id (a user with multiple roles appears once, keeping highest-priority role)
+    const rolePriority: Record<string, number> = { supervisor: 1, promotor: 2 }
+    const deduped = new Map<string, (typeof transformedTeam)[number]>()
+    for (const member of transformedTeam) {
+      const existing = deduped.get(member.id)
+      if (!existing || (rolePriority[member.role] ?? 99) < (rolePriority[existing.role] ?? 99)) {
+        deduped.set(member.id, member)
+      }
+    }
+    const dedupedTeam = Array.from(deduped.values())
+
+    const totalPages = Math.ceil((count || dedupedTeam.length) / limit)
 
     // Calculate metrics
     const metrics = {
-      totalMembers: transformedTeam.length,
-      supervisors: transformedTeam.filter(m => m.role === 'supervisor').length,
-      promotors: transformedTeam.filter(m => m.role === 'promotor').length,
-      activeMembers: transformedTeam.filter(m => m.status === 'active').length,
-      inactiveMembers: transformedTeam.filter(m => m.status === 'inactive').length
+      totalMembers: dedupedTeam.length,
+      supervisors: dedupedTeam.filter(m => m.role === 'supervisor').length,
+      promotors: dedupedTeam.filter(m => m.role === 'promotor').length,
+      activeMembers: dedupedTeam.filter(m => m.status === 'active').length,
+      inactiveMembers: dedupedTeam.filter(m => m.status === 'inactive').length
     }
 
     return NextResponse.json({
-      team: transformedTeam,
+      team: dedupedTeam,
       metrics,
       pagination: {
         page,

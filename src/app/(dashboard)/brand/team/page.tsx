@@ -42,6 +42,7 @@ export default function BrandTeamPage() {
 
   useEffect(() => {
     const loadTeam = async () => {
+      if (!currentBrandId) return;
       setLoading(true);
       setError(null);
 
