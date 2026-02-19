@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState, useEffect, use, useCallback } from 'react'
+import React, { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { displayPhone, extractDigits } from '@/lib/utils/phone'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import {
   ShoppingBag,
   Package,
@@ -151,30 +152,36 @@ export default function BrandOrderDetailPage({
 }) {
   const { id: orderId } = use(params)
 
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const loadOrder = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/brand/orders/${orderId}`)
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error al cargar la orden')
-      }
-      const data = await response.json()
-      setOrder(data.order)
-    } catch (err) {
-      console.error('Error loading order:', err)
-      setError(err instanceof Error ? err.message : 'Error desconocido')
-    } finally {
-      setLoading(false)
-    }
-  }, [orderId])
-
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadOrder = async () => {
+      try {
+        const response = await brandFetch(`/api/brand/orders/${orderId}`, { signal: controller.signal })
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Error al cargar la orden')
+        }
+        const data = await response.json()
+        setOrder(data.order)
+      } catch (err) {
+        if (controller.signal.aborted) return
+        setError(err instanceof Error ? err.message : 'Error desconocido')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     loadOrder()
-  }, [loadOrder])
+    return () => controller.abort()
+  }, [orderId, brandFetch, currentBrandId])
 
   if (loading) {
     return (

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -263,32 +263,39 @@ export default function BrandTiersPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingTier, setEditingTier] = useState<BrandTier | null>(null)
   const [saving, setSaving] = useState(false)
-
-  const loadTiers = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const response = await brandFetch('/api/brand/tiers')
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error al cargar niveles')
-      }
-
-      const data = await response.json()
-      setTiers(data.tiers || [])
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }, [brandFetch, currentBrandId])
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadTiers = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const response = await brandFetch('/api/brand/tiers', { signal: controller.signal })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Error al cargar niveles')
+        }
+
+        const data = await response.json()
+        setTiers(data.tiers || [])
+      } catch (err) {
+        if (controller.signal.aborted) return
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+        setError(errorMessage)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     loadTiers()
-  }, [loadTiers])
+    return () => controller.abort()
+  }, [brandFetch, currentBrandId, refreshKey])
 
   const handleCreate = () => {
     setEditingTier(null)
@@ -317,7 +324,7 @@ export default function BrandTiersPage() {
 
       setSuccessMessage('Nivel eliminado correctamente')
       setTimeout(() => setSuccessMessage(null), 3000)
-      loadTiers()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
       setError(errorMessage)
@@ -348,7 +355,7 @@ export default function BrandTiersPage() {
       setSuccessMessage(editingTier ? 'Nivel actualizado correctamente' : 'Nivel creado correctamente')
       setTimeout(() => setSuccessMessage(null), 3000)
       setModalOpen(false)
-      loadTiers()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
       setError(errorMessage)

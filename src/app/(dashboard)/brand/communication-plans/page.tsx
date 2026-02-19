@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -61,6 +61,7 @@ export default function BrandCommunicationPlansPage() {
   const [editingPlan, setEditingPlan] = useState<CommunicationPlan | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const [formData, setFormData] = useState({
     plan_name: '',
@@ -72,40 +73,45 @@ export default function BrandCommunicationPlansPage() {
     activities: [] as Array<{ activity_name: string; activity_description: string; scheduled_date: string; is_recurring: boolean }>
   })
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const [plansRes, materialsRes] = await Promise.all([
-        brandFetch('/api/brand/communication-plans'),
-        brandFetch('/api/brand/pop-materials?include_system=true')
-      ])
-
-      if (!plansRes.ok) throw new Error('Error al cargar planes')
-      if (!materialsRes.ok) throw new Error('Error al cargar materiales')
-
-      const plansData = await plansRes.json()
-      const materialsData = await materialsRes.json()
-
-      setPlans(plansData.plans || [])
-      setMaterials([
-        ...(materialsData.systemTemplates || []),
-        ...(materialsData.materials || [])
-      ])
-
-    } catch (err) {
-      console.error('Error loading data:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }, [brandFetch, currentBrandId])
-
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadData = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const [plansRes, materialsRes] = await Promise.all([
+          brandFetch('/api/brand/communication-plans', { signal: controller.signal }),
+          brandFetch('/api/brand/pop-materials?include_system=true', { signal: controller.signal })
+        ])
+
+        if (!plansRes.ok) throw new Error('Error al cargar planes')
+        if (!materialsRes.ok) throw new Error('Error al cargar materiales')
+
+        const plansData = await plansRes.json()
+        const materialsData = await materialsRes.json()
+
+        setPlans(plansData.plans || [])
+        setMaterials([
+          ...(materialsData.systemTemplates || []),
+          ...(materialsData.materials || [])
+        ])
+
+      } catch (err) {
+        if (controller.signal.aborted) return
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+        setError(errorMessage)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     loadData()
-  }, [loadData])
+    return () => controller.abort()
+  }, [brandFetch, currentBrandId, refreshKey])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -128,7 +134,7 @@ export default function BrandCommunicationPlansPage() {
         throw new Error(errorData.error || 'Error al guardar plan')
       }
 
-      await loadData()
+      setRefreshKey(k => k + 1)
       resetForm()
 
     } catch (err) {
@@ -151,7 +157,7 @@ export default function BrandCommunicationPlansPage() {
 
       if (!response.ok) throw new Error('Error al eliminar plan')
 
-      await loadData()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       console.error('Error deleting plan:', err)
       setError(err instanceof Error ? err.message : 'Error desconocido')

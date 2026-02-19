@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
@@ -40,27 +40,32 @@ export default function AssessmentConfigPage() {
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState<Record<string, boolean>>({})
 
-  const fetchProducts = useCallback(async () => {
-    if (!currentBrandId) return
-    setLoading(true)
-    setError(null)
-
-    try {
-      const res = await brandFetch('/api/brand/products?dashboard=true')
-      if (!res.ok) throw new Error('Error al cargar productos')
-      const data = await res.json()
-      setProducts(data.products || [])
-      setCategories(data.categories || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
-    } finally {
-      setLoading(false)
-    }
-  }, [brandFetch, currentBrandId])
-
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const fetchProducts = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const res = await brandFetch('/api/brand/products?dashboard=true', { signal: controller.signal })
+        if (!res.ok) throw new Error('Error al cargar productos')
+        const data = await res.json()
+        setProducts(data.products || [])
+        setCategories(data.categories || [])
+      } catch (err) {
+        if (controller.signal.aborted) return
+        setError(err instanceof Error ? err.message : 'Error desconocido')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     fetchProducts()
-  }, [fetchProducts])
+    return () => controller.abort()
+  }, [brandFetch, currentBrandId])
 
   const handleToggle = async (product: Product) => {
     const newValue = !product.include_in_assessment

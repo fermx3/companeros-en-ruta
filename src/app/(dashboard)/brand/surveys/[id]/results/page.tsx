@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -49,21 +49,27 @@ export default function SurveyResultsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchResults = useCallback(async () => {
-    try {
-      const res = await brandFetch(`/api/brand/surveys/${surveyId}/results`)
-      if (!res.ok) throw new Error('Error al cargar resultados')
-      setData(await res.json())
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error')
-    } finally {
-      setLoading(false)
-    }
-  }, [surveyId, brandFetch, currentBrandId])
-
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const fetchResults = async () => {
+      try {
+        const res = await brandFetch(`/api/brand/surveys/${surveyId}/results`, { signal: controller.signal })
+        if (!res.ok) throw new Error('Error al cargar resultados')
+        setData(await res.json())
+      } catch (err) {
+        if (controller.signal.aborted) return
+        setError(err instanceof Error ? err.message : 'Error')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     fetchResults()
-  }, [fetchResults])
+    return () => controller.abort()
+  }, [surveyId, brandFetch, currentBrandId])
 
   if (loading) return <div className="p-6"><LoadingSpinner /></div>
   if (error) return <div className="p-6"><Alert variant="error">{error}</Alert></div>

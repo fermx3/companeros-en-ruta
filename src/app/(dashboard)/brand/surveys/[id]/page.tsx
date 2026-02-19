@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -46,25 +46,32 @@ export default function BrandSurveyDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editQuestions, setEditQuestions] = useState<QuestionData[]>([])
-
-  const fetchSurvey = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await brandFetch(`/api/brand/surveys/${surveyId}`)
-      if (!res.ok) throw new Error('Error al cargar encuesta')
-      const data = await res.json()
-      setSurvey(data.survey)
-      setEditQuestions(data.survey.survey_questions || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error')
-    } finally {
-      setLoading(false)
-    }
-  }, [surveyId, brandFetch, currentBrandId])
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const fetchSurvey = async () => {
+      setLoading(true)
+      try {
+        const res = await brandFetch(`/api/brand/surveys/${surveyId}`, { signal: controller.signal })
+        if (!res.ok) throw new Error('Error al cargar encuesta')
+        const data = await res.json()
+        setSurvey(data.survey)
+        setEditQuestions(data.survey.survey_questions || [])
+      } catch (err) {
+        if (controller.signal.aborted) return
+        setError(err instanceof Error ? err.message : 'Error')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     fetchSurvey()
-  }, [fetchSurvey])
+    return () => controller.abort()
+  }, [surveyId, brandFetch, currentBrandId, refreshKey])
 
   const handleSubmitForApproval = async () => {
     setActionLoading(true)
@@ -75,7 +82,7 @@ export default function BrandSurveyDetailPage() {
         const data = await res.json()
         throw new Error(data.error || 'Error al enviar')
       }
-      await fetchSurvey()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error')
     } finally {
@@ -105,7 +112,7 @@ export default function BrandSurveyDetailPage() {
         throw new Error(data.error || 'Error al guardar')
       }
       setEditing(false)
-      await fetchSurvey()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error')
     } finally {

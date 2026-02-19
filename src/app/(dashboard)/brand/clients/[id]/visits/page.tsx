@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useBrandFetch } from '@/hooks/useBrandFetch';
@@ -29,7 +29,7 @@ interface ClientInfo {
 export default function BrandClientVisitsPage() {
   const params = useParams();
   const clientId = params.id as string;
-  const { brandFetch } = useBrandFetch();
+  const { brandFetch, currentBrandId } = useBrandFetch();
   const [visits, setVisits] = useState<Visit[]>([]);
   const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,53 +38,64 @@ export default function BrandClientVisitsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
 
-  const loadClientInfo = useCallback(async () => {
-    try {
-      const response = await brandFetch(`/api/brand/clients/${clientId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setClientInfo({
-          business_name: data.client.business_name,
-          public_id: data.client.public_id,
-        });
-      }
-    } catch {
-      // Non-critical, breadcrumb will show fallback
-    }
-  }, [clientId, brandFetch]);
-
-  const loadVisits = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-        ...(statusFilter && { status: statusFilter }),
-      });
-      const response = await brandFetch(`/api/brand/clients/${clientId}/visits?${queryParams}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al cargar visitas');
-      }
-      const data = await response.json();
-      setVisits(data.visits || []);
-      setTotalPages(data.pagination?.totalPages || 1);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error desconocido';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [clientId, brandFetch, page, statusFilter]);
-
   useEffect(() => {
+    if (!currentBrandId) return;
+
+    const controller = new AbortController();
+
+    const loadClientInfo = async () => {
+      try {
+        const response = await brandFetch(`/api/brand/clients/${clientId}`, { signal: controller.signal });
+        if (response.ok) {
+          const data = await response.json();
+          setClientInfo({
+            business_name: data.client.business_name,
+            public_id: data.client.public_id,
+          });
+        }
+      } catch {
+        // Non-critical, breadcrumb will show fallback
+      }
+    };
+
     loadClientInfo();
-  }, [loadClientInfo]);
+    return () => controller.abort();
+  }, [clientId, brandFetch, currentBrandId]);
 
   useEffect(() => {
+    if (!currentBrandId) return;
+
+    const controller = new AbortController();
+
+    const loadVisits = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const queryParams = new URLSearchParams({
+          page: page.toString(),
+          limit: '20',
+          ...(statusFilter && { status: statusFilter }),
+        });
+        const response = await brandFetch(`/api/brand/clients/${clientId}/visits?${queryParams}`, { signal: controller.signal });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error al cargar visitas');
+        }
+        const data = await response.json();
+        setVisits(data.visits || []);
+        setTotalPages(data.pagination?.totalPages || 1);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const msg = err instanceof Error ? err.message : 'Error desconocido';
+        setError(msg);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
     loadVisits();
-  }, [loadVisits]);
+    return () => controller.abort();
+  }, [clientId, brandFetch, page, statusFilter, currentBrandId]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-MX', {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
@@ -69,32 +69,35 @@ export default function BrandReportsPage() {
   const [error, setError] = useState<string | null>(null)
   const [period, setPeriod] = useState<Period>('month')
 
-  const fetchMetrics = useCallback(async () => {
-    if (!user) return
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      const response = await brandFetch('/api/brand/metrics')
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al cargar métricas')
-      }
-
-      setMetrics(data)
-    } catch (err) {
-      console.error('Error fetching metrics:', err)
-      setError(err instanceof Error ? err.message : 'Error al cargar métricas')
-    } finally {
-      setLoading(false)
-    }
-  }, [user, brandFetch, currentBrandId])
-
   useEffect(() => {
+    if (!user || !currentBrandId) return
+
+    const controller = new AbortController()
+
+    const fetchMetrics = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const response = await brandFetch('/api/brand/metrics', { signal: controller.signal })
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Error al cargar métricas')
+        }
+
+        setMetrics(data)
+      } catch (err) {
+        if (controller.signal.aborted) return
+        setError(err instanceof Error ? err.message : 'Error al cargar métricas')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     fetchMetrics()
-  }, [fetchMetrics])
+    return () => controller.abort()
+  }, [user, brandFetch, currentBrandId])
 
   if (!user) {
     return <div>Cargando...</div>

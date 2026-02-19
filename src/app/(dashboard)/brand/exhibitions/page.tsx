@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -39,6 +39,7 @@ export default function BrandExhibitionsPage() {
   const [editingExhibition, setEditingExhibition] = useState<Exhibition | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const [formData, setFormData] = useState({
     exhibition_name: '',
@@ -49,38 +50,43 @@ export default function BrandExhibitionsPage() {
     communication_plan_id: ''
   })
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const [exhibitionsRes, plansRes] = await Promise.all([
-        brandFetch('/api/brand/exhibitions'),
-        brandFetch('/api/brand/communication-plans?active_only=true')
-      ])
-
-      if (!exhibitionsRes.ok) throw new Error('Error al cargar exhibiciones')
-
-      const exhibitionsData = await exhibitionsRes.json()
-      setExhibitions(exhibitionsData.exhibitions || [])
-
-      if (plansRes.ok) {
-        const plansData = await plansRes.json()
-        setPlans(plansData.plans || [])
-      }
-
-    } catch (err) {
-      console.error('Error loading data:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }, [brandFetch, currentBrandId])
-
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadData = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const [exhibitionsRes, plansRes] = await Promise.all([
+          brandFetch('/api/brand/exhibitions', { signal: controller.signal }),
+          brandFetch('/api/brand/communication-plans?active_only=true', { signal: controller.signal })
+        ])
+
+        if (!exhibitionsRes.ok) throw new Error('Error al cargar exhibiciones')
+
+        const exhibitionsData = await exhibitionsRes.json()
+        setExhibitions(exhibitionsData.exhibitions || [])
+
+        if (plansRes.ok) {
+          const plansData = await plansRes.json()
+          setPlans(plansData.plans || [])
+        }
+
+      } catch (err) {
+        if (controller.signal.aborted) return
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+        setError(errorMessage)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     loadData()
-  }, [loadData])
+    return () => controller.abort()
+  }, [brandFetch, currentBrandId, refreshKey])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -106,7 +112,7 @@ export default function BrandExhibitionsPage() {
         throw new Error(errorData.error || 'Error al guardar exhibición')
       }
 
-      await loadData()
+      setRefreshKey(k => k + 1)
       resetForm()
 
     } catch (err) {
@@ -129,7 +135,7 @@ export default function BrandExhibitionsPage() {
 
       if (!response.ok) throw new Error('Error al eliminar exhibición')
 
-      await loadData()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       console.error('Error deleting exhibition:', err)
       setError(err instanceof Error ? err.message : 'Error desconocido')
