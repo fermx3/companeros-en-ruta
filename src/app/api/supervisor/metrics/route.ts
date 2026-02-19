@@ -67,37 +67,18 @@ export async function GET() {
       )
     }
 
-    // 4. Get team members (promotors in the same tenant/brand)
-    const { data: teamRoles } = await supabase
-      .from('user_roles')
-      .select(`
-        id,
-        user_profile_id,
-        role,
-        status,
-        brand_id,
-        user_profiles!inner(
-          id,
-          first_name,
-          last_name,
-          email
-        )
-      `)
-      .eq('role', 'promotor')
+    // 4. Get team members (subordinates by manager_id)
+    const { data: teamProfiles } = await supabase
+      .from('user_profiles')
+      .select('id, first_name, last_name, email, status')
+      .eq('manager_id', userProfile.id)
       .eq('status', 'active')
-      .eq('brand_id', supervisorRole.brand_id)
 
     // 5. Build team members array with stats
     const teamMembers: TeamMember[] = []
 
-    if (teamRoles) {
-      for (const role of teamRoles) {
-        const profile = role.user_profiles as unknown as {
-          id: string
-          first_name: string
-          last_name: string
-          email: string
-        }
+    if (teamProfiles) {
+      for (const profile of teamProfiles) {
 
         // Get promotor's client count
         const { count: clientCount } = await supabase
@@ -127,7 +108,7 @@ export async function GET() {
           id: profile.id,
           full_name: `${profile.first_name} ${profile.last_name}`.trim(),
           email: profile.email,
-          status: role.status,
+          status: profile.status,
           total_clients: clientCount || 0,
           completed_visits: completedVisits,
           pending_visits: pendingVisits,

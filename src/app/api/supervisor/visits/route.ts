@@ -41,17 +41,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no tiene rol de supervisor activo' }, { status: 403 })
     }
 
-    // 4. Get team member IDs
-    const { data: teamRoles } = await supabase
-      .from('user_roles')
-      .select('user_profile_id, user_profiles!inner(id, first_name, last_name)')
-      .eq('role', 'promotor')
+    // 4. Get team member IDs (subordinates by manager_id)
+    const { data: teamProfiles } = await supabase
+      .from('user_profiles')
+      .select('id, first_name, last_name')
+      .eq('manager_id', userProfile.id)
       .eq('status', 'active')
-      .eq('brand_id', supervisorRole.brand_id)
 
     const teamMap = new Map<string, string>()
-    teamRoles?.forEach(r => {
-      const p = r.user_profiles as unknown as { id: string; first_name: string; last_name: string }
+    teamProfiles?.forEach(p => {
       teamMap.set(p.id, `${p.first_name} ${p.last_name}`.trim())
     })
 

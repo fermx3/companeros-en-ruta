@@ -38,29 +38,16 @@ export async function GET(
       return NextResponse.json({ error: 'Usuario no tiene rol de supervisor activo' }, { status: 403 })
     }
 
-    // 4. Verify target member belongs to same brand as promotor
-    const { data: memberRole } = await supabase
-      .from('user_roles')
-      .select('id, role, brand_id, status')
-      .eq('user_profile_id', memberId)
-      .eq('role', 'promotor')
-      .eq('status', 'active')
-      .eq('brand_id', supervisorRole.brand_id)
-      .single()
-
-    if (!memberRole) {
-      return NextResponse.json({ error: 'Miembro no encontrado en tu equipo' }, { status: 404 })
-    }
-
-    // 5. Get member profile
+    // 4. Verify target member is a subordinate (manager_id) and get profile
     const { data: memberProfile } = await supabase
       .from('user_profiles')
       .select('id, first_name, last_name, email, phone, status')
       .eq('id', memberId)
+      .eq('manager_id', userProfile.id)
       .single()
 
     if (!memberProfile) {
-      return NextResponse.json({ error: 'Perfil del miembro no encontrado' }, { status: 404 })
+      return NextResponse.json({ error: 'Miembro no encontrado en tu equipo' }, { status: 404 })
     }
 
     // 6. Get assigned clients

@@ -48,42 +48,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no tiene rol de supervisor activo' }, { status: 403 })
     }
 
-    // 4. Get team promotors in same brand
-    const { data: teamRoles } = await supabase
-      .from('user_roles')
-      .select(`
-        id,
-        user_profile_id,
-        role,
-        status,
-        brand_id,
-        user_profiles!inner(
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          status
-        )
-      `)
-      .eq('role', 'promotor')
+    // 4. Get team members (subordinates by manager_id)
+    const { data: teamProfiles } = await supabase
+      .from('user_profiles')
+      .select('id, first_name, last_name, email, phone, status')
+      .eq('manager_id', userProfile.id)
       .eq('status', 'active')
-      .eq('brand_id', supervisorRole.brand_id)
 
     // 5. Build team members with stats
     const teamMembers: TeamMember[] = []
 
-    if (teamRoles) {
-      for (const role of teamRoles) {
-        const profile = role.user_profiles as unknown as {
-          id: string
-          first_name: string
-          last_name: string
-          email: string
-          phone: string | null
-          status: string
-        }
-
+    if (teamProfiles) {
+      for (const profile of teamProfiles) {
         const fullName = `${profile.first_name} ${profile.last_name}`.trim()
 
         // Filter by search
