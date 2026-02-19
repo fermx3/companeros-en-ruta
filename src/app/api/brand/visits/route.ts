@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
           id,
           business_name
         ),
-        promotor:user_profiles!visits_promotor_id_fkey(
+        promotor:user_profiles!visits_advisor_id_fkey(
           id,
           first_name,
           last_name

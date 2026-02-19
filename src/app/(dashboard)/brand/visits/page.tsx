@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
@@ -37,8 +37,21 @@ export default function BrandVisitsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce search: only update debouncedSearch after 400ms of inactivity
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1);
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchTerm]);
 
   const loadVisits = useCallback(async () => {
     setLoading(true);
@@ -48,7 +61,7 @@ export default function BrandVisitsPage() {
         page: page.toString(),
         limit: '20',
         ...(statusFilter && { status: statusFilter }),
-        ...(searchTerm && { search: searchTerm }),
+        ...(debouncedSearch && { search: debouncedSearch }),
         ...(dateFrom && { date_from: dateFrom }),
         ...(dateTo && { date_to: dateTo }),
       });
@@ -67,7 +80,7 @@ export default function BrandVisitsPage() {
     } finally {
       setLoading(false);
     }
-  }, [brandFetch, page, statusFilter, searchTerm, dateFrom, dateTo]);
+  }, [brandFetch, page, statusFilter, debouncedSearch, dateFrom, dateTo]);
 
   useEffect(() => {
     loadVisits();
@@ -200,7 +213,7 @@ export default function BrandVisitsPage() {
                   type="text"
                   id="search"
                   value={searchTerm}
-                  onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Nombre de cliente..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
@@ -228,7 +241,13 @@ export default function BrandVisitsPage() {
                   type="date"
                   id="date-from"
                   value={dateFrom}
-                  onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+                  max={dateTo || undefined}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDateFrom(val);
+                    if (dateTo && val > dateTo) setDateTo(val);
+                    setPage(1);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -240,13 +259,19 @@ export default function BrandVisitsPage() {
                   type="date"
                   id="date-to"
                   value={dateTo}
-                  onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+                  min={dateFrom || undefined}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDateTo(val);
+                    if (dateFrom && val < dateFrom) setDateFrom(val);
+                    setPage(1);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               <div className="flex items-end">
                 <Button
-                  onClick={() => { setSearchTerm(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); setPage(1); }}
+                  onClick={() => { setSearchTerm(''); setDebouncedSearch(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); setPage(1); }}
                   variant="outline"
                   className="w-full"
                 >

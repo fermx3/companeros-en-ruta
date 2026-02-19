@@ -50,7 +50,7 @@ export async function GET(
         check_out_time,
         client_satisfaction_rating,
         promotor_notes,
-        promotor:user_profiles!visits_promotor_id_fkey(
+        promotor:user_profiles!visits_advisor_id_fkey(
           id,
           first_name,
           last_name
