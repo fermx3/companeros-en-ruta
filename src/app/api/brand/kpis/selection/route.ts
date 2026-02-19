@@ -88,14 +88,19 @@ export async function PATCH(request: NextRequest) {
       return Response.json({ error: `KPIs no válidos: ${invalidSlugs.join(', ')}` }, { status: 400 })
     }
 
-    // Check cooldown
+    // Check cooldown — reorder-only changes (same set of slugs) bypass it
     const { data: brand } = await supabase
       .from('brands')
-      .select('dashboard_metrics_updated_at')
+      .select('dashboard_metrics, dashboard_metrics_updated_at')
       .eq('id', brandId)
       .single()
 
-    if (brand?.dashboard_metrics_updated_at) {
+    const currentSlugs: string[] = brand?.dashboard_metrics || []
+    const isReorderOnly =
+      currentSlugs.length === kpiSlugs.length &&
+      [...currentSlugs].sort().join(',') === [...kpiSlugs].sort().join(',')
+
+    if (!isReorderOnly && brand?.dashboard_metrics_updated_at) {
       const elapsed = Date.now() - new Date(brand.dashboard_metrics_updated_at).getTime()
       const twentyFourHours = 24 * 60 * 60 * 1000
       if (elapsed < twentyFourHours) {
@@ -106,12 +111,12 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    // Update brand
+    // Update brand — only bump cooldown timestamp when the selection set changes
     const { error: updateError } = await supabase
       .from('brands')
       .update({
         dashboard_metrics: kpiSlugs,
-        dashboard_metrics_updated_at: new Date().toISOString(),
+        ...(isReorderOnly ? {} : { dashboard_metrics_updated_at: new Date().toISOString() }),
         updated_at: new Date().toISOString(),
       })
       .eq('id', brandId)
@@ -123,8 +128,10 @@ export async function PATCH(request: NextRequest) {
 
     return Response.json({
       selected_slugs: kpiSlugs,
-      dashboard_metrics_updated_at: new Date().toISOString(),
-      can_update: false,
+      dashboard_metrics_updated_at: isReorderOnly
+        ? brand?.dashboard_metrics_updated_at
+        : new Date().toISOString(),
+      can_update: isReorderOnly ? !brand?.dashboard_metrics_updated_at || (Date.now() - new Date(brand.dashboard_metrics_updated_at).getTime()) > 24 * 60 * 60 * 1000 : false,
     })
   } catch (error) {
     console.error('Error in PATCH /api/brand/kpis/selection:', error)

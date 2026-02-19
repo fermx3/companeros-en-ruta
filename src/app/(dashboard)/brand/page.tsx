@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import {
   Users, TrendingUp, MapPin, Star, Settings, Building2, UserCheck, Layers,
   Gift, ChevronRight, ClipboardList, Target, Package, PieChart, LayoutGrid,
-  SlidersHorizontal, X, Clock, Check,
+  SlidersHorizontal, X, Clock, Check, ChevronUp, ChevronDown, Plus,
 } from "lucide-react"
 import { displayPhone } from '@/lib/utils/phone'
 import Link from 'next/link'
@@ -521,6 +521,7 @@ function KpiSelectorModal({ brandFetch, onClose, onSaved }: {
 }) {
   const [definitions, setDefinitions] = useState<KpiDefinition[]>([])
   const [selectedSlugs, setSelectedSlugs] = useState<string[]>([])
+  const [initialSlugs, setInitialSlugs] = useState<string[]>([])
   const [canUpdate, setCanUpdate] = useState(true)
   const [cooldownMs, setCooldownMs] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -535,6 +536,7 @@ function KpiSelectorModal({ brandFetch, onClose, onSaved }: {
           const data = await res.json()
           setDefinitions(data.definitions || [])
           setSelectedSlugs(data.selected_slugs || [])
+          setInitialSlugs(data.selected_slugs || [])
           setCanUpdate(data.can_update)
           setCooldownMs(data.cooldown_remaining_ms || 0)
         }
@@ -547,12 +549,29 @@ function KpiSelectorModal({ brandFetch, onClose, onSaved }: {
     load()
   }, [brandFetch])
 
-  const toggleSlug = (slug: string) => {
+  const addSlug = (slug: string) => {
     if (!canUpdate) return
     setSelectedSlugs(prev => {
-      if (prev.includes(slug)) return prev.filter(s => s !== slug)
-      if (prev.length >= 5) return prev
+      if (prev.includes(slug) || prev.length >= 5) return prev
       return [...prev, slug]
+    })
+  }
+
+  const removeSlug = (slug: string) => {
+    if (!canUpdate) return
+    setSelectedSlugs(prev => prev.filter(s => s !== slug))
+  }
+
+  const moveSlug = (slug: string, direction: 'up' | 'down') => {
+    setSelectedSlugs(prev => {
+      const idx = prev.indexOf(slug)
+      if (idx === -1) return prev
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev
+      const next = [...prev]
+      next[idx] = next[targetIdx]
+      next[targetIdx] = slug
+      return next
     })
   }
 
@@ -576,6 +595,11 @@ function KpiSelectorModal({ brandFetch, onClose, onSaved }: {
   }
 
   const cooldownHours = Math.ceil(cooldownMs / (60 * 60 * 1000))
+  const isReorderOnly =
+    selectedSlugs.length === initialSlugs.length &&
+    [...selectedSlugs].sort().join(',') === [...initialSlugs].sort().join(',')
+  const hasChanges = selectedSlugs.join(',') !== initialSlugs.join(',')
+  const canSave = hasChanges && selectedSlugs.length > 0 && (canUpdate || isReorderOnly)
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -598,40 +622,104 @@ function KpiSelectorModal({ brandFetch, onClose, onSaved }: {
           {!canUpdate && (
             <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-md">
               <Clock className="h-4 w-4" />
-              Podrás cambiar KPIs en {cooldownHours}h
+              Podrás agregar o quitar KPIs en {cooldownHours}h. Puedes reordenarlos en cualquier momento.
             </div>
           )}
 
           {loading ? (
             <div className="text-center py-8 text-gray-500">Cargando...</div>
           ) : (
-            definitions.map(def => {
-              const isSelected = selectedSlugs.includes(def.slug)
-              const IconComponent = ICON_MAP[def.icon || 'TrendingUp'] || TrendingUp
-              const colors = COLOR_MAP[def.color || 'blue'] || COLOR_MAP.blue
+            <>
+              {/* Selected KPIs — ordered */}
+              {selectedSlugs.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Seleccionados ({selectedSlugs.length}/5)</p>
+                  <div className="space-y-2">
+                    {selectedSlugs.map((slug, idx) => {
+                      const def = definitions.find(d => d.slug === slug)
+                      if (!def) return null
+                      const IconComponent = ICON_MAP[def.icon || 'TrendingUp'] || TrendingUp
+                      const colors = COLOR_MAP[def.color || 'blue'] || COLOR_MAP.blue
+                      return (
+                        <div
+                          key={def.slug}
+                          className="flex items-center gap-2 p-3 rounded-lg border-2 border-blue-500 bg-blue-50/50"
+                        >
+                          <div className="flex flex-col gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => moveSlug(slug, 'up')}
+                              disabled={idx === 0}
+                              className="p-0.5 rounded hover:bg-blue-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                              aria-label="Mover arriba"
+                            >
+                              <ChevronUp className="h-3.5 w-3.5 text-blue-600" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveSlug(slug, 'down')}
+                              disabled={idx === selectedSlugs.length - 1}
+                              className="p-0.5 rounded hover:bg-blue-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                              aria-label="Mover abajo"
+                            >
+                              <ChevronDown className="h-3.5 w-3.5 text-blue-600" />
+                            </button>
+                          </div>
+                          <div className={`p-2 rounded-lg ${colors.bg}`}>
+                            <IconComponent className={`h-4 w-4 ${colors.text}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">{def.label}</p>
+                            {def.description && <p className="text-xs text-gray-500 truncate">{def.description}</p>}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeSlug(slug)}
+                            disabled={!canUpdate}
+                            className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            aria-label="Quitar"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
-              return (
-                <button
-                  key={def.slug}
-                  onClick={() => toggleSlug(def.slug)}
-                  disabled={!canUpdate}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${
-                    isSelected
-                      ? 'border-blue-500 bg-blue-50/50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  } ${!canUpdate ? 'opacity-60 cursor-not-allowed' : ''}`}
-                >
-                  <div className={`p-2 rounded-lg ${colors.bg}`}>
-                    <IconComponent className={`h-4 w-4 ${colors.text}`} />
+              {/* Available KPIs */}
+              {definitions.filter(d => !selectedSlugs.includes(d.slug)).length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Disponibles</p>
+                  <div className="space-y-2">
+                    {definitions.filter(d => !selectedSlugs.includes(d.slug)).map(def => {
+                      const IconComponent = ICON_MAP[def.icon || 'TrendingUp'] || TrendingUp
+                      const colors = COLOR_MAP[def.color || 'blue'] || COLOR_MAP.blue
+                      return (
+                        <button
+                          key={def.slug}
+                          onClick={() => addSlug(def.slug)}
+                          disabled={!canUpdate || selectedSlugs.length >= 5}
+                          className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 hover:border-gray-300 text-left transition-all ${
+                            !canUpdate || selectedSlugs.length >= 5 ? 'opacity-60 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          <div className={`p-2 rounded-lg ${colors.bg}`}>
+                            <IconComponent className={`h-4 w-4 ${colors.text}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">{def.label}</p>
+                            {def.description && <p className="text-xs text-gray-500 truncate">{def.description}</p>}
+                          </div>
+                          <Plus className="h-4 w-4 text-gray-400" />
+                        </button>
+                      )
+                    })}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{def.label}</p>
-                    {def.description && <p className="text-xs text-gray-500">{def.description}</p>}
-                  </div>
-                  {isSelected && <Check className="h-5 w-5 text-blue-500" />}
-                </button>
-              )
-            })
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -639,7 +727,7 @@ function KpiSelectorModal({ brandFetch, onClose, onSaved }: {
           <span className="text-sm text-gray-500">{selectedSlugs.length}/5 seleccionados</span>
           <div className="flex gap-3">
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving || !canUpdate || selectedSlugs.length === 0}>
+            <Button onClick={handleSave} disabled={saving || !canSave}>
               {saving ? 'Guardando...' : 'Guardar'}
             </Button>
           </div>
