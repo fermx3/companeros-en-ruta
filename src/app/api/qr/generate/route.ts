@@ -19,19 +19,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 2. Get user profile
-    const { data: userProfile, error: profileError } = await supabase
+    // 2. Get user profile (may not exist for client-only users)
+    const { data: userProfile } = await supabase
       .from('user_profiles')
       .select('id, tenant_id')
       .eq('user_id', user.id)
       .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado' },
-        { status: 404 }
-      )
-    }
 
     // 3. Parse request body
     const body = await request.json()
@@ -73,15 +66,18 @@ export async function POST(request: NextRequest) {
     // Check if user is the client owner
     const isClientOwner = client.user_id === user.id
 
-    // Or has admin/brand_manager role
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('role, status')
-      .eq('user_profile_id', userProfile.id)
+    // Or has admin/brand_manager role (requires user_profiles entry)
+    let hasAdminAccess = false
+    if (userProfile) {
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role, status')
+        .eq('user_profile_id', userProfile.id)
 
-    const hasAdminAccess = roles?.some(role =>
-      role.status === 'active' && ['admin', 'brand_manager'].includes(role.role)
-    )
+      hasAdminAccess = roles?.some(role =>
+        role.status === 'active' && ['admin', 'brand_manager'].includes(role.role)
+      ) ?? false
+    }
 
     if (!isClientOwner && !hasAdminAccess) {
       return NextResponse.json(
@@ -165,7 +161,7 @@ export async function POST(request: NextRequest) {
     const { data: qrCode, error: createError } = await supabase
       .from('qr_codes')
       .insert({
-        tenant_id: userProfile.tenant_id,
+        tenant_id: userProfile?.tenant_id ?? client.tenant_id,
         client_id,
         promotion_id: promotion_id || null,
         brand_id: brand_id || null,
