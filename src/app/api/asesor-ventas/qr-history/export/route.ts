@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { escapeCsvValue, csvResponse, formatCsvDate } from '@/lib/utils/csv'
 
 /**
  * GET /api/asesor-ventas/qr-history/export
@@ -133,106 +134,61 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // 7. Generate CSV
-        const csvHeaders = [
-            'Fecha Canje',
-            'ID Redención',
-            'Código QR',
-            'Cliente',
-            'ID Cliente',
-            'Teléfono Cliente',
-            'Dirección Cliente',
-            'Promoción',
-            'Marca',
-            'Tipo Descuento',
-            'Valor Descuento',
-            'Descripción',
-            'Latitud',
-            'Longitud',
-            'Notas',
-            'Distribuidor',
-            'Asesor'
-        ].join(',')
+        // 7. Generate CSV using shared utility
+        const headers = [
+            'Fecha Canje', 'ID Redención', 'Código QR', 'Cliente',
+            'ID Cliente', 'Teléfono Cliente', 'Dirección Cliente',
+            'Promoción', 'Marca', 'Tipo Descuento', 'Valor Descuento',
+            'Descripción', 'Latitud', 'Longitud', 'Notas',
+            'Distribuidor', 'Asesor'
+        ]
 
-        const csvRows = redemptions?.map(r => {
+        const discountTypeMap: Record<string, string> = {
+            'percentage': 'Porcentaje',
+            'fixed_amount': 'Monto Fijo',
+            'free_product': 'Producto Gratis',
+            'points': 'Puntos'
+        }
+
+        const rows = (redemptions || []).map(r => {
             const qr = r.qr_code as any
             const client = qr?.client
             const promotion = qr?.promotion
             const brand = qr?.brand
 
-            // Format date - use ISO-like format without commas to avoid CSV issues
-            const date = new Date(r.redeemed_at).toLocaleString('es-MX', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            }).replace(',', '') // Remove comma between date and time
-
-            // Format discount type
-            const discountTypeMap: Record<string, string> = {
-                'percentage': 'Porcentaje',
-                'fixed_amount': 'Monto Fijo',
-                'free_product': 'Producto Gratis',
-                'points': 'Puntos'
-            }
-
-            const discountType = r.discount_type ? discountTypeMap[r.discount_type] || r.discount_type : 'N/A'
-            const discountValue = r.discount_value !== null ? r.discount_value.toString() : '0'
-
-            // Format address from separate columns
             const addressParts = [
-                client?.address_street,
-                client?.address_city,
-                client?.address_state,
-                client?.address_postal_code
+                client?.address_street, client?.address_city,
+                client?.address_state, client?.address_postal_code
             ].filter(Boolean)
-            const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : ''
-
-            // Escape CSV values (handle commas and quotes)
-            const escape = (val: string | null | undefined) => {
-                if (!val) return ''
-                const str = String(val)
-                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-                    return `"${str.replace(/"/g, '""')}"`
-                }
-                return str
-            }
 
             return [
-                date,
+                formatCsvDate(r.redeemed_at),
                 r.id,
-                escape(qr?.code),
-                escape(client?.business_name),
-                escape(client?.public_id),
-                escape(client?.phone),
-                escape(fullAddress),
-                escape(promotion?.name),
-                escape(brand?.name),
-                discountType,
-                discountValue,
-                escape(qr?.discount_description),
+                qr?.code || '',
+                client?.business_name || '',
+                client?.public_id || '',
+                client?.phone || '',
+                addressParts.join(', '),
+                promotion?.name || '',
+                brand?.name || '',
+                r.discount_type ? discountTypeMap[r.discount_type] || r.discount_type : 'N/A',
+                r.discount_value !== null ? r.discount_value.toString() : '0',
+                qr?.discount_description || '',
                 r.latitude?.toString() || '',
                 r.longitude?.toString() || '',
-                escape(r.notes),
-                escape(distributorName),
+                r.notes || '',
+                distributorName,
                 `${userProfile.first_name} ${userProfile.last_name}`
-            ].join(',')
-        }) || []
-
-        const csv = [csvHeaders, ...csvRows].join('\n')
-
-        // 8. Return CSV file
-        const filename = `facturacion_qr_${new Date().toISOString().split('T')[0]}.csv`
-
-        return new NextResponse(csv, {
-            headers: {
-                'Content-Type': 'text/csv; charset=utf-8',
-                'Content-Disposition': `attachment; filename="${filename}"`,
-                'Cache-Control': 'no-cache'
-            }
+            ]
         })
+
+        // 8. Build and return CSV using shared utility (includes UTF-8 BOM)
+        const UTF8_BOM = '\uFEFF'
+        const headerLine = headers.map(escapeCsvValue).join(',')
+        const dataLines = rows.map(row => row.map(escapeCsvValue).join(','))
+        const csv = UTF8_BOM + [headerLine, ...dataLines].join('\n')
+
+        return csvResponse(csv, `facturacion_qr_${new Date().toISOString().split('T')[0]}.csv`)
 
     } catch (error) {
         console.error('Error in GET /api/asesor-ventas/qr-history/export:', error)
