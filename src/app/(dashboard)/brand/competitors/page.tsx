@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
 import { Building2, Plus, Edit2, Trash2, ChevronDown, ChevronRight, Package } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 
 interface ProductSize {
   id: string
@@ -61,6 +62,7 @@ export default function BrandCompetitorsPage() {
   const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const [formData, setFormData] = useState<CompetitorFormData>({
     competitor_name: '',
@@ -68,33 +70,38 @@ export default function BrandCompetitorsPage() {
     products: []
   })
 
-  const loadCompetitors = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const response = await brandFetch('/api/brand/competitors?include_products=true')
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error al cargar competidores')
-      }
-
-      const data = await response.json()
-      setCompetitors(data.competitors || [])
-
-    } catch (err) {
-      console.error('Error loading competitors:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      setError(`Error al cargar competidores: ${errorMessage}`)
-    } finally {
-      setLoading(false)
-    }
-  }, [brandFetch, currentBrandId])
-
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadCompetitors = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const response = await brandFetch('/api/brand/competitors?include_products=true', { signal: controller.signal })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Error al cargar competidores')
+        }
+
+        const data = await response.json()
+        setCompetitors(data.competitors || [])
+
+      } catch (err) {
+        if (controller.signal.aborted) return
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+        setError(`Error al cargar competidores: ${errorMessage}`)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     loadCompetitors()
-  }, [loadCompetitors])
+    return () => controller.abort()
+  }, [brandFetch, currentBrandId, refreshKey])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -117,7 +124,7 @@ export default function BrandCompetitorsPage() {
         throw new Error(errorData.error || 'Error al guardar competidor')
       }
 
-      await loadCompetitors()
+      setRefreshKey(k => k + 1)
       resetForm()
 
     } catch (err) {
@@ -143,7 +150,7 @@ export default function BrandCompetitorsPage() {
         throw new Error(errorData.error || 'Error al eliminar competidor')
       }
 
-      await loadCompetitors()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       console.error('Error deleting competitor:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -292,6 +299,10 @@ export default function BrandCompetitorsPage() {
               </p>
             </div>
             <div className="flex space-x-3">
+              <ExportButton
+                endpoint="/api/brand/competitors/export"
+                filename="competidores"
+              />
               <Button onClick={() => setShowForm(true)} disabled={showForm}>
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Competidor

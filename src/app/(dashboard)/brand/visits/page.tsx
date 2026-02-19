@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
+import { ExportButton } from '@/components/ui/export-button';
 
 interface Visit {
   id: string;
@@ -53,38 +54,44 @@ export default function BrandVisitsPage() {
     };
   }, [searchTerm]);
 
-  const loadVisits = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-        ...(statusFilter && { status: statusFilter }),
-        ...(debouncedSearch && { search: debouncedSearch }),
-        ...(dateFrom && { date_from: dateFrom }),
-        ...(dateTo && { date_to: dateTo }),
-      });
-      const response = await brandFetch(`/api/brand/visits?${queryParams}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al cargar visitas');
-      }
-      const data = await response.json();
-      setVisits(data.visits || []);
-      setTotalPages(data.pagination?.totalPages || 1);
-      setSummary(data.summary || { total: 0, active: 0, completed: 0, avg_rating: 0 });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error desconocido';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [brandFetch, page, statusFilter, debouncedSearch, dateFrom, dateTo]);
-
   useEffect(() => {
+    if (!currentBrandId) return;
+
+    const controller = new AbortController();
+
+    const loadVisits = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const queryParams = new URLSearchParams({
+          page: page.toString(),
+          limit: '20',
+          ...(statusFilter && { status: statusFilter }),
+          ...(debouncedSearch && { search: debouncedSearch }),
+          ...(dateFrom && { date_from: dateFrom }),
+          ...(dateTo && { date_to: dateTo }),
+        });
+        const response = await brandFetch(`/api/brand/visits?${queryParams}`, { signal: controller.signal });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error al cargar visitas');
+        }
+        const data = await response.json();
+        setVisits(data.visits || []);
+        setTotalPages(data.pagination?.totalPages || 1);
+        setSummary(data.summary || { total: 0, active: 0, completed: 0, avg_rating: 0 });
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const msg = err instanceof Error ? err.message : 'Error desconocido';
+        setError(msg);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
     loadVisits();
-  }, [loadVisits, currentBrandId]);
+    return () => controller.abort();
+  }, [brandFetch, page, statusFilter, debouncedSearch, dateFrom, dateTo, currentBrandId]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-MX', {
@@ -160,6 +167,11 @@ export default function BrandVisitsPage() {
               <h1 className="text-2xl font-bold text-gray-900 mt-2">Visitas de la Marca</h1>
               <p className="text-gray-600 mt-1">Historial de visitas a clientes</p>
             </div>
+            <ExportButton
+              endpoint="/api/brand/visits/export"
+              filename="visitas"
+              filters={{ status: statusFilter, search: debouncedSearch, date_from: dateFrom, date_to: dateTo }}
+            />
           </div>
         </div>
       </div>

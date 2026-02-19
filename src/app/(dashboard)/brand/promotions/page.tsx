@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
 import { Gift, Plus, Search, Calendar, DollarSign, Users, TrendingUp, Pause, Play, Eye, Edit } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 
 interface Promotion {
   id: string
@@ -79,43 +80,49 @@ export default function BrandPromotionsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-
-  const loadPromotions = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '10',
-        ...(searchTerm && { search: searchTerm }),
-        ...(selectedStatus !== 'all' && { status: selectedStatus })
-      })
-
-      const response = await brandFetch(`/api/brand/promotions?${params}`)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error al cargar promociones')
-      }
-
-      const data = await response.json()
-      setPromotions(data.promotions || [])
-      setMetrics(data.metrics || null)
-      setPagination(data.pagination || null)
-
-    } catch (err) {
-      console.error('Error loading promotions:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      setError(`Error al cargar promociones: ${errorMessage}`)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, searchTerm, selectedStatus, brandFetch, currentBrandId])
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadPromotions = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: '10',
+          ...(searchTerm && { search: searchTerm }),
+          ...(selectedStatus !== 'all' && { status: selectedStatus })
+        })
+
+        const response = await brandFetch(`/api/brand/promotions?${params}`, { signal: controller.signal })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Error al cargar promociones')
+        }
+
+        const data = await response.json()
+        setPromotions(data.promotions || [])
+        setMetrics(data.metrics || null)
+        setPagination(data.pagination || null)
+
+      } catch (err) {
+        if (controller.signal.aborted) return
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+        setError(`Error al cargar promociones: ${errorMessage}`)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     loadPromotions()
-  }, [loadPromotions])
+    return () => controller.abort()
+  }, [page, searchTerm, selectedStatus, brandFetch, currentBrandId, refreshKey])
 
   const handlePauseResume = async (promotionId: string, currentStatus: string) => {
     setActionLoading(promotionId)
@@ -132,7 +139,7 @@ export default function BrandPromotionsPage() {
         throw new Error(errorData.error || 'Error al actualizar promoción')
       }
 
-      await loadPromotions()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       console.error('Error updating promotion:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -154,7 +161,7 @@ export default function BrandPromotionsPage() {
         throw new Error(errorData.error || 'Error al enviar promoción')
       }
 
-      await loadPromotions()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       console.error('Error submitting promotion:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -234,6 +241,11 @@ export default function BrandPromotionsPage() {
               </p>
             </div>
             <div className="flex space-x-3">
+              <ExportButton
+                endpoint="/api/brand/promotions/export"
+                filename="promociones"
+                filters={{ search: searchTerm, status: selectedStatus }}
+              />
               <Link href="/brand/promotions/create">
                 <Button>
                   <Plus className="w-4 h-4 mr-2" />

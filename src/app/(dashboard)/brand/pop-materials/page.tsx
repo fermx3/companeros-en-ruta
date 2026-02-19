@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
 import { Layers, Plus, Edit2, Trash2, Tag } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 
 interface POPMaterial {
   id: string
@@ -47,40 +48,46 @@ export default function BrandPOPMaterialsPage() {
   const [editingMaterial, setEditingMaterial] = useState<POPMaterial | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const [formData, setFormData] = useState({
     material_name: '',
     material_category: ''
   })
 
-  const loadMaterials = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const response = await brandFetch('/api/brand/pop-materials?include_system=true')
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error al cargar materiales')
-      }
-
-      const data = await response.json()
-      setMaterials(data.materials || [])
-      setSystemTemplates(data.systemTemplates || [])
-
-    } catch (err) {
-      console.error('Error loading materials:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      setError(`Error al cargar materiales: ${errorMessage}`)
-    } finally {
-      setLoading(false)
-    }
-  }, [brandFetch, currentBrandId])
-
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadMaterials = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const response = await brandFetch('/api/brand/pop-materials?include_system=true', { signal: controller.signal })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Error al cargar materiales')
+        }
+
+        const data = await response.json()
+        setMaterials(data.materials || [])
+        setSystemTemplates(data.systemTemplates || [])
+
+      } catch (err) {
+        if (controller.signal.aborted) return
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+        setError(`Error al cargar materiales: ${errorMessage}`)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     loadMaterials()
-  }, [loadMaterials])
+    return () => controller.abort()
+  }, [brandFetch, currentBrandId, refreshKey])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -103,7 +110,7 @@ export default function BrandPOPMaterialsPage() {
         throw new Error(errorData.error || 'Error al guardar material')
       }
 
-      await loadMaterials()
+      setRefreshKey(k => k + 1)
       resetForm()
 
     } catch (err) {
@@ -129,7 +136,7 @@ export default function BrandPOPMaterialsPage() {
         throw new Error(errorData.error || 'Error al eliminar material')
       }
 
-      await loadMaterials()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       console.error('Error deleting material:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -200,6 +207,10 @@ export default function BrandPOPMaterialsPage() {
               </p>
             </div>
             <div className="flex space-x-3">
+              <ExportButton
+                endpoint="/api/brand/pop-materials/export"
+                filename="materiales_pop"
+              />
               <Button onClick={() => setShowForm(true)} disabled={showForm}>
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Material

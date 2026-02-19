@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert, EmptyState } from '@/components/ui/feedback'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
 import {
   ShoppingBag,
   Package,
@@ -112,6 +113,7 @@ export default function BrandOrdersPage() {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
+  const { brandFetch, currentBrandId } = useBrandFetch()
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -125,7 +127,7 @@ export default function BrandOrdersPage() {
           ...(statusFilter && { status: statusFilter })
         })
 
-        const response = await fetch(`/api/brand/orders?${params}`)
+        const response = await brandFetch(`/api/brand/orders?${params}`)
 
         if (!response.ok) {
           const errorData = await response.json()
@@ -144,7 +146,7 @@ export default function BrandOrdersPage() {
     }
 
     loadOrders()
-  }, [page, statusFilter])
+  }, [page, statusFilter, brandFetch, currentBrandId])
 
   const statusOptions = [
     { value: '', label: 'Todos' },

@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
 import { displayPhone } from '@/lib/utils/phone';
+import { ExportButton } from '@/components/ui/export-button';
 
 interface TeamMember {
   id: string;
@@ -41,8 +42,11 @@ export default function BrandTeamPage() {
   const [sortBy, setSortBy] = useState<'visits' | 'orders' | 'activity' | 'name'>('visits');
 
   useEffect(() => {
+    if (!currentBrandId) return;
+
+    const controller = new AbortController();
+
     const loadTeam = async () => {
-      if (!currentBrandId) return;
       setLoading(true);
       setError(null);
 
@@ -55,7 +59,7 @@ export default function BrandTeamPage() {
           ...(selectedStatus && { status: selectedStatus })
         });
 
-        const response = await brandFetch(`/api/brand/team?${params}`);
+        const response = await brandFetch(`/api/brand/team?${params}`, { signal: controller.signal });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -66,15 +70,16 @@ export default function BrandTeamPage() {
         setTeam(data.team || []);
         setTotalPages(data.pagination?.totalPages || 1);
       } catch (err) {
-        console.error('Error loading team:', err);
+        if (controller.signal.aborted) return;
         const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
         setError(`Error al cargar equipo: ${errorMessage}`);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     loadTeam();
+    return () => controller.abort();
   }, [page, searchTerm, selectedRole, selectedStatus, brandFetch, currentBrandId]);
 
   const filteredTeam = team.filter(member => {
@@ -165,6 +170,11 @@ export default function BrandTeamPage() {
               </p>
             </div>
             <div className="flex space-x-3">
+              <ExportButton
+                endpoint="/api/brand/team/export"
+                filename="equipo"
+                filters={{ search: searchTerm, role: selectedRole, status: selectedStatus }}
+              />
               <Link href="/brand/team/invite">
                 <Button>
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

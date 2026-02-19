@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
 import { Package, Plus, Edit2, Trash2, ChevronDown, ChevronRight, DollarSign } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 import { cn } from '@/lib/utils'
 
 interface ProductVariant {
@@ -77,6 +78,7 @@ export default function BrandProductsPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set())
   const [includeInactive, setIncludeInactive] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -101,61 +103,63 @@ export default function BrandProductsPage() {
     _action?: string
   }[]>([])
 
-  const loadProducts = useCallback(async (brandId?: string) => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const params = new URLSearchParams({
-        dashboard: 'true',
-        include_inactive: includeInactive.toString()
-      })
-
-      // Use provided brandId or selected one
-      const targetBrandId = brandId || selectedBrandId
-      if (targetBrandId) {
-        params.set('brand_id', targetBrandId)
-      }
-
-      const response = await brandFetch(`/api/brand/products?${params}`)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        const errorMsg = errorData.details
-          ? `${errorData.error}: ${errorData.details}`
-          : errorData.error || 'Error al cargar productos'
-        throw new Error(errorMsg)
-      }
-
-      const data = await response.json()
-      setProducts(data.products || [])
-      setCategories(data.categories || [])
-
-      // Update available brands and selected brand
-      if (data.availableBrands) {
-        setAvailableBrands(data.availableBrands)
-      }
-      if (data.currentBrandId && !selectedBrandId) {
-        setSelectedBrandId(data.currentBrandId)
-      }
-
-    } catch (err) {
-      console.error('Error loading products:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      setError(`Error al cargar productos: ${errorMessage}`)
-    } finally {
-      setLoading(false)
-    }
-  }, [includeInactive, selectedBrandId, brandFetch, currentBrandId])
-
   const handleBrandChange = (newBrandId: string) => {
     setSelectedBrandId(newBrandId)
-    loadProducts(newBrandId)
+    setRefreshKey(k => k + 1)
   }
 
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadProducts = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const params = new URLSearchParams({
+          dashboard: 'true',
+          include_inactive: includeInactive.toString()
+        })
+
+        if (selectedBrandId) {
+          params.set('brand_id', selectedBrandId)
+        }
+
+        const response = await brandFetch(`/api/brand/products?${params}`, { signal: controller.signal })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          const errorMsg = errorData.details
+            ? `${errorData.error}: ${errorData.details}`
+            : errorData.error || 'Error al cargar productos'
+          throw new Error(errorMsg)
+        }
+
+        const data = await response.json()
+        setProducts(data.products || [])
+        setCategories(data.categories || [])
+
+        if (data.availableBrands) {
+          setAvailableBrands(data.availableBrands)
+        }
+        if (data.currentBrandId && !selectedBrandId) {
+          setSelectedBrandId(data.currentBrandId)
+        }
+
+      } catch (err) {
+        if (controller.signal.aborted) return
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+        setError(`Error al cargar productos: ${errorMessage}`)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     loadProducts()
-  }, [loadProducts])
+    return () => controller.abort()
+  }, [includeInactive, selectedBrandId, brandFetch, currentBrandId, refreshKey])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -191,7 +195,7 @@ export default function BrandProductsPage() {
         throw new Error(errorData.error || 'Error al guardar producto')
       }
 
-      await loadProducts()
+      setRefreshKey(k => k + 1)
       resetForm()
 
     } catch (err) {
@@ -217,7 +221,7 @@ export default function BrandProductsPage() {
         throw new Error(errorData.error || 'Error al eliminar producto')
       }
 
-      await loadProducts()
+      setRefreshKey(k => k + 1)
     } catch (err) {
       console.error('Error deleting product:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -381,6 +385,11 @@ export default function BrandProductsPage() {
                 />
                 Mostrar inactivos
               </label>
+              <ExportButton
+                endpoint="/api/brand/products/export"
+                filename="productos"
+                filters={{ include_inactive: includeInactive ? 'true' : 'false' }}
+              />
               <Button onClick={() => setShowForm(true)} disabled={showForm}>
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Producto

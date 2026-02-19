@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { Plus, Search, ClipboardList, BarChart3, Clock, Users } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
 
 interface SurveyListItem {
@@ -49,35 +50,41 @@ export default function BrandSurveysPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('all')
 
-  const fetchSurveys = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '10',
-        status: selectedStatus,
-        search: searchTerm
-      })
-
-      const res = await brandFetch(`/api/brand/surveys?${params}`)
-      if (!res.ok) throw new Error('Error al cargar encuestas')
-
-      const data = await res.json()
-      setSurveys(data.surveys || [])
-      setMetrics(data.metrics || null)
-      setTotalPages(data.pagination?.totalPages || 1)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
-    } finally {
-      setLoading(false)
-    }
-  }, [page, selectedStatus, searchTerm, brandFetch, currentBrandId])
-
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const fetchSurveys = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: '10',
+          status: selectedStatus,
+          search: searchTerm
+        })
+
+        const res = await brandFetch(`/api/brand/surveys?${params}`, { signal: controller.signal })
+        if (!res.ok) throw new Error('Error al cargar encuestas')
+
+        const data = await res.json()
+        setSurveys(data.surveys || [])
+        setMetrics(data.metrics || null)
+        setTotalPages(data.pagination?.totalPages || 1)
+      } catch (err) {
+        if (controller.signal.aborted) return
+        setError(err instanceof Error ? err.message : 'Error desconocido')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
     fetchSurveys()
-  }, [fetchSurveys])
+    return () => controller.abort()
+  }, [page, selectedStatus, searchTerm, brandFetch, currentBrandId])
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -87,11 +94,18 @@ export default function BrandSurveysPage() {
           <h1 className="text-2xl font-bold text-gray-900">Encuestas</h1>
           <p className="text-sm text-gray-500">Gestiona tus encuestas y visualiza resultados</p>
         </div>
-        <Link href="/brand/surveys/create">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" /> Nueva Encuesta
-          </Button>
-        </Link>
+        <div className="flex space-x-3">
+          <ExportButton
+            endpoint="/api/brand/surveys/export"
+            filename="encuestas"
+            filters={{ search: searchTerm, status: selectedStatus }}
+          />
+          <Link href="/brand/surveys/create">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" /> Nueva Encuesta
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Metrics */}

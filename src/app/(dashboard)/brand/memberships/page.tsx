@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Users, Search, Check, Award, ChevronLeft, ChevronRight, X, Plus, UserPlus, Coins, TrendingUp, TrendingDown } from 'lucide-react'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
+import { ExportButton } from '@/components/ui/export-button'
 
 interface MembershipTier {
   id: string
@@ -171,28 +172,29 @@ function AddMembersModal({
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
-  const loadAvailableClients = useCallback(async () => {
-    try {
-      setLoading(true)
-      // Get all clients from brand/clients endpoint
-      const response = await brandFetch('/api/brand/clients?limit=100')
-      if (response.ok) {
-        const data = await response.json()
-        // Filter out clients that already have membership (we'll need to check this)
-        setClients(data.clients || [])
-      }
-    } catch (err) {
-      console.error('Error loading clients:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [brandFetch])
-
   useEffect(() => {
-    if (isOpen) {
-      loadAvailableClients()
+    if (!isOpen || !currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadAvailableClients = async () => {
+      try {
+        setLoading(true)
+        const response = await brandFetch('/api/brand/clients?limit=100', { signal: controller.signal })
+        if (response.ok) {
+          const data = await response.json()
+          if (!controller.signal.aborted) setClients(data.clients || [])
+        }
+      } catch {
+        // Non-critical
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
     }
-  }, [isOpen, loadAvailableClients, currentBrandId])
+
+    loadAvailableClients()
+    return () => controller.abort()
+  }, [isOpen, brandFetch, currentBrandId])
 
   const toggleClient = (clientId: string) => {
     const newSelected = new Set(selectedClients)
@@ -467,6 +469,8 @@ export default function BrandMembershipsPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'active'>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTierId, setSelectedTierId] = useState('')
+  const [page, setPage] = useState(1)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const [assignModal, setAssignModal] = useState<{ open: boolean; membership: Membership | null }>({
     open: false,
@@ -481,57 +485,68 @@ export default function BrandMembershipsPage() {
 
   const { brandFetch, currentBrandId } = useBrandFetch()
 
-  const loadTiers = useCallback(async () => {
-    try {
-      const response = await brandFetch('/api/brand/tiers')
-      if (response.ok) {
-        const data = await response.json()
-        setTiers(data.tiers || [])
-      }
-    } catch (err) {
-      console.error('Error loading tiers:', err)
-    }
-  }, [brandFetch])
-
-  const loadMemberships = useCallback(async (page = 1) => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const statusParam = activeTab === 'all' ? '' : activeTab
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-        ...(statusParam && { status: statusParam }),
-        ...(searchTerm && { search: searchTerm }),
-        ...(selectedTierId && { tier_id: selectedTierId })
-      })
-
-      const response = await brandFetch(`/api/brand/memberships?${params}`)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error al cargar membresías')
-      }
-
-      const data = await response.json()
-      setMemberships(data.memberships || [])
-      setPagination(data.pagination)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }, [activeTab, searchTerm, selectedTierId, brandFetch])
-
   useEffect(() => {
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadTiers = async () => {
+      try {
+        const response = await brandFetch('/api/brand/tiers', { signal: controller.signal })
+        if (response.ok) {
+          const data = await response.json()
+          if (!controller.signal.aborted) setTiers(data.tiers || [])
+        }
+      } catch {
+        // Non-critical for tiers list
+      }
+    }
+
     loadTiers()
-  }, [loadTiers])
+    return () => controller.abort()
+  }, [brandFetch, currentBrandId])
 
   useEffect(() => {
-    loadMemberships(1)
-  }, [loadMemberships])
+    if (!currentBrandId) return
+
+    const controller = new AbortController()
+
+    const loadMemberships = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const statusParam = activeTab === 'all' ? '' : activeTab
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: '20',
+          ...(statusParam && { status: statusParam }),
+          ...(searchTerm && { search: searchTerm }),
+          ...(selectedTierId && { tier_id: selectedTierId })
+        })
+
+        const response = await brandFetch(`/api/brand/memberships?${params}`, { signal: controller.signal })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Error al cargar membresías')
+        }
+
+        const data = await response.json()
+        setMemberships(data.memberships || [])
+        setPagination(data.pagination)
+      } catch (err) {
+        if (controller.signal.aborted) return
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+        setError(errorMessage)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
+    loadMemberships()
+    return () => controller.abort()
+  }, [activeTab, searchTerm, selectedTierId, page, brandFetch, currentBrandId, refreshKey])
 
   const handleApprove = async (membership: Membership) => {
     if (!confirm(`¿Aprobar la membresía de "${membership.client_name}"?`)) {
@@ -552,7 +567,7 @@ export default function BrandMembershipsPage() {
 
       setSuccessMessage('Membresía aprobada correctamente')
       setTimeout(() => setSuccessMessage(null), 3000)
-      loadMemberships(pagination.page)
+      setRefreshKey(k => k + 1)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
       setError(errorMessage)
@@ -582,7 +597,7 @@ export default function BrandMembershipsPage() {
       setSuccessMessage(data.message || 'Nivel asignado correctamente')
       setTimeout(() => setSuccessMessage(null), 3000)
       setAssignModal({ open: false, membership: null })
-      loadMemberships(pagination.page)
+      setRefreshKey(k => k + 1)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
       setError(errorMessage)
@@ -593,7 +608,8 @@ export default function BrandMembershipsPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    loadMemberships(1)
+    setPage(1)
+    setRefreshKey(k => k + 1)
   }
 
   const handleAddMembers = async (clientIds: string[]) => {
@@ -617,7 +633,7 @@ export default function BrandMembershipsPage() {
       setSuccessMessage(data.message || 'Miembros agregados correctamente')
       setTimeout(() => setSuccessMessage(null), 3000)
       setAddMembersModal(false)
-      loadMemberships(1)
+      setPage(1); setRefreshKey(k => k + 1)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
       setError(errorMessage)
@@ -655,7 +671,7 @@ export default function BrandMembershipsPage() {
       setSuccessMessage(result.message || 'Puntos procesados correctamente')
       setTimeout(() => setSuccessMessage(null), 3000)
       setPointsModal({ open: false, membership: null })
-      loadMemberships(pagination.page)
+      setRefreshKey(k => k + 1)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
       setError(errorMessage)
@@ -701,10 +717,17 @@ export default function BrandMembershipsPage() {
                 Administra las membresías de tus clientes
               </p>
             </div>
-            <Button onClick={() => setAddMembersModal(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Agregar Miembros
-            </Button>
+            <div className="flex space-x-3">
+              <ExportButton
+                endpoint="/api/brand/memberships/export"
+                filename="membresias"
+                filters={{ status: activeTab, search: searchTerm, tier_id: selectedTierId || undefined }}
+              />
+              <Button onClick={() => setAddMembersModal(true)}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Agregar Miembros
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -913,16 +936,16 @@ export default function BrandMembershipsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => loadMemberships(pagination.page - 1)}
-                  disabled={pagination.page <= 1}
+                  onClick={() => setPage(p => p - 1)}
+                  disabled={page <= 1}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => loadMemberships(pagination.page + 1)}
-                  disabled={pagination.page >= pagination.totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page >= pagination.totalPages}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>

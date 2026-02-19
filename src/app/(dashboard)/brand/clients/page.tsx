@@ -6,6 +6,7 @@ import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
+import { ExportButton } from '@/components/ui/export-button';
 import { displayPhone } from '@/lib/utils/phone';
 
 interface Client {
@@ -37,12 +38,15 @@ export default function BrandClientsPage() {
   const [selectedType, setSelectedType] = useState<string>('');
 
   useEffect(() => {
+    if (!currentBrandId) return;
+
+    const controller = new AbortController();
+
     const loadClients = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        // Obtener clientes reales de la marca
         const params = new URLSearchParams({
           page: page.toString(),
           limit: '10',
@@ -51,10 +55,7 @@ export default function BrandClientsPage() {
         })
 
         const response = await brandFetch(`/api/brand/clients?${params}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          signal: controller.signal
         })
 
         if (!response.ok) {
@@ -66,15 +67,16 @@ export default function BrandClientsPage() {
         setClients(data.clients || [])
         setTotalPages(data.pagination?.totalPages || 1)
       } catch (err) {
-        console.error('Error loading clients:', err);
+        if (controller.signal.aborted) return;
         const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
         setError(`Error al cargar clientes: ${errorMessage}`);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     loadClients();
+    return () => controller.abort();
   }, [page, searchTerm, selectedType, brandFetch, currentBrandId]);
 
   const filteredClients = clients.filter(client => {
@@ -138,6 +140,11 @@ export default function BrandClientsPage() {
               </p>
             </div>
             <div className="flex space-x-3">
+              <ExportButton
+                endpoint="/api/brand/clients/export"
+                filename="clientes"
+                filters={{ search: searchTerm, type: selectedType }}
+              />
               <Link href="/brand/clients/create">
                 <Button>
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
