@@ -1341,8 +1341,8 @@ Referencia: Supabase lint `0010_security_definer_view`
 - `src/app/(dashboard)/supervisor/page.tsx` — Dashboard actualizado con links funcionales
 
 **Verificación manual:**
-- [ ] Todos los links del sidebar supervisor navegan a páginas funcionales
-- [ ] Quick actions del dashboard no producen 404
+- [x] Todos los links del sidebar supervisor navegan a páginas funcionales
+- [x] Quick actions del dashboard no producen 404
 - [ ] "Ver detalle" de un miembro del equipo muestra datos correctos
 - [ ] Lista de clientes muestra solo clientes del equipo supervisado
 - [ ] Lista de visitas filtra por equipo
@@ -1369,12 +1369,12 @@ Referencia: Supabase lint `0010_security_definer_view`
 - `src/lib/types/admin.ts` — Tipos de zona agregados
 
 **Verificación manual:**
-- [ ] Link "Zonas" aparece en sidebar admin y navega correctamente
-- [ ] Lista de zonas carga datos del tenant actual
-- [ ] Crear zona funciona y redirige a la lista
-- [ ] Editar zona muestra datos existentes y guarda cambios
-- [ ] Detalle zona muestra info completa (nombre, clientes asignados, etc.)
-- [ ] No se puede crear zona duplicada o sin nombre
+- [x] Link "Zonas" aparece en sidebar admin y navega correctamente
+- [x] Lista de zonas carga datos del tenant actual
+- [x] Crear zona funciona y redirige a la lista
+- [x] Editar zona muestra datos existentes y guarda cambios
+- [x] Detalle zona muestra info completa (nombre, clientes asignados, etc.)
+- [x] No se puede crear zona duplicada o sin nombre
 
 ---
 
@@ -1399,14 +1399,14 @@ Referencia: Supabase lint `0010_security_definer_view`
 - `src/lib/navigation-config.ts` — Visits link agregado
 
 **Verificación manual:**
-- [ ] Click en cliente desde `/brand/clients` navega a `/brand/clients/[id]` con datos reales
-- [ ] Botón "Editar" en detalle cliente lleva a formulario funcional
-- [ ] Tab "Visitas" del cliente muestra historial real
-- [ ] `/brand/visits` carga todas las visitas de la marca
-- [ ] Lista de clientes vacía muestra EmptyState (no mock data)
-- [ ] Dashboard metrics muestran datos expandidos
-- [ ] Team page muestra rankings y métricas reales
-- [ ] Migración security_invoker aplicada: `SELECT security_invoker FROM pg_views` confirma `true`
+- [x] Click en cliente desde `/brand/clients` navega a `/brand/clients/[id]` con datos reales
+- [x] Botón "Editar" en detalle cliente lleva a formulario funcional
+- [x] Tab "Visitas" del cliente muestra historial real
+- [x] `/brand/visits` carga todas las visitas de la marca
+- [x] Lista de clientes vacía muestra EmptyState (no mock data)
+- [x] Dashboard metrics muestran datos expandidos
+- [x] Team page muestra rankings y métricas reales
+- [x] Migración security_invoker aplicada: `SELECT security_invoker FROM pg_views` confirma `true`
 
 ---
 
@@ -1422,9 +1422,9 @@ Referencia: Supabase lint `0010_security_definer_view`
 - `src/lib/navigation-config.ts` — "Mi Perfil" agregado al clientNavConfig
 
 **Verificación manual:**
-- [ ] Quick action "Mi Perfil" desde home navega a `/client/profile` (no 404)
-- [ ] Página muestra información del negocio, contacto, ubicación, estadísticas
-- [ ] Botón "Editar" activa modo edición para teléfono y WhatsApp
-- [ ] Guardar persiste los cambios y actualiza la vista
-- [ ] Cancelar revierte los inputs al valor original
-- [ ] "Mi Perfil" aparece en sidebar (no en bottom nav)
+- [x] Quick action "Mi Perfil" desde home navega a `/client/profile` (no 404)
+- [x] Página muestra información del negocio, contacto, ubicación, estadísticas
+- [x] Botón "Editar" activa modo edición para teléfono y WhatsApp
+- [x] Guardar persiste los cambios y actualiza la vista
+- [x] Cancelar revierte los inputs al valor original
+- [x] "Mi Perfil" aparece en sidebar (no en bottom nav)
