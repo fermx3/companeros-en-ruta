@@ -314,7 +314,14 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
             <p className="text-sm text-gray-500">{user.public_id}</p>
           </div>
         </div>
-        <StatusBadge status={user.status === 'active' ? 'active' : 'inactive'} />
+        <div className="flex items-center space-x-2">
+          {user.is_client && (
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+              Cliente
+            </span>
+          )}
+          <StatusBadge status={user.status === 'active' ? 'active' : 'inactive'} />
+        </div>
       </div>
 
       <div className="space-y-2 text-sm text-gray-600 mb-4">

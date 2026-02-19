@@ -318,9 +318,16 @@ export default function UserRolesPage() {
               </nav>
 
               {/* Page Title */}
-              <h1 className="text-2xl font-bold text-gray-900 mt-2">
-                Roles de {user.first_name} {user.last_name}
-              </h1>
+              <div className="flex items-center gap-3 mt-2">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Roles de {user.first_name} {user.last_name}
+                </h1>
+                {isClient && (
+                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                    Cliente
+                  </span>
+                )}
+              </div>
               <p className="text-gray-600 mt-1">Gestiona los roles y permisos del usuario</p>
             </div>
 

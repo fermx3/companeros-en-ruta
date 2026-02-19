@@ -595,9 +595,12 @@ export class AdminService {
       })
     );
 
+    // Filter out client users — they are managed in the clients section
+    const staffUsers = usersWithRoles.filter(u => !u.is_client);
+
     return {
-      data: usersWithRoles,
-      count: count || 0,
+      data: staffUsers,
+      count: staffUsers.length,
       page,
       limit,
       totalPages: Math.ceil((count || 0) / limit)

@@ -241,6 +241,11 @@ export default function UserDetailPage() {
               <StatusBadge
                 status={user.status === 'active' ? 'active' : 'inactive'}
               />
+              {isClient && (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                  Cliente
+                </span>
+              )}
               {editMode ? (
                 <div className="flex space-x-2">
                   <Button
