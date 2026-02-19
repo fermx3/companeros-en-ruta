@@ -118,7 +118,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!isMounted) return
 
-      if (profileLoadError) {
+      // PGRST116 = no rows found from .single() — expected for client users
+      // who may not have a user_profiles entry. Fall through to client check.
+      const isProfileNotFound = profileLoadError &&
+        (profileLoadError as { code?: string })?.code === 'PGRST116'
+
+      if (profileLoadError && !isProfileNotFound) {
         if (hasValidDataRef.current) {
           // Already have valid profile/roles from a previous successful load.
           // Don't overwrite good state with a transient error (e.g. token refresh timeout).
@@ -173,34 +178,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           hasValidDataRef.current = true
           debugLog('Roles set:', rolesList)
           debugLog('Brand roles set:', brandRolesList)
-        } else {
-          // No user_roles found — check if user is a client.
-          // Client users are linked via clients.user_id (auth.users.id),
-          // not through user_roles.
-          debugLog('No user_roles found, checking clients table...')
-          const { data: clientRecord, error: clientError } = await supabase
-            .from('clients')
-            .select('id, status')
-            .eq('user_id', userId)
-            .is('deleted_at', null)
-            .single()
-
-          if (!isMounted) return
-
-          if (clientError && clientError.code !== 'PGRST116') {
-            // PGRST116 = no rows found, which is expected for non-client users
-            debugLog('Client check error:', clientError)
-          }
-
-          if (clientRecord && clientRecord.status === 'active') {
-            setUserRoles(['client'] as UserRole[])
-            hasValidDataRef.current = true
-            debugLog('User identified as client')
-          } else {
-            setUserRoles([])
-            debugLog('No roles and no active client record found')
-          }
+          return
         }
+      }
+
+      // No user_roles found (or no user_profiles entry) — check if user is a client.
+      // Client users are linked via clients.user_id (auth.users.id),
+      // not through user_roles.
+      debugLog('No staff roles found, checking clients table...')
+      const { data: clientRecord, error: clientError } = await supabase
+        .from('clients')
+        .select('id, status')
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .single()
+
+      if (!isMounted) return
+
+      if (clientError && clientError.code !== 'PGRST116') {
+        // PGRST116 = no rows found, which is expected for non-client users
+        debugLog('Client check error:', clientError)
+      }
+
+      if (clientRecord && clientRecord.status === 'active') {
+        setUserRoles(['client'] as UserRole[])
+        hasValidDataRef.current = true
+        debugLog('User identified as client')
+      } else {
+        setUserRoles([])
+        debugLog('No roles and no active client record found')
       }
     } catch (error) {
       if (hasValidDataRef.current) {
