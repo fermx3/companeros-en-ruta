@@ -784,7 +784,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 |----|----------|------------|-----|
 | CLI-002 | **SuggestedProductsGrid no implementado** (REQ-043, TASK-033) — Componente falta completamente. Debería mostrar 8 productos sugeridos en home. | — | Crear `components/client/SuggestedProductsGrid.tsx` + integrar en home |
 | CLI-003 | **CouponsSection no implementado** (REQ-048, TASK-036) — Sección cupones/email con tracking QR no existe. | — | Crear `components/client/CouponsSection.tsx` |
-| CLI-004 | **Registro extendido no implementado** (REQ-044) — No hay formulario de datos de negocio extendidos ni encuesta de onboarding. | — | Crear flujo registro extendido |
+| CLI-004 | **Onboarding cliente no implementado** (REQ-044) — Flujo completo de onboarding con wizard de 2 pasos: datos personales/negocio + encuesta. Requiere migración `add_client_onboarding_fields` (10 columnas nuevas en `clients`) y refactor `owner_name` → `owner_name` + `owner_last_name` (~49 archivos). **Paso 1:** Nombre, Apellido (`owner_last_name` nueva), Género (`gender` nueva), Fecha nacimiento (`date_of_birth` nueva), Email (pre-llenar), Email opt-in (`email_opt_in` nueva), WhatsApp (pre-llenar), WhatsApp opt-in (`whatsapp_opt_in` nueva), Nombre negocio (read-only), Tipo negocio (dropdown catálogo), Estado, CP, Compartir ubicación (geolocation). **Paso 2 — Encuesta:** Colaboradores (`metadata.employees`), Refri carnes (`has_meat_fridge` nueva), Refri refrescos (`has_soda_fridge` nueva), Pago tarjeta (`accepts_card` nueva), Recarga/servicios (`metadata.offers_topups`), Dónde compras (`metadata.supply_sources` array), Plataforma digital (`metadata.digital_restock` array), Cuál página/app (`metadata.digital_restock_detail`). **Flujo:** Login → si `onboarding_completed = false` → bienvenida → "Completar" o "En otro momento" → wizard → `onboarding_completed = true` → dashboard. | — | Migración + refactor owner_name + crear wizard onboarding |
 
 ### CLI-P2 — Nice to have (polish, no bloquean MVP)
 
@@ -799,7 +799,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 | CLI-001 | Crear | `client/profile/page.tsx` |
 | CLI-002 | Crear | `components/client/SuggestedProductsGrid.tsx`, editar `client/page.tsx` |
 | CLI-003 | Crear | `components/client/CouponsSection.tsx` |
-| CLI-004 | Crear | `client/register/extended/page.tsx` o flujo dentro de onboarding existente |
+| CLI-004 | Crear | `client/onboarding/page.tsx` (bienvenida), `client/onboarding/form/page.tsx` (wizard 2 pasos), `api/client/onboarding/route.ts` (PATCH endpoint). Editar ~49 archivos para refactor `owner_name` → `owner_name` + `owner_last_name`. Migración: `add_client_onboarding_fields` (10 columnas nuevas + split owner_name) |
 | CLI-005 | Editar | `api/client/promotions/route.ts` — remover console.log lines 55,68,74,121-125 |
 
 ### Criterios de verificación
@@ -807,8 +807,14 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 1. Link "/client/profile" navega a página funcional
 2. SuggestedProductsGrid renderiza en home (si se implementa)
 3. CouponsSection renderiza en home (si se implementa)
-4. No hay `console.log` en API de producción
-5. `npm run build` pasa sin errores
+4. Onboarding redirect funciona: login con `onboarding_completed = false` → página bienvenida
+5. "En otro momento" navega al dashboard sin error
+6. Wizard paso 1 guarda datos personales y negocio en columnas correctas de `clients`
+7. Wizard paso 2 guarda encuesta en columnas booleanas y `metadata` JSONB
+8. Al completar wizard → `onboarding_completed = true` → redirect a dashboard
+9. Refactor `owner_name`/`owner_last_name` no rompe formularios existentes de crear/editar cliente
+10. No hay `console.log` en API de producción
+11. `npm run build` pasa sin errores
 
 ---
 
@@ -884,7 +890,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 32. **ADV-002:** Integrar visitas/documentación en Asesor de Ventas (TASK-070). Esfuerzo: 3.
 33. **CLI-002:** SuggestedProductsGrid (TASK-033). Esfuerzo: 2.
 34. **CLI-003:** CouponsSection (TASK-036). Esfuerzo: 2.
-35. **CLI-004:** Registro extendido (REQ-044). Esfuerzo: 3.
+35. **CLI-004:** Onboarding cliente completo — wizard 2 pasos + migración 10 columnas + refactor owner_name ~49 archivos (REQ-044). Esfuerzo: 5.
 36. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.
 
 ### Tier 5 — All Profiles Audit (P2 — Polish) + Optimization
