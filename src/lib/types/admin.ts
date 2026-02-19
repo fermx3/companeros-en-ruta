@@ -211,6 +211,22 @@ export interface CommercialStructure {
   deleted_at: string | null;
 }
 
+// KPI Definition types
+export interface KpiDefinition {
+  id: string;
+  tenant_id: string;
+  slug: string;
+  label: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  computation_type: string;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Dashboard metrics types
 export interface AdminDashboardMetrics {
   totalBrands: number;

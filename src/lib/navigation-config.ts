@@ -17,6 +17,7 @@ import {
   Building2,
   Eye,
   UserCircle,
+  Download,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -47,6 +48,7 @@ export const brandNavConfig: RoleNavConfig = {
     { id: 'tiers', label: 'Niveles', icon: Layers, href: '/brand/tiers' },
     { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/brand/reports' },
     { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/brand/surveys' },
+    { id: 'exports', label: 'Exportar Datos', icon: Download, href: '/brand/exports' },
     { id: 'assessment-config', label: 'Config Assessment', icon: ClipboardList, href: '/brand/assessment-config' },
     { id: 'settings', label: 'Configuración', icon: Settings, href: '/brand/settings' },
   ],
