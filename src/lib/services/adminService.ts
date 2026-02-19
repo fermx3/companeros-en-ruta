@@ -904,31 +904,79 @@ export class AdminService {
       scope = 'tenant'; // Scope tenant porque trabaja para distribuidor, no para marca especifica
     }
 
-    // Primero crear el rol
-    const insertData: Record<string, unknown> = {
-      user_profile_id: userProfileId,
-      tenant_id: tenantId,
-      role: roleData.role,
-      brand_id: roleData.role === 'asesor_de_ventas' ? null : roleData.brand_id,
-      scope: scope,
-      is_primary: shouldBePrimary,
-      granted_by: currentUserProfile.id,
-      granted_at: new Date().toISOString(),
-      status: 'active'
-    };
+    const effectiveBrandId = roleData.role === 'asesor_de_ventas' ? null : roleData.brand_id;
 
-    // Solo agregar zone_id si esta definido
-    if (roleData.zone_id) {
-      insertData.zone_id = roleData.zone_id;
+    // Check if a soft-deleted row exists with the same combination — revive it instead of inserting
+    let query = this.supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_profile_id', userProfileId)
+      .eq('tenant_id', tenantId)
+      .eq('role', roleData.role)
+      .not('deleted_at', 'is', null); // only soft-deleted rows
+
+    if (effectiveBrandId) {
+      query = query.eq('brand_id', effectiveBrandId);
+    } else {
+      query = query.is('brand_id', null);
     }
 
-    const { data, error } = await this.supabase
-      .from('user_roles')
-      .insert(insertData)
-      .select()
-      .single();
+    const { data: softDeleted } = await query.limit(1).maybeSingle();
 
-    if (error) throw new Error(`Error al asignar rol: ${error.message}`);
+    let data: UserRoleRecord;
+
+    if (softDeleted) {
+      // Revive the soft-deleted record
+      const updateFields: Record<string, unknown> = {
+        deleted_at: null,
+        status: 'active',
+        scope: scope,
+        is_primary: shouldBePrimary,
+        granted_by: currentUserProfile.id,
+        granted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      if (roleData.zone_id) {
+        updateFields.zone_id = roleData.zone_id;
+      }
+
+      const { data: revived, error: reviveError } = await this.supabase
+        .from('user_roles')
+        .update(updateFields)
+        .eq('id', softDeleted.id)
+        .select()
+        .single();
+
+      if (reviveError) throw new Error(`Error al asignar rol: ${reviveError.message}`);
+      data = revived;
+    } else {
+      // Insert a new role record
+      const insertData: Record<string, unknown> = {
+        user_profile_id: userProfileId,
+        tenant_id: tenantId,
+        role: roleData.role,
+        brand_id: effectiveBrandId,
+        scope: scope,
+        is_primary: shouldBePrimary,
+        granted_by: currentUserProfile.id,
+        granted_at: new Date().toISOString(),
+        status: 'active'
+      };
+
+      if (roleData.zone_id) {
+        insertData.zone_id = roleData.zone_id;
+      }
+
+      const { data: inserted, error: insertError } = await this.supabase
+        .from('user_roles')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (insertError) throw new Error(`Error al asignar rol: ${insertError.message}`);
+      data = inserted;
+    }
 
     // Si es asesor_de_ventas, actualizar el distributor_id en user_profiles
     if (roleData.role === 'asesor_de_ventas' && roleData.distributor_id) {
