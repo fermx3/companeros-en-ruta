@@ -12,6 +12,7 @@ import {
 import { displayPhone } from '@/lib/utils/phone'
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
+import { KpiGaugeCard, KpiGaugeCardSkeleton } from '@/components/ui/kpi-gauge-card'
 
 interface BrandDashboardMetrics {
   brand_id: string
@@ -202,16 +203,6 @@ export default function BrandDashboard() {
     )
   }
 
-  function formatKpiValue(kpi: KpiResult): string {
-    if (kpi.unit === 'MXN') {
-      return `$${kpi.value.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-    }
-    if (kpi.unit === '%') {
-      return `${kpi.value}%`
-    }
-    return kpi.value.toLocaleString()
-  }
-
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -263,38 +254,25 @@ export default function BrandDashboard() {
             </div>
 
             {kpiLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} className="bg-white p-6 rounded-lg shadow-sm animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                    <div className="h-8 bg-gray-200 rounded w-3/4"></div>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {[1, 2, 3].map(i => (
+                  <KpiGaugeCardSkeleton key={i} isGauge={i <= 2} />
                 ))}
               </div>
             ) : kpis.length > 0 ? (
-              <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(kpis.length, 5)} gap-4`}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {kpis.map(kpi => {
                   const IconComponent = ICON_MAP[kpi.icon] || TrendingUp
-                  const colors = COLOR_MAP[kpi.color] || COLOR_MAP.blue
                   return (
-                    <Card key={kpi.slug} className="hover:shadow-lg transition-shadow duration-200">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">{kpi.label}</p>
-                            <p className="text-2xl font-bold text-gray-900 mt-1">
-                              {formatKpiValue(kpi)}
-                            </p>
-                          </div>
-                          <div className={`h-10 w-10 ${colors.bg} rounded-lg flex items-center justify-center`}>
-                            <IconComponent className={`h-5 w-5 ${colors.text}`} />
-                          </div>
-                        </div>
-                        {kpi.description && (
-                          <p className="text-xs text-gray-400 mt-2">{kpi.description}</p>
-                        )}
-                      </CardContent>
-                    </Card>
+                    <KpiGaugeCard
+                      key={kpi.slug}
+                      label={kpi.label}
+                      value={kpi.value}
+                      unit={kpi.unit}
+                      description={kpi.description}
+                      icon={IconComponent}
+                      color={kpi.color}
+                    />
                   )
                 })}
               </div>
