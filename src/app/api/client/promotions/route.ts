@@ -52,8 +52,6 @@ export async function GET(request: NextRequest) {
 
         const brandIds = memberships?.map(m => m.brand_id) || []
 
-        console.log('🔍 [API] Brand IDs from memberships:', brandIds)
-
         if (brandIds.length === 0) {
             return NextResponse.json({
                 promotions: [],
@@ -65,23 +63,9 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         const brandIdFilter = searchParams.get('brand_id')
 
-        console.log('🔍 [API] Brand ID filter from query:', brandIdFilter)
-
         // 5. Build promotions query
         // Use date-only format for comparison with date columns
         const now = new Date().toISOString().split('T')[0] // '2026-02-12' format
-
-        console.log('🔍 [API] Current date for filtering:', now)
-
-        // First, let's test without date filters to see if we get any results
-        const { data: testPromotions } = await supabase
-            .from('promotions')
-            .select('id, name, status, start_date, end_date, brand_id')
-            .eq('status', 'active')
-            .in('brand_id', brandIds)
-            .is('deleted_at', null)
-
-        console.log('🔍 [API] Test query (no date filters):', testPromotions)
 
         let query = supabase
             .from('promotions')
@@ -113,16 +97,9 @@ export async function GET(request: NextRequest) {
         // Filter by specific brand if requested
         if (brandIdFilter && brandIds.includes(brandIdFilter)) {
             query = query.eq('brand_id', brandIdFilter)
-            console.log('🔍 [API] Filtering by specific brand:', brandIdFilter)
         }
 
         const { data: promotions, error: promotionsError } = await query
-
-        console.log('🔍 [API] Query result:', {
-            promotionsCount: promotions?.length || 0,
-            error: promotionsError,
-            promotions: promotions
-        })
 
         if (promotionsError) {
             console.error('Error fetching promotions:', promotionsError)

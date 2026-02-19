@@ -94,6 +94,23 @@ export const clientNavConfig: RoleNavConfig = {
   ],
 }
 
+export const adminNavConfig: RoleNavConfig = {
+  role: 'admin',
+  title: 'Administración',
+  items: [
+    { id: 'home', label: 'Inicio', icon: Home, href: '/admin' },
+    { id: 'brands', label: 'Marcas', icon: Building2, href: '/admin/brands' },
+    { id: 'users', label: 'Usuarios', icon: Users, href: '/admin/users' },
+    { id: 'orders', label: 'Ordenes', icon: ShoppingCart, href: '/admin/orders' },
+    { id: 'clients', label: 'Clientes', icon: UsersRound, href: '/admin/clients' },
+    { id: 'zones', label: 'Zonas', icon: MapPin, href: '/admin/zones' },
+    { id: 'promotions', label: 'Promociones', icon: Tag, href: '/admin/promotions' },
+    { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/admin/surveys' },
+    { id: 'kpi-definitions', label: 'Definiciones KPI', icon: BarChart3, href: '/admin/kpi-definitions' },
+    { id: 'settings', label: 'Configuración', icon: Settings, href: '/admin/settings' },
+  ],
+}
+
 export const supervisorNavConfig: RoleNavConfig = {
   role: 'supervisor',
   title: 'Supervisor',

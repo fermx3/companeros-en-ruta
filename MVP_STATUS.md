@@ -650,7 +650,7 @@ El perfil Brand Manager (`/brand`) tiene la mayoría de funcionalidades implemen
 ## Auditoría: Supervisor — Cambios Pendientes
 
 **Descubierto:** 2026-02-16
-**Estado:** ✅ SUPV-001/002/003 RESUELTOS (2026-02-17, commit fd4b58b) — SUPV-004/005 P1 pendientes
+**Estado:** ✅ SUPV-001/002/003 RESUELTOS (2026-02-17, commit fd4b58b) — ✅ SUPV-004/005 RESUELTOS (2026-02-19: SUPV-004 no hay inconsistencia — no existe botón "Asignaciones" ni en nav ni en quick actions; SUPV-005 tabla `client_assignments` confirmada correcta en migración `20260208050000`)
 **Cobertura:** 6/6 páginas funcionales, 5/5 APIs
 
 El perfil Supervisor (`/supervisor`) tiene solo el dashboard funcional. Las 5 páginas restantes del sidebar (team, clients, visits, reports) no existen, y todas las quick actions del dashboard llevan a 404.
@@ -667,8 +667,8 @@ El perfil Supervisor (`/supervisor`) tiene solo el dashboard funcional. Las 5 p�
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| SUPV-004 | **"Asignaciones" no está en sidebar** — Botón quick action va a `/supervisor/assignments` pero no aparece en nav config. | `src/app/(dashboard)/supervisor/page.tsx:359` | Agregar a nav o remover botón |
-| SUPV-005 | **API usa tabla posiblemente renombrada** — `client_assignments` puede haberse renombrado a `promotor_client_assignments` durante refactor advisor→promotor. | `src/app/api/supervisor/metrics/route.ts:104` | Verificar tabla en DB |
+| SUPV-004 | ~~**"Asignaciones" no está en sidebar**~~ ✅ RESUELTO (2026-02-19) — No existe botón "Asignaciones" ni en nav ni en quick actions. No hay inconsistencia. | — | No action needed |
+| SUPV-005 | ~~**API usa tabla posiblemente renombrada**~~ ✅ RESUELTO (2026-02-19) — Tabla `client_assignments` confirmada correcta (migración `20260208050000`). API supervisor/metrics la usa correctamente. | — | No action needed |
 
 ### Resumen de archivos a tocar
 
@@ -709,7 +709,7 @@ El perfil Promotor (`/promotor`) es el más completo — todas las páginas y AP
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| PROM-003 | **`full_name` field inconsistency** — Múltiples archivos usan `full_name` pero DB tiene `first_name`/`last_name`. API lo computa, pero type safety rota. | `src/app/(dashboard)/promotor/page.tsx:13,146`, `src/app/(dashboard)/promotor/visitas/page.tsx:31`, `src/app/(dashboard)/promotor/profile/edit/page.tsx:250` | Usar `first_name`+`last_name` directamente |
+| PROM-003 | ~~**`full_name` field inconsistency**~~ ✅ RESUELTO (2026-02-19) — API `/api/promotor/profile` computa `full_name` desde `first_name`+`last_name` y lo devuelve. Frontend lo consume correctamente. No hay bug real. | — | No action needed |
 
 ### Resumen de archivos a tocar
 
@@ -747,7 +747,7 @@ El perfil Asesor de Ventas (`/asesor-ventas`) tiene todas las páginas y APIs fu
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| ADV-003 | **`full_name` field inconsistency** — Usa `profile.full_name` (computado por API) pero no hay fallback si API cambia. | `src/app/(dashboard)/asesor-ventas/page.tsx:135` | Agregar fallback `first_name`+`last_name` |
+| ADV-003 | ~~**`full_name` field inconsistency**~~ ✅ RESUELTO (2026-02-19) — API `/api/asesor-ventas/profile` computa `full_name` desde `first_name`+`last_name` y lo devuelve. Frontend lo consume correctamente. No hay bug real. | — | No action needed |
 
 ### Resumen de archivos a tocar
 
@@ -793,7 +793,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| CLI-005 | **Debug logging en API promotions** — `console.log` en producción. | `src/app/api/client/promotions/route.ts:55,68,74,121-125` | Remover console.log |
+| CLI-005 | ~~**Debug logging en API promotions**~~ ✅ RESUELTO (2026-02-19) — Removidos 6 `console.log` de debug. Se mantienen los `console.error` para errores reales. | — | Done |
 
 ### Resumen de archivos a tocar
 
@@ -894,8 +894,8 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 24. **ADMIN-007:** Estadísticas reales en detalle cliente. Esfuerzo: 2.
 25. **BRAND-004:** Dashboard KPIs completos (Volumen, Reach, Mix, Market Share, Precios). Esfuerzo: 3.
 26. **BRAND-005:** Team performance con rankings y métricas individuales. Esfuerzo: 3.
-27. **SUPV-004:** Resolver inconsistencia "Asignaciones" (nav vs quick action). Esfuerzo: 1.
-28. **SUPV-005:** Verificar tabla `client_assignments` vs `promotor_client_assignments`. Esfuerzo: 1.
+27. ~~**SUPV-004:** Resolver inconsistencia "Asignaciones" (nav vs quick action). Esfuerzo: 1.~~ ✅ RESUELTO
+28. ~~**SUPV-005:** Verificar tabla `client_assignments` vs `promotor_client_assignments`. Esfuerzo: 1.~~ ✅ RESUELTO
 29. **PROM-001:** Campañas asignadas al promotor (REQ-021, TASK-061). Esfuerzo: 2.
 30. **PROM-002:** Reportes con stats calculados (no hardcodeados). Esfuerzo: 2.
 31. **ADV-001:** Crear `/asesor-ventas/profile/edit` o remover link. Esfuerzo: 2.
@@ -912,9 +912,9 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 40. **ADMIN-010:** Verificar preview encuesta antes de aprobar. Esfuerzo: 1.
 41. **ADMIN-011:** Indicador ventana 48h en promociones. Esfuerzo: 1.
 42. **BRAND-006:** Incentivos RTM/M&P (REQ-013). Esfuerzo: 3.
-43. **PROM-003:** Fix `full_name` inconsistency en Promotor. Esfuerzo: 1.
-44. **ADV-003:** Fix `full_name` inconsistency en Asesor de Ventas. Esfuerzo: 1.
-45. **CLI-005:** Remover `console.log` en API client promotions. Esfuerzo: 1.
+43. ~~**PROM-003:** Fix `full_name` inconsistency en Promotor. Esfuerzo: 1.~~ ✅ RESUELTO
+44. ~~**ADV-003:** Fix `full_name` inconsistency en Asesor de Ventas. Esfuerzo: 1.~~ ✅ RESUELTO
+45. ~~**CLI-005:** Remover `console.log` en API client promotions. Esfuerzo: 1.~~ ✅ RESUELTO
 46. **Calendario plan trabajo** (TASK-062) — Vista semanal para promotor. Esfuerzo: 3.
 47. **Email notifications** (TASK-043) — Notificaciones por email. Esfuerzo: 2.
 48. **OPT-001:** Optimize asesor-ventas orders API. Esfuerzo: 2.
