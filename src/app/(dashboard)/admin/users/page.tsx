@@ -13,6 +13,7 @@ import type { UserProfile, UserRoleRecord } from '@/lib/types/admin';
 interface UserWithRoles extends UserProfile {
   user_roles?: UserRoleRecord[];
   roles?: UserRoleRecord[];
+  is_client?: boolean;
 }
 
 /**
@@ -363,6 +364,7 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
             Ver Perfil
           </Button>
         </Link>
+        {!user.is_client && (
         <Link href={`/admin/users/${user.id}/roles`} className="flex-1">
           <Button size="sm" variant="outline" className="w-full">
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -371,6 +373,7 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
             Roles
           </Button>
         </Link>
+        )}
         {user.status === 'active' ? (
           <Button
             size="sm"

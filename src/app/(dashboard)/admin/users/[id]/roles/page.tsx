@@ -46,6 +46,7 @@ export default function UserRolesPage() {
 
   // Estados principales
   const [user, setUser] = useState<UserWithRoles | null>(null)
+  const [isClient, setIsClient] = useState(false)
   const [availableBrands, setAvailableBrands] = useState<Brand[]>([])
   const [availableDistributors, setAvailableDistributors] = useState<Distributor[]>([])
 
@@ -79,6 +80,10 @@ export default function UserRolesPage() {
       // Cargar usuario con roles
       const userData = await adminService.getUserById(userId)
       setUser(userData)
+
+      // Check if this user is a client
+      const clientCheck = await adminService.isClientUser(userId)
+      setIsClient(clientCheck)
 
       // Cargar brands disponibles
       const brandsResponse = await adminService.getBrands(1, 100)
@@ -330,7 +335,7 @@ export default function UserRolesPage() {
                 </Button>
               </Link>
 
-              <Button
+              {!isClient && <Button
                 onClick={() => setShowAddRole(true)}
                 className="bg-blue-600 hover:bg-blue-700"
                 disabled={saving}
@@ -339,7 +344,7 @@ export default function UserRolesPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
                 Agregar Rol
-              </Button>
+              </Button>}
             </div>
           </div>
         </div>
@@ -353,6 +358,13 @@ export default function UserRolesPage() {
         {error && (
           <Alert variant="error" className="mb-6">
             {error}
+          </Alert>
+        )}
+
+        {/* Client User Warning */}
+        {isClient && (
+          <Alert variant="warning" className="mb-6">
+            Este usuario es un cliente y no puede tener roles de staff asignados.
           </Alert>
         )}
 
@@ -535,6 +547,7 @@ export default function UserRolesPage() {
                       status={role.status === 'active' ? 'active' : 'inactive'}
                     />
 
+                    {!isClient && (
                     <div className="flex space-x-2">
                       <Button
                         onClick={() => handleToggleRole(role.id, role.status === 'active')}
@@ -557,6 +570,7 @@ export default function UserRolesPage() {
                         </svg>
                       </Button>
                     </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -566,12 +580,14 @@ export default function UserRolesPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
                 </svg>
                 <p className="text-gray-500">No se han asignado roles a este usuario</p>
+                {!isClient && (
                 <Button
                   onClick={() => setShowAddRole(true)}
                   className="bg-blue-600 hover:bg-blue-700 mt-4"
                 >
                   Agregar Primer Rol
                 </Button>
+                )}
               </div>
             )}
           </div>

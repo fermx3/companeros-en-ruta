@@ -31,6 +31,7 @@ export default function UserDetailPage() {
   const userId = params?.id as string;
 
   const [user, setUser] = useState<UserWithDetails | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -59,6 +60,10 @@ export default function UserDetailPage() {
     try {
       const userData = await adminService.getUserById(userId);
       setUser(userData);
+
+      // Check if this user is a client
+      const clientCheck = await adminService.isClientUser(userId);
+      setIsClient(clientCheck);
 
       setFormData({
         first_name: userData.first_name || '',
@@ -432,6 +437,7 @@ export default function UserDetailPage() {
           <Card className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Roles Asignados</h2>
+              {!isClient && (
               <Link href={`/admin/users/${userId}/roles`}>
                 <Button variant="outline" size="sm">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -440,6 +446,7 @@ export default function UserDetailPage() {
                   Gestionar Roles
                 </Button>
               </Link>
+              )}
             </div>
 
             <div className="space-y-3">

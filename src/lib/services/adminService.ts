@@ -547,7 +547,7 @@ export class AdminService {
   /**
    * User Management
    */
-  async getUsers(page = 1, limit = 20): Promise<PaginatedResponse<UserProfile & { user_roles?: UserRoleRecord[] }>> {
+  async getUsers(page = 1, limit = 20): Promise<PaginatedResponse<UserProfile & { user_roles?: UserRoleRecord[]; is_client?: boolean }>> {
     const tenantId = await this.getCurrentTenantId();
     const from = (page - 1) * limit;
     const to = from + limit - 1;
@@ -563,6 +563,20 @@ export class AdminService {
 
     if (profileError) throw new Error(`Error al obtener usuarios: ${profileError.message}`);
 
+    // Collect all user_ids to batch-check which are clients
+    const userIds = (profiles || []).map(p => p.user_id).filter(Boolean);
+    let clientUserIdSet = new Set<string>();
+
+    if (userIds.length > 0) {
+      const { data: clientRecords } = await this.supabase
+        .from('clients')
+        .select('user_id')
+        .in('user_id', userIds)
+        .is('deleted_at', null);
+
+      clientUserIdSet = new Set((clientRecords || []).map(c => c.user_id).filter(Boolean));
+    }
+
     // Para cada perfil, obtener sus roles
     const usersWithRoles = await Promise.all(
       (profiles || []).map(async (profile) => {
@@ -575,7 +589,8 @@ export class AdminService {
 
         return {
           ...profile,
-          user_roles: roles || []
+          user_roles: roles || [],
+          is_client: clientUserIdSet.has(profile.user_id)
         };
       })
     );
@@ -828,6 +843,29 @@ export class AdminService {
   }
 
   /**
+   * Check if a user_profile belongs to a client (has a record in clients table)
+   */
+  async isClientUser(userProfileId: string): Promise<boolean> {
+    const { data: profile } = await this.supabase
+      .from('user_profiles')
+      .select('user_id')
+      .eq('id', userProfileId)
+      .single();
+
+    if (!profile) return false;
+
+    const { data: clientRecord } = await this.supabase
+      .from('clients')
+      .select('id')
+      .eq('user_id', profile.user_id)
+      .is('deleted_at', null)
+      .limit(1)
+      .maybeSingle();
+
+    return !!clientRecord;
+  }
+
+  /**
    * User Role Management
    */
   async assignUserRole(
@@ -852,6 +890,19 @@ export class AdminService {
 
     if (userError || !userProfile) {
       throw new Error('Usuario no encontrado o sin permisos');
+    }
+
+    // Check if this user is a client — clients cannot have staff roles
+    const { data: clientRecord } = await this.supabase
+      .from('clients')
+      .select('id')
+      .eq('user_id', userProfile.user_id)
+      .is('deleted_at', null)
+      .limit(1)
+      .maybeSingle();
+
+    if (clientRecord) {
+      throw new Error('No se pueden asignar roles a usuarios que son clientes');
     }
 
     // Obtener el perfil del usuario actual (quien esta asignando el rol)
