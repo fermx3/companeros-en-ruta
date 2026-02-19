@@ -4,6 +4,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
 import type { SurveyQuestionTypeEnum, MultipleChoiceOption } from '@/lib/types/database'
+import { normalizeMultipleChoiceOptions, normalizeScaleOptions } from './normalize-options'
 
 const QUESTION_TYPE_LABELS: Record<SurveyQuestionTypeEnum, string> = {
   text: 'Texto libre',
@@ -79,7 +80,7 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
 
   const addOption = (questionIndex: number) => {
     const question = questions[questionIndex]
-    const currentOptions = (question.options as MultipleChoiceOption[]) || []
+    const currentOptions = normalizeMultipleChoiceOptions(question.options)
     const newOption: MultipleChoiceOption = {
       value: `option_${currentOptions.length + 1}`,
       label: `Opción ${currentOptions.length + 1}`
@@ -91,7 +92,7 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
 
   const removeOption = (questionIndex: number, optionIndex: number) => {
     const question = questions[questionIndex]
-    const currentOptions = (question.options as MultipleChoiceOption[]) || []
+    const currentOptions = normalizeMultipleChoiceOptions(question.options)
     updateQuestion(questionIndex, {
       options: currentOptions.filter((_, i) => i !== optionIndex)
     })
@@ -99,7 +100,7 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
 
   const updateOption = (questionIndex: number, optionIndex: number, label: string) => {
     const question = questions[questionIndex]
-    const currentOptions = [...((question.options as MultipleChoiceOption[]) || [])]
+    const currentOptions = [...normalizeMultipleChoiceOptions(question.options)]
     currentOptions[optionIndex] = {
       ...currentOptions[optionIndex],
       label,
@@ -175,7 +176,7 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
               {/* Multiple choice options */}
               {question.question_type === 'multiple_choice' && (
                 <div className="pl-6 space-y-2">
-                  {((question.options as MultipleChoiceOption[]) || []).map((option, optIdx) => (
+                  {normalizeMultipleChoiceOptions(question.options).map((option, optIdx) => (
                     <div key={optIdx} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full border-2 border-gray-300" />
                       <input
@@ -210,25 +211,27 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
               )}
 
               {/* Scale options */}
-              {question.question_type === 'scale' && (
+              {question.question_type === 'scale' && (() => {
+                const scaleOpts = normalizeScaleOptions(question.options)
+                return (
                 <div className="pl-6 grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-gray-500">Mínimo</label>
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        value={(question.options as { min: number; max: number })?.min ?? 1}
+                        value={scaleOpts.min}
                         onChange={(e) => updateQuestion(index, {
-                          options: { ...(question.options as { min: number; max: number; min_label?: string; max_label?: string }), min: Number(e.target.value) }
+                          options: { ...scaleOpts, min: Number(e.target.value) }
                         })}
                         disabled={readonly}
                         className="w-16 border border-gray-200 rounded px-2 py-1 text-sm disabled:bg-gray-50"
                       />
                       <input
                         type="text"
-                        value={(question.options as { min_label?: string })?.min_label ?? ''}
+                        value={scaleOpts.min_label ?? ''}
                         onChange={(e) => updateQuestion(index, {
-                          options: { ...(question.options as { min: number; max: number; min_label?: string; max_label?: string }), min_label: e.target.value }
+                          options: { ...scaleOpts, min_label: e.target.value }
                         })}
                         disabled={readonly}
                         placeholder="Etiqueta (ej: Muy malo)"
@@ -241,18 +244,18 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        value={(question.options as { min: number; max: number })?.max ?? 5}
+                        value={scaleOpts.max}
                         onChange={(e) => updateQuestion(index, {
-                          options: { ...(question.options as { min: number; max: number; min_label?: string; max_label?: string }), max: Number(e.target.value) }
+                          options: { ...scaleOpts, max: Number(e.target.value) }
                         })}
                         disabled={readonly}
                         className="w-16 border border-gray-200 rounded px-2 py-1 text-sm disabled:bg-gray-50"
                       />
                       <input
                         type="text"
-                        value={(question.options as { max_label?: string })?.max_label ?? ''}
+                        value={scaleOpts.max_label ?? ''}
                         onChange={(e) => updateQuestion(index, {
-                          options: { ...(question.options as { min: number; max: number; min_label?: string; max_label?: string }), max_label: e.target.value }
+                          options: { ...scaleOpts, max_label: e.target.value }
                         })}
                         disabled={readonly}
                         placeholder="Etiqueta (ej: Excelente)"
@@ -261,7 +264,8 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
                     </div>
                   </div>
                 </div>
-              )}
+                )
+              })()}
             </div>
 
             {!readonly && (

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import type { SurveyQuestionTypeEnum, MultipleChoiceOption } from '@/lib/types/database'
+import { normalizeMultipleChoiceOptions, normalizeScaleOptions } from './normalize-options'
 
 interface Question {
   id: string
@@ -88,7 +89,7 @@ export function SurveyForm({ questions, onSubmit, loading = false }: SurveyFormP
         )
 
       case 'multiple_choice': {
-        const options = (question.options as MultipleChoiceOption[]) || []
+        const options = normalizeMultipleChoiceOptions(question.options)
         return (
           <div className="space-y-2">
             {options.map((option) => (
@@ -116,7 +117,7 @@ export function SurveyForm({ questions, onSubmit, loading = false }: SurveyFormP
       }
 
       case 'scale': {
-        const scaleOpts = (question.options as { min: number; max: number; min_label?: string; max_label?: string }) || { min: 1, max: 5 }
+        const scaleOpts = normalizeScaleOptions(question.options)
         const scaleValues = Array.from(
           { length: scaleOpts.max - scaleOpts.min + 1 },
           (_, i) => scaleOpts.min + i
