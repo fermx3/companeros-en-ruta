@@ -75,9 +75,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SideNavigation items={clientNavConfig.items} title={clientNavConfig.title} displayName={ownerName ?? undefined} />
+      <SideNavigation items={clientNavConfig.items} title={clientNavConfig.title} displayName={ownerName ?? undefined} profileHref="/client/profile" />
       <div className="lg:pl-64">
-        <DashboardHeader title={clientNavConfig.title} displayName={ownerName ?? undefined} />
+        <DashboardHeader title={clientNavConfig.title} displayName={ownerName ?? undefined} profileHref="/client/profile" />
         <main className="pb-20 lg:pb-0">{children}</main>
       </div>
       <BottomNavigation items={clientNavConfig.items.slice(0, 5)} />

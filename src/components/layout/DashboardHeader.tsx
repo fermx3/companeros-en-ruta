@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/components/providers/AuthProvider';
 
@@ -11,9 +12,10 @@ interface DashboardHeaderProps {
   title: string;
   displayName?: string;
   headerExtra?: ReactNode;
+  profileHref?: string;
 }
 
-export function DashboardHeader({ title, displayName, headerExtra }: DashboardHeaderProps) {
+export function DashboardHeader({ title, displayName, headerExtra, profileHref }: DashboardHeaderProps) {
   const router = useRouter();
   const { signOut, userProfile } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -73,6 +75,16 @@ export function DashboardHeader({ title, displayName, headerExtra }: DashboardHe
                 <div className="px-3 py-2 border-b border-gray-100">
                   <p className="text-sm font-medium text-gray-900 truncate">{fullName}</p>
                 </div>
+                {profileHref && (
+                  <Link
+                    href={profileHref}
+                    onClick={() => setMenuOpen(false)}
+                    className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Mi Perfil
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center px-3 py-2 text-sm text-gray-500 hover:text-red-600 hover:bg-gray-50 transition-colors"

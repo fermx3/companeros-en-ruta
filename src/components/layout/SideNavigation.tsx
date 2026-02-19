@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { LogOut } from 'lucide-react'
+import { LogOut, User } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import type { NavItem } from '@/lib/navigation-config'
 
@@ -11,9 +11,10 @@ interface SideNavigationProps {
   items: NavItem[]
   title: string
   displayName?: string
+  profileHref?: string
 }
 
-export function SideNavigation({ items, title, displayName }: SideNavigationProps) {
+export function SideNavigation({ items, title, displayName, profileHref }: SideNavigationProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { signOut, userProfile, userRoles } = useAuth()
@@ -96,9 +97,18 @@ export function SideNavigation({ items, title, displayName }: SideNavigationProp
             )}
           </div>
         </div>
+        {profileHref && (
+          <Link
+            href={profileHref}
+            className="mt-3 flex items-center text-xs text-gray-500 hover:text-blue-600 transition-colors"
+          >
+            <User className="w-3 h-3 mr-1" />
+            Ver perfil
+          </Link>
+        )}
         <button
           onClick={handleLogout}
-          className="mt-3 flex items-center text-xs text-gray-500 hover:text-red-600 transition-colors"
+          className={`${profileHref ? 'mt-1' : 'mt-3'} flex items-center text-xs text-gray-500 hover:text-red-600 transition-colors`}
         >
           <LogOut className="w-3 h-3 mr-1" />
           Cerrar sesión

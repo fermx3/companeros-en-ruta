@@ -64,9 +64,9 @@ export default function PromotorLayout({ children }: PromotorLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SideNavigation items={promotorNavConfig.items} title={promotorNavConfig.title} />
+      <SideNavigation items={promotorNavConfig.items} title={promotorNavConfig.title} profileHref="/promotor/profile" />
       <div className="lg:pl-64">
-        <DashboardHeader title={promotorNavConfig.title} />
+        <DashboardHeader title={promotorNavConfig.title} profileHref="/promotor/profile" />
         <main className="pb-20 lg:pb-0">{children}</main>
       </div>
       <BottomNavigation items={promotorNavConfig.items.slice(0, 5)} />
