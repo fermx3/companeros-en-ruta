@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-02-17
+**Last Updated:** 2026-02-19
 **Target:** Implementación requerimientos PerfectApp según especificaciones cliente
 
 ---
@@ -28,14 +28,16 @@
 | **Auth & Role Guards** | ✅ Complete | useRequireRole hook + all 6 layouts | None |
 | **Sistema QR** | ✅ Completo | Generación + Escaneo + Redención + Billing | None |
 | **Promociones UI** | ✅ Formulario + Workflow | Formulario + Banners + Aprobación Admin + Targeting | Targeting/segmentación (TASK-022, depende REQ-044) |
-| **Carga Evidencia** | ✅ Complete | PhotoEvidenceUpload con GPS, integrado en wizard | None |
+| **Carga Evidencia (Promotor)** | ✅ Complete | PhotoEvidenceUpload con GPS, integrado en wizard | None |
+| **Carga Evidencia (Cliente)** | ❌ No implementado | Cliente sube fotos para campañas/planes que requieren evidencia (CLI-006) | CLI-006 pendiente |
 | **Flujo Visita Assessment** | ✅ Wizard 3 secciones | 3 secciones assessment | None |
 | **Notificaciones** | ✅ Completo | In-app Bell + API + integrado en 8 flujos | None |
 | **Encuestas** | ✅ Completo | Schema + Builder + Aprobación + Segmentación + Form + Resultados | None |
 
 **Overall MVP Progress:** ✅ 100% P0 features | ~89% total (incluyendo P1 y polish)
-**Audit Status:** 31 hallazgos documentados (0 P0 pendientes ✅, 15 P1, 8 P2) across 6 perfiles — 72/83 páginas funcionales, 86/86 APIs OK
+**Audit Status:** 32 hallazgos documentados (0 P0 pendientes ✅, 16 P1, 8 P2) across 6 perfiles — 72/83 páginas funcionales, 86/86 APIs OK
 **Cambios 2026-02-17:** SUPV-001/002/003 ✅, ADMIN-002 ✅, BRAND-001/002/003 ✅ (commits fd4b58b, c0fdfb5, 1f56248) · CLI-001 ✅ (client/profile page)
+**Cambios 2026-02-19:** CLI-006 documentado (Carga Evidencia Cliente — spec completa en CLI-P1, tabla `client_evidence`, archivos a crear/editar, criterios de verificación, REQ-047 marcado como parcial)
 
 ---
 
@@ -162,7 +164,7 @@
 | REQ-044 | Registro Extendido - Datos negocio + encuesta | PDF_B p.2 | P1 |
 | ~~REQ-045~~ | ~~Display Tier Mejorado - Monedas + metas visuales~~ | PDF_B p.3 | ✅ DONE |
 | REQ-046 | Descarga QR Personal - Generar QR para promociones | PDF_B p.3 | P0 |
-| REQ-047 | Carga Evidencia - Upload fotos con cámara | PDF_B p.5 | P1 |
+| REQ-047 | Carga Evidencia - Upload fotos con cámara | PDF_B p.5 | P1 | **⚠️ Parcialmente implementado:** TASK-035 cubrió evidencia de **promotor** (PhotoEvidenceUpload en wizard de visita). Falta evidencia de **cliente** → ver CLI-006. |
 | REQ-048 | Sección Cupones/Email - QR con tracking estado | PDF_B p.6 | P1 |
 
 ### SISTEMA CÓDIGOS QR
@@ -287,7 +289,7 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 
 | ID | Tarea | Implementa | Esfuerzo | Dependencias |
 |----|-------|------------|----------|--------------|
-| TASK-035 | ~~Crear componente EvidenceUpload~~ | REQ-047 | 3 | TASK-006, TASK-007 | **DONE** (implementado como PhotoEvidenceUpload) |
+| TASK-035 | ~~Crear componente EvidenceUpload~~ | REQ-047 | 3 | TASK-006, TASK-007 | **DONE** (implementado como PhotoEvidenceUpload — ⚠️ solo cubre evidencia **promotor**, falta evidencia **cliente** → CLI-006) |
 | TASK-036 | Crear componente CouponsSection | REQ-048 | 2 | TASK-014 |
 | TASK-040 | ~~Crear tabla notifications~~ | REQ-080 | 1 | - | **DONE** |
 | TASK-041 | ~~Crear componente NotificationBell~~ | REQ-081 | 2 | TASK-040 | **DONE** |
@@ -785,6 +787,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 | CLI-002 | **SuggestedProductsGrid no implementado** (REQ-043, TASK-033) — Componente falta completamente. Debería mostrar 8 productos sugeridos en home. | — | Crear `components/client/SuggestedProductsGrid.tsx` + integrar en home |
 | CLI-003 | **CouponsSection no implementado** (REQ-048, TASK-036) — Sección cupones/email con tracking QR no existe. | — | Crear `components/client/CouponsSection.tsx` |
 | CLI-004 | **Onboarding cliente no implementado** (REQ-044) — Flujo completo de onboarding con wizard de 2 pasos: datos personales/negocio + encuesta. Requiere migración `add_client_onboarding_fields` (10 columnas nuevas en `clients`) y refactor `owner_name` → `owner_name` + `owner_last_name` (~49 archivos). **Paso 1:** Nombre, Apellido (`owner_last_name` nueva), Género (`gender` nueva), Fecha nacimiento (`date_of_birth` nueva), Email (pre-llenar), Email opt-in (`email_opt_in` nueva), WhatsApp (pre-llenar), WhatsApp opt-in (`whatsapp_opt_in` nueva), Nombre negocio (read-only), Tipo negocio (dropdown catálogo), Estado, CP, Compartir ubicación (geolocation). **Paso 2 — Encuesta:** Colaboradores (`metadata.employees`), Refri carnes (`has_meat_fridge` nueva), Refri refrescos (`has_soda_fridge` nueva), Pago tarjeta (`accepts_card` nueva), Recarga/servicios (`metadata.offers_topups`), Dónde compras (`metadata.supply_sources` array), Plataforma digital (`metadata.digital_restock` array), Cuál página/app (`metadata.digital_restock_detail`). **Flujo:** Login → si `onboarding_completed = false` → bienvenida → "Completar" o "En otro momento" → wizard → `onboarding_completed = true` → dashboard. | — | Migración + refactor owner_name + crear wizard onboarding |
+| CLI-006 | **Carga evidencia cliente no implementada** (REQ-047 parcial) — El cliente sube fotos como evidencia **solo cuando una campaña o plan de lealtad lo requiere**. Brand Manager activa toggle "Requiere evidencia del cliente" en campaña/promoción/tier; Admin aprueba (workflow existente). **Flujo:** Cliente ve "Evidencia" en nav → lista solo campañas/planes con `requires_client_evidence = true` → selecciona categoría (Campaña, Marca, Plan de Lealtad, Visibilidad) → toma foto con cámara + GPS → upload → confirmación. **Nueva tabla `client_evidence`:** `id` (UUID PK), `public_id` (CEV-XXXX auto), `tenant_id` (FK tenants), `client_id` (FK clients), `brand_id` (FK brands, nullable), `campaign_id` (FK campaigns, nullable), `promotion_id` (FK promotions, nullable), `tier_id` (FK tiers, nullable), `evidence_category` (enum: `'campaign'`, `'loyalty'`, `'visibility'`), `file_url` (varchar 500), `file_name` (varchar 255), `file_size_bytes` (int), `mime_type` (varchar 100), `captured_at` (timestamptz), `capture_latitude` (decimal 10,8), `capture_longitude` (decimal 11,8), `caption` (text), `status` (enum: `'pending'`, `'approved'`, `'rejected'`), `reviewed_by` (FK user_profiles, nullable), `reviewed_at` (timestamptz, nullable), `review_notes` (text, nullable), `created_at` (timestamptz), `deleted_at` (timestamptz, soft delete). **Columnas nuevas en tablas existentes:** `campaigns.requires_client_evidence` (boolean DEFAULT false), `promotions.requires_client_evidence` (boolean DEFAULT false), `tiers.requires_client_evidence` (boolean DEFAULT false). **Storage:** Nuevo bucket `client-evidence` o reusar `visit-evidence`. **RLS:** Tenant isolation + cliente solo ve/sube su propia evidencia + Brand Manager ve evidencia de su marca + Promotor ve evidencia de clientes asignados (via `promotor_client_assignments`) + Asesor de Ventas ve evidencia de clientes asignados. **Status workflow:** pending → approved/rejected (reviewed_by + reviewed_at). **Nota:** REQ-047 fue cerrado con TASK-035, pero TASK-035 implementó evidencia de **promotor** durante visitas (PhotoEvidenceUpload + `visit_evidence` table) — un flujo completamente diferente. CLI-006 cubre la parte de evidencia del **cliente**. **Depende parcialmente de CLI-004** (onboarding) si se requiere perfil completo antes de subir evidencia. | — | Migración `create_client_evidence` + bucket storage + RLS + UI cliente + toggle Brand Manager + vistas read-only promotor/asesor |
 
 ### CLI-P2 — Nice to have (polish, no bloquean MVP)
 
@@ -801,6 +804,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 | CLI-003 | Crear | `components/client/CouponsSection.tsx` |
 | CLI-004 | Crear | `client/onboarding/page.tsx` (bienvenida), `client/onboarding/form/page.tsx` (wizard 2 pasos), `api/client/onboarding/route.ts` (PATCH endpoint). Editar ~49 archivos para refactor `owner_name` → `owner_name` + `owner_last_name`. Migración: `add_client_onboarding_fields` (10 columnas nuevas + split owner_name) |
 | CLI-005 | Editar | `api/client/promotions/route.ts` — remover console.log lines 55,68,74,121-125 |
+| CLI-006 | Crear | `client/evidence/page.tsx` (página con dropdowns + cámara), `api/client/evidence/route.ts` (GET listar / POST subir). Migración: `create_client_evidence` (tabla nueva + enums + columnas `requires_client_evidence` en campaigns/promotions/tiers). Editar: `navigation-config.ts` (agregar "Evidencia" al clientNavConfig), forms Brand Manager campaigns/promotions (toggle "Requiere evidencia"), vistas aprobación Admin (indicador evidencia requerida), detalle cliente en promotor (tab "Evidencias del cliente"), detalle cliente en asesor-ventas (tab "Evidencias del cliente"). Reusar: `PhotoEvidenceUpload.tsx` (adaptar o crear variante), `useGeolocation` hook, `image-upload.tsx`. |
 
 ### Criterios de verificación
 
@@ -814,7 +818,15 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 8. Al completar wizard → `onboarding_completed = true` → redirect a dashboard
 9. Refactor `owner_name`/`owner_last_name` no rompe formularios existentes de crear/editar cliente
 10. No hay `console.log` en API de producción
-11. `npm run build` pasa sin errores
+11. "Evidencia" aparece en nav del cliente (CLI-006)
+12. Solo muestra campañas/planes con `requires_client_evidence = true` (CLI-006)
+13. Cliente puede subir foto con GPS metadata (CLI-006)
+14. Foto se guarda en storage + metadata en `client_evidence` (CLI-006)
+15. Brand Manager puede ver evidencias subidas por clientes de su marca (CLI-006)
+16. Promotor asignado al cliente puede ver sus evidencias read-only (CLI-006)
+17. Asesor de Ventas asignado al cliente puede ver sus evidencias read-only (CLI-006)
+18. Status workflow: pending → approved/rejected con reviewed_by + reviewed_at (CLI-006)
+19. `npm run build` pasa sin errores
 
 ---
 
@@ -827,10 +839,10 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 | Supervisor | 6/6 ✅ | 5/5 ✅ | 0 ✅ | 2 | 0 | 2 |
 | Promotor | 8/8 ✅ | 10/10 ✅ | 0 | 2 | 1 | 3 |
 | Asesor de Ventas | 11/11 ✅ | 9/9 ✅ | 0 | 2 | 1 | 3 |
-| Cliente | 8/8 ✅ | 8/8 ✅ | 0 ✅ | 3 | 1 | 4 |
-| **TOTAL** | **72/83** | **86/86** | **0 ✅** | **15** | **8** | **23** |
+| Cliente | 8/8 ✅ | 8/8 ✅ | 0 ✅ | 4 | 1 | 5 |
+| **TOTAL** | **72/83** | **86/86** | **0 ✅** | **16** | **8** | **24** |
 
-> Actualizado 2026-02-17 tras commits fd4b58b (Supervisor), c0fdfb5 (Admin Zones), 1f56248 (Brand client pages + security_invoker migration), CLI-001 (client/profile)
+> Actualizado 2026-02-19 — CLI-006 documentado (Carga Evidencia Cliente). Anterior: 2026-02-17 commits fd4b58b (Supervisor), c0fdfb5 (Admin Zones), 1f56248 (Brand client pages + security_invoker migration), CLI-001 (client/profile)
 
 ### Todos los P0 pendientes (por orden de impacto)
 
@@ -891,21 +903,22 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 33. **CLI-002:** SuggestedProductsGrid (TASK-033). Esfuerzo: 2.
 34. **CLI-003:** CouponsSection (TASK-036). Esfuerzo: 2.
 35. **CLI-004:** Onboarding cliente completo — wizard 2 pasos + migración 10 columnas + refactor owner_name ~49 archivos (REQ-044). Esfuerzo: 5.
-36. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.
+36. **CLI-006:** Carga evidencia cliente — tabla nueva `client_evidence` + bucket storage + RLS + UI cliente (página + nav) + toggle `requires_client_evidence` en Brand Manager (campaigns/promotions/tiers) + vistas read-only promotor/asesor + adaptar PhotoEvidenceUpload (REQ-047 parte cliente). Depende parcialmente de CLI-004. Esfuerzo: 5.
+37. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.
 
 ### Tier 5 — All Profiles Audit (P2 — Polish) + Optimization
-37. **ADMIN-008:** Editar perfil usuario desde admin. Esfuerzo: 2.
-38. **ADMIN-009:** Soft delete clientes desde UI. Esfuerzo: 1.
-39. **ADMIN-010:** Verificar preview encuesta antes de aprobar. Esfuerzo: 1.
-40. **ADMIN-011:** Indicador ventana 48h en promociones. Esfuerzo: 1.
-41. **BRAND-006:** Incentivos RTM/M&P (REQ-013). Esfuerzo: 3.
-42. **PROM-003:** Fix `full_name` inconsistency en Promotor. Esfuerzo: 1.
-43. **ADV-003:** Fix `full_name` inconsistency en Asesor de Ventas. Esfuerzo: 1.
-44. **CLI-005:** Remover `console.log` en API client promotions. Esfuerzo: 1.
-45. **Calendario plan trabajo** (TASK-062) — Vista semanal para promotor. Esfuerzo: 3.
-46. **Email notifications** (TASK-043) — Notificaciones por email. Esfuerzo: 2.
-47. **OPT-001:** Optimize asesor-ventas orders API. Esfuerzo: 2.
-48. **E2E testing** (TASK-072) — Testing integración end-to-end. Esfuerzo: 3.
+38. **ADMIN-008:** Editar perfil usuario desde admin. Esfuerzo: 2.
+39. **ADMIN-009:** Soft delete clientes desde UI. Esfuerzo: 1.
+40. **ADMIN-010:** Verificar preview encuesta antes de aprobar. Esfuerzo: 1.
+41. **ADMIN-011:** Indicador ventana 48h en promociones. Esfuerzo: 1.
+42. **BRAND-006:** Incentivos RTM/M&P (REQ-013). Esfuerzo: 3.
+43. **PROM-003:** Fix `full_name` inconsistency en Promotor. Esfuerzo: 1.
+44. **ADV-003:** Fix `full_name` inconsistency en Asesor de Ventas. Esfuerzo: 1.
+45. **CLI-005:** Remover `console.log` en API client promotions. Esfuerzo: 1.
+46. **Calendario plan trabajo** (TASK-062) — Vista semanal para promotor. Esfuerzo: 3.
+47. **Email notifications** (TASK-043) — Notificaciones por email. Esfuerzo: 2.
+48. **OPT-001:** Optimize asesor-ventas orders API. Esfuerzo: 2.
+49. **E2E testing** (TASK-072) — Testing integración end-to-end. Esfuerzo: 3.
 
 ---
 
@@ -1130,6 +1143,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 - [x] `brand_communication_plan_materials` - Materiales del plan
 - [x] `brand_communication_plan_activities` - Actividades del plan
 - [x] `brand_exhibitions` - Exhibiciones negociadas
+- [ ] `client_evidence` - Evidencia subida por clientes para campañas/planes (CLI-006, pendiente)
 
 ---
 
