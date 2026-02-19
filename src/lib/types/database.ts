@@ -507,3 +507,164 @@ export interface SurveyAnswer {
   answer_boolean?: boolean;
   created_at: string;
 }
+
+// =============================================================================
+// KPI TYPES
+// =============================================================================
+
+/**
+ * kpi_targets table
+ * Brand Manager defines monthly/weekly/quarterly targets per KPI
+ */
+export interface KpiTarget {
+  id: string;
+  tenant_id: string;
+  brand_id: string;
+  kpi_slug: string;
+  period_type: 'monthly' | 'weekly' | 'quarterly';
+  period_start: string;
+  period_end: string;
+  target_value: number;
+  target_unit: string;
+  zone_id?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
+}
+
+/**
+ * Row from v_kpi_dashboard_summary view
+ */
+export interface KpiSummaryRow {
+  brand_id: string;
+  tenant_id: string;
+  period_month: string;
+  kpi_slug: string;
+  actual_value: number;
+  target_value: number | null;
+  unit: string;
+  achievement_pct: number | null;
+}
+
+/**
+ * Volume KPI detail response
+ */
+export interface KpiVolumeDetail {
+  weekly: Array<{
+    week: string;
+    revenue: number;
+    weight_tons: number;
+  }>;
+  monthly_total: number;
+  weight_tons_total: number;
+  by_zone: Array<{
+    zone_id: string | null;
+    zone_name: string | null;
+    revenue: number;
+    weight_tons: number;
+  }>;
+  target: number | null;
+  achievement_pct: number | null;
+}
+
+/**
+ * Reach KPI detail response
+ */
+export interface KpiReachDetail {
+  by_zone: Array<{
+    zone_id: string | null;
+    zone_name: string | null;
+    clients_visited: number;
+    total_active_members: number;
+    reach_pct: number;
+  }>;
+  monthly_total_visited: number;
+  total_active_members: number;
+  reach_pct: number;
+  target: number | null;
+  achievement_pct: number | null;
+}
+
+/**
+ * Mix KPI detail response
+ */
+export interface KpiMixDetail {
+  channels: Array<{
+    market_id: string;
+    market_name: string;
+    client_count: number;
+  }>;
+  distinct_count: number;
+  target: number | null;
+  achievement_pct: number | null;
+}
+
+/**
+ * Assortment KPI detail response
+ */
+export interface KpiAssortmentDetail {
+  avg_pct: number;
+  by_zone: Array<{
+    zone_id: string | null;
+    zone_name: string | null;
+    avg_pct: number;
+    visit_count: number;
+  }>;
+  target: number | null;
+  achievement_pct: number | null;
+}
+
+/**
+ * Market Share KPI detail response
+ */
+export interface KpiMarketShareDetail {
+  share_pct: number;
+  brand_present: number;
+  competitor_present: number;
+  share_by_facings_pct: number;
+  by_zone: Array<{
+    zone_id: string | null;
+    zone_name: string | null;
+    share_pct: number;
+    brand_present: number;
+    competitor_present: number;
+  }>;
+  target: number | null;
+  achievement_pct: number | null;
+}
+
+/**
+ * Share of Shelf KPI detail response
+ */
+export interface KpiShareOfShelfDetail {
+  combined_pct: number;
+  pop_pct: number;
+  exhib_pct: number;
+  by_zone: Array<{
+    zone_id: string | null;
+    zone_name: string | null;
+    combined_pct: number;
+    pop_pct: number;
+    exhib_pct: number;
+  }>;
+  target: number | null;
+  achievement_pct: number | null;
+}
+
+/**
+ * Summary KPI response (for ring displays)
+ */
+export interface KpiDashboardSummary {
+  kpis: Array<{
+    slug: string;
+    label: string;
+    actual: number;
+    target: number | null;
+    achievement_pct: number | null;
+    unit: string;
+    icon: string;
+    color: string;
+  }>;
+  period: string;
+}

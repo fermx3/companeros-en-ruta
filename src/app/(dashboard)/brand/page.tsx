@@ -1,18 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
 import {
   Users, TrendingUp, MapPin, Star, Settings, Building2, UserCheck, Layers,
   Gift, ChevronRight, ClipboardList, Target, Package, PieChart, LayoutGrid,
-  SlidersHorizontal, X, Clock, Check, ChevronUp, ChevronDown, Plus,
+  SlidersHorizontal, X, Clock, ChevronUp, ChevronDown, Plus,
+  ChevronLeft,
 } from "lucide-react"
 import { displayPhone } from '@/lib/utils/phone'
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import { KpiGaugeCard, KpiGaugeCardSkeleton } from '@/components/ui/kpi-gauge-card'
+import { KpiSummaryRings } from '@/components/kpi/KpiSummaryRings'
+import { KpiDetailSection } from '@/components/kpi/KpiDetailSection'
 
 interface BrandDashboardMetrics {
   brand_id: string
@@ -67,6 +70,17 @@ interface KpiResult {
   period: string
 }
 
+interface KpiSummaryItem {
+  slug: string
+  label: string
+  actual: number
+  target: number | null
+  achievement_pct: number | null
+  unit: string
+  icon: string
+  color: string
+}
+
 interface KpiDefinition {
   id: string
   slug: string
@@ -76,6 +90,23 @@ interface KpiDefinition {
   color: string | null
   computation_type: string
   display_order: number
+}
+
+function getCurrentMonth(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
+function formatMonthLabel(month: string): string {
+  const [y, m] = month.split('-')
+  const d = new Date(Number(y), Number(m) - 1, 1)
+  return d.toLocaleString('es-MX', { month: 'long', year: 'numeric' })
+}
+
+function shiftMonth(month: string, delta: number): string {
+  const [y, m] = month.split('-')
+  const d = new Date(Number(y), Number(m) - 1 + delta, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -96,12 +127,30 @@ export default function BrandDashboard() {
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [metrics, setMetrics] = useState<BrandDashboardMetrics | null>(null)
   const [kpis, setKpis] = useState<KpiResult[]>([])
+  const [kpiSummary, setKpiSummary] = useState<KpiSummaryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [kpiLoading, setKpiLoading] = useState(true)
+  const [summaryLoading, setSummaryLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showKpiSelector, setShowKpiSelector] = useState(false)
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth)
 
   const [refreshKey, setRefreshKey] = useState(0)
+
+  const loadSummary = useCallback(async (month: string, signal?: AbortSignal) => {
+    try {
+      setSummaryLoading(true)
+      const res = await brandFetch(`/api/brand/kpis/summary?month=${month}`, signal ? { signal } : undefined)
+      if (res.ok) {
+        const data = await res.json()
+        setKpiSummary(data.kpis || [])
+      }
+    } catch {
+      // Summary is enhancement
+    } finally {
+      setSummaryLoading(false)
+    }
+  }, [brandFetch])
 
   useEffect(() => {
     if (!currentBrandId) return
@@ -140,11 +189,16 @@ export default function BrandDashboard() {
       } finally {
         if (!controller.signal.aborted) setKpiLoading(false)
       }
+
+      // Load enriched summary
+      if (!controller.signal.aborted) {
+        await loadSummary(selectedMonth, controller.signal)
+      }
     }
 
     loadData()
     return () => controller.abort()
-  }, [brandFetch, currentBrandId, refreshKey])
+  }, [brandFetch, currentBrandId, refreshKey, loadSummary, selectedMonth])
 
   const loadKpis = async () => {
     try {
@@ -159,6 +213,7 @@ export default function BrandDashboard() {
     } finally {
       setKpiLoading(false)
     }
+    loadSummary(selectedMonth)
   }
 
   if (loading) {
@@ -239,20 +294,54 @@ export default function BrandDashboard() {
             </div>
           )}
 
-          {/* Dynamic KPI Cards */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
+          {/* KPI Dashboard Section */}
+          <div className="space-y-6">
+            {/* KPI Header with period selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">KPIs</h2>
-                {kpis.length > 0 && kpis[0].period && (
-                  <p className="text-xs text-gray-500">{kpis[0].period}</p>
-                )}
+                <p className="text-xs text-gray-500 capitalize">{formatMonthLabel(selectedMonth)}</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setShowKpiSelector(true)}>
-                <SlidersHorizontal className="h-4 w-4 mr-2" /> Configurar KPIs
-              </Button>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-white border rounded-lg px-1 py-1">
+                  <button
+                    onClick={() => setSelectedMonth(m => shiftMonth(m, -1))}
+                    className="p-1 rounded hover:bg-gray-100"
+                    aria-label="Mes anterior"
+                  >
+                    <ChevronLeft className="h-4 w-4 text-gray-600" />
+                  </button>
+                  <span className="text-xs font-medium text-gray-700 px-2 capitalize">
+                    {formatMonthLabel(selectedMonth)}
+                  </span>
+                  <button
+                    onClick={() => setSelectedMonth(m => shiftMonth(m, 1))}
+                    disabled={selectedMonth >= getCurrentMonth()}
+                    className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"
+                    aria-label="Mes siguiente"
+                  >
+                    <ChevronRight className="h-4 w-4 text-gray-600" />
+                  </button>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setShowKpiSelector(true)}>
+                  <SlidersHorizontal className="h-4 w-4 mr-2" /> Configurar
+                </Button>
+                <Link href="/brand/kpi-targets">
+                  <Button variant="outline" size="sm">
+                    <Target className="h-4 w-4 mr-2" /> Metas
+                  </Button>
+                </Link>
+              </div>
             </div>
 
+            {/* Summary Rings */}
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardContent className="p-6">
+                <KpiSummaryRings kpis={kpiSummary} loading={summaryLoading} />
+              </CardContent>
+            </Card>
+
+            {/* KPI Gauge Cards (original) */}
             {kpiLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {[1, 2, 3].map(i => (
@@ -276,61 +365,21 @@ export default function BrandDashboard() {
                   )
                 })}
               </div>
-            ) : (
-              /* Fallback: show static metrics if no KPIs configured */
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="hover:shadow-lg transition-shadow duration-200">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Clientes Totales</p>
-                        <p className="text-2xl font-bold text-gray-900">{metrics?.total_clients || 0}</p>
-                      </div>
-                      <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <Users className="h-4 w-4 text-blue-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="hover:shadow-lg transition-shadow duration-200">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Visitas Activas</p>
-                        <p className="text-2xl font-bold text-gray-900">{metrics?.active_visits || 0}</p>
-                      </div>
-                      <div className="h-8 w-8 bg-green-50 rounded-lg flex items-center justify-center">
-                        <MapPin className="h-4 w-4 text-green-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="hover:shadow-lg transition-shadow duration-200">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Ingresos Mensuales</p>
-                        <p className="text-2xl font-bold text-gray-900">${(metrics?.monthly_revenue || 0).toLocaleString()}</p>
-                      </div>
-                      <div className="h-8 w-8 bg-green-50 rounded-lg flex items-center justify-center">
-                        <TrendingUp className="h-4 w-4 text-green-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="hover:shadow-lg transition-shadow duration-200">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Rating Promedio</p>
-                        <p className="text-2xl font-bold text-gray-900">{(metrics?.avg_visit_rating || 0).toFixed(1)}</p>
-                      </div>
-                      <div className="h-8 w-8 bg-yellow-50 rounded-lg flex items-center justify-center">
-                        <Star className="h-4 w-4 text-yellow-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            ) : null}
+
+            {/* KPI Detail Sections */}
+            {!kpiLoading && kpis.length > 0 && (
+              <div className="space-y-6">
+                {kpis.map(kpi => (
+                  <KpiDetailSection
+                    key={kpi.slug}
+                    slug={kpi.slug}
+                    label={kpi.label}
+                    color={kpi.color}
+                    brandFetch={brandFetch}
+                    month={selectedMonth}
+                  />
+                ))}
               </div>
             )}
           </div>
