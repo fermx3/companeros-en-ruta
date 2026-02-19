@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 interface BrandOrder {
@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
     if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
-    const { brandId: targetBrandId } = result
+    const { brandId: targetBrandId, tenantId } = result
+    const serviceSupabase = createServiceClient()
 
     // 2. Obtener parametros de paginacion y filtros
     const page = parseInt(searchParams.get('page') || '1')
@@ -55,8 +56,22 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('date_from') || ''
     const dateTo = searchParams.get('date_to') || ''
 
-    // 3. Consultar ordenes de esta marca
-    let ordersQuery = supabase
+    // 3a. Buscar órdenes con brand_id NULL que tengan productos de esta marca
+    const { data: itemOrderIds } = await serviceSupabase
+      .from('order_items')
+      .select('order_id, product:products!fk_order_items_product!inner(brand_id)')
+      .eq('products.brand_id', targetBrandId)
+      .is('deleted_at', null)
+
+    const extraOrderIds = [
+      ...new Set(
+        (itemOrderIds || [])
+          .map((item: Record<string, unknown>) => item.order_id as string)
+      )
+    ]
+
+    // 3b. Consultar ordenes de esta marca (directas + vía productos)
+    let ordersQuery = serviceSupabase
       .from('orders')
       .select(`
         id,
@@ -84,8 +99,15 @@ export async function GET(request: NextRequest) {
         ),
         order_items(count)
       `)
-      .eq('brand_id', targetBrandId)
+      .eq('tenant_id', tenantId)
       .is('deleted_at', null)
+
+    // Filtrar: brand_id directo O id en la lista de órdenes con productos de esta marca
+    if (extraOrderIds.length > 0) {
+      ordersQuery = ordersQuery.or(`brand_id.eq.${targetBrandId},id.in.(${extraOrderIds.join(',')})`)
+    } else {
+      ordersQuery = ordersQuery.eq('brand_id', targetBrandId)
+    }
 
     // Aplicar filtros
     if (status && status !== 'all') {

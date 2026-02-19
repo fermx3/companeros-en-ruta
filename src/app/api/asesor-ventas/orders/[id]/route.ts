@@ -208,7 +208,7 @@ export async function GET(
         ),
         product_variant:product_variants(
           id,
-          name
+          name:variant_name
         )
       `)
       .eq('order_id', orderData.id)

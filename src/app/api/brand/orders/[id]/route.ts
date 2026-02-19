@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 interface OrderDetailItem {
@@ -85,8 +85,9 @@ export async function GET(
     const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
     if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId: targetBrandId } = result
+    const serviceSupabase = createServiceClient()
 
-    // 2. Obtener la orden — must belong to this brand
+    // 2. Obtener la orden sin filtro de brand (verificaremos acceso después)
     let orderQuery = supabase
       .from('orders')
       .select(`
@@ -113,6 +114,7 @@ export async function GET(
         internal_notes,
         created_at,
         updated_at,
+        brand_id,
         client:clients(
           id,
           public_id,
@@ -133,7 +135,6 @@ export async function GET(
           last_name
         )
       `)
-      .eq('brand_id', targetBrandId)
       .is('deleted_at', null)
 
     if (orderId.startsWith('ORD-')) {
@@ -151,8 +152,27 @@ export async function GET(
       )
     }
 
+    // 2b. Verificar acceso: brand_id directo O productos de esta marca
+    if (orderData.brand_id !== targetBrandId) {
+      // Verificar si la orden tiene items con productos de esta marca
+      const { data: brandItems } = await serviceSupabase
+        .from('order_items')
+        .select('id, product:products!fk_order_items_product!inner(brand_id)')
+        .eq('order_id', orderData.id)
+        .eq('products.brand_id', targetBrandId)
+        .is('deleted_at', null)
+        .limit(1)
+
+      if (!brandItems || brandItems.length === 0) {
+        return NextResponse.json(
+          { error: 'Orden no encontrada' },
+          { status: 404 }
+        )
+      }
+    }
+
     // 3. Obtener items de la orden
-    const { data: itemsData, error: itemsError } = await supabase
+    const { data: itemsData, error: itemsError } = await serviceSupabase
       .from('order_items')
       .select(`
         id,
@@ -167,14 +187,14 @@ export async function GET(
         line_total,
         unit_type,
         item_status,
-        product:products(
+        product:products!fk_order_items_product(
           id,
           name,
           sku
         ),
-        product_variant:product_variants(
+        product_variant:product_variants!fk_order_items_product_variant(
           id,
-          name
+          name:variant_name
         )
       `)
       .eq('order_id', orderData.id)

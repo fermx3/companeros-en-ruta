@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 interface AdminOrder {
   id: string
@@ -100,8 +100,9 @@ export async function GET(request: NextRequest) {
     const sourceChannel = searchParams.get('source_channel') || ''
     const search = searchParams.get('search') || ''
 
-    // 5. Consultar todas las ordenes del tenant
-    let ordersQuery = supabase
+    // 5. Consultar todas las ordenes del tenant (service client bypasa RLS)
+    const serviceSupabase = createServiceClient()
+    let ordersQuery = serviceSupabase
       .from('orders')
       .select(`
         id,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 interface OrderDetailItem {
   id: string
@@ -125,8 +125,9 @@ export async function GET(
       )
     }
 
-    // 4. Obtener la orden por ID o public_id
-    let orderQuery = supabase
+    // 4. Obtener la orden por ID o public_id (service client bypasa RLS)
+    const serviceSupabase = createServiceClient()
+    let orderQuery = serviceSupabase
       .from('orders')
       .select(`
         id,
@@ -197,8 +198,8 @@ export async function GET(
       )
     }
 
-    // 5. Obtener items de la orden
-    const { data: itemsData, error: itemsError } = await supabase
+    // 5. Obtener items de la orden (service client bypasa RLS)
+    const { data: itemsData, error: itemsError } = await serviceSupabase
       .from('order_items')
       .select(`
         id,
@@ -213,14 +214,14 @@ export async function GET(
         line_total,
         unit_type,
         item_status,
-        product:products(
+        product:products!fk_order_items_product(
           id,
           name,
           sku
         ),
-        product_variant:product_variants(
+        product_variant:product_variants!fk_order_items_product_variant(
           id,
-          name
+          name:variant_name
         )
       `)
       .eq('order_id', orderData.id)
@@ -365,8 +366,9 @@ export async function PUT(
       )
     }
 
-    // 4. Obtener la orden actual
-    let orderQuery = supabase
+    // 4. Obtener la orden actual (service client bypasa RLS)
+    const serviceSupabase = createServiceClient()
+    let orderQuery = serviceSupabase
       .from('orders')
       .select('id, public_id, order_status')
       .eq('tenant_id', userProfile.tenant_id)
@@ -436,8 +438,8 @@ export async function PUT(
     if (priority !== undefined) updateData.priority = priority
     if (internal_notes !== undefined) updateData.internal_notes = internal_notes
 
-    // 8. Actualizar la orden
-    const { data: updatedOrder, error: updateError } = await supabase
+    // 8. Actualizar la orden (service client bypasa RLS)
+    const { data: updatedOrder, error: updateError } = await serviceSupabase
       .from('orders')
       .update(updateData)
       .eq('id', existingOrder.id)
