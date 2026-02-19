@@ -12,6 +12,12 @@ import { displayPhone } from '@/lib/utils/phone';
 import { adminService } from '@/lib/services/adminService';
 import type { UserProfile, UserRoleRecord, Brand } from '@/lib/types/admin';
 
+interface SupervisorOption {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
 interface UserWithDetails extends UserProfile {
   user_roles?: UserRoleRecord[];
   brands?: Brand[];
@@ -38,8 +44,11 @@ export default function UserDetailPage() {
     employee_code: '',
     position: '',
     department: '',
-    timezone: ''
+    timezone: '',
+    manager_id: '' as string | null,
   });
+  const [availableSupervisors, setAvailableSupervisors] = useState<SupervisorOption[]>([]);
+  const [managerName, setManagerName] = useState<string | null>(null);
 
   const loadUser = useCallback(async () => {
     if (!userId) return;
@@ -59,8 +68,21 @@ export default function UserDetailPage() {
         employee_code: userData.employee_code || '',
         position: userData.position || '',
         department: userData.department || '',
-        timezone: userData.timezone || ''
+        timezone: userData.timezone || '',
+        manager_id: userData.manager_id || '',
       });
+
+      // Load manager name for read mode
+      if (userData.manager_id) {
+        try {
+          const managerData = await adminService.getUserById(userData.manager_id);
+          setManagerName(`${managerData.first_name} ${managerData.last_name}`.trim());
+        } catch {
+          setManagerName(null);
+        }
+      } else {
+        setManagerName(null);
+      }
     } catch (err) {
       console.error('Error loading user:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al cargar usuario';
@@ -81,7 +103,17 @@ export default function UserDetailPage() {
     setError(null);
 
     try {
-      await adminService.updateUser(user.id, formData);
+      // Convert empty strings to null for nullable unique/FK fields
+      const cleanedData = {
+        ...formData,
+        phone: formData.phone || null,
+        employee_code: formData.employee_code || null,
+        position: formData.position || null,
+        department: formData.department || null,
+        timezone: formData.timezone || undefined,
+        manager_id: formData.manager_id || null,
+      };
+      await adminService.updateUser(user.id, cleanedData);
       await loadUser();
       setEditMode(false);
     } catch (err) {
@@ -222,7 +254,22 @@ export default function UserDetailPage() {
                 </div>
               ) : (
                 <Button
-                  onClick={() => setEditMode(true)}
+                  onClick={async () => {
+                    setEditMode(true);
+                    try {
+                      const usersData = await adminService.getUsers(1, 100);
+                      const supervisors = usersData.data
+                        .filter(u =>
+                          u.id !== userId &&
+                          u.status === 'active' &&
+                          u.user_roles?.some(r => r.role === 'supervisor' && r.status === 'active')
+                        )
+                        .map(u => ({ id: u.id, first_name: u.first_name, last_name: u.last_name }));
+                      setAvailableSupervisors(supervisors);
+                    } catch (err) {
+                      console.error('Error loading supervisors:', err);
+                    }
+                  }}
                   variant="outline"
                 >
                   Editar
@@ -325,6 +372,23 @@ export default function UserDetailPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Supervisor Directo
+                      </label>
+                      <select
+                        value={formData.manager_id || ''}
+                        onChange={(e) => setFormData({...formData, manager_id: e.target.value || null})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Sin supervisor asignado</option>
+                        {availableSupervisors.map(sup => (
+                          <option key={sup.id} value={sup.id}>
+                            {sup.first_name} {sup.last_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </>
                 ) : (
                   <>
@@ -349,6 +413,10 @@ export default function UserDetailPage() {
                     <div>
                       <p className="text-sm text-gray-500">Código Empleado</p>
                       <p className="text-gray-900">{user.employee_code || 'No asignado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Supervisor Directo</p>
+                      <p className="text-gray-900">{managerName || 'Sin supervisor asignado'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">ID Público</p>
