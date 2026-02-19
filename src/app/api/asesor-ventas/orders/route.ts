@@ -333,20 +333,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 7. Obtener commercial_structure_id del asesor (desde distributor o default)
+    // 7. Obtener distributor_id y commercial_structure_id del asesor
     const { data: profileWithDistributor } = await supabase
       .from('user_profiles')
       .select('distributor_id')
       .eq('id', userProfile.id)
       .single()
 
+    // Auto-asignar el distribuidor del asesor
+    const distributorId = profileWithDistributor?.distributor_id || null
+
     // Buscar el commercial_structure vinculado al distribuidor
     let commercialStructureId: string | null = null
-    if (profileWithDistributor?.distributor_id) {
+    if (distributorId) {
       const { data: commercialStructure } = await supabase
         .from('commercial_structures')
         .select('id')
-        .eq('distributor_id', profileWithDistributor.distributor_id)
+        .eq('distributor_id', distributorId)
         .is('deleted_at', null)
         .single()
 
@@ -400,6 +403,7 @@ export async function POST(request: NextRequest) {
         delivery_address: delivery_address || null,
         delivery_instructions: delivery_instructions || null,
         commercial_structure_id: commercialStructureId,
+        distributor_id: distributorId,
         subtotal,
         total_amount: totalAmount,
         priority,

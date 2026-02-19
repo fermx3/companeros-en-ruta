@@ -232,6 +232,7 @@ export interface Order {
   delivery_address?: string;
   delivery_instructions?: string;
   commercial_structure_id: string;
+  distributor_id?: string;
   payment_method: 'cash' | 'credit' | 'transfer' | 'card';
   payment_status: 'pending' | 'partial' | 'paid' | 'refunded';
   payment_terms?: string;
