@@ -16,6 +16,8 @@ interface TeamMember {
   phone: string | null;
   role: string;
   status: string;
+  manager_id: string | null;
+  manager_name: string | null;
   last_activity: string | null;
   total_visits: number;
   total_orders: number;
@@ -354,7 +356,38 @@ export default function BrandTeamPage() {
             {/* Grid de Miembros */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {sortedTeam.map((member, index) => (
-                <TeamMemberCard key={member.id} member={member} rank={index + 1} />
+                <TeamMemberCard
+                  key={member.id}
+                  member={member}
+                  rank={index + 1}
+                  supervisors={filteredTeam.filter(m => m.role === 'supervisor' && m.id !== member.id)}
+                  onSupervisorChange={async (memberId, supervisorId) => {
+                    try {
+                      if (supervisorId) {
+                        await brandFetch(`/api/brand/team/${memberId}/supervisor`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ supervisor_id: supervisorId }),
+                        });
+                      } else {
+                        await brandFetch(`/api/brand/team/${memberId}/supervisor`, {
+                          method: 'DELETE',
+                        });
+                      }
+                      // Reload team
+                      setPage(p => p); // trigger re-render
+                      // Force a full reload by toggling a counter
+                      setTeam(prev => prev.map(m =>
+                        m.id === memberId
+                          ? { ...m, manager_id: supervisorId, manager_name: supervisorId ? (filteredTeam.find(s => s.id === supervisorId)?.full_name || null) : null }
+                          : m
+                      ));
+                    } catch (err) {
+                      console.error('Error updating supervisor:', err);
+                      setError('Error al actualizar supervisor');
+                    }
+                  }}
+                />
               ))}
             </div>
 
@@ -391,9 +424,11 @@ export default function BrandTeamPage() {
 interface TeamMemberCardProps {
   member: TeamMember;
   rank: number;
+  supervisors: TeamMember[];
+  onSupervisorChange: (memberId: string, supervisorId: string | null) => void;
 }
 
-function TeamMemberCard({ member, rank }: TeamMemberCardProps) {
+function TeamMemberCard({ member, rank, supervisors, onSupervisorChange }: TeamMemberCardProps) {
   const getRankBadge = (r: number) => {
     if (r === 1) return { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300', label: '#1' };
     if (r === 2) return { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-300', label: '#2' };
@@ -502,6 +537,23 @@ function TeamMemberCard({ member, rank }: TeamMemberCardProps) {
             <div className="text-xs text-green-700">Órdenes Generadas</div>
           </div>
         </div>
+
+        {/* Supervisor assignment (only for promotors) */}
+        {member.role === 'promotor' && (
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-gray-500 mb-1">Supervisor Directo</label>
+            <select
+              value={member.manager_id || ''}
+              onChange={(e) => onSupervisorChange(member.id, e.target.value || null)}
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Sin supervisor</option>
+              {supervisors.map(sup => (
+                <option key={sup.id} value={sup.id}>{sup.full_name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Última actividad */}
         <div className="flex justify-between items-center text-xs text-gray-500 mb-4">

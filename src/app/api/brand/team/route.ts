@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
           email,
           phone,
           avatar_url,
+          manager_id,
           created_at,
           updated_at
         )
@@ -181,6 +182,32 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Resolve manager names
+    const managerIds = [...new Set(
+      (teamRoles || [])
+        .map(tr => {
+          const profileData = tr.user_profiles as unknown
+          const profile = (Array.isArray(profileData) ? profileData[0] : profileData) as { manager_id: string | null } | null
+          return profile?.manager_id
+        })
+        .filter((id): id is string => !!id)
+    )]
+
+    let managerNames: Record<string, string> = {}
+    if (managerIds.length > 0) {
+      const { data: managers } = await supabase
+        .from('user_profiles')
+        .select('id, first_name, last_name')
+        .in('id', managerIds)
+
+      if (managers) {
+        managerNames = managers.reduce((acc, m) => {
+          acc[m.id] = `${m.first_name} ${m.last_name}`.trim()
+          return acc
+        }, {} as Record<string, string>)
+      }
+    }
+
     // Transform data for frontend
     const transformedTeam = (teamRoles || [])
       .filter(tr => tr.user_profiles)
@@ -195,6 +222,7 @@ export async function GET(request: NextRequest) {
           email: string
           phone: string | null
           avatar_url: string | null
+          manager_id: string | null
           created_at: string
           updated_at: string
         } | null
@@ -217,6 +245,8 @@ export async function GET(request: NextRequest) {
           avatar_url: profile.avatar_url,
           role: tr.role,
           status: tr.status || 'active',
+          manager_id: profile.manager_id,
+          manager_name: profile.manager_id ? (managerNames[profile.manager_id] || null) : null,
           specialization: assignment?.specialization,
           experience_level: assignment?.experience_level,
           monthly_quota: assignment?.monthly_quota,
