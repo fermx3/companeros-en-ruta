@@ -72,6 +72,20 @@ export default function UsersListPage() {
     }
   };
 
+  const handleReactivateUser = async (userId: string) => {
+    setDeleting(userId);
+    try {
+      await adminService.reactivateUser(userId);
+      await loadUsers();
+    } catch (err) {
+      console.error('Error reactivating user:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      alert(`Error al reactivar usuario: ${errorMessage}`);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   if (loading && users.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -161,7 +175,8 @@ export default function UsersListPage() {
                   key={user.id}
                   user={user}
                   onDeactivate={() => handleDeactivateUser(user.id)}
-                  isDeleting={deleting === user.id}
+                  onReactivate={() => handleReactivateUser(user.id)}
+                  isProcessing={deleting === user.id}
                 />
               ))
             ) : (
@@ -218,10 +233,11 @@ export default function UsersListPage() {
 interface UserCardProps {
   user: UserWithRoles;
   onDeactivate: () => void;
-  isDeleting: boolean;
+  onReactivate: () => void;
+  isProcessing: boolean;
 }
 
-function UserCard({ user, onDeactivate, isDeleting }: UserCardProps) {
+function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -355,24 +371,45 @@ function UserCard({ user, onDeactivate, isDeleting }: UserCardProps) {
             Roles
           </Button>
         </Link>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onDeactivate}
-          disabled={isDeleting}
-          className="text-red-600 hover:text-red-700 hover:border-red-300"
-        >
-          {isDeleting ? (
-            <LoadingSpinner size="sm" />
-          ) : (
-            <>
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
-              </svg>
-              Desactivar
-            </>
-          )}
-        </Button>
+        {user.status === 'active' ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onDeactivate}
+            disabled={isProcessing}
+            className="text-red-600 hover:text-red-700 hover:border-red-300"
+          >
+            {isProcessing ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <>
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                </svg>
+                Desactivar
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onReactivate}
+            disabled={isProcessing}
+            className="text-green-600 hover:text-green-700 hover:border-green-300"
+          >
+            {isProcessing ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <>
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Reactivar
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );
