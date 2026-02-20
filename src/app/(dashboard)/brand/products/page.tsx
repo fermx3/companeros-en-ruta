@@ -109,7 +109,8 @@ export default function BrandProductsPage() {
   }
 
   useEffect(() => {
-    if (!currentBrandId) return
+    const effectiveBrandId = selectedBrandId || currentBrandId
+    if (!effectiveBrandId) return
 
     const controller = new AbortController()
 
@@ -120,14 +121,11 @@ export default function BrandProductsPage() {
       try {
         const params = new URLSearchParams({
           dashboard: 'true',
-          include_inactive: includeInactive.toString()
+          include_inactive: includeInactive.toString(),
+          brand_id: effectiveBrandId
         })
 
-        if (selectedBrandId) {
-          params.set('brand_id', selectedBrandId)
-        }
-
-        const response = await brandFetch(`/api/brand/products?${params}`, { signal: controller.signal })
+        const response = await fetch(`/api/brand/products?${params}`, { signal: controller.signal })
 
         if (!response.ok) {
           const errorData = await response.json()
@@ -159,7 +157,7 @@ export default function BrandProductsPage() {
 
     loadProducts()
     return () => controller.abort()
-  }, [includeInactive, selectedBrandId, brandFetch, currentBrandId, refreshKey])
+  }, [includeInactive, selectedBrandId, currentBrandId, refreshKey])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
