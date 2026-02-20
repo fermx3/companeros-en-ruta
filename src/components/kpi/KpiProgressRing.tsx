@@ -1,11 +1,17 @@
 'use client'
 
+import {
+  TrendingUp, Target, Package, PieChart, LayoutGrid, Users, MapPin, Star,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
 interface KpiProgressRingProps {
   label: string
   actual: number
   target: number | null
   unit: string
   color?: string
+  icon?: string
   size?: number
 }
 
@@ -14,8 +20,12 @@ const HEX_MAP: Record<string, string> = {
   orange: '#EA580C', red: '#DC2626', cyan: '#0891B2', amber: '#D97706',
 }
 
+const ICON_MAP: Record<string, LucideIcon> = {
+  TrendingUp, Target, Package, PieChart, LayoutGrid, Users, MapPin, Star,
+}
+
 export function KpiProgressRing({
-  label, actual, target, unit, color = 'blue', size = 140,
+  label, actual, target, unit, color = 'blue', icon, size = 140,
 }: KpiProgressRingProps) {
   const hex = HEX_MAP[color] || HEX_MAP.blue
   const pct = target && target > 0 ? Math.min(actual / target * 100, 100) : 0
@@ -24,6 +34,8 @@ export function KpiProgressRing({
   const dashOffset = circumference - (pct / 100) * circumference
   const viewBox = `0 0 ${size} ${size}`
   const center = size / 2
+
+  const IconComponent = icon ? ICON_MAP[icon] : null
 
   const formatValue = (val: number) => {
     if (unit === 'MXN') {
@@ -57,6 +69,9 @@ export function KpiProgressRing({
           <span className="text-xl font-bold text-gray-900">{formatValue(actual)}</span>
           {target !== null && (
             <span className="text-xs text-gray-500">/ {formatValue(target)}</span>
+          )}
+          {IconComponent && (
+            <IconComponent className="h-4 w-4 mt-1 opacity-50" style={{ color: hex }} />
           )}
         </div>
       </div>

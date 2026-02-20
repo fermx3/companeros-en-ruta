@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,6 @@ import {
 import { displayPhone } from '@/lib/utils/phone'
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
-import { KpiGaugeCard, KpiGaugeCardSkeleton } from '@/components/ui/kpi-gauge-card'
 import { KpiSummaryRings } from '@/components/kpi/KpiSummaryRings'
 import { KpiDetailSection } from '@/components/kpi/KpiDetailSection'
 
@@ -123,35 +122,58 @@ const COLOR_MAP: Record<string, { bg: string; text: string }> = {
   amber: { bg: 'bg-amber-50', text: 'text-amber-600' },
 }
 
+const DETAIL_VALUE_KEY: Record<string, string> = {
+  volume: 'monthly_total',
+  reach_mix: 'reach_pct',
+  assortment: 'avg_pct',
+  market_share: 'share_pct',
+  share_of_shelf: 'combined_pct',
+  mix: 'distinct_count',
+}
+
+const DETAIL_UNIT: Record<string, string> = {
+  volume: 'MXN',
+  reach_mix: '%',
+  assortment: '%',
+  market_share: '%',
+  share_of_shelf: '%',
+  mix: 'channels',
+}
+
 export default function BrandDashboard() {
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [metrics, setMetrics] = useState<BrandDashboardMetrics | null>(null)
   const [kpis, setKpis] = useState<KpiResult[]>([])
-  const [kpiSummary, setKpiSummary] = useState<KpiSummaryItem[]>([])
   const [kpiDetails, setKpiDetails] = useState<Record<string, Record<string, unknown>> | null>(null)
   const [loading, setLoading] = useState(true)
   const [kpiLoading, setKpiLoading] = useState(true)
-  const [summaryLoading, setSummaryLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showKpiSelector, setShowKpiSelector] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth)
 
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const loadSummary = useCallback(async (month: string, signal?: AbortSignal) => {
-    try {
-      setSummaryLoading(true)
-      const res = await brandFetch(`/api/brand/kpis/summary?month=${month}`, signal ? { signal } : undefined)
-      if (res.ok) {
-        const data = await res.json()
-        setKpiSummary(data.kpis || [])
+  // Derive summary from details + kpis (avoids broken v_kpi_dashboard_summary view)
+  const kpiSummary = useMemo<KpiSummaryItem[]>(() => {
+    if (!kpis.length || !kpiDetails) return []
+    return kpis.map(kpi => {
+      const detail = kpiDetails[kpi.slug] as Record<string, unknown> | undefined
+      const valueKey = DETAIL_VALUE_KEY[kpi.slug]
+      const actual = detail && valueKey ? Number(detail[valueKey]) || 0 : 0
+      const target = detail ? Number(detail.target) || null : null
+      const achievementPct = detail ? Number(detail.achievement_pct) || null : null
+      return {
+        slug: kpi.slug,
+        label: kpi.label,
+        actual,
+        target,
+        achievement_pct: achievementPct,
+        unit: DETAIL_UNIT[kpi.slug] || kpi.unit,
+        icon: kpi.icon,
+        color: kpi.color,
       }
-    } catch {
-      // Summary is enhancement
-    } finally {
-      setSummaryLoading(false)
-    }
-  }, [brandFetch])
+    })
+  }, [kpis, kpiDetails])
 
   useEffect(() => {
     if (!currentBrandId) return
@@ -170,9 +192,6 @@ export default function BrandDashboard() {
           brandFetch('/api/brand/kpis', { signal: controller.signal }),
           brandFetch(`/api/brand/kpis/details?month=${selectedMonth}`, { signal: controller.signal }),
         ])
-
-        // Also launch summary in parallel (has its own loading state)
-        loadSummary(selectedMonth, controller.signal)
 
         // Process metrics
         if (!metricsRes.ok) {
@@ -207,7 +226,7 @@ export default function BrandDashboard() {
 
     loadData()
     return () => controller.abort()
-  }, [brandFetch, currentBrandId, refreshKey, loadSummary, selectedMonth])
+  }, [brandFetch, currentBrandId, refreshKey, selectedMonth])
 
   const loadKpis = async () => {
     try {
@@ -222,7 +241,6 @@ export default function BrandDashboard() {
     } finally {
       setKpiLoading(false)
     }
-    loadSummary(selectedMonth)
   }
 
   if (loading) {
@@ -346,35 +364,9 @@ export default function BrandDashboard() {
             {/* Summary Rings */}
             <Card className="hover:shadow-lg transition-shadow duration-200">
               <CardContent className="p-6">
-                <KpiSummaryRings kpis={kpiSummary} loading={summaryLoading} />
+                <KpiSummaryRings kpis={kpiSummary} loading={kpiLoading} />
               </CardContent>
             </Card>
-
-            {/* KPI Gauge Cards (original) */}
-            {kpiLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {[1, 2, 3].map(i => (
-                  <KpiGaugeCardSkeleton key={i} isGauge={i <= 2} />
-                ))}
-              </div>
-            ) : kpis.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {kpis.map(kpi => {
-                  const IconComponent = ICON_MAP[kpi.icon] || TrendingUp
-                  return (
-                    <KpiGaugeCard
-                      key={kpi.slug}
-                      label={kpi.label}
-                      value={kpi.value}
-                      unit={kpi.unit}
-                      description={kpi.description}
-                      icon={IconComponent}
-                      color={kpi.color}
-                    />
-                  )
-                })}
-              </div>
-            ) : null}
 
             {/* KPI Detail Sections */}
             {!kpiLoading && kpis.length > 0 && (

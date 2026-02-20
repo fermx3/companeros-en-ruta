@@ -8,6 +8,7 @@ interface KpiSummaryItem {
   actual: number
   target: number | null
   unit: string
+  icon?: string
   color: string
 }
 
@@ -48,6 +49,7 @@ export function KpiSummaryRings({ kpis, loading }: KpiSummaryRingsProps) {
           target={kpi.target}
           unit={kpi.unit}
           color={kpi.color}
+          icon={kpi.icon}
         />
       ))}
     </div>
