@@ -11,6 +11,8 @@ interface UseNotificationsReturn {
   loading: boolean;
   markAsRead: (ids: string[]) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  deleteAllRead: () => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -127,5 +129,41 @@ export function useNotifications(): UseNotificationsReturn {
     }
   }, []);
 
-  return { notifications, unreadCount, loading, markAsRead, markAllAsRead, refresh };
+  const deleteNotification = useCallback(async (id: string) => {
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notification_ids: [id] }),
+      });
+      if (!res.ok) return;
+
+      // Optimistic update
+      const removed = notifications.find((n) => n.id === id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      if (removed && !removed.is_read) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error('[useNotifications] deleteNotification error:', err);
+    }
+  }, [notifications]);
+
+  const deleteAllRead = useCallback(async () => {
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delete_all_read: true }),
+      });
+      if (!res.ok) return;
+
+      // Optimistic update: remove all read notifications
+      setNotifications((prev) => prev.filter((n) => !n.is_read));
+    } catch (err) {
+      console.error('[useNotifications] deleteAllRead error:', err);
+    }
+  }, []);
+
+  return { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, deleteAllRead, refresh };
 }

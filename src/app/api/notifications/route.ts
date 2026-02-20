@@ -131,3 +131,69 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/notifications - Soft-delete notificaciones
+ * Body: { notification_ids: string[] } or { delete_all_read: true }
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id, tenant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 });
+    }
+
+    const body = await request.json();
+    const { notification_ids, delete_all_read } = body as {
+      notification_ids?: string[];
+      delete_all_read?: boolean;
+    };
+
+    if (!delete_all_read && (!notification_ids || notification_ids.length === 0)) {
+      return NextResponse.json(
+        { error: 'Se requiere notification_ids o delete_all_read' },
+        { status: 400 }
+      );
+    }
+
+    // Soft-delete via UPDATE (RLS only has UPDATE policy)
+    let query = supabase
+      .from('notifications')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('user_profile_id', profile.id)
+      .is('deleted_at', null);
+
+    if (delete_all_read) {
+      query = query.eq('is_read', true);
+    } else if (notification_ids) {
+      query = query.in('id', notification_ids);
+    }
+
+    const { error: deleteError, count } = await query.select('id');
+
+    if (deleteError) {
+      console.error('[DELETE /api/notifications] Error:', deleteError.message);
+      return NextResponse.json(
+        { error: `Error al eliminar notificaciones: ${deleteError.message}` },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ deleted: count ?? 0 });
+  } catch (error) {
+    console.error('[DELETE /api/notifications] Unexpected error:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}

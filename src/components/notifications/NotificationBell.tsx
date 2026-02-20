@@ -12,27 +12,33 @@ const NOTIFICATION_TYPE_ICONS: Record<string, string> = {
   promotion_approved: '🎉',
   promotion_rejected: '❌',
   new_promotion: '🏷️',
+  new_promotion_pending: '🏷️',
   visit_completed: '✅',
   order_created: '📦',
   qr_redeemed: '📱',
   tier_upgrade: '⬆️',
   survey_assigned: '📋',
+  survey_approved: '✅',
+  survey_rejected: '❌',
+  new_survey_pending: '📋',
   system: '🔔',
 };
 
 function NotificationItem({
   notification,
   onRead,
+  onDelete,
 }: {
   notification: Notification;
   onRead: (n: Notification) => void;
+  onDelete: (id: string) => void;
 }) {
   const icon = NOTIFICATION_TYPE_ICONS[notification.notification_type] ?? '🔔';
 
   return (
     <button
       className={cn(
-        'w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors',
+        'group w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors',
         !notification.is_read && 'bg-blue-50/50'
       )}
       onClick={() => onRead(notification)}
@@ -49,9 +55,31 @@ function NotificationItem({
             >
               {notification.title}
             </p>
-            {!notification.is_read && (
-              <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
-            )}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {!notification.is_read && (
+                <span className="w-2 h-2 rounded-full bg-blue-500 mt-0.5" />
+              )}
+              <span
+                role="button"
+                tabIndex={0}
+                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-red-500 transition-all"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(notification.id);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    onDelete(notification.id);
+                  }
+                }}
+                aria-label="Eliminar notificación"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </span>
+            </div>
           </div>
           <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{notification.message}</p>
           <p className="text-xs text-gray-400 mt-1">
@@ -71,7 +99,7 @@ export function NotificationBell() {
   const panelRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, deleteAllRead } = useNotifications();
 
   // Extract the dashboard prefix (e.g. "/promotor", "/client", "/brand") from the current path
   const dashboardPrefix = pathname.match(/^\/(promotor|asesor-ventas|client|admin|brand|supervisor)/)?.[0] ?? '';
@@ -146,14 +174,24 @@ export function NotificationBell() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
             <h3 className="font-semibold text-gray-900 text-sm">Notificaciones</h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={handleMarkAllRead}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Marcar todas leídas
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {notifications.some((n) => n.is_read) && (
+                <button
+                  onClick={deleteAllRead}
+                  className="text-xs text-red-500 hover:text-red-700 font-medium"
+                >
+                  Eliminar leídas
+                </button>
+              )}
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Marcar todas leídas
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Notification list */}
@@ -185,6 +223,7 @@ export function NotificationBell() {
                   key={notification.id}
                   notification={notification}
                   onRead={handleNotificationClick}
+                  onDelete={deleteNotification}
                 />
               ))
             )}
