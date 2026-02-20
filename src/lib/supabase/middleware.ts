@@ -50,11 +50,14 @@ export async function updateSession(request: NextRequest) {
   // Inject user ID as internal request header so API routes can skip getUser()
   // Defense in depth: always strip any externally-provided header first
   if (user) {
-    const requestHeaders = new Headers(request.headers)
-    requestHeaders.delete('x-supabase-user-id')
-    requestHeaders.set('x-supabase-user-id', user.id)
+    // Mutate the original request.headers directly so the request object
+    // retains all cookie mutations from supabase's setAll callback.
+    // Creating `new Headers(request.headers)` + `{ request: { headers } }`
+    // detaches the request context and breaks cookie forwarding to API routes.
+    request.headers.delete('x-supabase-user-id')
+    request.headers.set('x-supabase-user-id', user.id)
 
-    const response = NextResponse.next({ request: { headers: requestHeaders } })
+    const response = NextResponse.next({ request })
 
     // Preserve auth refresh cookies from the supabase response
     supabaseResponse.cookies.getAll().forEach(cookie => {
