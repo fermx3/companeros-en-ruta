@@ -16,7 +16,7 @@ import { Alert } from '@/components/ui/feedback'
 import {
   Camera,
   CameraOff,
-  FlipHorizontal,
+  SwitchCamera,
   X,
   QrCode
 } from 'lucide-react'
@@ -66,8 +66,8 @@ export function QRScanner({
   // State
   const [isScanning, setIsScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [cameras, setCameras] = useState<{ id: string; label: string }[]>([])
-  const [currentCameraIndex, setCurrentCameraIndex] = useState(0)
+  const [hasCameras, setHasCameras] = useState(false)
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   const [lastScannedCode, setLastScannedCode] = useState<string | null>(null)
 
   // Create scanner div manually (outside React's control)
@@ -156,7 +156,7 @@ export function QRScanner({
         if (!isMountedRef.current) return
 
         if (devices && devices.length > 0) {
-          setCameras(devices.map(d => ({ id: d.id, label: d.label })))
+          setHasCameras(true)
         } else {
           setError('No se encontraron camaras disponibles')
         }
@@ -183,13 +183,15 @@ export function QRScanner({
   }, [cleanupScannerSync])
 
   // Start scanning
-  const startScanning = useCallback(async () => {
-    if (!cameras.length) {
+  const startScanning = useCallback(async (overrideFacingMode?: 'environment' | 'user') => {
+    if (!hasCameras) {
       setError('No hay camaras disponibles')
       return
     }
 
     if (!isMountedRef.current || !scannerDivRef.current) return
+
+    const mode = overrideFacingMode ?? facingMode
 
     try {
       setError(null)
@@ -216,9 +218,9 @@ export function QRScanner({
       scannerRef.current = new Html5Qrcode(scannerIdRef.current)
       const scanner = scannerRef.current
 
-      // Start scanning
+      // Start scanning with facingMode constraint (environment = rear, user = front)
       await scanner.start(
-        cameras[currentCameraIndex].id,
+        { facingMode: mode },
         {
           fps,
           qrbox: { width: Math.min(width - 50, 250), height: Math.min(height - 50, 250) },
@@ -245,7 +247,7 @@ export function QRScanner({
         onError?.('Scanner start error')
       }
     }
-  }, [cameras, currentCameraIndex, fps, width, height, lastScannedCode, onScan, onError, cleanupScannerAsync])
+  }, [hasCameras, facingMode, fps, width, height, lastScannedCode, onScan, onError, cleanupScannerAsync])
 
   // Stop scanning
   const stopScanning = useCallback(async () => {
@@ -257,18 +259,16 @@ export function QRScanner({
 
   // Switch camera
   const switchCamera = useCallback(async () => {
-    if (cameras.length <= 1) return
-
-    const newIndex = (currentCameraIndex + 1) % cameras.length
-    setCurrentCameraIndex(newIndex)
+    const newMode = facingMode === 'environment' ? 'user' : 'environment'
+    setFacingMode(newMode)
 
     if (isScanning) {
       await stopScanning()
       setTimeout(() => {
-        startScanning()
+        startScanning(newMode)
       }, 150)
     }
-  }, [cameras.length, currentCameraIndex, isScanning, stopScanning, startScanning])
+  }, [facingMode, isScanning, stopScanning, startScanning])
 
   // Handle close
   const handleClose = useCallback(() => {
@@ -333,8 +333,8 @@ export function QRScanner({
           <div className="flex gap-2 mt-4">
             {!isScanning ? (
               <Button
-                onClick={startScanning}
-                disabled={cameras.length === 0}
+                onClick={() => startScanning()}
+                disabled={!hasCameras}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
                 <Camera className="h-4 w-4 mr-2" />
@@ -350,15 +350,14 @@ export function QRScanner({
                   Detener
                 </Button>
 
-                {cameras.length > 1 && (
-                  <Button
-                    variant="outline"
-                    onClick={switchCamera}
-                    title="Cambiar camara"
-                  >
-                    <FlipHorizontal className="h-4 w-4" />
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  onClick={switchCamera}
+                  title="Cambiar camara"
+                >
+                  <SwitchCamera className="h-4 w-4 mr-1" />
+                  Cambiar
+                </Button>
               </>
             )}
           </div>
