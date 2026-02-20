@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { cachedJsonResponse } from '@/lib/api/cache-headers'
 
@@ -19,11 +19,12 @@ export async function GET(request: NextRequest) {
     if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId } = result
 
+    const serviceSupabase = createServiceClient()
     const month = searchParams.get('month') || new Date().toISOString().slice(0, 7)
     const periodMonth = `${month}-01`
 
     // Get brand's selected KPI slugs
-    const { data: brand } = await supabase
+    const { data: brand } = await serviceSupabase
       .from('brands')
       .select('dashboard_metrics')
       .eq('id', brandId)
@@ -46,51 +47,51 @@ export async function GET(request: NextRequest) {
       targetsData,
     ] = await Promise.all([
       slugSet.has('volume')
-        ? supabase.from('v_kpi_volume')
+        ? serviceSupabase.from('v_kpi_volume')
             .select('period_week, zone_id, zone_name, revenue_mxn, weight_tons')
             .eq('brand_id', brandId)
             .eq('period_month', periodMonth)
         : null,
       slugSet.has('reach_mix')
-        ? supabase.from('v_kpi_reach')
+        ? serviceSupabase.from('v_kpi_reach')
             .select('zone_id, zone_name, market_id, market_name, clients_visited, total_active_members, reach_pct')
             .eq('brand_id', brandId)
             .eq('period_month', periodMonth)
         : null,
       slugSet.has('mix')
-        ? supabase.from('v_kpi_mix')
+        ? serviceSupabase.from('v_kpi_mix')
             .select('distinct_markets_visited, distinct_client_types_visited, total_clients_visited')
             .eq('brand_id', brandId)
             .eq('period_month', periodMonth)
             .maybeSingle()
         : null,
       slugSet.has('mix')
-        ? supabase.from('v_visit_assessment_facts')
+        ? serviceSupabase.from('v_visit_assessment_facts')
             .select('market_id, market_name, client_id')
             .eq('brand_id', brandId)
             .eq('period_month', periodMonth)
             .not('market_id', 'is', null)
         : null,
       slugSet.has('assortment')
-        ? supabase.from('v_kpi_assortment')
+        ? serviceSupabase.from('v_kpi_assortment')
             .select('zone_id, zone_name, avg_assortment_pct, visit_count')
             .eq('brand_id', brandId)
             .eq('period_month', periodMonth)
         : null,
       slugSet.has('market_share')
-        ? supabase.from('v_kpi_market_share')
+        ? serviceSupabase.from('v_kpi_market_share')
             .select('zone_id, zone_name, brand_present, competitor_present, share_pct, brand_facings, competitor_facings, share_by_facings_pct')
             .eq('brand_id', brandId)
             .eq('period_month', periodMonth)
         : null,
       slugSet.has('share_of_shelf')
-        ? supabase.from('v_kpi_share_of_shelf')
+        ? serviceSupabase.from('v_kpi_share_of_shelf')
             .select('zone_id, zone_name, pop_pct, exhib_pct, combined_pct, pop_total, pop_present, exhib_total, exhib_executed')
             .eq('brand_id', brandId)
             .eq('period_month', periodMonth)
         : null,
       // Batch targets — single query for all selected slugs
-      supabase.from('kpi_targets')
+      serviceSupabase.from('kpi_targets')
         .select('kpi_slug, target_value')
         .eq('brand_id', brandId)
         .eq('period_type', 'monthly')

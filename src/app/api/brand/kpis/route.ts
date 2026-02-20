@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { cachedJsonResponse } from '@/lib/api/cache-headers'
 
@@ -27,9 +27,10 @@ export async function GET(request: NextRequest) {
     const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
     if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId, tenantId } = result
+    const serviceSupabase = createServiceClient()
 
     // 1. Get the brand's selected KPI slugs from dashboard_metrics
-    const { data: brand } = await supabase
+    const { data: brand } = await serviceSupabase
       .from('brands')
       .select('dashboard_metrics, dashboard_metrics_updated_at')
       .eq('id', brandId)
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
     const selectedSlugs: string[] = brand?.dashboard_metrics || ['volume', 'reach_mix', 'assortment', 'market_share', 'share_of_shelf']
 
     // 2. Get KPI definitions for the selected slugs
-    const { data: kpiDefs } = await supabase
+    const { data: kpiDefs } = await serviceSupabase
       .from('kpi_definitions')
       .select('slug, label, description, icon, color, computation_type')
       .eq('tenant_id', tenantId)
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     const kpis: KpiResult[] = await Promise.all(
       kpiDefs.map(async (def) => {
-        const value = await computeKpi(supabase, brandId, def.computation_type, monthStart, monthEnd)
+        const value = await computeKpi(serviceSupabase, brandId, def.computation_type, monthStart, monthEnd)
         return {
           slug: def.slug,
           label: def.label,
