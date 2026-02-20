@@ -92,13 +92,13 @@ GRANT EXECUTE ON FUNCTION public.get_field_user_tenant_id() TO authenticated;
 -- STEP 2: Rewrite SUPERVISOR policies (4-5 level nesting → 1 function call)
 -- ============================================================================
 -- Original pattern:
---   WHERE advisor_id IN (SELECT up.id FROM user_profiles up
+--   WHERE promotor_id IN (SELECT up.id FROM user_profiles up
 --     WHERE up.manager_id IN (SELECT ur.user_profile_id FROM user_roles ur
 --       JOIN user_profiles up_mgr ON ...
 --       WHERE up_mgr.user_id = auth.uid() AND ur.role = 'supervisor' ...))
 --
 -- New pattern:
---   WHERE advisor_id = ANY(get_supervised_profile_ids())
+--   WHERE promotor_id = ANY(get_supervised_profile_ids())
 
 -- 2a. supervisors_select_points_transactions
 DROP POLICY IF EXISTS "supervisors_select_points_transactions" ON public.points_transactions;
@@ -112,7 +112,7 @@ CREATE POLICY "supervisors_select_points_transactions" ON public.points_transact
       WHERE c.id IN (
         SELECT DISTINCT v.client_id
         FROM visits v
-        WHERE v.advisor_id = ANY(get_supervised_profile_ids())
+        WHERE v.promotor_id = ANY(get_supervised_profile_ids())
           AND v.deleted_at IS NULL
       )
       AND cbm.deleted_at IS NULL
@@ -134,7 +134,7 @@ CREATE POLICY "supervisors_select_promotion_redemptions" ON public.promotion_red
         WHERE c.id IN (
           SELECT DISTINCT v.client_id
           FROM visits v
-          WHERE v.advisor_id = ANY(get_supervised_profile_ids())
+          WHERE v.promotor_id = ANY(get_supervised_profile_ids())
             AND v.deleted_at IS NULL
         )
         AND cbm.deleted_at IS NULL
@@ -155,7 +155,7 @@ CREATE POLICY "supervisors_select_reward_redemptions" ON public.reward_redemptio
       WHERE c.id IN (
         SELECT DISTINCT v.client_id
         FROM visits v
-        WHERE v.advisor_id = ANY(get_supervised_profile_ids())
+        WHERE v.promotor_id = ANY(get_supervised_profile_ids())
           AND v.deleted_at IS NULL
       )
       AND cbm.deleted_at IS NULL
@@ -175,7 +175,7 @@ CREATE POLICY "supervisors_select_client_tier_assignments" ON public.client_tier
       WHERE c.id IN (
         SELECT DISTINCT v.client_id
         FROM visits v
-        WHERE v.advisor_id = ANY(get_supervised_profile_ids())
+        WHERE v.promotor_id = ANY(get_supervised_profile_ids())
           AND v.deleted_at IS NULL
       )
       AND cbm.deleted_at IS NULL
@@ -195,7 +195,7 @@ CREATE POLICY "supervisors_manage_client_tier_assignments" ON public.client_tier
       WHERE c.id IN (
         SELECT DISTINCT v.client_id
         FROM visits v
-        WHERE v.advisor_id = ANY(get_supervised_profile_ids())
+        WHERE v.promotor_id = ANY(get_supervised_profile_ids())
           AND v.deleted_at IS NULL
       )
       AND cbm.deleted_at IS NULL
@@ -325,12 +325,6 @@ CREATE POLICY "field_users_select_client_brand_memberships" ON public.client_bra
 -- ============================================================================
 -- STEP 5: Add missing FK indexes (from Supabase performance advisor)
 -- ============================================================================
-
-CREATE INDEX IF NOT EXISTS idx_audit_logs_tenant_id
-  ON public.audit_logs (tenant_id);
-
-CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id
-  ON public.audit_logs (user_id);
 
 CREATE INDEX IF NOT EXISTS idx_brand_competitor_products_tenant_id
   ON public.brand_competitor_products (tenant_id);
