@@ -282,12 +282,10 @@ BEGIN
     (v_tenant_id, v_profile_promotor, 'promotor', 'brand', v_brand_lala, 'active', v_profile_admin)
   ON CONFLICT DO NOTHING;
 
-  -- Asesor de ventas = brand-scoped (needs both asesor + promotor roles;
-  -- validate_visit_data() only accepts 'promotor'/'supervisor' for visits.promotor_id)
+  -- Asesor de ventas = tenant-scoped, no brand (linked to distributor via user_profiles.distributor_id)
   INSERT INTO user_roles (tenant_id, user_profile_id, role, scope, brand_id, status, granted_by)
   VALUES
-    (v_tenant_id, v_profile_asesor, 'asesor_de_ventas', 'brand', v_brand_iberia, 'active', v_profile_admin),
-    (v_tenant_id, v_profile_asesor, 'promotor', 'brand', v_brand_iberia, 'active', v_profile_admin)
+    (v_tenant_id, v_profile_asesor, 'asesor_de_ventas', 'tenant', NULL, 'active', v_profile_admin)
   ON CONFLICT DO NOTHING;
 
   -- Client user: NO user_roles entry. Link via clients.user_id (Layer 4).
@@ -856,7 +854,17 @@ BEGIN
     ON CONFLICT DO NOTHING;
   END LOOP;
 
-  -- Asesor → 12 cross-zona clients
+  -- Asesor → client 1 (linked to cliente@demo user) + 12 cross-zona clients
+  INSERT INTO client_assignments (
+    tenant_id, user_profile_id, client_id, is_active
+  )
+  VALUES (
+    v_tenant_id, v_profile_asesor,
+    'f1000000-0000-0000-0000-000000000001'::uuid,
+    true
+  )
+  ON CONFLICT DO NOTHING;
+
   FOR i IN 10..21 LOOP
     INSERT INTO client_assignments (
       tenant_id, user_profile_id, client_id, is_active
