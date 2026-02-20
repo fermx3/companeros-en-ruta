@@ -10,40 +10,63 @@ export async function GET() {
       return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 })
     }
 
+    // Resolve tenant — staff users have user_profiles, client users may only have clients
+    let tenantId: string
+    let profileId: string | null = null
+
     const { data: userProfile } = await supabase
       .from('user_profiles')
       .select('id, tenant_id')
       .eq('user_id', user.id)
       .single()
 
-    if (!userProfile) {
-      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
+    if (userProfile) {
+      tenantId = userProfile.tenant_id
+      profileId = userProfile.id
+    } else {
+      // Client user without user_profile — resolve tenant from clients table
+      const { data: clientRow } = await supabase
+        .from('clients')
+        .select('id, tenant_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .single()
+
+      if (!clientRow) {
+        return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
+      }
+      tenantId = clientRow.tenant_id
     }
 
     // Determine user's role for survey targeting
-    const { data: userRoles } = await supabase
-      .from('user_roles')
-      .select('role, status')
-      .eq('user_profile_id', userProfile.id)
-      .eq('status', 'active')
-      .is('deleted_at', null)
+    const userTargetRoles: string[] = []
 
-    // Map user roles to survey target roles
-    const roleMap: Record<string, string> = {
-      promotor: 'promotor',
-      asesor_de_ventas: 'asesor_de_ventas'
+    if (profileId) {
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role, status')
+        .eq('user_profile_id', profileId)
+        .eq('status', 'active')
+        .is('deleted_at', null)
+
+      const roleMap: Record<string, string> = {
+        promotor: 'promotor',
+        asesor_de_ventas: 'asesor_de_ventas'
+      }
+
+      for (const r of userRoles || []) {
+        const mapped = roleMap[r.role]
+        if (mapped) userTargetRoles.push(mapped)
+      }
     }
-
-    const userTargetRoles: string[] = (userRoles || [])
-      .map(r => roleMap[r.role])
-      .filter(Boolean)
 
     // Check if user is a client
     const { data: clientData } = await supabase
       .from('clients')
       .select('id')
       .eq('user_id', user.id)
-      .eq('is_active', true)
+      .eq('status', 'active')
       .limit(1)
 
     if (clientData && clientData.length > 0) {
@@ -71,7 +94,7 @@ export async function GET() {
         max_responses_per_user,
         brands(name, logo_url)
       `)
-      .eq('tenant_id', userProfile.tenant_id)
+      .eq('tenant_id', tenantId)
       .eq('survey_status', 'active')
       .is('deleted_at', null)
       .lte('start_date', today)
@@ -87,11 +110,11 @@ export async function GET() {
     const surveyIds = (surveys || []).map(s => s.id)
     let respondedSurveys: Set<string> = new Set()
 
-    if (surveyIds.length > 0) {
+    if (surveyIds.length > 0 && profileId) {
       const { data: responses } = await supabase
         .from('survey_responses')
         .select('survey_id')
-        .eq('respondent_id', userProfile.id)
+        .eq('respondent_id', profileId)
         .in('survey_id', surveyIds)
 
       respondedSurveys = new Set((responses || []).map(r => r.survey_id))

@@ -15,14 +15,39 @@ export async function POST(
       return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 })
     }
 
+    // Resolve tenant — staff users have user_profiles, client users may only have clients
+    let tenantId: string
+    let profileId: string | null = null
+
     const { data: userProfile } = await supabase
       .from('user_profiles')
       .select('id, tenant_id')
       .eq('user_id', user.id)
       .single()
 
-    if (!userProfile) {
-      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
+    if (userProfile) {
+      tenantId = userProfile.tenant_id
+      profileId = userProfile.id
+    } else {
+      const { data: clientRow } = await supabase
+        .from('clients')
+        .select('id, tenant_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .single()
+
+      if (!clientRow) {
+        return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
+      }
+      tenantId = clientRow.tenant_id
+    }
+
+    if (!profileId) {
+      return NextResponse.json(
+        { error: 'Tu perfil no permite enviar respuestas de encuestas aún' },
+        { status: 403 }
+      )
     }
 
     // Get survey and questions
@@ -43,7 +68,7 @@ export async function POST(
         )
       `)
       .eq('id', id)
-      .eq('tenant_id', userProfile.tenant_id)
+      .eq('tenant_id', tenantId)
       .eq('survey_status', 'active')
       .is('deleted_at', null)
       .single()
@@ -63,7 +88,7 @@ export async function POST(
       .from('survey_responses')
       .select('id')
       .eq('survey_id', id)
-      .eq('respondent_id', userProfile.id)
+      .eq('respondent_id', profileId)
       .limit(1)
 
     if (existingResponse && existingResponse.length > 0) {
@@ -77,7 +102,7 @@ export async function POST(
     const { data: userRoles } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_profile_id', userProfile.id)
+      .eq('user_profile_id', profileId)
       .eq('status', 'active')
       .is('deleted_at', null)
 
@@ -118,7 +143,7 @@ export async function POST(
       .insert({
         survey_id: id,
         tenant_id: survey.tenant_id,
-        respondent_id: userProfile.id,
+        respondent_id: profileId,
         respondent_role: respondentRole
       })
       .select()

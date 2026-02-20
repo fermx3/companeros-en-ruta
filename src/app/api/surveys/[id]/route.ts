@@ -14,14 +14,32 @@ export async function GET(
       return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 })
     }
 
+    // Resolve tenant — staff users have user_profiles, client users may only have clients
+    let tenantId: string
+    let profileId: string | null = null
+
     const { data: userProfile } = await supabase
       .from('user_profiles')
       .select('id, tenant_id')
       .eq('user_id', user.id)
       .single()
 
-    if (!userProfile) {
-      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
+    if (userProfile) {
+      tenantId = userProfile.tenant_id
+      profileId = userProfile.id
+    } else {
+      const { data: clientRow } = await supabase
+        .from('clients')
+        .select('id, tenant_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .single()
+
+      if (!clientRow) {
+        return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
+      }
+      tenantId = clientRow.tenant_id
     }
 
     const { data: survey, error: fetchError } = await supabase
@@ -48,7 +66,7 @@ export async function GET(
         )
       `)
       .eq('id', id)
-      .eq('tenant_id', userProfile.tenant_id)
+      .eq('tenant_id', tenantId)
       .eq('survey_status', 'active')
       .is('deleted_at', null)
       .single()
@@ -63,12 +81,16 @@ export async function GET(
     }
 
     // Check if already responded
-    const { data: existingResponse } = await supabase
-      .from('survey_responses')
-      .select('id, submitted_at')
-      .eq('survey_id', id)
-      .eq('respondent_id', userProfile.id)
-      .limit(1)
+    let existingResponse: { id: string; submitted_at: string }[] | null = null
+    if (profileId) {
+      const { data } = await supabase
+        .from('survey_responses')
+        .select('id, submitted_at')
+        .eq('survey_id', id)
+        .eq('respondent_id', profileId)
+        .limit(1)
+      existingResponse = data
+    }
 
     return NextResponse.json({
       survey,
