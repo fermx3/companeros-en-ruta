@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
@@ -65,7 +65,8 @@ export async function POST(
 
     // Notify admins
     try {
-      const { data: adminProfiles } = await supabase
+      const serviceClient = createServiceClient()
+      const { data: adminProfiles } = await serviceClient
         .from('user_roles')
         .select('user_profile_id')
         .eq('tenant_id', tenantId)
