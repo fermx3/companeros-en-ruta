@@ -220,12 +220,12 @@ export default function BrandDashboard() {
     return (
       <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
-          <div className="h-8 bg-gray-300 rounded-md w-64"></div>
+          <div className="h-8 bg-muted rounded-md w-64"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="bg-white p-6 rounded-lg shadow-sm">
-                <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
-                <div className="h-8 bg-gray-300 rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-1/2 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-3/4"></div>
               </div>
             ))}
           </div>

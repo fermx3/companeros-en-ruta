@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
-import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { LoadingSpinner, PageLoader, Alert } from '@/components/ui/feedback'
 import { displayPhone, extractDigits } from '@/lib/utils/phone'
 import {
   ShoppingBag,
@@ -253,14 +253,7 @@ export default function OrderDetailPage({
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="lg" className="mx-auto mb-4" />
-          <p className="text-gray-600">Cargando orden...</p>
-        </div>
-      </div>
-    )
+    return <PageLoader message="Cargando orden..." />
   }
 
   if (error && !order) {

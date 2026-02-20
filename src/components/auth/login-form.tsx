@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { ActionButton } from '@/components/ui/action-button'
+import { PageLoader } from '@/components/ui/feedback'
 
 // Validation schema
 const loginSchema = z.object({
@@ -202,14 +203,7 @@ export function LoginForm() {
 
     // Show loading while checking existing session
     if (checkingSession) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Verificando sesión...</p>
-                </div>
-            </div>
-        )
+        return <PageLoader message="Verificando sesión..." />
     }
 
     return (

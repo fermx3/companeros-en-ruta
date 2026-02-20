@@ -139,14 +139,14 @@ export default function ClientPortal() {
     return (
       <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6 animate-pulse">
-          <div className="h-20 bg-gray-200 rounded-2xl" />
-          <div className="h-48 bg-gray-200 rounded-2xl" />
+          <div className="h-20 bg-muted rounded-2xl" />
+          <div className="h-48 bg-muted rounded-2xl" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded-2xl" />
+              <div key={i} className="h-24 bg-muted rounded-2xl" />
             ))}
           </div>
-          <div className="h-44 bg-gray-200 rounded-2xl" />
+          <div className="h-44 bg-muted rounded-2xl" />
         </div>
       </div>
     )

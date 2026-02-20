@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { PageLoader, Alert } from '@/components/ui/feedback'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import type { AdminDashboardMetrics, RecentActivity } from '@/lib/types/admin'
@@ -84,14 +84,7 @@ export default function AdminDashboard() {
   }, [loadDashboard])
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="lg" className="mx-auto mb-4" />
-          <p className="text-gray-600">Cargando dashboard...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Cargando dashboard..." />;
   }
 
   if (error) {

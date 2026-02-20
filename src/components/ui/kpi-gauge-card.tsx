@@ -136,17 +136,17 @@ export function KpiGaugeCardSkeleton({ isGauge = false }: { isGauge?: boolean })
   return (
     <div className="bg-gray-50/60 rounded-2xl p-5 shadow-sm border border-white/60 animate-pulse">
       <div className="flex items-start justify-between mb-4">
-        <div className="h-3 bg-gray-200 rounded w-20" />
-        <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+        <div className="h-3 bg-muted rounded w-20" />
+        <div className="h-8 w-8 bg-muted rounded-lg" />
       </div>
       {isGauge ? (
         <div className="flex justify-center">
-          <div className="h-[140px] w-[140px] rounded-full border-8 border-gray-200" />
+          <div className="h-[140px] w-[140px] rounded-full border-8 border-muted" />
         </div>
       ) : (
         <>
-          <div className="h-9 bg-gray-200 rounded w-32 mb-2" />
-          <div className="h-5 bg-gray-200 rounded w-12 mt-2" />
+          <div className="h-9 bg-muted rounded w-32 mb-2" />
+          <div className="h-5 bg-muted rounded w-12 mt-2" />
         </>
       )}
     </div>

@@ -65,8 +65,8 @@ function getDiscountLabel(promo: Promotion): string {
 function PromotionsSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="h-6 bg-gray-200 rounded w-56 animate-pulse" />
-      <div className="h-44 bg-gray-200 rounded-2xl animate-pulse" />
+      <div className="h-6 bg-muted rounded w-56 animate-pulse" />
+      <div className="h-44 bg-muted rounded-2xl animate-pulse" />
     </div>
   )
 }

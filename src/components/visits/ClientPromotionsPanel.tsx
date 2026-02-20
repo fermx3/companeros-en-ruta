@@ -80,9 +80,9 @@ export function ClientPromotionsPanel({
   if (loading) {
     return (
       <div className={cn('animate-pulse space-y-3', className)}>
-        <div className="h-4 bg-gray-200 rounded w-1/3" />
-        <div className="h-20 bg-gray-200 rounded" />
-        <div className="h-20 bg-gray-200 rounded" />
+        <div className="h-4 bg-muted rounded w-1/3" />
+        <div className="h-20 bg-muted rounded" />
+        <div className="h-20 bg-muted rounded" />
       </div>
     )
   }

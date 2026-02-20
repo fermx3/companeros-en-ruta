@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { MapPin, ShoppingCart } from 'lucide-react';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { PageLoader } from '@/components/ui/feedback';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { SideNavigation } from '@/components/layout/SideNavigation';
@@ -36,14 +37,7 @@ export default function SupervisorLayout({ children }: SupervisorLayoutProps) {
   }, [userRoles]);
 
   if (roleLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Verificando permisos...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Verificando permisos..." />;
   }
 
   if (error && !hasAccess) {

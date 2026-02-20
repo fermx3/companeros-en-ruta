@@ -170,9 +170,9 @@ export function AssessmentStage1({
   if (loading) {
     return (
       <div className={cn('animate-pulse space-y-4', className)}>
-        <div className="h-8 bg-gray-200 rounded w-1/3" />
-        <div className="h-40 bg-gray-200 rounded" />
-        <div className="h-40 bg-gray-200 rounded" />
+        <div className="h-8 bg-muted rounded w-1/3" />
+        <div className="h-40 bg-muted rounded" />
+        <div className="h-40 bg-muted rounded" />
       </div>
     )
   }

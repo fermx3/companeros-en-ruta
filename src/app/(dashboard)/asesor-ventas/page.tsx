@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
-import { LoadingSpinner, StatusBadge, Alert } from '@/components/ui/feedback';
+import { PageLoader, StatusBadge, Alert } from '@/components/ui/feedback';
 import { displayPhone } from '@/lib/utils/phone';
 
 interface AsesorVentasProfile {
@@ -91,14 +91,7 @@ export default function AsesorVentasPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="lg" className="mx-auto mb-4" />
-          <p className="text-gray-600">Cargando perfil...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Cargando perfil..." />;
   }
 
   if (error) {

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { PageLoader } from '@/components/ui/feedback';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { createClient } from '@/lib/supabase/client';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
@@ -37,14 +38,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   }, [user]);
 
   if (roleLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Verificando permisos...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Verificando permisos..." />;
   }
 
   if (error && !hasAccess) {

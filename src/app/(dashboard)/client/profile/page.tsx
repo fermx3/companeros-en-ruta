@@ -141,10 +141,10 @@ export default function ClientProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto space-y-4 animate-pulse">
-          <div className="h-24 bg-gray-200 rounded-2xl" />
-          <div className="h-40 bg-gray-200 rounded-2xl" />
-          <div className="h-40 bg-gray-200 rounded-2xl" />
-          <div className="h-28 bg-gray-200 rounded-2xl" />
+          <div className="h-24 bg-muted rounded-2xl" />
+          <div className="h-40 bg-muted rounded-2xl" />
+          <div className="h-40 bg-muted rounded-2xl" />
+          <div className="h-28 bg-muted rounded-2xl" />
         </div>
       </div>
     )

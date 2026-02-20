@@ -73,9 +73,21 @@ export const LoadingSpinner: React.FC<{ size?: 'sm' | 'md' | 'lg'; className?: s
   };
 
   return (
-    <div className={`animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 ${sizeClasses[size]} ${className}`}></div>
+    <div className={`animate-spin rounded-full border-2 border-muted border-t-primary ${sizeClasses[size]} ${className}`}></div>
   );
 };
+
+// Page-level loader (full-screen centered spinner with optional message)
+export const PageLoader: React.FC<{ message?: string; className?: string }> = ({
+  message, className = ''
+}) => (
+  <div className={`min-h-screen flex items-center justify-center bg-background ${className}`}>
+    <div className="text-center">
+      <LoadingSpinner size="lg" className="mx-auto mb-4" />
+      {message && <p className="text-muted-foreground">{message}</p>}
+    </div>
+  </div>
+);
 
 // Empty State
 interface EmptyStateProps {

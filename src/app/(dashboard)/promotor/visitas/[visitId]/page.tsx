@@ -8,6 +8,7 @@ import { AssessmentStage1 } from '@/components/visits/AssessmentStage1'
 import { AssessmentStage2 } from '@/components/visits/AssessmentStage2'
 import { AssessmentStage3 } from '@/components/visits/AssessmentStage3'
 import { useVisit } from '@/hooks/useVisits'
+import { PageLoader } from '@/components/ui/feedback'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/Card'
 import { ArrowLeft, Play, MapPin, Clock, CheckCircle } from 'lucide-react'
@@ -212,11 +213,7 @@ export default function VisitDetailPage() {
   }, [visit, visitId])
 
   if (loading || loadingAssessment) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    return <PageLoader message="Cargando visita..." />
   }
 
   if (error || !visit) {

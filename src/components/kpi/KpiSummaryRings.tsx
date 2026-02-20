@@ -22,8 +22,8 @@ export function KpiSummaryRings({ kpis, loading }: KpiSummaryRingsProps) {
       <div className="flex flex-wrap justify-center gap-8 py-6">
         {[1, 2, 3].map(i => (
           <div key={i} className="flex flex-col items-center animate-pulse">
-            <div className="h-[140px] w-[140px] rounded-full border-8 border-gray-200" />
-            <div className="h-3 bg-gray-200 rounded w-20 mt-3" />
+            <div className="h-[140px] w-[140px] rounded-full border-8 border-muted" />
+            <div className="h-3 bg-muted rounded w-20 mt-3" />
           </div>
         ))}
       </div>

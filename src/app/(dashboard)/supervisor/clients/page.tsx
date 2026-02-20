@@ -91,10 +91,10 @@ export default function SupervisorClientsPage() {
     return (
       <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6 animate-pulse">
-          <div className="h-8 bg-gray-300 rounded-md w-48"></div>
+          <div className="h-8 bg-muted rounded-md w-48"></div>
           <div className="flex gap-4">
-            <div className="h-10 bg-gray-300 rounded-md w-64"></div>
-            <div className="h-10 bg-gray-300 rounded-md w-48"></div>
+            <div className="h-10 bg-muted rounded-md w-64"></div>
+            <div className="h-10 bg-muted rounded-md w-48"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
