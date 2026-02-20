@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 
 interface Product {
   id: string
@@ -26,47 +27,10 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener user_profile del asesor de ventas
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    // 3. Verificar rol de asesor_de_ventas activo
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('id, role, status, brand_id, tenant_id')
-      .eq('user_profile_id', userProfile.id)
-
-    const asesorVentasRole = roles?.find(role =>
-      role.status === 'active' &&
-      role.role === 'asesor_de_ventas'
-    )
-
-    if (!asesorVentasRole) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene rol de Asesor de Ventas activo' },
-        { status: 403 }
-      )
-    }
+    // Authenticate and verify asesor role
+    const authResult = await resolveAsesorAuth(supabase)
+    if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+    const { userProfileId, brandId } = authResult
 
     // 4. Obtener parametros de busqueda
     const { searchParams } = new URL(request.url)
@@ -77,9 +41,9 @@ export async function GET(request: NextRequest) {
     // 5. Determinar las marcas de las cuales obtener productos
     let brandIds: string[] = []
 
-    if (asesorVentasRole.brand_id) {
+    if (brandId) {
       // Rol con marca asignada (promotor, etc): solo productos de su marca
-      brandIds = [asesorVentasRole.brand_id]
+      brandIds = [brandId]
     } else {
       // Asesor de ventas sin marca: productos de las marcas del cliente
       if (!clientId) {
@@ -94,7 +58,7 @@ export async function GET(request: NextRequest) {
         .from('client_assignments')
         .select('id')
         .eq('client_id', clientId)
-        .eq('user_profile_id', userProfile.id)
+        .eq('user_profile_id', userProfileId)
         .eq('is_active', true)
         .is('deleted_at', null)
         .single()

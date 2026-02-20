@@ -1,31 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolvePromotorAuth, isPromotorAuthError, promotorAuthErrorResponse } from '@/lib/api/promotor-auth'
 import { extractDigits } from '@/lib/utils/phone'
-
-interface UserRole {
-  id: string
-  role: string
-  scope: string
-  status: string
-  brand_id?: string
-  tenant_id: string
-  is_primary?: boolean
-  permissions?: Record<string, unknown>
-  granted_by?: string
-  granted_at: string
-  expires_at?: string
-  created_at: string
-  updated_at?: string
-}
-
-interface UserProfile {
-  id: string
-  first_name: string
-  last_name: string
-  email: string
-  phone?: string
-  user_roles: UserRole[]
-}
 
 interface ZoneInfo {
   id: string
@@ -37,125 +13,63 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // 1. Resolve promotor auth (single embedded query instead of 3 sequential)
+    const authResult = await resolvePromotorAuth(supabase)
+    if (isPromotorAuthError(authResult)) return promotorAuthErrorResponse(authResult)
+    const { user, userProfileId, role: promotorRole } = authResult
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener o crear user_profile del promotor
-    let userProfile: UserProfile | null = null
-
-    const { data: profileData, error: profileError } = await supabase
+    // 2. Get profile details (first_name, last_name, email, phone)
+    // We need these for the response but auth helper doesn't select them all
+    const { data: profileData } = await supabase
       .from('user_profiles')
-      .select('id, first_name, last_name, email, phone')
-      .eq('user_id', user.id)
+      .select('first_name, last_name, email, phone')
+      .eq('id', userProfileId)
       .single()
 
-    if (profileError || !profileData) {
-      return NextResponse.json(
-        {
-          error: 'Error al obtener perfil de usuario',
-          details: profileError?.message,
-          userId: user.id,
-          help: 'Usuario no encontrado en user_profiles'
-        },
-        { status: 404 }
-      )
-    }
-
-    // Ahora obtener los roles por separado
-    const { data: roles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select(`
-        id,
-        role,
-        scope,
-        status,
-        brand_id,
-        tenant_id,
-        is_primary,
-        permissions,
-        granted_by,
-        granted_at,
-        expires_at,
-        created_at,
-        updated_at
-      `)
-      .eq('user_profile_id', profileData.id)
-
-    userProfile = {
-      ...profileData,
-      user_roles: roles || []
-    }
-
-    // 3. Buscar rol de promotor (sin bloquear si no existe)
-    if (!userProfile) {
-      return NextResponse.json(
-        { error: 'No se pudo obtener el perfil del usuario' },
-        { status: 500 }
-      )
-    }
-
-    const promotorRole = userProfile.user_roles.find((role: UserRole) =>
-      role.role === 'promotor'
-    )
-
-    if (!promotorRole) {
-      return NextResponse.json(
-        {
-          error: 'Usuario no tiene rol de promotor asignado',
-          availableRoles: userProfile.user_roles.map((r: UserRole) => r.role),
-          help: 'Debe ser asignado como promotor por un admin o brand manager'
-        },
-        { status: 403 }
-      )
-    }
-
-    // 4. Obtener información específica de promotor (zona, especialización)
-    const { data: promotorInfo } = await supabase
-      .from('promotor_assignments')
-      .select(`
-        id,
-        zone_id,
-        specialization,
-        experience_level,
-        monthly_quota,
-        performance_rating,
-        zones(
+    // 3. Fetch promotor assignment and client count IN PARALLEL
+    const [promotorInfoResult, assignedClientsResult] = await Promise.all([
+      supabase
+        .from('promotor_assignments')
+        .select(`
           id,
-          name,
-          code
-        )
-      `)
-      .eq('user_profile_id', userProfile.id)
-      .eq('is_active', true)
-      .single()
+          zone_id,
+          specialization,
+          experience_level,
+          monthly_quota,
+          performance_rating,
+          zones(
+            id,
+            name,
+            code
+          )
+        `)
+        .eq('user_profile_id', userProfileId)
+        .eq('is_active', true)
+        .single(),
 
-    // 5. Obtener clientes asignados
-    const { data: assignedClients } = await supabase
-      .from('client_assignments')
-      .select('id')
-      .eq('user_profile_id', userProfile.id)
-      .eq('is_active', true)
+      supabase
+        .from('client_assignments')
+        .select('id')
+        .eq('user_profile_id', userProfileId)
+        .eq('is_active', true),
+    ])
 
-    const totalAssignedClients = assignedClients?.length || 0
+    const promotorInfo = promotorInfoResult.data
+    const totalAssignedClients = assignedClientsResult.data?.length || 0
     const zoneInfo = (promotorInfo?.zones as ZoneInfo[])?.[0] || null
 
-    // 6. Construir perfil del promotor con datos reales
-    const fullName = `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || 'Usuario';
+    // 4. Build promotor profile response
+    const firstName = profileData?.first_name || ''
+    const lastName = profileData?.last_name || ''
+    const fullName = `${firstName} ${lastName}`.trim() || 'Usuario'
 
     const promotorProfile = {
-      id: userProfile.id,
-      public_id: `ASR-${userProfile.id.substring(0, 8).toUpperCase()}`,
+      id: userProfileId,
+      public_id: `ASR-${userProfileId.substring(0, 8).toUpperCase()}`,
       user_id: user.id,
       full_name: fullName,
-      email: userProfile.email || user.email,
-      phone: userProfile.phone,
+      email: profileData?.email || '',
+      phone: profileData?.phone,
       // Campos del rol real
       role: promotorRole.role,
       scope: promotorRole.scope,
@@ -201,15 +115,10 @@ export async function PUT(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado', details: authError?.message },
-        { status: 401 }
-      )
-    }
+    // 1. Resolve promotor auth (single embedded query)
+    const authResult = await resolvePromotorAuth(supabase)
+    if (isPromotorAuthError(authResult)) return promotorAuthErrorResponse(authResult)
+    const { userProfileId } = authResult
 
     // 2. Obtener datos del body
     const body = await request.json()
@@ -219,20 +128,6 @@ export async function PUT(request: NextRequest) {
       specialization,
       experience_level
     } = body
-
-    // 3. Obtener user_profile
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado', details: profileError?.message },
-        { status: 404 }
-      )
-    }
 
     // Validate phone (10 digits for Mexico)
     if (phone) {
@@ -245,7 +140,7 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // 4. Actualizar user_profile
+    // 3. Actualizar user_profile
     if (phone) {
       const phoneDigits = extractDigits(phone)
       const { error: updateProfileError } = await supabase
@@ -254,14 +149,14 @@ export async function PUT(request: NextRequest) {
           phone: phoneDigits,
           updated_at: new Date().toISOString()
         })
-        .eq('id', userProfile.id)
+        .eq('id', userProfileId)
 
       if (updateProfileError) {
         throw new Error(`Error al actualizar perfil: ${updateProfileError.message}`)
       }
     }
 
-    // 5. Actualizar user_role de promotor
+    // 4. Actualizar user_role de promotor
     const { error: updateRoleError } = await supabase
       .from('user_roles')
       .update({
@@ -270,7 +165,7 @@ export async function PUT(request: NextRequest) {
         experience_level,
         updated_at: new Date().toISOString()
       })
-      .eq('user_profile_id', userProfile.id)
+      .eq('user_profile_id', userProfileId)
       .eq('role', 'promotor')
       .eq('status', 'active')
 

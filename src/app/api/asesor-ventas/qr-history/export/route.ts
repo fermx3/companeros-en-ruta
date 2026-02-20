@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { escapeCsvValue, csvResponse, formatCsvDate } from '@/lib/utils/csv'
+import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 
 /**
  * GET /api/asesor-ventas/qr-history/export
@@ -11,46 +12,20 @@ export async function GET(request: NextRequest) {
     try {
         const supabase = await createClient()
 
-        // 1. Authenticate user
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        // Authenticate and verify asesor role
+        const authResult = await resolveAsesorAuth(supabase)
+        if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+        const { userProfileId, distributorId } = authResult
 
-        if (authError || !user) {
-            return NextResponse.json(
-                { error: 'Usuario no autenticado' },
-                { status: 401 }
-            )
-        }
-
-        // 2. Get user profile
-        const { data: userProfile, error: profileError } = await supabase
+        // Fetch extra profile fields needed for CSV export
+        const { data: profileExtra } = await supabase
             .from('user_profiles')
-            .select('id, tenant_id, distributor_id, first_name, last_name')
-            .eq('user_id', user.id)
+            .select('first_name, last_name')
+            .eq('id', userProfileId)
             .single()
 
-        if (profileError || !userProfile) {
-            return NextResponse.json(
-                { error: 'Perfil de usuario no encontrado' },
-                { status: 404 }
-            )
-        }
-
-        // 3. Verify asesor_de_ventas role
-        const { data: roles } = await supabase
-            .from('user_roles')
-            .select('id, role, status')
-            .eq('user_profile_id', userProfile.id)
-
-        const hasAsesorRole = roles?.some(role =>
-            role.status === 'active' && role.role === 'asesor_de_ventas'
-        )
-
-        if (!hasAsesorRole) {
-            return NextResponse.json(
-                { error: 'Acceso no autorizado' },
-                { status: 403 }
-            )
-        }
+        const firstName = profileExtra?.first_name || ''
+        const lastName = profileExtra?.last_name || ''
 
         // 4. Get query params for filtering
         const { searchParams } = new URL(request.url)
@@ -98,7 +73,7 @@ export async function GET(request: NextRequest) {
           )
         )
       `)
-            .eq('redeemed_by', userProfile.id)
+            .eq('redeemed_by', userProfileId)
             .eq('status', 'completed') // Only completed redemptions for billing
             .order('redeemed_at', { ascending: false })
 
@@ -122,11 +97,11 @@ export async function GET(request: NextRequest) {
 
         // 6. Get distributor info if available
         let distributorName = 'N/A'
-        if (userProfile.distributor_id) {
+        if (distributorId) {
             const { data: distributor } = await supabase
                 .from('distributors')
                 .select('name')
-                .eq('id', userProfile.distributor_id)
+                .eq('id', distributorId)
                 .single()
 
             if (distributor) {
@@ -178,7 +153,7 @@ export async function GET(request: NextRequest) {
                 r.longitude?.toString() || '',
                 r.notes || '',
                 distributorName,
-                `${userProfile.first_name} ${userProfile.last_name}`
+                `${firstName} ${lastName}`
             ]
         })
 

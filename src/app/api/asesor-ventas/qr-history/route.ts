@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 
 /**
  * GET /api/asesor-ventas/qr-history
@@ -10,46 +11,10 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // 1. Authenticate user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // 2. Get user profile
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id, tenant_id, distributor_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    // 3. Verify asesor_de_ventas role
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('id, role, status')
-      .eq('user_profile_id', userProfile.id)
-
-    const hasAsesorRole = roles?.some(role =>
-      role.status === 'active' && role.role === 'asesor_de_ventas'
-    )
-
-    if (!hasAsesorRole) {
-      return NextResponse.json(
-        { error: 'Acceso no autorizado' },
-        { status: 403 }
-      )
-    }
+    // Authenticate and verify asesor role
+    const authResult = await resolveAsesorAuth(supabase)
+    if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+    const { userProfileId } = authResult
 
     // 4. Get query params
     const { searchParams } = new URL(request.url)
@@ -81,7 +46,7 @@ export async function GET(request: NextRequest) {
           )
         )
       `)
-      .eq('redeemed_by', userProfile.id)
+      .eq('redeemed_by', userProfileId)
       .order('redeemed_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -97,13 +62,13 @@ export async function GET(request: NextRequest) {
     const { count } = await supabase
       .from('qr_redemptions')
       .select('id', { count: 'exact', head: true })
-      .eq('redeemed_by', userProfile.id)
+      .eq('redeemed_by', userProfileId)
 
     // 7. Calculate summary stats
     const { data: statsData } = await supabase
       .from('qr_redemptions')
       .select('discount_value, status, redeemed_at')
-      .eq('redeemed_by', userProfile.id)
+      .eq('redeemed_by', userProfileId)
       .eq('status', 'completed')
 
     const today = new Date()

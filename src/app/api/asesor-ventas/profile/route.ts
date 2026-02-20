@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 
 interface UserRole {
   id: string
@@ -37,36 +38,26 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Authenticate and verify asesor role
+    const authResult = await resolveAsesorAuth(supabase)
+    if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+    const { user, userProfileId, distributorId, brandId } = authResult
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener user_profile del asesor de ventas
+    // Fetch extra profile fields needed for this route
     const { data: profileData, error: profileError } = await supabase
       .from('user_profiles')
-      .select('id, first_name, last_name, email, phone, distributor_id')
-      .eq('user_id', user.id)
+      .select('first_name, last_name, email, phone')
+      .eq('id', userProfileId)
       .single()
 
     if (profileError || !profileData) {
       return NextResponse.json(
-        {
-          error: 'Error al obtener perfil de usuario',
-          details: profileError?.message,
-          userId: user.id,
-          help: 'Usuario no encontrado en user_profiles'
-        },
+        { error: 'Error al obtener perfil de usuario' },
         { status: 404 }
       )
     }
 
-    // 3. Obtener los roles
+    // Fetch full roles for profile response
     const { data: roles } = await supabase
       .from('user_roles')
       .select(`
@@ -84,28 +75,18 @@ export async function GET() {
         created_at,
         updated_at
       `)
-      .eq('user_profile_id', profileData.id)
+      .eq('user_profile_id', userProfileId)
 
     const userProfile: UserProfile = {
+      id: userProfileId,
       ...profileData,
+      distributor_id: distributorId || undefined,
       user_roles: roles || []
     }
 
-    // 4. Buscar rol de asesor_de_ventas
     const asesorVentasRole = userProfile.user_roles.find((role: UserRole) =>
       role.role === 'asesor_de_ventas'
-    )
-
-    if (!asesorVentasRole) {
-      return NextResponse.json(
-        {
-          error: 'Usuario no tiene rol de Asesor de Ventas asignado',
-          availableRoles: userProfile.user_roles.map((r: UserRole) => r.role),
-          help: 'Debe ser asignado como Asesor de Ventas por un admin o brand manager'
-        },
-        { status: 403 }
-      )
-    }
+    )!
 
     // 5. Obtener informacion del distribuidor
     let distributorInfo: Distributor | null = null
@@ -121,11 +102,11 @@ export async function GET() {
 
     // 6. Obtener clientes asignados (via brand memberships del rol)
     let totalClients = 0
-    if (asesorVentasRole.brand_id) {
+    if (brandId) {
       const { count } = await supabase
         .from('client_brand_memberships')
         .select('id', { count: 'exact', head: true })
-        .eq('brand_id', asesorVentasRole.brand_id)
+        .eq('brand_id', brandId)
         .is('deleted_at', null)
 
       totalClients = count || 0
@@ -139,7 +120,7 @@ export async function GET() {
       public_id: `ADV-${userProfile.id.substring(0, 8).toUpperCase()}`,
       user_id: user.id,
       full_name: fullName,
-      email: userProfile.email || user.email,
+      email: userProfile.email || null,
       phone: userProfile.phone || null,
       // Informacion del distribuidor
       distributor_id: userProfile.distributor_id || null,

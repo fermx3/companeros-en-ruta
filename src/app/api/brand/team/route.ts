@@ -89,8 +89,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get promotor assignments for additional data
-    // Note: Supabase returns single object when using FK relationship with .single() style select
+    // Collect profile IDs for enrichment queries
     const userProfileIds = (teamRoles || [])
       .map(tr => {
         const profile = tr.user_profiles as { id: string } | { id: string }[] | null
@@ -101,22 +100,43 @@ export async function GET(request: NextRequest) {
       })
       .filter(Boolean) as string[]
 
+    // Fetch enrichment data IN PARALLEL (was 5 sequential queries)
     let promotorAssignments: Record<string, {
       specialization: string | null
       experience_level: string | null
       monthly_quota: number | null
       performance_rating: number | null
     }> = {}
+    let visitCounts: Record<string, number> = {}
+    let orderCounts: Record<string, number> = {}
+    let lastActivity: Record<string, string | null> = {}
 
     if (userProfileIds.length > 0) {
-      const { data: assignments } = await supabase
-        .from('promotor_assignments')
-        .select('user_profile_id, specialization, experience_level, monthly_quota, performance_rating')
-        .in('user_profile_id', userProfileIds)
-        .eq('is_active', true)
+      const [assignmentsResult, visitsResult, ordersResult] = await Promise.all([
+        // Promotor assignments
+        supabase
+          .from('promotor_assignments')
+          .select('user_profile_id, specialization, experience_level, monthly_quota, performance_rating')
+          .in('user_profile_id', userProfileIds)
+          .eq('is_active', true),
 
-      if (assignments) {
-        promotorAssignments = assignments.reduce((acc, a) => {
+        // Visits (for both counts and last activity)
+        supabase
+          .from('visits')
+          .select('promotor_id, updated_at')
+          .in('promotor_id', userProfileIds)
+          .eq('brand_id', brandId)
+          .order('updated_at', { ascending: false }),
+
+        // Order counts
+        supabase
+          .from('orders')
+          .select('promotor_id')
+          .in('promotor_id', userProfileIds),
+      ])
+
+      if (assignmentsResult.data) {
+        promotorAssignments = assignmentsResult.data.reduce((acc, a) => {
           acc[a.user_profile_id] = {
             specialization: a.specialization,
             experience_level: a.experience_level,
@@ -126,61 +146,24 @@ export async function GET(request: NextRequest) {
           return acc
         }, {} as typeof promotorAssignments)
       }
-    }
 
-    // Get visit counts for team members
-    let visitCounts: Record<string, number> = {}
-    let orderCounts: Record<string, number> = {}
-
-    if (userProfileIds.length > 0) {
-      // Count visits per promotor
-      const { data: visits } = await supabase
-        .from('visits')
-        .select('promotor_id')
-        .in('promotor_id', userProfileIds)
-        .eq('brand_id', brandId)
-
-      if (visits) {
-        visitCounts = visits.reduce((acc, v) => {
-          acc[v.promotor_id] = (acc[v.promotor_id] || 0) + 1
-          return acc
-        }, {} as Record<string, number>)
+      if (visitsResult.data) {
+        // Build both visit counts and last activity from a single query
+        for (const visit of visitsResult.data) {
+          visitCounts[visit.promotor_id] = (visitCounts[visit.promotor_id] || 0) + 1
+          if (!lastActivity[visit.promotor_id]) {
+            lastActivity[visit.promotor_id] = visit.updated_at
+          }
+        }
       }
 
-      // Count orders per promotor (if orders table has promotor_id)
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('promotor_id')
-        .in('promotor_id', userProfileIds)
-
-      if (orders) {
-        orderCounts = orders.reduce((acc, o) => {
+      if (ordersResult.data) {
+        orderCounts = ordersResult.data.reduce((acc, o) => {
           if (o.promotor_id) {
             acc[o.promotor_id] = (acc[o.promotor_id] || 0) + 1
           }
           return acc
         }, {} as Record<string, number>)
-      }
-    }
-
-    // Get last activity (last visit date) for each team member
-    let lastActivity: Record<string, string | null> = {}
-
-    if (userProfileIds.length > 0) {
-      const { data: recentVisits } = await supabase
-        .from('visits')
-        .select('promotor_id, updated_at')
-        .in('promotor_id', userProfileIds)
-        .eq('brand_id', brandId)
-        .order('updated_at', { ascending: false })
-
-      if (recentVisits) {
-        // Get most recent activity per promotor
-        for (const visit of recentVisits) {
-          if (!lastActivity[visit.promotor_id]) {
-            lastActivity[visit.promotor_id] = visit.updated_at
-          }
-        }
       }
     }
 

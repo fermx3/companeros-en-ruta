@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createNotification, getClientUserProfileId } from '@/lib/notifications'
+import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 
 interface AsesorOrder {
   id: string
@@ -36,47 +37,10 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener user_profile del asesor de ventas
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    // 3. Verificar rol de asesor_de_ventas activo
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('id, role, status, brand_id, tenant_id')
-      .eq('user_profile_id', userProfile.id)
-
-    const asesorVentasRole = roles?.find(role =>
-      role.status === 'active' &&
-      role.role === 'asesor_de_ventas'
-    )
-
-    if (!asesorVentasRole) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene rol de Asesor de Ventas activo' },
-        { status: 403 }
-      )
-    }
+    // Authenticate and verify asesor role
+    const authResult = await resolveAsesorAuth(supabase)
+    if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+    const { userProfileId } = authResult
 
     // 4. Obtener parametros de paginacion y filtros
     const { searchParams } = new URL(request.url)
@@ -87,7 +51,7 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('date_from') || ''
     const dateTo = searchParams.get('date_to') || ''
 
-    const asesorId = userProfile.id
+    const asesorId = userProfileId
 
     // 5. Consultar ordenes asignadas a este asesor
     let ordersQuery = supabase
@@ -231,47 +195,10 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener user_profile del asesor de ventas
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    // 3. Verificar rol de asesor_de_ventas activo
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('id, role, status, brand_id, tenant_id')
-      .eq('user_profile_id', userProfile.id)
-
-    const asesorVentasRole = roles?.find(role =>
-      role.status === 'active' &&
-      role.role === 'asesor_de_ventas'
-    )
-
-    if (!asesorVentasRole) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene rol de Asesor de Ventas activo' },
-        { status: 403 }
-      )
-    }
+    // Authenticate and verify asesor role
+    const authResult = await resolveAsesorAuth(supabase)
+    if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+    const { userProfileId, tenantId, distributorId, brandId } = authResult
 
     // 4. Parsear body de la peticion
     const body = await request.json()
@@ -306,7 +233,7 @@ export async function POST(request: NextRequest) {
       .from('client_assignments')
       .select('id, client_id')
       .eq('client_id', client_id)
-      .eq('user_profile_id', userProfile.id)
+      .eq('user_profile_id', userProfileId)
       .eq('is_active', true)
       .is('deleted_at', null)
       .single()
@@ -314,12 +241,12 @@ export async function POST(request: NextRequest) {
     let hasAccess = !assignmentError && clientAssignment
 
     // If no direct assignment but has brand_id, fallback to brand memberships
-    if (!hasAccess && asesorVentasRole.brand_id) {
+    if (!hasAccess && brandId) {
       const { data: clientMembership, error: membershipError } = await supabase
         .from('client_brand_memberships')
         .select('id, client_id')
         .eq('client_id', client_id)
-        .eq('brand_id', asesorVentasRole.brand_id)
+        .eq('brand_id', brandId)
         .is('deleted_at', null)
         .single()
 
@@ -333,15 +260,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 7. Obtener distributor_id y commercial_structure_id del asesor
-    const { data: profileWithDistributor } = await supabase
-      .from('user_profiles')
-      .select('distributor_id')
-      .eq('id', userProfile.id)
-      .single()
-
-    // Auto-asignar el distribuidor del asesor
-    const distributorId = profileWithDistributor?.distributor_id || null
+    // 7. Obtener commercial_structure_id del asesor
 
     // Buscar el commercial_structure vinculado al distribuidor
     let commercialStructureId: string | null = null
@@ -357,11 +276,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Si no hay estructura comercial, buscar una por defecto para el tenant
-    if (!commercialStructureId && asesorVentasRole.tenant_id) {
+    if (!commercialStructureId && tenantId) {
       const { data: defaultStructure } = await supabase
         .from('commercial_structures')
         .select('id')
-        .eq('tenant_id', asesorVentasRole.tenant_id)
+        .eq('tenant_id', tenantId)
         .is('deleted_at', null)
         .limit(1)
         .single()
@@ -392,9 +311,9 @@ export async function POST(request: NextRequest) {
     const { data: newOrder, error: orderError } = await supabase
       .from('orders')
       .insert({
-        tenant_id: asesorVentasRole.tenant_id,
+        tenant_id: tenantId,
         client_id,
-        brand_id: asesorVentasRole.brand_id || null,
+        brand_id: brandId || null,
         order_number: orderNumber,
         order_type: 'standard',
         order_status: 'draft',
@@ -408,7 +327,7 @@ export async function POST(request: NextRequest) {
         total_amount: totalAmount,
         priority,
         source_channel: 'field_sales',
-        assigned_to: userProfile.id,
+        assigned_to: userProfileId,
         client_notes: client_notes || null
       })
       .select('id, public_id, order_number')
@@ -430,7 +349,7 @@ export async function POST(request: NextRequest) {
       unit_price: number
       unit_type?: string
     }, index: number) => ({
-      tenant_id: asesorVentasRole.tenant_id,
+      tenant_id: tenantId,
       order_id: newOrder.id,
       product_id: item.product_id,
       product_variant_id: item.product_variant_id || null,
@@ -463,7 +382,7 @@ export async function POST(request: NextRequest) {
       const clientProfileId = await getClientUserProfileId(serviceClient, client_id)
       if (clientProfileId) {
         await createNotification({
-          tenant_id: asesorVentasRole.tenant_id,
+          tenant_id: tenantId,
           user_profile_id: clientProfileId,
           title: 'Nueva orden creada',
           message: `Se ha creado la orden ${newOrder.order_number} para tu negocio`,

@@ -58,9 +58,13 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('date_to') || ''
     const sourceFilter = searchParams.get('source') || '' // 'direct', 'visit', or '' for all
 
-    // 3a. Direct orders
-    let directOrders: BrandOrder[] = []
-    if (sourceFilter !== 'visit') {
+    // 3. Fetch direct orders and visit orders IN PARALLEL
+    // Direct orders have a dependency (itemOrderIds lookup first), but we can
+    // still parallelize the visit orders fetch alongside the entire direct flow.
+
+    const directOrdersPromise = (async (): Promise<{ data: BrandOrder[]; error: string | null }> => {
+      if (sourceFilter === 'visit') return { data: [], error: null }
+
       // Find orders with NULL brand_id that have products from this brand
       const { data: itemOrderIds } = await serviceSupabase
         .from('order_items')
@@ -108,14 +112,10 @@ export async function GET(request: NextRequest) {
 
       const { data: ordersData, error: ordersError } = await ordersQuery
       if (ordersError) {
-        console.error('Error fetching brand orders:', ordersError)
-        return NextResponse.json(
-          { error: 'Error al obtener ordenes', details: ordersError.message },
-          { status: 500 }
-        )
+        return { data: [], error: ordersError.message }
       }
 
-      directOrders = (ordersData || []).map((order: unknown) => {
+      const mapped = (ordersData || []).map((order: unknown) => {
         const o = order as Record<string, unknown>
         const clientRaw = o.client as unknown
         const client = (Array.isArray(clientRaw) ? clientRaw[0] : clientRaw) as BrandOrder['client']
@@ -147,11 +147,12 @@ export async function GET(request: NextRequest) {
           created_at: o.created_at as string,
         }
       })
-    }
+      return { data: mapped, error: null }
+    })()
 
-    // 3b. Visit orders for this brand
-    let visitOrdersList: BrandOrder[] = []
-    if (sourceFilter !== 'direct') {
+    const visitOrdersPromise = (async (): Promise<BrandOrder[]> => {
+      if (sourceFilter === 'direct') return []
+
       let visitQuery = serviceSupabase
         .from('visit_orders')
         .select(
@@ -176,51 +177,64 @@ export async function GET(request: NextRequest) {
       const { data: visitData, error: visitError } = await visitQuery
       if (visitError) {
         console.error('Error fetching visit orders for brand:', visitError)
-      } else {
-        // Filter to only visits for this brand
-        const filtered = (visitData || []).filter((order: unknown) => {
-          const o = order as Record<string, unknown>
-          const visitRaw = o.visit as unknown
-          const visit = (Array.isArray(visitRaw) ? visitRaw[0] : visitRaw) as {
-            brand_id: string
-          } | null
-          return visit?.brand_id === targetBrandId
-        })
-
-        visitOrdersList = filtered.map((order: unknown) => {
-          const o = order as Record<string, unknown>
-          const clientRaw = o.client as unknown
-          const client = (
-            Array.isArray(clientRaw) ? clientRaw[0] : clientRaw
-          ) as BrandOrder['client']
-          const promotorRaw = o.promotor as unknown
-          const promotor = (Array.isArray(promotorRaw) ? promotorRaw[0] : promotorRaw) as {
-            id: string
-            first_name: string
-            last_name: string
-          } | null
-          const visitItems = o.visit_order_items as Array<{ count: number }> | undefined
-
-          return {
-            id: o.id as string,
-            public_id: o.public_id as string,
-            order_number: (o.order_number || o.public_id) as string,
-            client,
-            distributor: null,
-            assigned_user: promotor,
-            order_status: (o.order_status || 'draft') as string,
-            order_type: o.order_type as string | null,
-            source_channel: 'mobile_app',
-            source: 'visit' as const,
-            order_date: o.order_date as string,
-            total_amount: (o.total_amount || 0) as number,
-            items_count: visitItems?.[0]?.count || 0,
-            priority: 'normal',
-            created_at: o.created_at as string,
-          }
-        })
+        return []
       }
+
+      // Filter to only visits for this brand
+      const filtered = (visitData || []).filter((order: unknown) => {
+        const o = order as Record<string, unknown>
+        const visitRaw = o.visit as unknown
+        const visit = (Array.isArray(visitRaw) ? visitRaw[0] : visitRaw) as {
+          brand_id: string
+        } | null
+        return visit?.brand_id === targetBrandId
+      })
+
+      return filtered.map((order: unknown) => {
+        const o = order as Record<string, unknown>
+        const clientRaw = o.client as unknown
+        const client = (
+          Array.isArray(clientRaw) ? clientRaw[0] : clientRaw
+        ) as BrandOrder['client']
+        const promotorRaw = o.promotor as unknown
+        const promotor = (Array.isArray(promotorRaw) ? promotorRaw[0] : promotorRaw) as {
+          id: string
+          first_name: string
+          last_name: string
+        } | null
+        const visitItems = o.visit_order_items as Array<{ count: number }> | undefined
+
+        return {
+          id: o.id as string,
+          public_id: o.public_id as string,
+          order_number: (o.order_number || o.public_id) as string,
+          client,
+          distributor: null,
+          assigned_user: promotor,
+          order_status: (o.order_status || 'draft') as string,
+          order_type: o.order_type as string | null,
+          source_channel: 'mobile_app',
+          source: 'visit' as const,
+          order_date: o.order_date as string,
+          total_amount: (o.total_amount || 0) as number,
+          items_count: visitItems?.[0]?.count || 0,
+          priority: 'normal',
+          created_at: o.created_at as string,
+        }
+      })
+    })()
+
+    const [directResult, visitOrdersList] = await Promise.all([directOrdersPromise, visitOrdersPromise])
+
+    if (directResult.error) {
+      console.error('Error fetching brand orders:', directResult.error)
+      return NextResponse.json(
+        { error: 'Error al obtener ordenes', details: directResult.error },
+        { status: 500 }
+      )
     }
+
+    const directOrders = directResult.data
 
     // 4. Combine and sort
     const allOrders: BrandOrder[] = [...directOrders, ...visitOrdersList].sort(

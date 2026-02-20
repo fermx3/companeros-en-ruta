@@ -74,7 +74,7 @@ export function AssessmentStage1({
       try {
         const [productsRes, competitorsRes] = await Promise.all([
           fetch(`/api/brand/products?brand_id=${brandId}`).catch(() => null),
-          fetch('/api/brand/competitors?include_products=true').catch(() => null)
+          fetch(`/api/brand/competitors?brand_id=${brandId}&include_products=true`).catch(() => null)
         ])
 
         if (productsRes?.ok) {

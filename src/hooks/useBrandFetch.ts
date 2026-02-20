@@ -24,7 +24,7 @@ export function useBrandFetch() {
 
   const brandFetch = useCallback(
     (url: string, init?: RequestInit): Promise<Response> => {
-      if (!currentBrandId) {
+      if (!currentBrandId || url.includes('brand_id=')) {
         return fetch(url, init);
       }
 

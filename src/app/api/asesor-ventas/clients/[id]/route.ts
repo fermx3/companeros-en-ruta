@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 
 interface RouteParams {
   params: Promise<{
@@ -12,47 +13,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: clientPublicId } = await params
     const supabase = await createClient()
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener user_profile del asesor de ventas
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id, tenant_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    // 3. Verificar rol de asesor_de_ventas activo
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('id, role, status, brand_id, tenant_id')
-      .eq('user_profile_id', userProfile.id)
-
-    const asesorVentasRole = roles?.find(role =>
-      role.status === 'active' &&
-      role.role === 'asesor_de_ventas'
-    )
-
-    if (!asesorVentasRole) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene rol de Asesor de Ventas activo' },
-        { status: 403 }
-      )
-    }
+    // Authenticate and verify asesor role
+    const authResult = await resolveAsesorAuth(supabase)
+    if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+    const { userProfileId, brandId } = authResult
 
     // 4. Obtener datos del cliente
     const { data: clientData, error: clientError } = await supabase
@@ -94,7 +58,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .from('client_assignments')
       .select('id')
       .eq('client_id', clientData.id)
-      .eq('user_profile_id', userProfile.id)
+      .eq('user_profile_id', userProfileId)
       .eq('is_active', true)
       .is('deleted_at', null)
       .single()
@@ -102,12 +66,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     let hasAccess = !!assignment
 
     // If no direct assignment but has brand_id, check brand membership
-    if (!hasAccess && asesorVentasRole.brand_id) {
+    if (!hasAccess && brandId) {
       const { data: membership } = await supabase
         .from('client_brand_memberships')
         .select('id')
         .eq('client_id', clientData.id)
-        .eq('brand_id', asesorVentasRole.brand_id)
+        .eq('brand_id', brandId)
         .is('deleted_at', null)
         .single()
 
@@ -175,7 +139,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         created_at
       `)
       .eq('client_id', clientData.id)
-      .eq('assigned_to', userProfile.id)
+      .eq('assigned_to', userProfileId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(5)
@@ -185,7 +149,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .from('orders')
       .select('id, total_amount, order_status')
       .eq('client_id', clientData.id)
-      .eq('assigned_to', userProfile.id)
+      .eq('assigned_to', userProfileId)
       .is('deleted_at', null)
 
     const stats = {

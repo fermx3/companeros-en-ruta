@@ -1,51 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 
 export async function GET() {
   try {
     const supabase = await createClient()
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado', details: authError?.message },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener user_profile del asesor de ventas
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado', details: profileError?.message },
-        { status: 404 }
-      )
-    }
-
-    // 3. Obtener rol de asesor_de_ventas activo
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('id, role, status, brand_id, tenant_id')
-      .eq('user_profile_id', userProfile.id)
-
-    const asesorVentasRole = roles?.find(role =>
-      role.status === 'active' &&
-      role.role === 'asesor_de_ventas'
-    )
-
-    if (!asesorVentasRole) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene rol de Asesor de Ventas activo' },
-        { status: 403 }
-      )
-    }
+    // Authenticate and verify asesor role
+    const authResult = await resolveAsesorAuth(supabase)
+    if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+    const { userProfileId, brandId } = authResult
 
     // 4. Obtener clientes asignados al asesor
     // Priority 1: Direct client assignments (client_assignments table)
@@ -72,7 +36,7 @@ export async function GET() {
           status
         )
       `)
-      .eq('user_profile_id', userProfile.id)
+      .eq('user_profile_id', userProfileId)
       .eq('is_active', true)
       .is('deleted_at', null)
 
@@ -123,7 +87,7 @@ export async function GET() {
 
     // If no direct assignments but has brand_id, fallback to brand memberships
     let brandClients: ClientWithSource[] = []
-    if (assignedClients.length === 0 && asesorVentasRole.brand_id) {
+    if (assignedClients.length === 0 && brandId) {
       const { data: memberships, error: membershipsError } = await supabase
         .from('client_brand_memberships')
         .select(`
@@ -144,7 +108,7 @@ export async function GET() {
             status
           )
         `)
-        .eq('brand_id', asesorVentasRole.brand_id)
+        .eq('brand_id', brandId)
         .is('deleted_at', null)
 
       if (membershipsError) {

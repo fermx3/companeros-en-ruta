@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
 import type { SurveyTargetRoleEnum } from '@/lib/types/database'
 
 export async function POST(
@@ -10,20 +11,30 @@ export async function POST(
     const { id } = await params
     const supabase = await createClient()
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 })
+    // Get user ID from middleware header or fallback to getUser()
+    let userId: string | undefined
+    try {
+      const h = await headers()
+      userId = h.get('x-supabase-user-id') || undefined
+    } catch { /* headers() not available */ }
+
+    if (!userId) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 })
+      }
+      userId = user.id
     }
 
     // Resolve tenant — staff users have user_profiles, client users may only have clients
-    let tenantId: string
-    let profileId: string | null = null
-
     const { data: userProfile } = await supabase
       .from('user_profiles')
       .select('id, tenant_id')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .single()
+
+    let tenantId: string
+    let profileId: string | null = null
 
     if (userProfile) {
       tenantId = userProfile.tenant_id
@@ -32,7 +43,7 @@ export async function POST(
       const { data: clientRow } = await supabase
         .from('clients')
         .select('id, tenant_id')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('status', 'active')
         .limit(1)
         .single()
@@ -50,30 +61,47 @@ export async function POST(
       )
     }
 
-    // Get survey and questions
-    const { data: survey, error: surveyError } = await supabase
-      .from('surveys')
-      .select(`
-        id,
-        tenant_id,
-        survey_status,
-        target_roles,
-        start_date,
-        end_date,
-        max_responses_per_user,
-        survey_questions(
+    // Fetch survey, check duplicates, and determine role IN PARALLEL
+    const [surveyResult, existingResponseResult, userRolesResult] = await Promise.all([
+      supabase
+        .from('surveys')
+        .select(`
           id,
-          question_type,
-          is_required
-        )
-      `)
-      .eq('id', id)
-      .eq('tenant_id', tenantId)
-      .eq('survey_status', 'active')
-      .is('deleted_at', null)
-      .single()
+          tenant_id,
+          survey_status,
+          target_roles,
+          start_date,
+          end_date,
+          max_responses_per_user,
+          survey_questions(
+            id,
+            question_type,
+            is_required
+          )
+        `)
+        .eq('id', id)
+        .eq('tenant_id', tenantId)
+        .eq('survey_status', 'active')
+        .is('deleted_at', null)
+        .single(),
 
-    if (surveyError || !survey) {
+      supabase
+        .from('survey_responses')
+        .select('id')
+        .eq('survey_id', id)
+        .eq('respondent_id', profileId)
+        .limit(1),
+
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_profile_id', profileId)
+        .eq('status', 'active')
+        .is('deleted_at', null),
+    ])
+
+    const survey = surveyResult.data
+    if (surveyResult.error || !survey) {
       return NextResponse.json({ error: 'Encuesta no encontrada o no activa' }, { status: 404 })
     }
 
@@ -84,14 +112,7 @@ export async function POST(
     }
 
     // Check for duplicate response
-    const { data: existingResponse } = await supabase
-      .from('survey_responses')
-      .select('id')
-      .eq('survey_id', id)
-      .eq('respondent_id', profileId)
-      .limit(1)
-
-    if (existingResponse && existingResponse.length > 0) {
+    if (existingResponseResult.data && existingResponseResult.data.length > 0) {
       return NextResponse.json(
         { error: 'Ya has respondido esta encuesta' },
         { status: 409 }
@@ -99,12 +120,7 @@ export async function POST(
     }
 
     // Determine respondent role
-    const { data: userRoles } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_profile_id', profileId)
-      .eq('status', 'active')
-      .is('deleted_at', null)
+    const userRoles = userRolesResult.data
 
     let respondentRole: SurveyTargetRoleEnum = 'client'
     const roles = (userRoles || []).map(r => r.role)

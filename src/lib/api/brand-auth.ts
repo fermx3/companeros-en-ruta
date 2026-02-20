@@ -106,7 +106,8 @@ export async function resolveBrandAuth(
 
   // 4. If a specific brand_id was requested, validate access
   if (requestedBrandId) {
-    const hasAccess = brandRoles.some(r => r.brand_id === requestedBrandId)
+    // Check all roles with brand_id (including promotor, supervisor, asesor_de_ventas)
+    const hasAccess = roles.some(r => r.brand_id === requestedBrandId)
 
     // Also allow global admins
     const isGlobalAdmin = roles.some(r => r.role === 'admin' && r.scope === 'global')
@@ -120,7 +121,12 @@ export async function resolveBrandAuth(
       userProfileId: userProfile.id,
       brandId: requestedBrandId,
       tenantId,
-      allBrandRoles: brandRoles,
+      allBrandRoles: [
+        ...brandRoles,
+        ...roles
+          .filter(r => r.brand_id && !['brand_manager', 'brand_admin'].includes(r.role))
+          .map(r => ({ brand_id: r.brand_id as string, role: r.role, is_primary: r.is_primary ?? false })),
+      ],
     }
   }
 

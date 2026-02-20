@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 
 interface OrderDetailItem {
   id: string
@@ -74,47 +75,10 @@ export async function GET(
     const supabase = await createClient()
     const { id: orderId } = await params
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener user_profile del asesor de ventas
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    // 3. Verificar rol de asesor_de_ventas activo
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('id, role, status')
-      .eq('user_profile_id', userProfile.id)
-
-    const asesorVentasRole = roles?.find(role =>
-      role.status === 'active' &&
-      role.role === 'asesor_de_ventas'
-    )
-
-    if (!asesorVentasRole) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene rol de Asesor de Ventas activo' },
-        { status: 403 }
-      )
-    }
+    // Authenticate and verify asesor role
+    const authResult = await resolveAsesorAuth(supabase)
+    if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+    const { userProfileId } = authResult
 
     // 4. Obtener la orden por ID o public_id
     let orderQuery = supabase
@@ -178,7 +142,7 @@ export async function GET(
     }
 
     // 5. Verificar que la orden pertenece a este asesor
-    if (orderData.assigned_to !== userProfile.id) {
+    if (orderData.assigned_to !== userProfileId) {
       return NextResponse.json(
         { error: 'No tiene permiso para ver esta orden' },
         { status: 403 }
@@ -303,47 +267,10 @@ export async function PUT(
     const supabase = await createClient()
     const { id: orderId } = await params
 
-    // 1. Obtener usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // 2. Obtener user_profile del asesor de ventas
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil de usuario no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    // 3. Verificar rol de asesor_de_ventas activo
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('id, role, status')
-      .eq('user_profile_id', userProfile.id)
-
-    const asesorVentasRole = roles?.find(role =>
-      role.status === 'active' &&
-      role.role === 'asesor_de_ventas'
-    )
-
-    if (!asesorVentasRole) {
-      return NextResponse.json(
-        { error: 'Usuario no tiene rol de Asesor de Ventas activo' },
-        { status: 403 }
-      )
-    }
+    // Authenticate and verify asesor role
+    const authResult = await resolveAsesorAuth(supabase)
+    if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+    const { userProfileId } = authResult
 
     // 4. Obtener la orden actual
     let orderQuery = supabase
@@ -367,7 +294,7 @@ export async function PUT(
     }
 
     // 5. Verificar que la orden pertenece a este asesor
-    if (existingOrder.assigned_to !== userProfile.id) {
+    if (existingOrder.assigned_to !== userProfileId) {
       return NextResponse.json(
         { error: 'No tiene permiso para modificar esta orden' },
         { status: 403 }

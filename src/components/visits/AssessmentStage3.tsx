@@ -109,9 +109,9 @@ export function AssessmentStage3({
       setLoading(true)
       try {
         const [plansRes, materialsRes, exhibitionsRes] = await Promise.all([
-          fetch('/api/brand/communication-plans?active_only=true').catch(() => null),
-          fetch('/api/brand/pop-materials?include_system=true').catch(() => null),
-          fetch('/api/brand/exhibitions?active_only=true').catch(() => null)
+          fetch(`/api/brand/communication-plans?brand_id=${brandId}&active_only=true`).catch(() => null),
+          fetch(`/api/brand/pop-materials?brand_id=${brandId}&include_system=true`).catch(() => null),
+          fetch(`/api/brand/exhibitions?brand_id=${brandId}&active_only=true`).catch(() => null)
         ])
 
         if (plansRes?.ok) {
