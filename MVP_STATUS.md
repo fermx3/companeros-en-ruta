@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-02-19
+**Last Updated:** 2026-02-20
 **Target:** Implementación requerimientos PerfectApp según especificaciones cliente
 
 ---
@@ -38,6 +38,7 @@
 **Audit Status:** 32 hallazgos documentados (0 P0 pendientes ✅, 16 P1, 8 P2) across 6 perfiles — 72/83 páginas funcionales, 86/86 APIs OK
 **Cambios 2026-02-17:** SUPV-001/002/003 ✅, ADMIN-002 ✅, BRAND-001/002/003 ✅ (commits fd4b58b, c0fdfb5, 1f56248) · CLI-001 ✅ (client/profile page)
 **Cambios 2026-02-19:** CLI-006 documentado (Carga Evidencia Cliente — spec completa en CLI-P1, tabla `client_evidence`, archivos a crear/editar, criterios de verificación, REQ-047 marcado como parcial)
+**Cambios 2026-02-20:** OPT-004 ✅ (initplan fix 327 RLS policies), fix advisor_id→promotor_id en RLS, field_users products RLS, notifications delete, survey service client
 
 ---
 
@@ -327,6 +328,9 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | OPT-001 | Optimizar API `/api/asesor-ventas/orders` | Actualmente obtiene TODAS las órdenes para calcular resumen, luego pagina en JS. Separar en 2 queries: una para datos paginados y otra para summary. Reduce tiempo de 6-12s a <1s | 2 | Media | Pendiente |
 | OPT-002 | ~~Optimizar API `/api/admin/metrics`~~ | ~~Traía TODAS las visitas y órdenes, luego filtraba en JS. Ahora usa filtros SQL `.gte('created_at', monthStart)` y `head: true` para counts. Llamadas paralelizadas en frontend.~~ | 1 | Alta | **DONE** |
 | OPT-003 | Actividad reciente admin con Supabase Realtime | Actualmente `getRecentActivity()` hace queries compuestas (visits, orders, clients) on-load. Migrar a Supabase Realtime subscriptions para que el feed se actualice en tiempo real sin refresh. | 3 | Media | Pendiente |
+| OPT-004 | Wrap auth.uid()/auth.jwt() en SELECT (initplan fix) | FINDING-005. 327 policies reescritas para evaluar auth functions una vez por query en vez de por fila. | 3 | Alta | **DONE** |
+| OPT-005 | Consolidar multiple permissive policies por tabla | FINDING-006. Combinar N policies/action en 1 con OR. ~690 instances. Riesgo medio: altera lógica acceso. | 5 | Media | Pendiente |
+| OPT-006 | Limpiar unused indexes | FINDING-007. 543 indexes sin uso. Re-evaluar post OPT-004/005. | 2 | Baja | Pendiente |
 
 ### Backlog: UX/UI Enhancements
 
@@ -1334,6 +1338,86 @@ Referencia: Supabase lint `0010_security_definer_view`
 - [ ] Crear vista `brand_visit_stats` (similar a `brand_membership_stats`) que agrupe visits por brand_id
 - [ ] La vista `active_visits` actual NO tiene columna `brand_id` — considerar agregar al SELECT de la vista
 - [ ] Revocar grants de `anon` en vistas que no deberían ser accesibles sin autenticación
+
+### FINDING-005: `auth_rls_initplan` — bare auth.uid() en 327 RLS policies
+**Descubierto:** 2026-02-20
+**Prioridad:** ALTA (performance — Disk IO budget exhaustion)
+**Estado:** ✅ RESUELTO (migración `20260221100000_fix_auth_rls_initplan.sql`)
+
+**Problema:**
+327 políticas RLS usaban `auth.uid()` / `auth.jwt()` directamente en la cláusula USING/WITH CHECK. PostgreSQL ejecuta estas funciones **por cada fila** en vez de evaluarlas una vez por query (initplan). Esto multiplicaba las llamadas a `auth.uid()` por el número de filas escaneadas, generando consumo excesivo de Disk IO.
+
+Referencia: Supabase lint `0015_rls_references_user_metadata` + advisor `auth_rls_initplan`
+
+**Impacto:**
+- Principal causa del Disk IO Budget Exhaustion en el proyecto
+- 325 policies con `auth.uid()` + 2 policies con `auth.jwt()` afectadas
+- Cada query multiplicaba llamadas auth por N filas escaneadas
+
+**Resolución:**
+- Migración reescribe las 327 policies envolviendo en `(SELECT auth.uid())` / `(SELECT auth.jwt())`
+- PostgreSQL ahora evalúa la función una vez (initplan) y reutiliza el resultado
+- Reducción significativa de Disk IO por query
+
+---
+
+### FINDING-006: `multiple_permissive_policies` — 690 policies redundantes evaluadas por query
+**Descubierto:** 2026-02-20
+**Prioridad:** MEDIA (performance)
+**Estado:** Pendiente — evaluar después de medir impacto de FINDING-005 fix
+
+**Problema:**
+690 instancias de múltiples políticas PERMISSIVE en la misma tabla/acción. PostgreSQL evalúa TODAS las policies permissive y las combina con OR. Si hay 5 policies SELECT en una tabla, las 5 se evalúan en cada query aunque la primera ya conceda acceso.
+
+Referencia: Supabase lint `0002_multiple_permissive_policies`
+
+**Impacto:**
+- Overhead de evaluación de policies redundantes en cada query
+- Especialmente impactante en tablas con muchas policies (visits, orders, clients)
+
+**Resolución propuesta:**
+- Consolidar N policies por tabla/acción en 1 policy con condiciones OR
+- Riesgo medio: altera lógica de acceso, requiere testing exhaustivo
+
+---
+
+### FINDING-007: `unused_index` — 543 indexes sin uso
+**Descubierto:** 2026-02-20
+**Prioridad:** BAJA-MEDIA (performance)
+**Estado:** Pendiente — re-evaluar después de Fase 1-2
+
+**Problema:**
+543 indexes detectados como no utilizados por el query planner. Indexes sin uso consumen espacio en disco y agregan overhead en cada INSERT/UPDATE/DELETE (deben actualizarse).
+
+Referencia: Supabase advisor `unused_index`
+
+**Impacto:**
+- Overhead de mantenimiento de indexes en operaciones de escritura
+- Consumo innecesario de Disk IO y almacenamiento
+
+**Resolución propuesta:**
+- Re-evaluar después de aplicar FINDING-005 y FINDING-006 (el cambio de policies puede alterar los query plans)
+- Eliminar indexes confirmados como no utilizados
+
+---
+
+### FINDING-008: `unindexed_foreign_keys` — 17 FKs sin index
+**Descubierto:** 2026-02-20
+**Prioridad:** BAJA (performance)
+**Estado:** Parcialmente resuelto (migración `20260220120000`)
+
+**Problema:**
+17 foreign keys sin index correspondiente. JOINs y cascading deletes en estas columnas requieren table scans completos.
+
+Referencia: Supabase advisor `unindexed_foreign_keys`
+
+**Impacto:**
+- Queries con JOINs en FKs sin index hacen sequential scans
+- Cascading deletes/updates más lentos
+
+**Resolución:**
+- Migración `20260220120000` agregó indexes para las FKs más críticas
+- FKs restantes pendientes de evaluación
 
 ---
 
