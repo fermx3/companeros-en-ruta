@@ -47,5 +47,22 @@ export async function updateSession(request: NextRequest) {
   // Don't auto-redirect from login - let the login page handle role detection
   // This prevents security issues where users get redirected to wrong dashboards
 
+  // Inject user ID as internal request header so API routes can skip getUser()
+  // Defense in depth: always strip any externally-provided header first
+  if (user) {
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.delete('x-supabase-user-id')
+    requestHeaders.set('x-supabase-user-id', user.id)
+
+    const response = NextResponse.next({ request: { headers: requestHeaders } })
+
+    // Preserve auth refresh cookies from the supabase response
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      response.cookies.set(cookie.name, cookie.value, cookie)
+    })
+
+    return response
+  }
+
   return supabaseResponse
 }

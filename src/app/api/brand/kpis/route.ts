@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { cachedJsonResponse } from '@/lib/api/cache-headers'
 
 interface KpiResult {
   slug: string
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
       .map(slug => kpis.find(k => k.slug === slug))
       .filter(Boolean) as KpiResult[]
 
-    return Response.json({
+    return cachedJsonResponse({
       kpis: orderedKpis,
       dashboard_metrics_updated_at: brand?.dashboard_metrics_updated_at,
       selected_slugs: selectedSlugs,

@@ -11,23 +11,25 @@ interface KpiDetailSectionProps {
   color: string
   brandFetch: (url: string, init?: RequestInit) => Promise<Response>
   month: string
+  prefetchedData?: Record<string, unknown> | null
 }
 
 function useKpiDetail(
   brandFetch: (url: string, init?: RequestInit) => Promise<Response>,
   slug: string,
   month: string,
+  skip = false,
 ) {
   const endpoint = getEndpointForSlug(slug)
   const [state, setState] = useState<{
     key: string
     data: Record<string, unknown> | null
     loading: boolean
-  }>({ key: '', data: null, loading: !!endpoint })
+  }>({ key: '', data: null, loading: !skip && !!endpoint })
 
   const currentKey = `${slug}:${month}`
 
-  if (currentKey !== state.key && endpoint) {
+  if (!skip && currentKey !== state.key && endpoint) {
     // Trigger re-fetch by returning loading state immediately
     setState({ key: currentKey, data: null, loading: true })
 
@@ -38,12 +40,16 @@ function useKpiDetail(
       .catch(() => setState(prev => prev.key === currentKey ? { key: currentKey, data: {}, loading: false } : prev))
   }
 
-  if (!endpoint) return { data: null, loading: false }
+  if (skip || !endpoint) return { data: null, loading: false }
   return { data: state.data, loading: state.loading }
 }
 
-export function KpiDetailSection({ slug, label, color, brandFetch, month }: KpiDetailSectionProps) {
-  const { data, loading } = useKpiDetail(brandFetch, slug, month)
+export function KpiDetailSection({ slug, label, color, brandFetch, month, prefetchedData }: KpiDetailSectionProps) {
+  const fetched = useKpiDetail(brandFetch, slug, month, prefetchedData !== undefined)
+
+  // Use prefetched data when available, otherwise fall back to individual fetch
+  const data = prefetchedData !== undefined ? prefetchedData : fetched.data
+  const loading = prefetchedData !== undefined ? false : fetched.loading
 
   if (loading) {
     return (

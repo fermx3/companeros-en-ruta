@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { cachedJsonResponse } from '@/lib/api/cache-headers'
 
 /**
  * GET /api/brand/kpis/summary?month=2026-02
@@ -45,17 +46,39 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', brandId)
       .eq('period_month', periodMonth)
 
-    // Build the response, maintaining selection order
+    // Build the response — aggregate zone-level rows into a single brand-level value per slug
     const kpis = selectedSlugs.map(slug => {
       const def = defMap.get(slug)
-      const summary = (summaryData || []).find(s => s.kpi_slug === slug)
+      const rows = (summaryData || []).filter(s => s.kpi_slug === slug)
+
+      let actual = 0
+      let target: number | null = null
+
+      if (rows.length > 0) {
+        target = rows[0].target_value ? Number(rows[0].target_value) : null
+
+        if (slug === 'volume') {
+          // Sum across zones
+          actual = rows.reduce((sum, r) => sum + (Number(r.actual_value) || 0), 0)
+        } else {
+          // Average percentages across zones (weighted equally)
+          actual = Math.round(
+            rows.reduce((sum, r) => sum + (Number(r.actual_value) || 0), 0) / rows.length * 10
+          ) / 10
+        }
+      }
+
+      const achievement_pct = target && target > 0
+        ? Math.round(actual / target * 1000) / 10
+        : null
+
       return {
         slug,
         label: def?.label || slug,
-        actual: summary ? Number(summary.actual_value) || 0 : 0,
-        target: summary?.target_value ? Number(summary.target_value) : null,
-        achievement_pct: summary?.achievement_pct ? Number(summary.achievement_pct) : null,
-        unit: summary?.unit || '%',
+        actual,
+        target,
+        achievement_pct,
+        unit: rows[0]?.unit || '%',
         icon: def?.icon || 'TrendingUp',
         color: def?.color || 'blue',
       }
@@ -64,7 +87,7 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const period = `${now.toLocaleString('es-MX', { month: 'long' })} ${now.getFullYear()}`
 
-    return Response.json({ kpis, period })
+    return cachedJsonResponse({ kpis, period })
   } catch (error) {
     console.error('Error in GET /api/brand/kpis/summary:', error)
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 })

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { SupabaseClient } from '@supabase/supabase-js'
 
 interface BrandAuthSuccess {
@@ -36,36 +37,51 @@ export async function resolveBrandAuth(
   supabase: SupabaseClient,
   requestedBrandId?: string | null
 ): Promise<BrandAuthResult> {
-  // 1. Get authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    return { _type: 'brand_auth_error', message: 'Usuario no autenticado', status: 401 }
+  // 1. Get authenticated user — prefer middleware-injected header to avoid redundant getUser()
+  let userId: string | undefined
+  try {
+    const h = await headers()
+    userId = h.get('x-supabase-user-id') || undefined
+  } catch {
+    // headers() not available outside request context — fallback below
   }
 
-  // 2. Get user profile
+  let user: { id: string; email?: string }
+
+  if (userId) {
+    user = { id: userId }
+  } else {
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    if (authError || !authUser) {
+      return { _type: 'brand_auth_error', message: 'Usuario no autenticado', status: 401 }
+    }
+    user = authUser
+  }
+
+  // 2. Get user profile + roles in a single embedded query
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')
-    .select('id, tenant_id')
+    .select(`
+      id, tenant_id,
+      user_roles(brand_id, role, scope, tenant_id, is_primary)
+    `)
     .eq('user_id', user.id)
     .eq('status', 'active')
+    .eq('user_roles.status', 'active')
+    .is('user_roles.deleted_at', null)
     .single()
 
   if (profileError || !userProfile) {
     return { _type: 'brand_auth_error', message: 'Perfil de usuario no encontrado', status: 404 }
   }
 
-  // 3. Get all active roles with brand_id and is_primary
-  const { data: roles, error: rolesError } = await supabase
-    .from('user_roles')
-    .select('brand_id, role, scope, tenant_id, is_primary')
-    .eq('user_profile_id', userProfile.id)
-    .eq('status', 'active')
-    .is('deleted_at', null)
-
-  if (rolesError) {
-    return { _type: 'brand_auth_error', message: `Error al consultar roles: ${rolesError.message}`, status: 500 }
-  }
+  const roles = userProfile.user_roles as Array<{
+    brand_id: string | null
+    role: string
+    scope: string
+    tenant_id: string
+    is_primary: boolean | null
+  }> | null
 
   if (!roles || roles.length === 0) {
     return { _type: 'brand_auth_error', message: 'No tienes roles asignados', status: 403 }

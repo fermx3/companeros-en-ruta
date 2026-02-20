@@ -128,6 +128,7 @@ export default function BrandDashboard() {
   const [metrics, setMetrics] = useState<BrandDashboardMetrics | null>(null)
   const [kpis, setKpis] = useState<KpiResult[]>([])
   const [kpiSummary, setKpiSummary] = useState<KpiSummaryItem[]>([])
+  const [kpiDetails, setKpiDetails] = useState<Record<string, Record<string, unknown>> | null>(null)
   const [loading, setLoading] = useState(true)
   const [kpiLoading, setKpiLoading] = useState(true)
   const [summaryLoading, setSummaryLoading] = useState(true)
@@ -163,10 +164,11 @@ export default function BrandDashboard() {
         setKpiLoading(true)
         setError(null)
 
-        // Fire all 3 API calls in parallel
-        const [metricsRes, kpisRes] = await Promise.all([
+        // Fire all API calls in parallel
+        const [metricsRes, kpisRes, detailsRes] = await Promise.all([
           brandFetch('/api/brand/metrics', { signal: controller.signal }),
           brandFetch('/api/brand/kpis', { signal: controller.signal }),
+          brandFetch(`/api/brand/kpis/details?month=${selectedMonth}`, { signal: controller.signal }),
         ])
 
         // Also launch summary in parallel (has its own loading state)
@@ -184,6 +186,12 @@ export default function BrandDashboard() {
         if (kpisRes.ok) {
           const kpisData = await kpisRes.json()
           if (!controller.signal.aborted) setKpis(kpisData.kpis || [])
+        }
+
+        // Process KPI details
+        if (detailsRes.ok) {
+          const detailsData = await detailsRes.json()
+          if (!controller.signal.aborted) setKpiDetails(detailsData)
         }
       } catch (error) {
         if (controller.signal.aborted) return
@@ -379,6 +387,7 @@ export default function BrandDashboard() {
                     color={kpi.color}
                     brandFetch={brandFetch}
                     month={selectedMonth}
+                    prefetchedData={kpiDetails?.[kpi.slug] ?? undefined}
                   />
                 ))}
               </div>
