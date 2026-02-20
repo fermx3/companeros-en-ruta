@@ -41,6 +41,7 @@ interface Order {
   order_status: string
   order_type: string | null
   source_channel: string
+  source: 'direct' | 'visit'
   order_date: string
   total_amount: number
   items_count: number
@@ -88,6 +89,21 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${className}`}>
       {icon}
       {label}
+    </span>
+  )
+}
+
+function OriginBadge({ source }: { source: 'direct' | 'visit' }) {
+  if (source === 'visit') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-purple-50 text-purple-700">
+        Visita
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-blue-50 text-blue-700">
+      Directo
     </span>
   )
 }
@@ -312,6 +328,7 @@ export default function BrandOrdersPage() {
                             #{order.order_number}
                           </span>
                           <StatusBadge status={order.order_status} />
+                          <OriginBadge source={order.source} />
                         </div>
 
                         <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
