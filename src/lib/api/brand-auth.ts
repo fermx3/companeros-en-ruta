@@ -63,7 +63,7 @@ export async function resolveBrandAuth(
     .from('user_profiles')
     .select(`
       id, tenant_id,
-      user_roles(brand_id, role, scope, tenant_id, is_primary)
+      user_roles!user_roles_user_profile_id_fkey(brand_id, role, scope, tenant_id, is_primary)
     `)
     .eq('user_id', user.id)
     .eq('status', 'active')
@@ -72,7 +72,13 @@ export async function resolveBrandAuth(
     .single()
 
   if (profileError || !userProfile) {
-    return { _type: 'brand_auth_error', message: 'Perfil de usuario no encontrado', status: 404 }
+    return {
+      _type: 'brand_auth_error',
+      message: profileError
+        ? `Perfil de usuario no encontrado: ${profileError.message}`
+        : 'Perfil de usuario no encontrado',
+      status: 404,
+    }
   }
 
   const roles = userProfile.user_roles as Array<{
