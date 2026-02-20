@@ -160,39 +160,40 @@ export default function BrandDashboard() {
     const loadData = async () => {
       try {
         setLoading(true)
+        setKpiLoading(true)
         setError(null)
-        const response = await brandFetch('/api/brand/metrics', { signal: controller.signal })
-        if (!response.ok) {
-          const errorData = await response.json()
+
+        // Fire all 3 API calls in parallel
+        const [metricsRes, kpisRes] = await Promise.all([
+          brandFetch('/api/brand/metrics', { signal: controller.signal }),
+          brandFetch('/api/brand/kpis', { signal: controller.signal }),
+        ])
+
+        // Also launch summary in parallel (has its own loading state)
+        loadSummary(selectedMonth, controller.signal)
+
+        // Process metrics
+        if (!metricsRes.ok) {
+          const errorData = await metricsRes.json()
           throw new Error(errorData.error || 'Error al cargar métricas')
         }
-        const data = await response.json()
-        setMetrics(data)
+        const metricsData = await metricsRes.json()
+        if (!controller.signal.aborted) setMetrics(metricsData)
+
+        // Process KPIs
+        if (kpisRes.ok) {
+          const kpisData = await kpisRes.json()
+          if (!controller.signal.aborted) setKpis(kpisData.kpis || [])
+        }
       } catch (error) {
         if (controller.signal.aborted) return
         const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
         setError(errorMessage)
       } finally {
-        if (!controller.signal.aborted) setLoading(false)
-      }
-
-      try {
-        if (controller.signal.aborted) return
-        setKpiLoading(true)
-        const response = await brandFetch('/api/brand/kpis', { signal: controller.signal })
-        if (response.ok) {
-          const data = await response.json()
-          if (!controller.signal.aborted) setKpis(data.kpis || [])
+        if (!controller.signal.aborted) {
+          setLoading(false)
+          setKpiLoading(false)
         }
-      } catch {
-        // KPIs are enhancement, don't block the page
-      } finally {
-        if (!controller.signal.aborted) setKpiLoading(false)
-      }
-
-      // Load enriched summary
-      if (!controller.signal.aborted) {
-        await loadSummary(selectedMonth, controller.signal)
       }
     }
 

@@ -59,21 +59,21 @@ export async function GET(request: NextRequest) {
     const monthEnd = now.toISOString()
     const period = `${now.toLocaleString('es-MX', { month: 'long' })} ${now.getFullYear()}`
 
-    const kpis: KpiResult[] = []
-
-    for (const def of kpiDefs) {
-      const value = await computeKpi(supabase, brandId, def.computation_type, monthStart, monthEnd)
-      kpis.push({
-        slug: def.slug,
-        label: def.label,
-        value,
-        unit: getKpiUnit(def.computation_type),
-        icon: def.icon || 'TrendingUp',
-        color: def.color || 'blue',
-        description: def.description || '',
-        period,
+    const kpis: KpiResult[] = await Promise.all(
+      kpiDefs.map(async (def) => {
+        const value = await computeKpi(supabase, brandId, def.computation_type, monthStart, monthEnd)
+        return {
+          slug: def.slug,
+          label: def.label,
+          value,
+          unit: getKpiUnit(def.computation_type),
+          icon: def.icon || 'TrendingUp',
+          color: def.color || 'blue',
+          description: def.description || '',
+          period,
+        }
       })
-    }
+    )
 
     // Maintain original selection order
     const orderedKpis = selectedSlugs
@@ -143,25 +143,24 @@ async function computeVolume(supabase: any, brandId: string, start: string, end:
  * Reach & Mix: (unique clients visited / total clients) * 100
  */
 async function computeReachMix(supabase: any, brandId: string, start: string, end: string): Promise<number> {
-  // Total clients for brand
-  const { count: totalClients } = await supabase
-    .from('client_brand_memberships')
-    .select('id', { count: 'exact', head: true })
-    .eq('brand_id', brandId)
-    .eq('membership_status', 'active')
-    .is('deleted_at', null)
+  // Total clients and visited clients are independent — fetch in parallel
+  const [{ count: totalClients }, { data: visits }] = await Promise.all([
+    supabase
+      .from('client_brand_memberships')
+      .select('id', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+      .eq('membership_status', 'active')
+      .is('deleted_at', null),
+    supabase
+      .from('visits')
+      .select('client_id')
+      .eq('brand_id', brandId)
+      .is('deleted_at', null)
+      .gte('visit_date', start)
+      .lte('visit_date', end),
+  ])
 
   if (!totalClients || totalClients === 0) return 0
-
-  // Unique clients visited in period
-  const { data: visits } = await supabase
-    .from('visits')
-    .select('client_id')
-    .eq('brand_id', brandId)
-    .is('deleted_at', null)
-    .gte('visit_date', start)
-    .lte('visit_date', end)
-
   if (!visits || visits.length === 0) return 0
 
   const uniqueClients = new Set(visits.map((v: any) => v.client_id))
@@ -172,26 +171,25 @@ async function computeReachMix(supabase: any, brandId: string, start: string, en
  * Assortment: avg % of brand products present per visit
  */
 async function computeAssortment(supabase: any, brandId: string, start: string, end: string): Promise<number> {
-  // Total active products for brand
-  const { count: totalProducts } = await supabase
-    .from('products')
-    .select('id', { count: 'exact', head: true })
-    .eq('brand_id', brandId)
-    .eq('is_active', true)
-    .eq('include_in_assessment', true)
-    .is('deleted_at', null)
+  // Products count and visits are independent — fetch in parallel
+  const [{ count: totalProducts }, { data: visits }] = await Promise.all([
+    supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+      .eq('is_active', true)
+      .eq('include_in_assessment', true)
+      .is('deleted_at', null),
+    supabase
+      .from('visits')
+      .select('id')
+      .eq('brand_id', brandId)
+      .is('deleted_at', null)
+      .gte('visit_date', start)
+      .lte('visit_date', end),
+  ])
 
   if (!totalProducts || totalProducts === 0) return 0
-
-  // Get visits with assessments in period
-  const { data: visits } = await supabase
-    .from('visits')
-    .select('id')
-    .eq('brand_id', brandId)
-    .is('deleted_at', null)
-    .gte('visit_date', start)
-    .lte('visit_date', end)
-
   if (!visits || visits.length === 0) return 0
 
   const visitIds = visits.map((v: any) => v.id)
@@ -232,18 +230,18 @@ async function computeMarketShare(supabase: any, brandId: string, start: string,
   if (!visits || visits.length === 0) return 0
   const visitIds = visits.map((v: any) => v.id)
 
-  // Brand products present
-  const { count: brandPresent } = await supabase
-    .from('visit_brand_product_assessments')
-    .select('id', { count: 'exact', head: true })
-    .in('visit_id', visitIds)
-    .eq('is_product_present', true)
-
-  // Competitor products present
-  const { count: competitorPresent } = await supabase
-    .from('visit_competitor_assessments')
-    .select('id', { count: 'exact', head: true })
-    .in('visit_id', visitIds)
+  // Brand and competitor counts are independent — fetch in parallel
+  const [{ count: brandPresent }, { count: competitorPresent }] = await Promise.all([
+    supabase
+      .from('visit_brand_product_assessments')
+      .select('id', { count: 'exact', head: true })
+      .in('visit_id', visitIds)
+      .eq('is_product_present', true),
+    supabase
+      .from('visit_competitor_assessments')
+      .select('id', { count: 'exact', head: true })
+      .in('visit_id', visitIds),
+  ])
 
   const total = (brandPresent || 0) + (competitorPresent || 0)
   if (total === 0) return 0
@@ -266,17 +264,17 @@ async function computeShareOfShelf(supabase: any, brandId: string, start: string
   if (!visits || visits.length === 0) return 0
   const visitIds = visits.map((v: any) => v.id)
 
-  // POP material checks
-  const { data: popChecks } = await supabase
-    .from('visit_pop_material_checks')
-    .select('is_present')
-    .in('visit_id', visitIds)
-
-  // Exhibition checks
-  const { data: exhibChecks } = await supabase
-    .from('visit_exhibition_checks')
-    .select('is_executed')
-    .in('visit_id', visitIds)
+  // POP and exhibition checks are independent — fetch in parallel
+  const [{ data: popChecks }, { data: exhibChecks }] = await Promise.all([
+    supabase
+      .from('visit_pop_material_checks')
+      .select('is_present')
+      .in('visit_id', visitIds),
+    supabase
+      .from('visit_exhibition_checks')
+      .select('is_executed')
+      .in('visit_id', visitIds),
+  ])
 
   const popTotal = popChecks?.length || 0
   const popPresent = popChecks?.filter((c: any) => c.is_present).length || 0

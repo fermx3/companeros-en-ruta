@@ -15,97 +15,120 @@ export async function GET(request: NextRequest) {
     if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId: targetBrandId } = result
 
-    // Obtener información real de la marca
-    const { data: brandInfo, error: brandError } = await supabase
-      .from('brands')
-      .select(`
-        *,
-        tenants!brands_tenant_id_fkey(
-          name,
-          slug
-        )
-      `)
-      .eq('id', targetBrandId)
-      .single()
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
 
-    if (brandError || !brandInfo) {
+    // All queries in parallel — COUNTs use head:true (no data transfer)
+    const [
+      brandResult,
+      membershipsResult,
+      // Visit metrics (COUNTs + minimal data)
+      totalVisitsResult,
+      activeVisitsResult,
+      monthlyVisitsResult,
+      visitRatingsResult,
+      lastVisitResult,
+      // Order metrics (COUNTs + amounts only)
+      totalOrdersResult,
+      monthlyOrdersResult,
+      totalRevenueResult,
+      monthlyRevenueResult,
+      lastOrderResult,
+      // Promotion metrics (COUNTs)
+      totalPromosResult,
+      activePromosResult,
+    ] = await Promise.all([
+      // Brand info
+      supabase
+        .from('brands')
+        .select(`*, tenants!brands_tenant_id_fkey(name, slug)`)
+        .eq('id', targetBrandId)
+        .single(),
+      // Memberships (small set, need multiple derived values)
+      supabase
+        .from('client_brand_memberships')
+        .select('id, membership_status, joined_date, points_balance')
+        .eq('brand_id', targetBrandId)
+        .is('deleted_at', null),
+      // Visit counts — head:true returns only count, no data
+      supabase.from('visits').select('id', { count: 'exact', head: true })
+        .eq('brand_id', targetBrandId).is('deleted_at', null),
+      supabase.from('visits').select('id', { count: 'exact', head: true })
+        .eq('brand_id', targetBrandId).is('deleted_at', null).eq('visit_status', 'in_progress'),
+      supabase.from('visits').select('id', { count: 'exact', head: true })
+        .eq('brand_id', targetBrandId).is('deleted_at', null).gte('visit_date', monthStart),
+      // Visit data — only ratings (filtered non-null) for avg calculation
+      supabase.from('visits').select('client_satisfaction_rating')
+        .eq('brand_id', targetBrandId).is('deleted_at', null)
+        .not('client_satisfaction_rating', 'is', null),
+      // Last visit date — order desc limit 1
+      supabase.from('visits').select('visit_date')
+        .eq('brand_id', targetBrandId).is('deleted_at', null)
+        .not('visit_date', 'is', null)
+        .order('visit_date', { ascending: false }).limit(1),
+      // Order counts
+      supabase.from('active_orders').select('id', { count: 'exact', head: true })
+        .eq('brand_id', targetBrandId),
+      supabase.from('active_orders').select('id', { count: 'exact', head: true })
+        .eq('brand_id', targetBrandId).gte('order_date', monthStart),
+      // Order amounts — only total_amount column
+      supabase.from('active_orders').select('total_amount')
+        .eq('brand_id', targetBrandId),
+      supabase.from('active_orders').select('total_amount')
+        .eq('brand_id', targetBrandId).gte('order_date', monthStart),
+      // Last order date
+      supabase.from('active_orders').select('order_date')
+        .not('order_date', 'is', null)
+        .eq('brand_id', targetBrandId)
+        .order('order_date', { ascending: false }).limit(1),
+      // Promotion counts
+      supabase.from('active_promotions').select('id', { count: 'exact', head: true })
+        .eq('brand_id', targetBrandId),
+      supabase.from('active_promotions').select('id', { count: 'exact', head: true })
+        .eq('brand_id', targetBrandId).eq('status', 'active'),
+    ])
+
+    const brandInfo = brandResult.data
+    if (brandResult.error || !brandInfo) {
       throw new Error('Marca no encontrada')
     }
 
-    // Obtener métricas reales de client_brand_memberships
-    const { data: memberships, error: membershipsError } = await supabase
-      .from('client_brand_memberships')
-      .select('id, membership_status, joined_date, lifetime_points, points_balance, last_purchase_date, created_at')
-      .eq('brand_id', targetBrandId)
-      .is('deleted_at', null)
-
-    if (membershipsError) {
-      console.error('Error al obtener membresías:', membershipsError)
-    }
-
-    // Calcular métricas desde client_brand_memberships
+    // Membership metrics (full fetch — small set, multiple derived values)
+    const memberships = membershipsResult.data
     const totalClients = memberships?.length || 0
     const activeClients = memberships?.filter(m => m.membership_status === 'active').length || 0
     const pendingClients = memberships?.filter(m => m.membership_status === 'pending').length || 0
-
     const totalPointsBalance = memberships?.reduce((sum, m) => sum + (Number(m.points_balance) || 0), 0) || 0
     const avgClientPoints = totalClients > 0 ? Math.round((totalPointsBalance / totalClients) * 100) / 100 : 0
 
-    // Fechas de membresía
     const membershipDates = memberships
       ?.filter(m => m.joined_date)
       .map(m => new Date(m.joined_date!))
       .sort((a, b) => a.getTime() - b.getTime()) || []
-
     const firstMembershipDate = membershipDates.length > 0 ? membershipDates[0].toISOString() : null
     const lastMembershipDate = membershipDates.length > 0 ? membershipDates[membershipDates.length - 1].toISOString() : null
 
-    // Visits — direct query (active_visits view does not have brand_id)
-    const { data: visitRows } = await supabase
-      .from('visits')
-      .select('id, visit_status, visit_date, client_satisfaction_rating')
-      .eq('brand_id', targetBrandId)
-      .is('deleted_at', null)
+    // Visit metrics (from COUNT queries — no full table scan)
+    const totalVisits = totalVisitsResult.count || 0
+    const activeVisitsCount = activeVisitsResult.count || 0
+    const monthlyVisits = monthlyVisitsResult.count || 0
 
-    const totalVisits = visitRows?.length || 0
-    const activeVisitsCount = visitRows?.filter(v => v.visit_status === 'in_progress').length || 0
-
-    const now = new Date()
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
-    const monthlyVisits = visitRows?.filter(v => v.visit_date && v.visit_date >= monthStart).length || 0
-
-    const visitRatings = visitRows?.filter(v => v.client_satisfaction_rating != null).map(v => v.client_satisfaction_rating as number) || []
+    const visitRatings = visitRatingsResult.data?.map((v: any) => v.client_satisfaction_rating as number) || []
     const avgVisitRating = visitRatings.length > 0
-      ? Math.round((visitRatings.reduce((sum, r) => sum + r, 0) / visitRatings.length) * 10) / 10
+      ? Math.round((visitRatings.reduce((sum: number, r: number) => sum + r, 0) / visitRatings.length) * 10) / 10
       : 0
+    const lastVisitDate = lastVisitResult.data?.[0]?.visit_date || null
 
-    const visitDates = visitRows?.filter(v => v.visit_date).map(v => v.visit_date as string).sort() || []
-    const lastVisitDate = visitDates.length > 0 ? visitDates[visitDates.length - 1] : null
+    // Order metrics (from COUNT + amount-only queries)
+    const totalOrders = totalOrdersResult.count || 0
+    const monthlyOrders = monthlyOrdersResult.count || 0
+    const totalRevenue = totalRevenueResult.data?.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || 0), 0) || 0
+    const monthlyRevenue = monthlyRevenueResult.data?.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || 0), 0) || 0
+    const lastOrderDate = lastOrderResult.data?.[0]?.order_date || null
 
-    // Orders — use active_orders view
-    const { data: orderRows } = await supabase
-      .from('active_orders')
-      .select('id, order_status, order_date, total_amount')
-      .eq('brand_id', targetBrandId)
-
-    const totalOrders = orderRows?.length || 0
-    const monthlyOrders = orderRows?.filter(o => o.order_date && o.order_date >= monthStart).length || 0
-    const totalRevenue = orderRows?.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) || 0
-    const monthlyRevenue = orderRows
-      ?.filter(o => o.order_date && o.order_date >= monthStart)
-      .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) || 0
-
-    const orderDates = orderRows?.filter(o => o.order_date).map(o => o.order_date as string).sort() || []
-    const lastOrderDate = orderDates.length > 0 ? orderDates[orderDates.length - 1] : null
-
-    // Promotions — use active_promotions view
-    const { data: promoRows } = await supabase
-      .from('active_promotions')
-      .select('id, status')
-      .eq('brand_id', targetBrandId)
-
-    const totalPromotions = promoRows?.length || 0
-    const activePromotions = promoRows?.filter(p => p.status === 'active').length || 0
+    // Promotion metrics (from COUNT queries)
+    const totalPromotions = totalPromosResult.count || 0
+    const activePromotions = activePromosResult.count || 0
 
     // Derived metrics
     const conversionRate = totalVisits > 0
