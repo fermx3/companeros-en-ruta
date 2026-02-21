@@ -18,6 +18,8 @@ import {
   Eye,
   UserCircle,
   Download,
+  LayoutGrid,
+  Megaphone,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -50,6 +52,10 @@ export const brandNavConfig: RoleNavConfig = {
     { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/brand/reports' },
     { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/brand/surveys' },
     { id: 'exports', label: 'Exportar Datos', icon: Download, href: '/brand/exports' },
+    { id: 'competitors', label: 'Competidores', icon: Building2, href: '/brand/competitors' },
+    { id: 'pop-materials', label: 'Materiales POP', icon: LayoutGrid, href: '/brand/pop-materials' },
+    { id: 'exhibitions', label: 'Exhibiciones', icon: Eye, href: '/brand/exhibitions' },
+    { id: 'communication-plans', label: 'Planes Comunicación', icon: Megaphone, href: '/brand/communication-plans' },
     { id: 'assessment-config', label: 'Config Assessment', icon: ClipboardList, href: '/brand/assessment-config' },
     { id: 'settings', label: 'Configuración', icon: Settings, href: '/brand/settings' },
   ],
