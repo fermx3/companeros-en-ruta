@@ -39,6 +39,7 @@
 **Cambios 2026-02-17:** SUPV-001/002/003 ✅, ADMIN-002 ✅, BRAND-001/002/003 ✅ (commits fd4b58b, c0fdfb5, 1f56248) · CLI-001 ✅ (client/profile page)
 **Cambios 2026-02-19:** CLI-006 documentado (Carga Evidencia Cliente — spec completa en CLI-P1, tabla `client_evidence`, archivos a crear/editar, criterios de verificación, REQ-047 marcado como parcial)
 **Cambios 2026-02-20:** OPT-004 ✅ (initplan fix 327 RLS policies), fix advisor_id→promotor_id en RLS, field_users products RLS, notifications delete, survey service client
+**Cambios 2026-02-21:** OPT-005 ✅ (RLS consolidation 364→135 policies, 63% reduction), OPT-006 ✅ (drop 46 unused GIN indexes), fix function_search_path (87 functions), fix audit_logs RLS+FK indexes, move pg_trgm→extensions schema
 
 ---
 
@@ -329,8 +330,8 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 | OPT-002 | ~~Optimizar API `/api/admin/metrics`~~ | ~~Traía TODAS las visitas y órdenes, luego filtraba en JS. Ahora usa filtros SQL `.gte('created_at', monthStart)` y `head: true` para counts. Llamadas paralelizadas en frontend.~~ | 1 | Alta | **DONE** |
 | OPT-003 | Actividad reciente admin con Supabase Realtime | Actualmente `getRecentActivity()` hace queries compuestas (visits, orders, clients) on-load. Migrar a Supabase Realtime subscriptions para que el feed se actualice en tiempo real sin refresh. | 3 | Media | Pendiente |
 | OPT-004 | Wrap auth.uid()/auth.jwt() en SELECT (initplan fix) | FINDING-005. 327 policies reescritas para evaluar auth functions una vez por query en vez de por fila. | 3 | Alta | **DONE** |
-| OPT-005 | Consolidar multiple permissive policies por tabla | FINDING-006. Combinar N policies/action en 1 con OR. ~690 instances. Riesgo medio: altera lógica acceso. | 5 | Media | Pendiente |
-| OPT-006 | Limpiar unused indexes | FINDING-007. 543 indexes sin uso. Re-evaluar post OPT-004/005. | 2 | Baja | Pendiente |
+| OPT-005 | Consolidar multiple permissive policies por tabla | FINDING-006. 364→135 policies (63% reducción). 5 migraciones: drop fallbacks, helpers, SELECT, write, manage consolidation. 10 combos multi-permissive legítimos restantes en 8 tablas. | 5 | Media | **DONE** |
+| OPT-006 | Limpiar unused indexes + fix search_path + audit_logs | FINDING-007/008/009. 46 GIN indexes eliminados, 87 funciones con search_path fijado, audit_logs retro-documentado + RLS initplan fix + FK indexes, pg_trgm movido a extensions schema. | 3 | Media | **DONE** |
 
 ### Backlog: UX/UI Enhancements
 
@@ -1361,10 +1362,10 @@ Referencia: Supabase lint `0015_rls_references_user_metadata` + advisor `auth_rl
 
 ---
 
-### FINDING-006: `multiple_permissive_policies` — 690 policies redundantes evaluadas por query
+### FINDING-006: `multiple_permissive_policies` — 690→10 instancias
 **Descubierto:** 2026-02-20
 **Prioridad:** MEDIA (performance)
-**Estado:** Pendiente — evaluar después de medir impacto de FINDING-005 fix
+**Estado:** ✅ RESUELTO (migraciones `20260221110000` a `20260221150000`)
 
 **Problema:**
 690 instancias de múltiples políticas PERMISSIVE en la misma tabla/acción. PostgreSQL evalúa TODAS las policies permissive y las combina con OR. Si hay 5 policies SELECT en una tabla, las 5 se evalúan en cada query aunque la primera ya conceda acceso.
@@ -1375,49 +1376,93 @@ Referencia: Supabase lint `0002_multiple_permissive_policies`
 - Overhead de evaluación de policies redundantes en cada query
 - Especialmente impactante en tablas con muchas policies (visits, orders, clients)
 
-**Resolución propuesta:**
-- Consolidar N policies por tabla/acción en 1 policy con condiciones OR
-- Riesgo medio: altera lógica de acceso, requiere testing exhaustivo
+**Resolución (5 migraciones):**
+1. `20260221110000_drop_generic_fallback_rls_policies.sql` — eliminó policies genéricas de fallback
+2. `20260221120000_rls_consolidation_phase1_helpers.sql` — helper functions (get_client_ids_for_auth_user, get_promotor_profile_ids, get_tenant_admin_tenant_ids)
+3. `20260221130000_rls_consolidation_phase2_select_policies.sql` — 27 tablas, ~144 SELECT policies → 27 consolidadas
+4. `20260221140000_rls_consolidation_phase3_write_policies.sql` — admin I/U/D → FOR ALL, -48 policies
+5. `20260221150000_rls_consolidation_phase4_manage_policies.sql` — multi-role manage consolidation, -52 policies
+
+**Resultado:** 364 → 135 policies totales (63% reducción). 10 combos multi-permissive legítimos restantes en 8 tablas (order_items, visit_order_items, tenants, user_roles, orders, distributors, qr_codes, qr_redemptions).
 
 ---
 
-### FINDING-007: `unused_index` — 543 indexes sin uso
+### FINDING-007: `unused_index` — 522→479 (46 GIN eliminados)
 **Descubierto:** 2026-02-20
 **Prioridad:** BAJA-MEDIA (performance)
-**Estado:** Pendiente — re-evaluar después de Fase 1-2
+**Estado:** ✅ PARCIALMENTE RESUELTO (migración `20260221160000_drop_unused_indexes.sql`)
 
 **Problema:**
-543 indexes detectados como no utilizados por el query planner. Indexes sin uso consumen espacio en disco y agregan overhead en cada INSERT/UPDATE/DELETE (deben actualizarse).
+522 indexes detectados como no utilizados por el query planner (post OPT-004/005). Indexes sin uso consumen espacio en disco y agregan overhead en cada INSERT/UPDATE/DELETE.
 
 Referencia: Supabase advisor `unused_index`
 
-**Impacto:**
-- Overhead de mantenimiento de indexes en operaciones de escritura
-- Consumo innecesario de Disk IO y almacenamiento
-
-**Resolución propuesta:**
-- Re-evaluar después de aplicar FINDING-005 y FINDING-006 (el cambio de policies puede alterar los query plans)
-- Eliminar indexes confirmados como no utilizados
+**Resolución:**
+- Migración `20260221160000` eliminó 46 GIN indexes en columnas JSONB (metadata, dimensions, specifications, etc.) que nunca fueron consultados por el query planner (idx_scan=0 en remote pg_stat_user_indexes)
+- 479 indexes restantes son mayormente B-tree de 16kB en columnas de filtrado/FK — mantenidos intencionalmente ya que pueden ser útiles cuando crezca la data
+- Unique constraints y PK indexes excluidos del drop (enfuerzan integridad)
 
 ---
 
-### FINDING-008: `unindexed_foreign_keys` — 17 FKs sin index
+### FINDING-008: `unindexed_foreign_keys` — 17→0
 **Descubierto:** 2026-02-20
 **Prioridad:** BAJA (performance)
-**Estado:** Parcialmente resuelto (migración `20260220120000`)
+**Estado:** ✅ RESUELTO (migraciones `20260220120000` + `20260221180000`)
 
 **Problema:**
 17 foreign keys sin index correspondiente. JOINs y cascading deletes en estas columnas requieren table scans completos.
 
 Referencia: Supabase advisor `unindexed_foreign_keys`
 
-**Impacto:**
-- Queries con JOINs en FKs sin index hacen sequential scans
-- Cascading deletes/updates más lentos
+**Resolución:**
+- Migración `20260220120000` agregó indexes para las FKs más críticas (15 FKs)
+- Migración `20260221180000` agregó `idx_audit_logs_tenant_id` e `idx_audit_logs_user_id` (2 FKs restantes)
+- Supabase advisor ahora reporta 0 unindexed_foreign_keys
+
+---
+
+### FINDING-009: `function_search_path_mutable` — 87 funciones sin search_path
+**Descubierto:** 2026-02-21
+**Prioridad:** MEDIA (security)
+**Estado:** ✅ RESUELTO (migración `20260221170000_fix_function_search_path.sql`)
+
+**Problema:**
+87 funciones custom en schema `public` sin `SET search_path` configurado. Un atacante podría explotar el search_path mutable para ejecutar funciones maliciosas con el mismo nombre en otro schema.
+
+Referencia: Supabase lint `0011_function_search_path_mutable`
 
 **Resolución:**
-- Migración `20260220120000` agregó indexes para las FKs más críticas
-- FKs restantes pendientes de evaluación
+- Migración `20260221170000` aplica `ALTER FUNCTION ... SET search_path = ''` a las 87 funciones custom
+- Funciones de extensión pg_trgm resueltas moviendo la extensión al schema `extensions` (migración `20260221180000`)
+- Supabase security advisor ahora reporta 0 function_search_path_mutable
+
+---
+
+### FINDING-010: `extension_in_public` — pg_trgm en schema public
+**Descubierto:** 2026-02-21
+**Prioridad:** MEDIA (security)
+**Estado:** ✅ RESUELTO (migración `20260221180000_fix_audit_logs_and_pg_trgm.sql`)
+
+**Problema:**
+Extensión `pg_trgm` instalada en schema `public`. Las extensiones deben estar en un schema dedicado.
+
+**Resolución:**
+- Migración `20260221180000` ejecuta `ALTER EXTENSION pg_trgm SET SCHEMA extensions`
+
+---
+
+### FINDING-011: `auth_rls_initplan` en audit_logs
+**Descubierto:** 2026-02-21
+**Prioridad:** BAJA (performance — tabla poco usada)
+**Estado:** ✅ RESUELTO (migración `20260221180000_fix_audit_logs_and_pg_trgm.sql`)
+
+**Problema:**
+Tabla `audit_logs` (creada manualmente, no en migraciones) tenía policy "Admins can view all audit logs" con `auth.uid()` sin wrapper SELECT.
+
+**Resolución:**
+- Tabla retro-documentada en migraciones con `CREATE TABLE IF NOT EXISTS`
+- Policy reescrita como `rls_select_audit_logs` con `(SELECT auth.uid())`
+- FK indexes agregados (tenant_id, user_id)
 
 ---
 
