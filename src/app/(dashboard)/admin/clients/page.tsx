@@ -38,6 +38,8 @@ export default function AdminClientsPage() {
   const [zones, setZones] = useState<Zone[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
 
+  const [togglingStatus, setTogglingStatus] = useState<string | null>(null);
+
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 20;
@@ -117,6 +119,29 @@ export default function AdminClientsPage() {
   const clearFilters = () => {
     setFilters({ status: '', zone_id: '', market_id: '' });
     setCurrentPage(1);
+  };
+
+  const handleStatusToggle = async (publicId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    setTogglingStatus(publicId);
+
+    try {
+      const response = await adminService.updateClientStatus(
+        publicId,
+        newStatus as 'active' | 'inactive'
+      );
+
+      if (response.error) {
+        alert(response.error);
+      } else {
+        await loadClients();
+      }
+    } catch (err) {
+      console.error('Error updating client status:', err);
+      alert('Error al cambiar el estado del cliente');
+    } finally {
+      setTogglingStatus(null);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -373,6 +398,22 @@ export default function AdminClientsPage() {
                         >
                           Editar
                         </Link>
+                        <span className="text-gray-300">|</span>
+                        <button
+                          onClick={() => handleStatusToggle(client.public_id, client.status)}
+                          disabled={togglingStatus === client.public_id}
+                          className={`${
+                            client.status === 'active'
+                              ? 'text-red-600 hover:text-red-900'
+                              : 'text-green-600 hover:text-green-900'
+                          } disabled:opacity-50`}
+                        >
+                          {togglingStatus === client.public_id
+                            ? 'Cambiando...'
+                            : client.status === 'active'
+                              ? 'Desactivar'
+                              : 'Activar'}
+                        </button>
                       </td>
                     </tr>
                   ))

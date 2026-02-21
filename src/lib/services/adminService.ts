@@ -544,6 +544,43 @@ export class AdminService {
     }
   }
 
+  async updateClientStatus(publicId: string, status: 'active' | 'inactive' | 'suspended'): Promise<ApiResponse<{ public_id: string; status: string }>> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(`/api/admin/clients/${publicId}`, {
+        method: 'PATCH',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        let errorMessage = 'Error al actualizar estado del cliente';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        return { error: errorMessage };
+      }
+
+      const result = await response.json();
+      return { data: result.data, message: result.message };
+
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { error: 'Timeout: La petición tardó demasiado tiempo' };
+      }
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      return { error: message };
+    }
+  }
+
   /**
    * User Management
    */

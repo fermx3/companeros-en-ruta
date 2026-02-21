@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { z } from 'zod';
 
 /**
  * API Route para obtener un cliente específico por su public_id
@@ -133,11 +134,104 @@ export async function POST() {
   );
 }
 
-export async function PUT() {
-  return NextResponse.json(
-    { error: 'Método no permitido' },
-    { status: 405 }
-  );
+const patchClientSchema = z.object({
+  status: z.enum(['active', 'inactive', 'suspended']),
+});
+
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { clientId } = await params;
+
+    const supabase = createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id, tenant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { error: 'Perfil de usuario no encontrado' },
+        { status: 400 }
+      );
+    }
+
+    const { data: userRoles, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role, status, brand_id')
+      .eq('user_profile_id', profile.id)
+      .eq('tenant_id', profile.tenant_id)
+      .is('deleted_at', null);
+
+    const adminRole = userRoles?.find(r => r.role === 'admin' && r.status === 'active');
+
+    if (roleError || !adminRole) {
+      return NextResponse.json(
+        { error: 'Sin permisos para modificar clientes' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const validatedData = patchClientSchema.parse(body);
+
+    const serviceSupabase = createServiceClient();
+
+    const { data: updatedClient, error: updateError } = await serviceSupabase
+      .from('clients')
+      .update({
+        status: validatedData.status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('public_id', clientId)
+      .eq('tenant_id', profile.tenant_id)
+      .is('deleted_at', null)
+      .select('public_id, status')
+      .single();
+
+    if (updateError) {
+      if (updateError.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Cliente no encontrado' },
+          { status: 404 }
+        );
+      }
+      console.error('Error updating client status:', updateError);
+      return NextResponse.json(
+        { error: 'Error al actualizar el estado del cliente' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { data: updatedClient, message: 'Estado del cliente actualizado exitosamente' },
+      { status: 200 }
+    );
+
+  } catch (error) {
+    console.error('Error in PATCH /api/admin/clients/[clientId]:', error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Estado inválido', details: error.issues },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function DELETE() {

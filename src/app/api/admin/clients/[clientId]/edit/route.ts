@@ -40,7 +40,7 @@ const updateClientSchema = z.object({
   payment_terms: z.string().optional(),
   minimum_order: z.number().min(1, 'El pedido mínimo debe ser mayor a 0'),
   credit_limit: z.number().min(0, 'El límite de crédito no puede ser negativo'),
-  status: z.enum(['active', 'inactive', 'pending', 'suspended'])
+  status: z.enum(['active', 'inactive', 'prospect', 'suspended'])
 });
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {

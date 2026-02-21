@@ -90,6 +90,7 @@ export default function CreatePromotionPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const today = new Date().toISOString().split('T')[0]
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -430,6 +431,7 @@ export default function CreatePromotionPage() {
             value={formData.start_date}
             onChange={(e) => handleInputChange('start_date', e.target.value)}
             error={validationErrors.start_date}
+            min={today}
             required
           />
           <Input
@@ -438,6 +440,7 @@ export default function CreatePromotionPage() {
             value={formData.end_date}
             onChange={(e) => handleInputChange('end_date', e.target.value)}
             error={validationErrors.end_date}
+            min={formData.start_date || today}
             required
           />
         </div>
@@ -736,35 +739,36 @@ export default function CreatePromotionPage() {
         {/* Progress Steps */}
         <div className="mb-8">
           <nav aria-label="Progress">
-            <ol className="flex items-center justify-between">
+            <ol className="flex">
               {STEPS.map((step, stepIdx) => (
-                <li key={step.id} className={`relative ${stepIdx !== STEPS.length - 1 ? 'flex-1' : ''}`}>
-                  <div className="flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => currentStep > step.id && setCurrentStep(step.id)}
-                      disabled={currentStep < step.id}
-                      className={`relative z-10 w-10 h-10 flex items-center justify-center rounded-full ${
-                        currentStep > step.id
-                          ? 'bg-blue-600 text-white'
-                          : currentStep === step.id
-                          ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                          : 'bg-gray-200 text-gray-500'
-                      }`}
-                    >
-                      {currentStep > step.id ? (
-                        <Check className="w-5 h-5" />
-                      ) : (
-                        <step.icon className="w-5 h-5" />
-                      )}
-                    </button>
-                    {stepIdx !== STEPS.length - 1 && (
-                      <div className={`flex-1 h-0.5 mx-4 ${
+                <li key={step.id} className="flex-1 relative flex flex-col items-center">
+                  {stepIdx !== STEPS.length - 1 && (
+                    <div
+                      className={`absolute top-5 h-0.5 ${
                         currentStep > step.id ? 'bg-blue-600' : 'bg-gray-200'
-                      }`} />
+                      }`}
+                      style={{ left: 'calc(50% + 20px)', right: 'calc(-50% + 20px)' }}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => currentStep > step.id && setCurrentStep(step.id)}
+                    disabled={currentStep < step.id}
+                    className={`relative z-10 w-10 h-10 flex items-center justify-center rounded-full ${
+                      currentStep > step.id
+                        ? 'bg-blue-600 text-white'
+                        : currentStep === step.id
+                        ? 'bg-blue-600 text-white ring-4 ring-blue-100'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {currentStep > step.id ? (
+                      <Check className="w-5 h-5" />
+                    ) : (
+                      <step.icon className="w-5 h-5" />
                     )}
-                  </div>
-                  <span className={`absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-medium whitespace-nowrap ${
+                  </button>
+                  <span className={`mt-2 text-[10px] sm:text-xs font-medium text-center leading-tight ${
                     currentStep >= step.id ? 'text-blue-600' : 'text-gray-500'
                   }`}>
                     {step.name}
@@ -785,49 +789,64 @@ export default function CreatePromotionPage() {
           </div>
 
           {/* Actions */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
-            <div>
-              {currentStep > 1 && (
-                <Button type="button" variant="outline" onClick={handleBack}>
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Anterior
-                </Button>
-              )}
-            </div>
-            <div className="flex space-x-3">
-              <Link href="/brand/promotions">
-                <Button type="button" variant="outline">
-                  Cancelar
-                </Button>
-              </Link>
-              {currentStep < 4 ? (
+          {currentStep < 4 ? (
+            <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+              <div>
+                {currentStep > 1 && (
+                  <Button type="button" variant="outline" onClick={handleBack}>
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Anterior
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <Link href="/brand/promotions">
+                  <Button type="button" variant="outline">
+                    Cancelar
+                  </Button>
+                </Link>
                 <Button type="button" onClick={handleNext}>
                   Siguiente
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleSubmit(false)}
-                    disabled={submitting}
-                  >
-                    {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
-                    Guardar Borrador
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => handleSubmit(true)}
-                    disabled={submitting}
-                  >
-                    {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
-                    Enviar a Aprobación
-                  </Button>
-                </>
-              )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row sm:justify-between gap-3">
+              <div className="flex gap-3">
+                <Link href="/brand/promotions" className="flex-1 sm:flex-initial">
+                  <Button type="button" variant="outline" className="w-full sm:w-auto">
+                    Cancelar
+                  </Button>
+                </Link>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSubmit(false)}
+                  disabled={submitting}
+                  className="flex-1 sm:flex-initial"
+                >
+                  {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+                  Guardar Borrador
+                </Button>
+              </div>
+              <div className="flex gap-3 justify-between">
+                <Button type="button" variant="outline" onClick={handleBack}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Anterior
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => handleSubmit(true)}
+                  disabled={submitting}
+                  className="flex-1 sm:flex-initial"
+                >
+                  {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+                  Enviar a Aprobación
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </div>

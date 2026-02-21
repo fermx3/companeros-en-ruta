@@ -210,12 +210,12 @@ export default function BrandPromotionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 py-6">
+            <div className="min-w-0">
               <nav className="flex" aria-label="Breadcrumb">
                 <ol className="flex items-center space-x-4">
                   <li>
@@ -240,7 +240,7 @@ export default function BrandPromotionsPage() {
                 Crea y administra las promociones de tu marca
               </p>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex space-x-3 shrink-0">
               <ExportButton
                 endpoint="/api/brand/promotions/export"
                 filename="promociones"
@@ -409,117 +409,186 @@ export default function BrandPromotionsPage() {
           <div className="space-y-4">
             {promotions.map((promo) => (
               <Card key={promo.id} className="hover:shadow-md transition-shadow">
-                <div className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4">
-                      {/* Type Icon */}
-                      <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-bold text-blue-600">
-                          {PROMOTION_TYPE_ICONS[promo.promotion_type] || 'P'}
-                        </span>
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="text-lg font-medium text-gray-900 truncate">
-                            {promo.name}
-                          </h3>
-                          <StatusBadge
-                            status={STATUS_COLORS[promo.status] || 'inactive'}
-                            size="sm"
-                          />
-                        </div>
-                        <p className="text-sm text-gray-500 mb-2">
-                          {promo.public_id} • {promo.promotion_type_label}
-                        </p>
-                        {promo.description && (
-                          <p className="text-sm text-gray-600 line-clamp-1">
-                            {promo.description}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-600">
-                          <span className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            {formatDate(promo.start_date)} - {formatDate(promo.end_date)}
-                          </span>
-                          <span className="flex items-center font-medium text-blue-600">
-                            Valor: {getPromotionValue(promo)}
-                          </span>
-                          {promo.usage_limit_total && (
-                            <span className="flex items-center">
-                              <Users className="h-4 w-4 mr-1" />
-                              {promo.usage_count_total}/{promo.usage_limit_total} usos
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                <div className="p-4 sm:p-6">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    {/* Type Icon */}
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                      <span className="text-xs sm:text-sm font-bold text-blue-600">
+                        {PROMOTION_TYPE_ICONS[promo.promotion_type] || 'P'}
+                      </span>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center space-x-2 ml-4">
-                      {promo.status === 'draft' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSubmitForApproval(promo.id)}
-                          disabled={actionLoading === promo.id}
-                        >
-                          {actionLoading === promo.id ? (
-                            <LoadingSpinner size="sm" />
-                          ) : (
-                            'Enviar a Aprobación'
+                    {/* Info + Actions */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate">
+                              {promo.name}
+                            </h3>
+                            <StatusBadge
+                              status={STATUS_COLORS[promo.status] || 'inactive'}
+                              size="sm"
+                            />
+                          </div>
+                          <p className="text-sm text-gray-500 mb-2">
+                            {promo.public_id} • {promo.promotion_type_label}
+                          </p>
+                        </div>
+
+                        {/* Desktop actions */}
+                        <div className="hidden sm:flex items-center gap-2 shrink-0">
+                          {promo.status === 'draft' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSubmitForApproval(promo.id)}
+                              disabled={actionLoading === promo.id}
+                            >
+                              {actionLoading === promo.id ? (
+                                <LoadingSpinner size="sm" />
+                              ) : (
+                                'Enviar a Aprobación'
+                              )}
+                            </Button>
                           )}
-                        </Button>
-                      )}
-                      {promo.status === 'active' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handlePauseResume(promo.id, promo.status)}
-                          disabled={actionLoading === promo.id}
-                        >
-                          {actionLoading === promo.id ? (
-                            <LoadingSpinner size="sm" />
-                          ) : (
-                            <>
-                              <Pause className="h-4 w-4 mr-1" />
-                              Pausar
-                            </>
+                          {promo.status === 'active' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePauseResume(promo.id, promo.status)}
+                              disabled={actionLoading === promo.id}
+                            >
+                              {actionLoading === promo.id ? (
+                                <LoadingSpinner size="sm" />
+                              ) : (
+                                <>
+                                  <Pause className="h-4 w-4 mr-1" />
+                                  Pausar
+                                </>
+                              )}
+                            </Button>
                           )}
-                        </Button>
-                      )}
-                      {promo.status === 'paused' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handlePauseResume(promo.id, promo.status)}
-                          disabled={actionLoading === promo.id}
-                        >
-                          {actionLoading === promo.id ? (
-                            <LoadingSpinner size="sm" />
-                          ) : (
-                            <>
-                              <Play className="h-4 w-4 mr-1" />
-                              Reanudar
-                            </>
+                          {promo.status === 'paused' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePauseResume(promo.id, promo.status)}
+                              disabled={actionLoading === promo.id}
+                            >
+                              {actionLoading === promo.id ? (
+                                <LoadingSpinner size="sm" />
+                              ) : (
+                                <>
+                                  <Play className="h-4 w-4 mr-1" />
+                                  Reanudar
+                                </>
+                              )}
+                            </Button>
                           )}
-                        </Button>
+                          <Link href={`/brand/promotions/${promo.id}`}>
+                            <Button size="sm" variant="outline">
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
+                            </Button>
+                          </Link>
+                          {['draft', 'approved'].includes(promo.status) && (
+                            <Link href={`/brand/promotions/${promo.id}/edit`}>
+                              <Button size="sm" variant="outline">
+                                <Edit className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+
+                      {promo.description && (
+                        <p className="text-sm text-gray-600 line-clamp-1">
+                          {promo.description}
+                        </p>
                       )}
-                      <Link href={`/brand/promotions/${promo.id}`}>
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-4 w-4 mr-1" />
-                          Ver
-                        </Button>
-                      </Link>
-                      {['draft', 'approved'].includes(promo.status) && (
-                        <Link href={`/brand/promotions/${promo.id}/edit`}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm text-gray-600">
+                        <span className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-1 shrink-0" />
+                          {formatDate(promo.start_date)} - {formatDate(promo.end_date)}
+                        </span>
+                        <span className="flex items-center font-medium text-blue-600">
+                          Valor: {getPromotionValue(promo)}
+                        </span>
+                        {promo.usage_limit_total && (
+                          <span className="flex items-center">
+                            <Users className="h-4 w-4 mr-1 shrink-0" />
+                            {promo.usage_count_total}/{promo.usage_limit_total} usos
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Mobile actions */}
+                      <div className="flex sm:hidden flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+                        {promo.status === 'draft' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSubmitForApproval(promo.id)}
+                            disabled={actionLoading === promo.id}
+                          >
+                            {actionLoading === promo.id ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              'Enviar a Aprobación'
+                            )}
+                          </Button>
+                        )}
+                        {promo.status === 'active' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePauseResume(promo.id, promo.status)}
+                            disabled={actionLoading === promo.id}
+                          >
+                            {actionLoading === promo.id ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <>
+                                <Pause className="h-4 w-4 mr-1" />
+                                Pausar
+                              </>
+                            )}
+                          </Button>
+                        )}
+                        {promo.status === 'paused' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePauseResume(promo.id, promo.status)}
+                            disabled={actionLoading === promo.id}
+                          >
+                            {actionLoading === promo.id ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <>
+                                <Play className="h-4 w-4 mr-1" />
+                                Reanudar
+                              </>
+                            )}
+                          </Button>
+                        )}
+                        <Link href={`/brand/promotions/${promo.id}`}>
                           <Button size="sm" variant="outline">
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver
                           </Button>
                         </Link>
-                      )}
+                        {['draft', 'approved'].includes(promo.status) && (
+                          <Link href={`/brand/promotions/${promo.id}/edit`}>
+                            <Button size="sm" variant="outline">
+                              <Edit className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
