@@ -39,6 +39,7 @@ export const brandNavConfig: RoleNavConfig = {
   title: 'Brand Manager',
   items: [
     { id: 'home', label: 'Inicio', icon: Home, href: '/brand' },
+    { id: 'kpis', label: 'KPIs', icon: BarChart3, href: '/brand/kpis' },
     { id: 'clients', label: 'Clientes', icon: Users, href: '/brand/clients' },
     { id: 'products', label: 'Productos', icon: Package, href: '/brand/products' },
     { id: 'team', label: 'Equipo', icon: UsersRound, href: '/brand/team' },
