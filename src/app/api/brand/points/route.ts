@@ -173,8 +173,6 @@ export async function POST(request: NextRequest) {
       multiplier_applied: 1.0
     }
 
-    console.log('Points transaction insert data:', JSON.stringify(insertData, null, 2))
-
     const { data: transaction, error: transactionError } = await supabase
       .from('points_transactions')
       .insert(insertData)

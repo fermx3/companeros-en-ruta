@@ -85,7 +85,6 @@ export default function AdminClientsPage() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (loading) {
-        console.warn('Loading timeout - forcing loading to false');
         setLoading(false);
         setError('Timeout: La petición tardó demasiado. Por favor, recarga la página.');
       }

@@ -26,9 +26,7 @@ export default function BrandsListPage() {
       setError(null);
 
       try {
-        console.log('Loading brands...');
         const response = await adminService.getBrands(page, 10);
-        console.log('Brands response:', response);
         setBrands(response.data);
         setTotalPages(response.totalPages);
       } catch (err) {
@@ -48,9 +46,7 @@ export default function BrandsListPage() {
     setError(null);
 
     try {
-      console.log('Reloading brands...');
       const response = await adminService.getBrands(page, 10);
-      console.log('Brands reload response:', response);
       setBrands(response.data);
       setTotalPages(response.totalPages);
     } catch (err) {
@@ -70,14 +66,11 @@ export default function BrandsListPage() {
     setDeleting(brandId);
 
     try {
-      console.log('Attempting to delete brand:', brandId);
       const response = await adminService.deleteBrand(brandId);
 
       if (response.error) {
-        console.error('Delete brand error response:', response.error);
         alert(`Error: ${response.error}`);
       } else {
-        console.log('Delete brand success:', response.message);
         alert(response.message || 'Brand eliminada exitosamente');
         await loadBrands(); // Recargar la lista
       }

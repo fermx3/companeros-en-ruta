@@ -7,18 +7,13 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('=== API Route: GET /api/admin/clients ===');
-
     // Verificar autenticación
     const supabase = createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      console.log('❌ User not authenticated:', userError?.message);
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-
-    console.log('✅ User authenticated:', user.id);
 
     // Obtener perfil del usuario
     const { data: profile, error: profileError } = await supabase
@@ -28,11 +23,8 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (profileError || !profile) {
-      console.log('❌ Profile not found:', profileError?.message);
       return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 });
     }
-
-    console.log('Profile encontrado:', profile);
 
     // Verificar rol de admin
     const { data: userRoles, error: roleError } = await supabase
@@ -40,16 +32,11 @@ export async function GET(request: NextRequest) {
       .select('role, status')
       .eq('user_profile_id', profile.id);
 
-    console.log('Roles query result:', { userRoles, roleError });
-
     const adminRole = userRoles?.find(role => role.role === 'admin' && role.status === 'active');
 
     if (!adminRole) {
-      console.log('❌ No admin role found for user');
       return NextResponse.json({ error: 'Acceso denegado - Se requiere rol de administrador' }, { status: 403 });
     }
-
-    console.log('✅ Admin permissions verified');
 
     // Obtener parámetros de query
     const searchParams = request.nextUrl.searchParams;
@@ -58,8 +45,6 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const zone_id = searchParams.get('zone_id');
     const market_id = searchParams.get('market_id');
-
-    console.log('Query parameters:', { page, limit, status, zone_id, market_id });
 
     // Usar service client para operaciones de admin
     const serviceSupabase = createServiceClient();
@@ -97,8 +82,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`✅ Found ${clients?.length || 0} clients (total: ${count})`);
-
     // Formatear data con nombres de relaciones
     const formattedClients = (clients || []).map(client => ({
       ...client,
@@ -115,8 +98,6 @@ export async function GET(request: NextRequest) {
       limit,
       totalPages: Math.ceil((count || 0) / limit)
     };
-
-    console.log('✅ Sending response with', formattedClients.length, 'clients');
 
     return NextResponse.json(response);
 

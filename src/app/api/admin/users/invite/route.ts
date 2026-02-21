@@ -75,8 +75,6 @@ export async function POST(request: NextRequest) {
 
     // Si el usuario ya existe en auth, intentar obtenerlo
     if (authError?.message?.includes('User already registered') || authError?.message?.includes('already exists')) {
-      console.log('User already exists in auth, attempting to retrieve existing user');
-
       // Obtener el usuario existente
       const { data: existingUsers, error: getUserError } = await supabase.auth.admin.listUsers();
 

@@ -1,11 +1,8 @@
-import { NextRequest } from 'next/server';
 import { getAuthenticatedServiceClient } from '@/lib/utils/tenant';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const t0 = Date.now();
     const { supabase, tenantId } = await getAuthenticatedServiceClient();
-    console.log(`[metrics] auth: ${Date.now() - t0}ms`);
 
     const currentMonth = new Date();
     currentMonth.setDate(1);
@@ -49,8 +46,6 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false }).limit(activityLimit),
     ]);
 
-    console.log(`[metrics] queries: ${Date.now() - t0}ms`);
-
     const monthlyRevenue = (monthlyOrdersRes.data || []).reduce(
       (sum, o) => sum + (o.total_amount || 0), 0
     );
@@ -83,7 +78,6 @@ export async function GET(request: NextRequest) {
 
     activities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    console.log(`[metrics] total: ${Date.now() - t0}ms`);
     return Response.json({
       totalBrands: brandsRes.count || 0,
       activeBrands: brandsRes.count || 0,

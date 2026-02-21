@@ -5,11 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import { UserRole } from '@/lib/types'
 
-// Debug logging helper - ALWAYS logs for now to diagnose issues
-const debugLog = (message: string, data?: unknown) => {
-  console.log(`[AuthProvider] ${message}`, data !== undefined ? data : '')
-}
-
 export interface UserBrandRole {
   role: string
   brandId: string
@@ -54,11 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Define loadUserData first so it can be used in useEffect
   const loadUserData = useCallback(async (userId: string, isMounted: boolean = true) => {
-    debugLog('loadUserData called for:', userId)
-
     // Prevent multiple simultaneous calls using ref (not state) for immediate check
     if (isLoadingUserDataRef.current) {
-      debugLog('loadUserData already in progress, skipping...')
       return
     }
 
@@ -71,8 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setErrorMessage(null)
       }
 
-      debugLog('Fetching user_profiles...')
-
       // Cargar perfil del usuario (user_profiles uses user_id to link to auth.users)
       // Retry up to 3 times with increasing timeout
       let profile = null
@@ -81,8 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const baseTimeout = 15000 // 15 seconds
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        debugLog(`Profile fetch attempt ${attempt}/${maxRetries}...`)
-
         const profilePromise = supabase
           .from('user_profiles')
           .select('*')
@@ -100,21 +88,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           profileLoadError = result.error
 
           if (profile && !profileLoadError) {
-            debugLog(`Profile fetch succeeded on attempt ${attempt}`)
             break // Success, exit retry loop
           }
         } catch (timeoutErr) {
-          debugLog(`Profile fetch attempt ${attempt} failed:`, timeoutErr)
           profileLoadError = timeoutErr
 
           if (attempt < maxRetries) {
-            debugLog(`Retrying in 1 second...`)
             await new Promise(resolve => setTimeout(resolve, 1000))
           }
         }
       }
-
-      debugLog('Profile result:', { profile: profile ? { id: (profile as { id: string }).id, tenant_id: (profile as { tenant_id: string }).tenant_id } : null, error: profileLoadError })
 
       if (!isMounted) return
 
@@ -127,7 +110,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (hasValidDataRef.current) {
           // Already have valid profile/roles from a previous successful load.
           // Don't overwrite good state with a transient error (e.g. token refresh timeout).
-          debugLog('Profile re-fetch failed but existing data is valid, keeping current state')
           return
         }
         console.error('Error loading user profile:', profileLoadError)
@@ -152,8 +134,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq('status', 'active')
           .is('deleted_at', null)
 
-        debugLog('Roles result:', { roles, error: rolesError })
-
         if (!isMounted) return
 
         if (rolesError) {
@@ -176,8 +156,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserBrandRoles(brandRolesList)
 
           hasValidDataRef.current = true
-          debugLog('Roles set:', rolesList)
-          debugLog('Brand roles set:', brandRolesList)
           return
         }
       }
@@ -185,7 +163,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // No user_roles found (or no user_profiles entry) — check if user is a client.
       // Client users are linked via clients.user_id (auth.users.id),
       // not through user_roles.
-      debugLog('No staff roles found, checking clients table...')
       const { data: clientRecord, error: clientError } = await supabase
         .from('clients')
         .select('id, status')
@@ -197,20 +174,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (clientError && clientError.code !== 'PGRST116') {
         // PGRST116 = no rows found, which is expected for non-client users
-        debugLog('Client check error:', clientError)
       }
 
       if (clientRecord && clientRecord.status === 'active') {
         setUserRoles(['client'] as UserRole[])
         hasValidDataRef.current = true
-        debugLog('User identified as client')
       } else {
         setUserRoles([])
-        debugLog('No roles and no active client record found')
       }
     } catch (error) {
       if (hasValidDataRef.current) {
-        debugLog('loadUserData threw but existing data is valid, keeping current state')
+        // loadUserData threw but existing data is valid, keeping current state
       } else {
         console.error('Error loading user data:', error)
         setProfileError(true)
@@ -229,13 +203,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let initialLoadDone = false
 
     const getSession = async () => {
-      debugLog('getSession starting...')
       try {
         const { data: { session } } = await supabase.auth.getSession()
 
         if (!isMounted) return
 
-        debugLog('Session retrieved:', { userId: session?.user?.id, email: session?.user?.email })
         setUser(session?.user ?? null)
 
         if (session?.user) {
@@ -247,7 +219,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (isMounted) {
           setLoading(false)
           setInitialized(true)
-          debugLog('Auth initialized successfully')
         }
       } catch (error) {
         console.error('Error getting session:', error)
@@ -256,7 +227,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
           setInitialized(true)
           setErrorMessage(error instanceof Error ? error.message : 'Error al obtener sesión')
-          debugLog('Auth initialized with error:', error)
         }
       } finally {
         initialLoadDone = true
@@ -269,20 +239,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         if (!isMounted) return
 
-        debugLog('Auth state change:', { event, userId: session?.user?.id })
-
         // Skip INITIAL_SESSION — getSession() already handles the initial load.
         // Processing it here causes a race: loadUserData is already running from
         // getSession, so the isLoadingUserDataRef guard skips data loading, but
         // this callback still sets initialized=true with empty userRoles.
         if (event === 'INITIAL_SESSION') {
-          debugLog('Skipping INITIAL_SESSION (handled by getSession)')
           return
         }
 
         // For subsequent events before initial load completes, wait
         if (!initialLoadDone) {
-          debugLog('Skipping event before initial load completes:', event)
           return
         }
 
@@ -294,7 +260,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           session?.user?.id === currentUserIdRef.current &&
           hasValidDataRef.current
         ) {
-          debugLog(`Skipping ${event} for same user (data already loaded)`)
           setUser(session?.user ?? null)
           return
         }
@@ -332,7 +297,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadUserData, supabase.auth])
 
   const signOut = async () => {
-    debugLog('Signing out...')
     await supabase.auth.signOut()
     setUserProfile(null)
     setUserRoles([])
@@ -349,11 +313,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const retry = useCallback(async () => {
     if (!user) {
-      debugLog('retry called but no user present')
       return
     }
 
-    debugLog('Retrying user data load...')
     setLoading(true)
     setProfileError(false)
     setErrorMessage(null)
@@ -361,21 +323,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loadUserData(user.id, true)
 
     setLoading(false)
-    debugLog('Retry completed')
   }, [user, loadUserData])
-
-  // Debug log final state whenever it changes
-  useEffect(() => {
-    if (initialized) {
-      debugLog('Final auth state:', {
-        user: user ? { id: user.id, email: user.email } : null,
-        userRoles,
-        initialized,
-        profileError,
-        errorMessage
-      })
-    }
-  }, [user, userRoles, initialized, profileError, errorMessage])
 
   return (
     <AuthContext.Provider value={{

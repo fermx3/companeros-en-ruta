@@ -125,7 +125,7 @@ export default function VisitDetailPage() {
             longitude: position.coords.longitude
           }
         } catch {
-          console.log('Location unavailable, continuing without it')
+          // Location unavailable, continuing without it
         }
       }
 

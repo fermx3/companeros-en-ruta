@@ -12,8 +12,6 @@ export async function GET(request: NextRequest) {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    console.log('API Route - getBrands:', { page, limit, tenantId, from, to });
-
     const { data, error, count } = await supabase
       .from('brands')
       .select('*', { count: 'exact' })
@@ -21,8 +19,6 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .range(from, to);
-
-    console.log('API Route - query result:', { data: data?.length, error, count });
 
     if (error) {
       console.error('Database error:', error);

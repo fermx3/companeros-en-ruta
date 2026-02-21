@@ -93,15 +93,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   const { id: visitId } = await params
   const supabase = await createClient()
 
-  console.log('[Assessment POST] Starting - visitId:', visitId)
-
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
-    console.error('[Assessment POST] Auth error:', authError)
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
-  console.log('[Assessment POST] User authenticated:', user.id)
 
   // Get user profile for tenant_id and user_profile_id
   const { data: userProfile, error: profileError } = await supabase
@@ -111,15 +106,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     .single()
 
   if (profileError) {
-    console.error('[Assessment POST] Profile error:', profileError)
     return NextResponse.json({ error: 'User profile not found', details: profileError.message }, { status: 404 })
   }
 
   if (!userProfile) {
     return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
   }
-
-  console.log('[Assessment POST] User profile:', userProfile.id, 'tenant:', userProfile.tenant_id)
 
   // Check user roles
   const { data: userRoles } = await supabase
@@ -128,8 +120,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     .eq('user_profile_id', userProfile.id)
     .eq('status', 'active')
     .is('deleted_at', null)
-
-  console.log('[Assessment POST] User roles:', userRoles)
 
   // Verify visit exists and user has access
   // Note: The actual column is 'visit_status', not 'status'
@@ -142,10 +132,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     .single()
 
   if (visitError) {
-    console.error('[Assessment POST] Visit fetch error:', visitError)
-    console.error('[Assessment POST] visitId was:', visitId)
-    console.error('[Assessment POST] userProfile.id:', userProfile.id)
-
     // If it's a "no rows" error, it could be RLS blocking access
     if (visitError.code === 'PGRST116') {
       return NextResponse.json({
@@ -160,8 +146,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!visit) {
     return NextResponse.json({ error: 'Visit not found' }, { status: 404 })
   }
-
-  console.log('[Assessment POST] Visit found:', visit.id, 'promotor_id:', visit.promotor_id, 'visit_status:', visit.visit_status)
 
   if (visit.visit_status !== 'in_progress') {
     return NextResponse.json({ error: 'Visit must be in progress to save assessment' }, { status: 400 })

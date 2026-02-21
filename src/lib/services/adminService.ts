@@ -378,8 +378,6 @@ export class AdminService {
     try {
       const tenantId = await this.getCurrentTenantId();
 
-      console.log('DeleteBrand - attempting to delete:', { id, tenantId });
-
       // Verificar que la brand existe antes de intentar eliminarla
       const { data: existingBrand, error: findError } = await this.supabase
         .from('brands')
@@ -401,10 +399,7 @@ export class AdminService {
         throw new Error('La brand ya está eliminada');
       }
 
-      console.log('DeleteBrand - found brand:', existingBrand);
-
-      // Realizar soft delete - intentar con diferentes enfoques si falla
-      console.log('DeleteBrand - attempting soft delete...');
+      // Realizar soft delete
 
       const { data: updateData, error: deleteError } = await this.supabase
         .from('brands')
@@ -416,8 +411,6 @@ export class AdminService {
         .eq('tenant_id', tenantId)
         .is('deleted_at', null) // Solo actualizar si no está ya eliminada
         .select(); // Importante: agregar .select() para obtener los datos actualizados
-
-      console.log('DeleteBrand - update result:', { updateData, deleteError });
 
       if (deleteError) {
         console.error('Error during soft delete:', deleteError);
@@ -435,7 +428,6 @@ export class AdminService {
       // Verificar si la actualización fue exitosa
       if (!updateData || updateData.length === 0) {
         // Esto puede ocurrir si las políticas RLS bloquean la operación
-        console.warn('DeleteBrand - no rows updated, checking if brand still exists...');
 
         // Verificar si la brand todavía existe sin cambios
         const { data: verifyBrand, error: verifyError } = await this.supabase
@@ -454,12 +446,9 @@ export class AdminService {
           // La brand todavía existe y no fue eliminada - esto indica un problema de permisos RLS
           throw new Error('No se pudo eliminar la brand. Esto puede ser un problema de permisos. Por favor, contacta al administrador del sistema.');
         } else {
-          // La brand fue eliminada exitosamente por otro proceso
-          console.log('DeleteBrand - brand was already deleted by another process');
         }
       }
 
-      console.log('DeleteBrand - successfully deleted:', id);
       return { message: 'Brand eliminado exitosamente' };
 
     } catch (error) {
@@ -493,8 +482,6 @@ export class AdminService {
       if (filters?.zone_id) params.append('zone_id', filters.zone_id);
       if (filters?.market_id) params.append('market_id', filters.market_id);
 
-      console.log('Calling API with params:', params.toString());
-
       // Crear AbortController para timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
@@ -520,8 +507,6 @@ export class AdminService {
       }
 
       const data = await response.json();
-
-      console.log('API response:', data);
 
       // Validar que tenemos datos válidos
       if (!data || typeof data !== 'object') {

@@ -5,11 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/providers/AuthProvider'
 import type { UserRole } from '@/lib/types'
 
-// Debug logging helper - ALWAYS logs for now to diagnose issues
-const debugLog = (message: string, data?: unknown) => {
-  console.log(`[useRequireRole] ${message}`, data !== undefined ? data : '')
-}
-
 interface UseRequireRoleOptions {
   /**
    * Additional roles that should be allowed access.
@@ -93,22 +88,9 @@ export function useRequireRole(
   const hasAllowedRole = allowMultipleRoles.some(role => userRoles.includes(role))
   const hasAccess = !isLoading && user !== null && !profileError && (hasRequiredRole || hasAllowedRole)
 
-  debugLog(`Called with role: ${requiredRole}`, {
-    isLoading,
-    initialized,
-    user: user ? { id: user.id, email: user.email } : null,
-    userRoles,
-    profileError,
-    hasRequiredRole,
-    hasAllowedRole,
-    hasAccess,
-    allowMultipleRoles
-  })
-
   useEffect(() => {
     // Still loading, wait
     if (isLoading) {
-      debugLog('Still loading, waiting...')
       return
     }
 
@@ -117,7 +99,6 @@ export function useRequireRole(
 
     // If no user, redirect to login
     if (!user) {
-      debugLog('No user, redirecting to /login')
       hasRedirected.current = true
       router.replace('/login')
       return
@@ -125,18 +106,12 @@ export function useRequireRole(
 
     // If there was a profile error OR user doesn't have any required role, redirect
     if (profileError) {
-      debugLog('Profile error, redirecting to', redirectTo)
       hasRedirected.current = true
       router.replace(redirectTo)
       return
     }
 
     if (!hasRequiredRole && !hasAllowedRole) {
-      debugLog('No required or allowed role, redirecting to ' + redirectTo, {
-        userRoles,
-        requiredRole,
-        allowMultipleRoles
-      })
       hasRedirected.current = true
       router.replace(redirectTo)
     }
