@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createBulkNotifications } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 // Promotion type labels
@@ -322,6 +323,41 @@ export async function POST(request: NextRequest) {
         { error: 'Error al crear la promoción', details: insertError.message },
         { status: 500 }
       )
+    }
+
+    // Notify admins if promotion was submitted for approval on creation
+    if (submit_for_approval) {
+      try {
+        const serviceClient = createServiceClient()
+        const { data: adminProfiles, error: adminError } = await serviceClient
+          .from('user_roles')
+          .select('user_profile_id')
+          .eq('tenant_id', tenantId)
+          .eq('role', 'admin')
+          .eq('status', 'active')
+          .is('deleted_at', null)
+
+        if (adminError) {
+          console.error('[create-promotion] Error fetching admin profiles:', adminError)
+        }
+
+        if (adminProfiles && adminProfiles.length > 0) {
+          const uniqueAdminIds = [...new Set(adminProfiles.map(a => a.user_profile_id))]
+          await createBulkNotifications(
+            uniqueAdminIds.map(adminProfileId => ({
+              tenant_id: tenantId!,
+              user_profile_id: adminProfileId,
+              title: 'Nueva promoción pendiente',
+              message: `La promoción "${newPromotion.name}" fue enviada para aprobación`,
+              notification_type: 'new_promotion' as const,
+              action_url: `/admin/promotions`,
+              metadata: { promotion_id: newPromotion.id },
+            }))
+          )
+        }
+      } catch (notifError) {
+        console.error('[create-promotion] Error creating notification:', notifError)
+      }
     }
 
     return NextResponse.json({

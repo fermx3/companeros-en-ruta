@@ -58,13 +58,17 @@ export async function POST(
     // Notify all tenant admins about the new pending promotion
     try {
       const serviceClient = createServiceClient()
-      const { data: adminProfiles } = await serviceClient
+      const { data: adminProfiles, error: adminError } = await serviceClient
         .from('user_roles')
         .select('user_profile_id, tenant_id')
         .eq('tenant_id', tenantId)
-        .in('role', ['admin', 'tenant_admin', 'super_admin'])
+        .eq('role', 'admin')
         .eq('status', 'active')
         .is('deleted_at', null)
+
+      if (adminError) {
+        console.error('[submit-promotion] Error fetching admin profiles:', adminError)
+      }
 
       if (adminProfiles && adminProfiles.length > 0) {
         const uniqueAdminIds = [...new Set(adminProfiles.map(a => a.user_profile_id))]
@@ -81,7 +85,7 @@ export async function POST(
         )
       }
     } catch (notifError) {
-      console.error('Error creating submit notification:', notifError)
+      console.error('[submit-promotion] Error creating notification:', notifError)
     }
 
     return NextResponse.json({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createBulkNotifications } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 // Promotion type labels
@@ -130,12 +131,12 @@ export async function PATCH(
     const { searchParams } = new URL(request.url)
     const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
     if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
-    const { brandId } = result
+    const { brandId, tenantId } = result
 
     // Get current promotion
     const { data: currentPromotion, error: fetchError } = await supabase
       .from('promotions')
-      .select('id, status')
+      .select('id, status, name')
       .eq('id', id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
@@ -244,6 +245,41 @@ export async function PATCH(
 
     if (updateError) {
       throw new Error(`Error al actualizar promoción: ${updateError.message}`)
+    }
+
+    // Notify admins if promotion was submitted for approval
+    if (submit_for_approval && updatedPromotion.status === 'pending_approval') {
+      try {
+        const serviceClient = createServiceClient()
+        const { data: adminProfiles, error: adminError } = await serviceClient
+          .from('user_roles')
+          .select('user_profile_id')
+          .eq('tenant_id', tenantId)
+          .eq('role', 'admin')
+          .eq('status', 'active')
+          .is('deleted_at', null)
+
+        if (adminError) {
+          console.error('[update-promotion] Error fetching admin profiles:', adminError)
+        }
+
+        if (adminProfiles && adminProfiles.length > 0) {
+          const uniqueAdminIds = [...new Set(adminProfiles.map(a => a.user_profile_id))]
+          await createBulkNotifications(
+            uniqueAdminIds.map(adminProfileId => ({
+              tenant_id: tenantId!,
+              user_profile_id: adminProfileId,
+              title: 'Nueva promoción pendiente',
+              message: `La promoción "${currentPromotion.name}" fue enviada para aprobación`,
+              notification_type: 'new_promotion' as const,
+              action_url: `/admin/promotions`,
+              metadata: { promotion_id: id },
+            }))
+          )
+        }
+      } catch (notifError) {
+        console.error('[update-promotion] Error creating notification:', notifError)
+      }
     }
 
     return NextResponse.json({
