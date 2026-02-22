@@ -42,7 +42,7 @@ const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
       <div
         ref={ref}
         className={cn(
-          "pointer-events-auto w-full max-w-sm rounded-lg border p-4 shadow-lg",
+          "pointer-events-auto w-full sm:max-w-sm rounded-lg border p-4 shadow-lg",
           "transition-all duration-300",
           variantClasses[variant],
           className

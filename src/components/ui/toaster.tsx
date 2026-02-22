@@ -88,7 +88,7 @@ interface ToasterProps {
 
 export function Toaster({ toasts, dismiss }: ToasterProps) {
   return (
-    <div className="fixed bottom-0 right-0 z-50 p-4 space-y-2 pointer-events-none">
+    <div className="fixed bottom-0 inset-x-0 sm:left-auto sm:right-0 z-50 p-4 space-y-2 pointer-events-none">
       {toasts.map((toast) => (
         <Toast
           key={toast.id}
