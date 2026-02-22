@@ -11,6 +11,8 @@ import { isValidMxPhone } from '@/lib/utils/phone';
 import { adminService } from '@/lib/services/adminService';
 import type { Brand, Zone, Distributor } from '@/lib/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useToast } from '@/components/ui/toaster';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 /**
  * Página para crear nuevos usuarios directamente en el sistema
@@ -25,7 +27,9 @@ export default function CreateUserPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const { toast } = useToast();
+  useUnsavedChanges(isDirty);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -123,6 +127,7 @@ export default function CreateUserPage() {
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setIsDirty(true);
 
     // Limpiar error de validación al cambiar el campo
     if (validationErrors[field]) {
@@ -143,7 +148,6 @@ export default function CreateUserPage() {
 
     setSaving(true);
     setError(null);
-    setSuccess(null);
 
     try {
       // Crear el usuario
@@ -171,7 +175,8 @@ export default function CreateUserPage() {
         });
       }
 
-      setSuccess('Usuario creado exitosamente');
+      toast({ variant: 'success', title: 'Usuario creado exitosamente' });
+      setIsDirty(false);
 
       // Redirigir al usuario creado después de 2 segundos
       setTimeout(() => {
@@ -251,12 +256,6 @@ export default function CreateUserPage() {
         {error && (
           <Alert variant="error" className="mb-6">
             {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert variant="success" className="mb-6">
-            {success} Redirigiendo al perfil del usuario...
           </Alert>
         )}
 

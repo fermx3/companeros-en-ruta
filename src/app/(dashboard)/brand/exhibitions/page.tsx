@@ -10,6 +10,7 @@ import { LayoutGrid, Plus, Edit2, Trash2, Package, MapPin, Calendar } from 'luci
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 
 interface Exhibition {
   id: string
@@ -33,6 +34,7 @@ interface CommunicationPlan {
 export default function BrandExhibitionsPage() {
   usePageTitle('Exhibiciones')
   const { brandFetch, currentBrandId } = useBrandFetch()
+  const { toast } = useToast()
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
   const [plans, setPlans] = useState<CommunicationPlan[]>([])
   const [loading, setLoading] = useState(true)
@@ -115,6 +117,7 @@ export default function BrandExhibitionsPage() {
       }
 
       setRefreshKey(k => k + 1)
+      toast({ variant: 'success', title: editingExhibition ? 'Exhibición actualizada' : 'Exhibición creada' })
       resetForm()
 
     } catch (err) {

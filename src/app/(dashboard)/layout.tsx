@@ -1,6 +1,7 @@
 'use client'
 
 import { AuthProvider } from '@/components/providers/AuthProvider'
+import { ToasterProvider } from '@/components/ui/toaster'
 
 export default function DashboardLayout({
   children,
@@ -9,12 +10,13 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-gray-50">
-        {/* Navigation could go here in the future */}
-        <main>
-          {children}
-        </main>
-      </div>
+      <ToasterProvider>
+        <div className="min-h-screen bg-gray-50">
+          <main>
+            {children}
+          </main>
+        </div>
+      </ToasterProvider>
     </AuthProvider>
   )
 }

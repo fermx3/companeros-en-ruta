@@ -10,6 +10,7 @@ import { SurveyQuestionBuilder, type QuestionData } from '@/components/surveys/S
 import { ArrowLeft, CheckCircle, XCircle, Users, Edit } from 'lucide-react'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 
 const ROLE_LABELS: Record<string, string> = {
   promotor: 'Promotor',
@@ -50,6 +51,7 @@ export default function AdminSurveyReviewPage() {
   const router = useRouter()
   const params = useParams()
   const surveyId = params.id as string
+  const { toast } = useToast()
 
   const [survey, setSurvey] = useState<AdminSurveyDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -145,6 +147,7 @@ export default function AdminSurveyReviewPage() {
       }
       setEditing(false)
       await fetchSurvey()
+      toast({ variant: 'success', title: 'Encuesta actualizada' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error')
     } finally {
@@ -166,6 +169,7 @@ export default function AdminSurveyReviewPage() {
         throw new Error(data.error || 'Error al aprobar')
       }
       await fetchSurvey()
+      toast({ variant: 'success', title: 'Encuesta aprobada' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error')
     } finally {
@@ -192,6 +196,7 @@ export default function AdminSurveyReviewPage() {
       }
       await fetchSurvey()
       setShowRejectForm(false)
+      toast({ variant: 'success', title: 'Encuesta rechazada' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error')
     } finally {

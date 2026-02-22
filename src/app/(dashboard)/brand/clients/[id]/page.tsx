@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { displayPhone } from '@/lib/utils/phone'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 import { Check, Coins, Award } from 'lucide-react'
 import {
   TierAssignModal,
@@ -75,7 +76,7 @@ export default function BrandClientDetailPage() {
   const [tiers, setTiers] = useState<BrandTier[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const { toast } = useToast()
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -143,8 +144,7 @@ export default function BrandClientDetailPage() {
         throw new Error(errorData.error || 'Error al aprobar membresía')
       }
 
-      setSuccessMessage('Membresía aprobada correctamente')
-      setTimeout(() => setSuccessMessage(null), 3000)
+      toast({ variant: 'success', title: 'Membresía aprobada correctamente' })
       setRefreshKey(k => k + 1)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -170,8 +170,7 @@ export default function BrandClientDetailPage() {
       }
 
       const data = await response.json()
-      setSuccessMessage(data.message || 'Nivel asignado correctamente')
-      setTimeout(() => setSuccessMessage(null), 3000)
+      toast({ variant: 'success', title: data.message || 'Nivel asignado correctamente' })
       setAssignModal(false)
       setRefreshKey(k => k + 1)
     } catch (err) {
@@ -205,8 +204,7 @@ export default function BrandClientDetailPage() {
       }
 
       const result = await response.json()
-      setSuccessMessage(result.message || 'Puntos procesados correctamente')
-      setTimeout(() => setSuccessMessage(null), 3000)
+      toast({ variant: 'success', title: result.message || 'Puntos procesados correctamente' })
       setPointsModal(false)
       setRefreshKey(k => k + 1)
     } catch (err) {
@@ -321,12 +319,6 @@ export default function BrandClientDetailPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {successMessage && (
-          <Alert variant="success" className="mb-6" onClose={() => setSuccessMessage(null)}>
-            {successMessage}
-          </Alert>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Column - Client Info */}
           <div className="lg:col-span-2 space-y-6">

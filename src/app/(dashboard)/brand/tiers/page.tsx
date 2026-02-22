@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Award, Users, Plus, Pencil, Trash2, Star, Percent, X } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 
 interface BrandTier {
   id: string
@@ -260,7 +261,7 @@ export default function BrandTiersPage() {
   const [tiers, setTiers] = useState<BrandTier[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingTier, setEditingTier] = useState<BrandTier | null>(null)
@@ -324,8 +325,7 @@ export default function BrandTiersPage() {
         throw new Error(errorData.error || 'Error al eliminar nivel')
       }
 
-      setSuccessMessage('Nivel eliminado correctamente')
-      setTimeout(() => setSuccessMessage(null), 3000)
+      toast({ variant: 'success', title: 'Nivel eliminado correctamente' })
       setRefreshKey(k => k + 1)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -354,8 +354,7 @@ export default function BrandTiersPage() {
         throw new Error(errorData.error || 'Error al guardar nivel')
       }
 
-      setSuccessMessage(editingTier ? 'Nivel actualizado correctamente' : 'Nivel creado correctamente')
-      setTimeout(() => setSuccessMessage(null), 3000)
+      toast({ variant: 'success', title: editingTier ? 'Nivel actualizado correctamente' : 'Nivel creado correctamente' })
       setModalOpen(false)
       setRefreshKey(k => k + 1)
     } catch (err) {
@@ -440,12 +439,6 @@ export default function BrandTiersPage() {
         {error && (
           <Alert variant="error" className="mb-6" onClose={() => setError(null)}>
             {error}
-          </Alert>
-        )}
-
-        {successMessage && (
-          <Alert variant="success" className="mb-6" onClose={() => setSuccessMessage(null)}>
-            {successMessage}
           </Alert>
         )}
 

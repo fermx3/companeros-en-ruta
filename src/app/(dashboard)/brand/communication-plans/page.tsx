@@ -10,6 +10,7 @@ import { Calendar, Plus, Edit2, Trash2, ChevronDown, ChevronRight, Layers, Megap
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 
 interface PlanMaterial {
   id: string
@@ -54,6 +55,7 @@ interface POPMaterial {
 export default function BrandCommunicationPlansPage() {
   usePageTitle('Planes de Comunicación')
   const { brandFetch, currentBrandId } = useBrandFetch()
+  const { toast } = useToast()
   const [plans, setPlans] = useState<CommunicationPlan[]>([])
   const [materials, setMaterials] = useState<POPMaterial[]>([])
   const [loading, setLoading] = useState(true)
@@ -137,6 +139,7 @@ export default function BrandCommunicationPlansPage() {
       }
 
       setRefreshKey(k => k + 1)
+      toast({ variant: 'success', title: editingPlan ? 'Plan actualizado' : 'Plan creado' })
       resetForm()
 
     } catch (err) {

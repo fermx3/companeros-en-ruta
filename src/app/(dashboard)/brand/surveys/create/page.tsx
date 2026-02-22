@@ -9,6 +9,8 @@ import { Alert } from '@/components/ui/feedback'
 import { SurveyQuestionBuilder, type QuestionData } from '@/components/surveys/SurveyQuestionBuilder'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import type { SurveyTargetRoleEnum } from '@/lib/types/database'
 
 const STEPS = [
@@ -37,9 +39,12 @@ export default function CreateSurveyPage() {
   usePageTitle('Crear Encuesta')
   const router = useRouter()
   const { brandFetch } = useBrandFetch()
+  const { toast } = useToast()
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isDirty, setIsDirty] = useState(false)
+  useUnsavedChanges(isDirty)
 
   // Form state
   const [title, setTitle] = useState('')
@@ -106,6 +111,8 @@ export default function CreateSurveyPage() {
       }
 
       const data = await res.json()
+      toast({ variant: 'success', title: 'Encuesta creada' })
+      setIsDirty(false)
       router.push(`/brand/surveys/${data.survey.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -161,7 +168,7 @@ export default function CreateSurveyPage() {
                 <input
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => { setTitle(e.target.value); setIsDirty(true) }}
                   placeholder="Ej: Encuesta de satisfacción Q1 2026"
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />

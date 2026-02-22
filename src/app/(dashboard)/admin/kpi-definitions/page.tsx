@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, LoadingSpinner } from '@/components/ui/feedback'
 import { Plus, Edit2, Power, PowerOff, TrendingUp, Target, Package, PieChart, LayoutGrid } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 
 interface KpiDefinition {
   id: string
@@ -39,7 +40,7 @@ export default function AdminKpiDefinitionsPage() {
   const [definitions, setDefinitions] = useState<KpiDefinition[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const { toast } = useToast()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
 
@@ -73,7 +74,7 @@ export default function AdminKpiDefinitionsPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error al crear')
-      setSuccessMsg('KPI creado exitosamente')
+      toast({ variant: 'success', title: 'KPI creado exitosamente' })
       setShowCreateForm(false)
       setFormData({ slug: '', label: '', description: '', icon: 'TrendingUp', color: 'blue', computation_type: 'volume' })
       loadDefinitions()
@@ -93,7 +94,7 @@ export default function AdminKpiDefinitionsPage() {
         const data = await res.json()
         throw new Error(data.error || 'Error al actualizar')
       }
-      setSuccessMsg('KPI actualizado')
+      toast({ variant: 'success', title: 'KPI actualizado' })
       setEditingId(null)
       loadDefinitions()
     } catch (err) {
@@ -144,7 +145,6 @@ export default function AdminKpiDefinitionsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && <Alert variant="error" className="mb-4" onClose={() => setError(null)}>{error}</Alert>}
-        {successMsg && <Alert variant="success" className="mb-4" onClose={() => setSuccessMsg(null)}>{successMsg}</Alert>}
 
         {/* Create Form */}
         {showCreateForm && (

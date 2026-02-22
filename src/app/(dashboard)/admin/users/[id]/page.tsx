@@ -12,6 +12,7 @@ import { displayPhone } from '@/lib/utils/phone';
 import { adminService } from '@/lib/services/adminService';
 import type { UserProfile, UserRoleRecord, Brand } from '@/lib/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useToast } from '@/components/ui/toaster';
 
 interface SupervisorOption {
   id: string;
@@ -31,6 +32,7 @@ export default function UserDetailPage() {
   usePageTitle('Detalle de Usuario');
   const params = useParams();
   const userId = params?.id as string;
+  const { toast } = useToast();
 
   const [user, setUser] = useState<UserWithDetails | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -123,6 +125,7 @@ export default function UserDetailPage() {
       await adminService.updateUser(user.id, cleanedData);
       await loadUser();
       setEditMode(false);
+      toast({ variant: 'success', title: 'Usuario actualizado correctamente' });
     } catch (err) {
       console.error('Error updating user:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al actualizar usuario';
@@ -141,6 +144,7 @@ export default function UserDetailPage() {
     try {
       await adminService.deactivateUser(user.id);
       await loadUser();
+      toast({ variant: 'success', title: 'Usuario desactivado' });
     } catch (err) {
       console.error('Error deactivating user:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al desactivar usuario';
@@ -159,6 +163,7 @@ export default function UserDetailPage() {
     try {
       await adminService.reactivateUser(user.id);
       await loadUser();
+      toast({ variant: 'success', title: 'Usuario reactivado' });
     } catch (err) {
       console.error('Error reactivating user:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al reactivar usuario';

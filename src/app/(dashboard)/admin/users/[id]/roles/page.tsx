@@ -9,6 +9,7 @@ import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { adminService } from '@/lib/services/adminService'
 import type { UserProfile, UserRoleRecord, Brand, Distributor } from '@/lib/types/admin'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 
 // ===========================================
 // Types
@@ -45,6 +46,7 @@ export default function UserRolesPage() {
 
   const params = useParams()
   const userId = params?.id as string
+  const { toast } = useToast()
 
   // Estados principales
   const [user, setUser] = useState<UserWithRoles | null>(null)
@@ -140,6 +142,7 @@ export default function UserRolesPage() {
       await loadData()
       setShowAddRole(false)
       setNewRole({ role: 'promotor', brand_id: '', distributor_id: '' })
+      toast({ variant: 'success', title: 'Rol asignado correctamente' })
     } catch (err) {
       console.error('Error adding role:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -166,6 +169,7 @@ export default function UserRolesPage() {
       }
 
       await loadData() // Recargar datos
+      toast({ variant: 'success', title: 'Rol actualizado' })
     } catch (err) {
       console.error('Error toggling role:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -187,6 +191,7 @@ export default function UserRolesPage() {
     try {
       await adminService.removeUserRole(roleId)
       await loadData() // Recargar datos
+      toast({ variant: 'success', title: 'Rol removido' })
     } catch (err) {
       console.error('Error removing role:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'

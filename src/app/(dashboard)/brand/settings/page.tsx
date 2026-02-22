@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { useToast } from '@/components/ui/toaster';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import type { Brand } from '@/lib/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
@@ -18,11 +20,13 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 export default function BrandSettingsPage() {
   usePageTitle('Configuración de Marca');
   const { brandFetch, currentBrandId } = useBrandFetch();
+  const { toast } = useToast();
   const [brand, setBrand] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  useUnsavedChanges(isDirty);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -82,6 +86,7 @@ export default function BrandSettingsPage() {
   }, [brandFetch, currentBrandId]);
 
   const handleInputChange = (field: string, value: string) => {
+    setIsDirty(true);
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -108,7 +113,6 @@ export default function BrandSettingsPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
       // Actualizar marca con datos reales
@@ -127,10 +131,8 @@ export default function BrandSettingsPage() {
 
       const data = await response.json();
       setBrand(data.brand);
-      setSuccessMessage('Configuración guardada correctamente');
-
-      // Limpiar mensaje después de 3 segundos
-      setTimeout(() => setSuccessMessage(null), 3000);
+      toast({ variant: 'success', title: 'Configuración guardada correctamente' });
+      setIsDirty(false);
     } catch (err) {
       console.error('Error saving brand settings:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -190,12 +192,6 @@ export default function BrandSettingsPage() {
         {error && (
           <Alert variant="error" className="mb-6" onClose={() => setError(null)}>
             {error}
-          </Alert>
-        )}
-
-        {successMessage && (
-          <Alert variant="success" className="mb-6" onClose={() => setSuccessMessage(null)}>
-            {successMessage}
           </Alert>
         )}
 

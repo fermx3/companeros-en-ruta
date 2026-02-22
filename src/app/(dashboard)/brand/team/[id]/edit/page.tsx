@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useToast } from '@/components/ui/toaster';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 interface MemberInfo {
   id: string;
@@ -67,7 +69,9 @@ export default function BrandTeamMemberEditPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const { toast } = useToast();
+  const [isDirty, setIsDirty] = useState(false);
+  useUnsavedChanges(isDirty);
 
   const [member, setMember] = useState<MemberInfo | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
@@ -140,6 +144,7 @@ export default function BrandTeamMemberEditPage() {
   }, [memberId, brandFetch, currentBrandId]);
 
   const handleChange = (field: keyof FormData, value: string) => {
+    setIsDirty(true);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -147,7 +152,6 @@ export default function BrandTeamMemberEditPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const response = await brandFetch(`/api/brand/team/${member!.id}/assignment`, {
@@ -166,7 +170,8 @@ export default function BrandTeamMemberEditPage() {
         throw new Error(errorData.error || 'Error al guardar asignación');
       }
 
-      setSuccess('Asignación actualizada exitosamente');
+      toast({ variant: 'success', title: 'Asignación actualizada exitosamente' });
+      setIsDirty(false);
       setTimeout(() => {
         router.push('/brand/team');
       }, 1000);
@@ -268,12 +273,6 @@ export default function BrandTeamMemberEditPage() {
             {error}
           </Alert>
         )}
-        {success && (
-          <Alert variant="success" className="mb-6">
-            {success}
-          </Alert>
-        )}
-
         {/* Read-only member info */}
         <Card className="mb-6">
           <div className="p-6">

@@ -9,6 +9,7 @@ import { Users, Search, Check, Award, ChevronLeft, ChevronRight, UserPlus, Coins
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { ExportButton } from '@/components/ui/export-button'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 import {
   TierAssignModal,
   PointsModal,
@@ -24,7 +25,7 @@ export default function BrandClientsPage() {
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'active'>('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -127,8 +128,7 @@ export default function BrandClientsPage() {
         throw new Error(errorData.error || 'Error al aprobar membresía')
       }
 
-      setSuccessMessage('Membresía aprobada correctamente')
-      setTimeout(() => setSuccessMessage(null), 3000)
+      toast({ variant: 'success', title: 'Membresía aprobada correctamente' })
       setRefreshKey(k => k + 1)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -156,8 +156,7 @@ export default function BrandClientsPage() {
       }
 
       const data = await response.json()
-      setSuccessMessage(data.message || 'Nivel asignado correctamente')
-      setTimeout(() => setSuccessMessage(null), 3000)
+      toast({ variant: 'success', title: data.message || 'Nivel asignado correctamente' })
       setAssignModal({ open: false, membership: null })
       setRefreshKey(k => k + 1)
     } catch (err) {
@@ -192,8 +191,7 @@ export default function BrandClientsPage() {
       }
 
       const data = await response.json()
-      setSuccessMessage(data.message || 'Miembros agregados correctamente')
-      setTimeout(() => setSuccessMessage(null), 3000)
+      toast({ variant: 'success', title: data.message || 'Miembros agregados correctamente' })
       setAddMembersModal(false)
       setPage(1); setRefreshKey(k => k + 1)
     } catch (err) {
@@ -229,8 +227,7 @@ export default function BrandClientsPage() {
       }
 
       const result = await response.json()
-      setSuccessMessage(result.message || 'Puntos procesados correctamente')
-      setTimeout(() => setSuccessMessage(null), 3000)
+      toast({ variant: 'success', title: result.message || 'Puntos procesados correctamente' })
       setPointsModal({ open: false, membership: null })
       setRefreshKey(k => k + 1)
     } catch (err) {
@@ -297,12 +294,6 @@ export default function BrandClientsPage() {
         {error && (
           <Alert variant="error" className="mb-6" onClose={() => setError(null)}>
             {error}
-          </Alert>
-        )}
-
-        {successMessage && (
-          <Alert variant="success" className="mb-6" onClose={() => setSuccessMessage(null)}>
-            {successMessage}
           </Alert>
         )}
 

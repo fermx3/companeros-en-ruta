@@ -10,6 +10,7 @@ import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { SurveyQuestionBuilder, type QuestionData } from '@/components/surveys/SurveyQuestionBuilder'
 import { ArrowLeft, Send, Edit, BarChart3, AlertCircle } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -40,6 +41,7 @@ export default function BrandSurveyDetailPage() {
   const router = useRouter()
   const params = useParams()
   const { brandFetch, currentBrandId } = useBrandFetch()
+  const { toast } = useToast()
   const surveyId = params.id as string
 
   const [survey, setSurvey] = useState<SurveyDetail | null>(null)
@@ -114,6 +116,7 @@ export default function BrandSurveyDetailPage() {
         throw new Error(data.error || 'Error al guardar')
       }
       setEditing(false)
+      toast({ variant: 'success', title: 'Encuesta actualizada' })
       setRefreshKey(k => k + 1)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error')

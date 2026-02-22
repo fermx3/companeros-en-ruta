@@ -10,6 +10,7 @@ import {
 import Link from 'next/link'
 import type { KpiTarget } from '@/lib/types/database'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 
 const KPI_OPTIONS = [
   { slug: 'volume', label: 'Avances de Volumen', defaultUnit: 'MXN' },
@@ -40,6 +41,7 @@ function getMonthEnd(start: string): string {
 export default function KpiTargetsPage() {
   usePageTitle('Metas de KPI')
   const { brandFetch, currentBrandId } = useBrandFetch()
+  const { toast } = useToast()
   const [targets, setTargets] = useState<KpiTarget[]>([])
   const [zones, setZones] = useState<Array<{ id: string; name: string }>>([])
   const [loading, setLoading] = useState(true)
@@ -175,6 +177,7 @@ export default function KpiTargetsPage() {
       }
 
       setShowForm(false)
+      toast({ variant: 'success', title: editingId ? 'Meta actualizada' : 'Meta creada' })
       resetForm()
       loadTargets()
     } catch (err) {

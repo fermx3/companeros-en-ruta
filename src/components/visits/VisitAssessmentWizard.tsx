@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { WizardProgress, WizardStage } from './WizardProgress'
 import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/feedback'
+import { useToast } from '@/components/ui/toaster'
 import { ArrowLeft, ArrowRight, Save, CheckCircle2, MapPin, Store, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -168,6 +169,8 @@ export function VisitAssessmentWizard({
   renderStage,
   className
 }: VisitAssessmentWizardProps) {
+  const { toast } = useToast()
+
   // Client info helpers
   const clientName = visit?.client?.name || visit?.client?.business_name || 'Cliente'
   const ownerName = visit?.client?.owner_name
@@ -256,6 +259,7 @@ export function VisitAssessmentWizard({
       setData(updatedData)
 
       await onSave(updatedData, currentStage + 1)
+      toast({ variant: 'success', title: 'Etapa guardada' })
     } catch (err) {
       console.error('Error saving stage:', err)
       setError(err instanceof Error ? err.message : 'Error al guardar')

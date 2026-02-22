@@ -14,6 +14,7 @@ import type { LucideIcon } from 'lucide-react'
 import { KpiSummaryRings } from '@/components/kpi/KpiSummaryRings'
 import { KpiDetailSection } from '@/components/kpi/KpiDetailSection'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 
 interface KpiResult {
   slug: string
@@ -287,6 +288,7 @@ function KpiSelectorModal({ brandFetch, onClose, onSaved }: {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     async function load() {
@@ -346,6 +348,7 @@ function KpiSelectorModal({ brandFetch, onClose, onSaved }: {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error al guardar')
+      toast({ variant: 'success', title: 'KPIs actualizados' })
       onSaved()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error')

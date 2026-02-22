@@ -9,6 +9,7 @@ import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/
 import { Building2, Plus, Edit2, Trash2, ChevronDown, ChevronRight, Package } from 'lucide-react'
 import { ExportButton } from '@/components/ui/export-button'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 
 interface ProductSize {
   id: string
@@ -56,6 +57,7 @@ interface CompetitorFormData {
 export default function BrandCompetitorsPage() {
   usePageTitle('Competidores')
   const { brandFetch, currentBrandId } = useBrandFetch()
+  const { toast } = useToast()
   const [competitors, setCompetitors] = useState<Competitor[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -127,6 +129,7 @@ export default function BrandCompetitorsPage() {
       }
 
       setRefreshKey(k => k + 1)
+      toast({ variant: 'success', title: editingCompetitor ? 'Competidor actualizado' : 'Competidor creado' })
       resetForm()
 
     } catch (err) {

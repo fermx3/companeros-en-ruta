@@ -9,6 +9,8 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { adminService } from '@/lib/services/adminService';
 import type { Brand, BrandCreateForm } from '@/lib/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useToast } from '@/components/ui/toaster';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 // ===========================================
 // Types & Interfaces
@@ -52,7 +54,9 @@ export default function BrandEditPage({ params }: BrandEditPageProps) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [isDirty, setIsDirty] = useState(false)
+  const { toast } = useToast()
+  useUnsavedChanges(isDirty)
 
   const [formData, setFormData] = useState<FormState>({
     name: '',
@@ -126,10 +130,7 @@ export default function BrandEditPage({ params }: BrandEditPageProps) {
       [field]: value
     }))
 
-    // Clear success message when user starts editing
-    if (successMessage) {
-      setSuccessMessage(null)
-    }
+    setIsDirty(true)
   }
 
   /**
@@ -165,7 +166,6 @@ export default function BrandEditPage({ params }: BrandEditPageProps) {
 
     setSaving(true)
     setError(null)
-    setSuccessMessage(null)
 
     try {
       const updateData: Partial<BrandCreateForm> = {
@@ -186,7 +186,8 @@ export default function BrandEditPage({ params }: BrandEditPageProps) {
         throw new Error(response.error)
       }
 
-      setSuccessMessage('Marca actualizada exitosamente')
+      toast({ variant: 'success', title: 'Marca actualizada exitosamente' })
+      setIsDirty(false)
 
       // Update local brand state
       if (response.data) {
@@ -264,12 +265,6 @@ export default function BrandEditPage({ params }: BrandEditPageProps) {
       {error && (
         <Alert variant="error" className="mb-6">
           {error}
-        </Alert>
-      )}
-
-      {successMessage && (
-        <Alert variant="success" className="mb-6">
-          {successMessage}
         </Alert>
       )}
 

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/toaster'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import { Save } from 'lucide-react'
 
 interface VisitAssessmentFormProps {
@@ -19,6 +21,7 @@ interface VisitAssessmentFormProps {
 }
 
 export function VisitAssessmentForm({ visit, onSave }: VisitAssessmentFormProps) {
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     product_visibility: visit.assessment?.product_visibility || null,
     package_condition: visit.assessment?.package_condition || null,
@@ -29,6 +32,7 @@ export function VisitAssessmentForm({ visit, onSave }: VisitAssessmentFormProps)
 
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+  useUnsavedChanges(hasChanges)
 
   useEffect(() => {
     // Check if there are changes
@@ -51,6 +55,7 @@ export function VisitAssessmentForm({ visit, onSave }: VisitAssessmentFormProps)
     setSaving(true)
     try {
       await onSave(formData)
+      toast({ variant: 'success', title: 'Assessment guardado' })
       setHasChanges(false)
     } catch (error) {
       console.error('Error saving assessment:', error)

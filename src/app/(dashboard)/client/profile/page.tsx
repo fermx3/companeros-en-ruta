@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { isValidMxPhone, displayPhone } from '@/lib/utils/phone'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useToast } from '@/components/ui/toaster'
 import {
   Store,
   Phone,
@@ -59,6 +60,7 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
 
 export default function ClientProfilePage() {
   usePageTitle('Mi Perfil')
+  const { toast } = useToast()
   const [profile, setProfile] = useState<ClientProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -111,6 +113,7 @@ export default function ClientProfilePage() {
       }
       setProfile((prev) => prev ? { ...prev, phone, whatsapp } : prev)
       setEditing(false)
+      toast({ variant: 'success', title: 'Contacto actualizado' })
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Error al guardar')
     } finally {

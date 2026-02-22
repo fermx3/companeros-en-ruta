@@ -9,6 +9,8 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidMxPhone } from '@/lib/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useToast } from '@/components/ui/toaster';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 interface PromotorProfile {
   id: string;
@@ -28,11 +30,13 @@ export default function EditPromotorProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<PromotorProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [phone, setPhone] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
   const [phoneError, setPhoneError] = useState('');
+  useUnsavedChanges(isDirty);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -73,7 +77,6 @@ export default function EditPromotorProfilePage() {
 
     setSaving(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
       const response = await fetch('/api/promotor/profile', {
@@ -87,7 +90,8 @@ export default function EditPromotorProfilePage() {
         throw new Error(errorData.error || 'Error al actualizar perfil');
       }
 
-      setSuccessMessage('Teléfono actualizado correctamente');
+      toast({ variant: 'success', title: 'Teléfono actualizado correctamente' });
+      setIsDirty(false);
       setTimeout(() => {
         router.push('/promotor');
       }, 2000);
@@ -166,12 +170,6 @@ export default function EditPromotorProfilePage() {
           </Alert>
         )}
 
-        {successMessage && (
-          <Alert variant="success" title="Éxito" className="mb-6">
-            {successMessage}
-          </Alert>
-        )}
-
         <Card>
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Información No Editable */}
@@ -213,7 +211,7 @@ export default function EditPromotorProfilePage() {
             <div className="max-w-sm">
               <PhoneInput
                 value={phone}
-                onChange={(digits) => { setPhone(digits); setPhoneError(''); }}
+                onChange={(digits) => { setPhone(digits); setPhoneError(''); setIsDirty(true); }}
                 label="Teléfono"
                 id="phone"
                 error={phoneError}
