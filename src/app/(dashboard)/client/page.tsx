@@ -7,7 +7,7 @@ import { MetricCard } from "@/components/ui/metric-card"
 import { TierProgressCard } from "@/components/client/TierProgressCard"
 import { LoyaltyPlansSection } from "@/components/client/LoyaltyPlansSection"
 import { WeeklyPromotionsBanner } from "@/components/client/WeeklyPromotionsBanner"
-import { Store, ShoppingCart, Star, MapPin, Building2, QrCode, ClipboardList } from "lucide-react"
+import { Store, ShoppingCart, Star, MapPin, Building2, QrCode, ClipboardList, ClipboardCheck, X } from "lucide-react"
 import { usePageTitle } from '@/hooks/usePageTitle'
 import Link from 'next/link'
 
@@ -34,6 +34,7 @@ interface ClientProfile {
   last_order_date: string | null
   last_visit_date: string | null
   created_at: string
+  onboarding_completed: boolean
 }
 
 interface CurrentTier {
@@ -93,6 +94,7 @@ export default function ClientPortal() {
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [bannerDismissed, setBannerDismissed] = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -196,6 +198,33 @@ export default function ClientPortal() {
             </div>
           </div>
         </div>
+
+        {/* Onboarding CTA Banner */}
+        {profile && !profile.onboarding_completed && !bannerDismissed && (
+          <div className="relative flex items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100">
+              <ClipboardCheck className="h-5 w-5 text-amber-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-amber-900">
+                Completa tu perfil para aprovechar todos los beneficios
+              </p>
+              <Link
+                href="/client/onboarding/form"
+                className="mt-1 inline-block text-sm font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-800"
+              >
+                Completar perfil
+              </Link>
+            </div>
+            <button
+              onClick={() => setBannerDismissed(true)}
+              className="shrink-0 rounded-lg p-1 text-amber-400 hover:bg-amber-100 hover:text-amber-600"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         {/* 2. TierProgressCard */}
         {primaryMembership && (

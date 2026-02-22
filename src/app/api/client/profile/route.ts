@@ -26,6 +26,7 @@ interface ClientProfile {
   last_order_date: string | null
   last_visit_date: string | null
   created_at: string
+  onboarding_completed: boolean
 }
 
 export async function GET() {
@@ -61,6 +62,7 @@ export async function GET() {
         address_state,
         address_postal_code,
         status,
+        onboarding_completed,
         last_visit_date,
         created_at,
         zones(name),
@@ -139,7 +141,8 @@ export async function GET() {
       total_orders: orderCount || 0,
       last_order_date: lastOrder?.created_at || null,
       last_visit_date: client.last_visit_date,
-      created_at: client.created_at
+      created_at: client.created_at,
+      onboarding_completed: client.onboarding_completed
     }
 
     return NextResponse.json(profile)
