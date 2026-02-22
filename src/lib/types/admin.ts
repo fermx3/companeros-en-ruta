@@ -332,11 +332,30 @@ export const tenantUpdateSchema = z.object({
   settings: z.record(z.string(), z.unknown()).optional()
 });
 
+export const distributorCreateSchema = z.object({
+  name: z.string().min(1, 'Nombre es requerido').max(255),
+  legal_name: z.string().max(255).optional().or(z.literal('')),
+  rfc: z.string().max(13).optional().or(z.literal('')),
+  contact_name: z.string().max(255).optional().or(z.literal('')),
+  contact_email: z.string().email('Email inválido').optional().or(z.literal('')),
+  contact_phone: z.string().max(50).optional().or(z.literal('')),
+  address_street: z.string().max(255).optional().or(z.literal('')),
+  address_city: z.string().max(100).optional().or(z.literal('')),
+  address_state: z.string().max(100).optional().or(z.literal('')),
+  address_postal_code: z.string().max(10).optional().or(z.literal('')),
+  address_country: z.string().max(100).default('México'),
+  status: z.enum(['active', 'inactive', 'suspended']).default('active'),
+  notes: z.string().optional().or(z.literal('')),
+});
+export const distributorUpdateSchema = distributorCreateSchema;
+
 // Form types
 export type BrandCreateForm = z.infer<typeof brandCreateSchema>;
 export type UserCreateForm = z.infer<typeof userCreateSchema>;
 export type ClientCreateForm = z.infer<typeof clientCreateSchema>;
 export type TenantUpdateForm = z.infer<typeof tenantUpdateSchema>;
+export type DistributorCreateForm = z.infer<typeof distributorCreateSchema>;
+export type DistributorUpdateForm = z.infer<typeof distributorUpdateSchema>;
 
 // API response types
 export interface ApiResponse<T> {

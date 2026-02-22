@@ -15,6 +15,7 @@ import {
   History,
   Star,
   Building2,
+  Truck,
   Eye,
   UserCircle,
   Download,
@@ -167,6 +168,7 @@ export const adminNavConfig: RoleNavConfig = buildConfig(
     { id: 'promotions', label: 'Promociones', icon: Tag, href: '/admin/promotions' },
     { id: 'kpi-definitions', label: 'Definiciones KPI', icon: BarChart3, href: '/admin/kpi-definitions' },
     { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/admin/surveys' },
+    { id: 'distributors', label: 'Distribuidores', icon: Truck, href: '/admin/distributors' },
     { id: 'settings', label: 'Configuración', icon: Settings, href: '/admin/settings' },
   ],
 )
