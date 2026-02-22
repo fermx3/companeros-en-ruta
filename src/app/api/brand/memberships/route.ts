@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', targetBrandId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
 
     // Apply status filter
     if (status && ['pending', 'active', 'suspended', 'cancelled'].includes(status)) {
