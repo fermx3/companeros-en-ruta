@@ -13,6 +13,7 @@ import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import { KpiSummaryRings } from '@/components/kpi/KpiSummaryRings'
 import { KpiDetailSection } from '@/components/kpi/KpiDetailSection'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface KpiResult {
   slug: string
@@ -97,6 +98,7 @@ const DETAIL_UNIT: Record<string, string> = {
 }
 
 export default function BrandKpisPage() {
+  usePageTitle('KPIs')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [kpis, setKpis] = useState<KpiResult[]>([])
   const [kpiDetails, setKpiDetails] = useState<Record<string, Record<string, unknown>> | null>(null)

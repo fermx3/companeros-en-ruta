@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
 import { displayPhone } from '@/lib/utils/phone';
 import { ExportButton } from '@/components/ui/export-button';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface TeamMember {
   id: string;
@@ -30,6 +31,7 @@ interface TeamMember {
  * Página de gestión de equipos de venta para usuarios de marca
  */
 export default function BrandTeamPage() {
+  usePageTitle('Equipo');
   const { brandFetch, currentBrandId } = useBrandFetch();
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -575,7 +577,7 @@ function TeamMemberCard({ member, rank, supervisors, onSupervisorChange }: TeamM
         {/* Actions */}
         <div className="flex justify-between items-center pt-4 border-t border-gray-100">
           <div className="flex space-x-2">
-            <Link href={`/brand/team/${member.id}`}>
+            <Link href={`/brand/team/${member.public_id}`}>
               <Button size="sm" variant="outline">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -584,7 +586,7 @@ function TeamMemberCard({ member, rank, supervisors, onSupervisorChange }: TeamM
                 Ver Perfil
               </Button>
             </Link>
-            <Link href={`/brand/team/${member.id}/performance`}>
+            <Link href={`/brand/team/${member.public_id}/performance`}>
               <Button size="sm" variant="outline">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -593,7 +595,7 @@ function TeamMemberCard({ member, rank, supervisors, onSupervisorChange }: TeamM
               </Button>
             </Link>
           </div>
-          <Link href={`/brand/team/${member.id}/edit`}>
+          <Link href={`/brand/team/${member.public_id}/edit`}>
             <Button size="sm" variant="outline">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

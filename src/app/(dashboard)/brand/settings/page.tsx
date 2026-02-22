@@ -9,12 +9,14 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { PhoneInput } from '@/components/ui/phone-input';
 import type { Brand } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 /**
  * Página de configuración de marca
  * Permite a los brand managers editar la información de su marca
  */
 export default function BrandSettingsPage() {
+  usePageTitle('Configuración de Marca');
   const { brandFetch, currentBrandId } = useBrandFetch();
   const [brand, setBrand] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);

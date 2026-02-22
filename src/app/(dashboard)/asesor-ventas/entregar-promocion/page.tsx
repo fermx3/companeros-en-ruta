@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Alert, LoadingSpinner } from '@/components/ui/feedback'
 import { QRScanner } from '@/components/qr'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   QrCode,
   ArrowLeft,
@@ -79,6 +80,7 @@ interface RedemptionResult {
 type Step = 'scan' | 'preview' | 'result'
 
 export default function EntregarPromocionPage() {
+  usePageTitle('Entregar Promoción')
   const [step, setStep] = useState<Step>('scan')
   const [scannedCode, setScannedCode] = useState<string | null>(null)
   const [validation, setValidation] = useState<QRValidationResult | null>(null)

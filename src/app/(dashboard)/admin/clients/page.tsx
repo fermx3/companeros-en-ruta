@@ -12,12 +12,14 @@ import type {
   Zone,
   Market
 } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 /**
  * Vista de gestión de clientes para administradores
  * Permite ver, filtrar, crear y gestionar clientes del tenant
  */
 export default function AdminClientsPage() {
+  usePageTitle('Clientes');
   const [clients, setClients] = useState<PaginatedResponse<Client & {
     zone_name?: string;
     market_name?: string;

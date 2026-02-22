@@ -11,6 +11,7 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { displayPhone } from '@/lib/utils/phone';
 import { adminService } from '@/lib/services/adminService';
 import type { UserProfile, UserRoleRecord, Brand } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface SupervisorOption {
   id: string;
@@ -27,6 +28,7 @@ interface UserWithDetails extends UserProfile {
  * Página de detalles y edición de un usuario específico
  */
 export default function UserDetailPage() {
+  usePageTitle('Detalle de Usuario');
   const params = useParams();
   const userId = params?.id as string;
 

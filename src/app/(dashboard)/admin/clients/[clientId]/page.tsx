@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Client } from '@/lib/types/admin';
 import { displayPhone, extractDigits } from '@/lib/utils/phone';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 /**
  * Página de detalle de cliente
  * Muestra la información completa de un cliente específico
  */
 export default function ClientDetailPage() {
+  usePageTitle('Detalle de Cliente');
   const params = useParams();
   const [client, setClient] = useState<(Client & {
     zone_name?: string;

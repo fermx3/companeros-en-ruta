@@ -11,6 +11,7 @@ import {
   Gift, Calendar, DollarSign, Users, TrendingUp, Check, X,
   ArrowLeft, Building2, Clock, Target, FileText, Hash
 } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface Brand {
   id: string
@@ -106,6 +107,7 @@ const STATUS_COLORS: Record<string, 'active' | 'inactive' | 'pending' | 'suspend
 const DAYS_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
 export default function AdminPromotionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  usePageTitle('Detalle de Promoción')
   const { id } = use(params)
   const router = useRouter()
   const [promotion, setPromotion] = useState<Promotion | null>(null)

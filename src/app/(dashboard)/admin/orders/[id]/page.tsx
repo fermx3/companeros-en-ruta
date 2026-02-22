@@ -23,6 +23,7 @@ import {
   Truck,
   ChevronDown
 } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface OrderItem {
   id: string
@@ -182,6 +183,7 @@ export default function AdminOrderDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  usePageTitle('Detalle de Pedido')
   const { id: orderId } = use(params)
 
   const [order, setOrder] = useState<OrderDetail | null>(null)

@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Settings, ArrowLeft, Construction } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function AdminSettingsPage() {
+  usePageTitle('Configuración')
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow-sm border-b">

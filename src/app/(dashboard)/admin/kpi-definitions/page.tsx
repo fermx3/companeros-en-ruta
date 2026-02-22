@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Alert, LoadingSpinner } from '@/components/ui/feedback'
 import { Plus, Edit2, Power, PowerOff, TrendingUp, Target, Package, PieChart, LayoutGrid } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface KpiDefinition {
   id: string
@@ -34,6 +35,7 @@ const COMPUTATION_LABELS: Record<string, string> = {
 }
 
 export default function AdminKpiDefinitionsPage() {
+  usePageTitle('Definiciones de KPI')
   const [definitions, setDefinitions] = useState<KpiDefinition[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

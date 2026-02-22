@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/form-legacy'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Gift, ArrowLeft, ArrowRight, Check, Calendar, Target, FileText } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 type PromotionType =
   | 'discount_percentage'
@@ -84,6 +85,7 @@ const STEPS = [
 ]
 
 export default function CreatePromotionPage() {
+  usePageTitle('Crear Promoción')
   const router = useRouter()
   const { brandFetch } = useBrandFetch()
   const [currentStep, setCurrentStep] = useState(1)

@@ -6,10 +6,12 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Zone, PaginatedResponse } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 type ZoneWithParent = Zone & { parent_zone_name?: string | null };
 
 export default function AdminZonesPage() {
+  usePageTitle('Zonas');
   const [zones, setZones] = useState<PaginatedResponse<ZoneWithParent> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -321,14 +323,14 @@ export default function AdminZonesPage() {
                       </td>
                       <td className="px-6 py-4 text-sm font-medium space-x-2">
                         <Link
-                          href={`/admin/zones/${zone.id}`}
+                          href={`/admin/zones/${zone.public_id}`}
                           className="text-blue-600 hover:text-blue-900"
                         >
                           Ver
                         </Link>
                         <span className="text-gray-300">|</span>
                         <Link
-                          href={`/admin/zones/${zone.id}/edit`}
+                          href={`/admin/zones/${zone.public_id}/edit`}
                           className="text-indigo-600 hover:text-indigo-900"
                         >
                           Editar

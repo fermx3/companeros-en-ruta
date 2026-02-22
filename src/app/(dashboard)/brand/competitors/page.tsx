@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
 import { Building2, Plus, Edit2, Trash2, ChevronDown, ChevronRight, Package } from 'lucide-react'
 import { ExportButton } from '@/components/ui/export-button'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface ProductSize {
   id: string
@@ -53,6 +54,7 @@ interface CompetitorFormData {
 }
 
 export default function BrandCompetitorsPage() {
+  usePageTitle('Competidores')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [competitors, setCompetitors] = useState<Competitor[]>([])
   const [loading, setLoading] = useState(true)

@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Zone } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 type ZoneDetail = Zone & {
   parent_zone_name?: string | null;
@@ -15,6 +16,7 @@ type ZoneDetail = Zone & {
 };
 
 export default function ZoneDetailPage() {
+  usePageTitle('Detalle de Zona');
   const params = useParams();
   const zoneId = params.id as string;
 

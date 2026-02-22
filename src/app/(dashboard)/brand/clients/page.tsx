@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
 import { ExportButton } from '@/components/ui/export-button';
 import { displayPhone } from '@/lib/utils/phone';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface Client {
   id: string;
@@ -28,6 +29,7 @@ interface Client {
  * Página de gestión de clientes para usuarios de marca
  */
 export default function BrandClientsPage() {
+  usePageTitle('Clientes');
   const { brandFetch, currentBrandId } = useBrandFetch();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -369,7 +371,7 @@ function ClientCard({ client }: ClientCardProps) {
         {/* Actions */}
         <div className="flex justify-between items-center pt-4 border-t border-gray-100">
           <div className="flex space-x-2">
-            <Link href={`/brand/clients/${client.id}`}>
+            <Link href={`/brand/clients/${client.public_id}`}>
               <Button size="sm" variant="outline">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -378,7 +380,7 @@ function ClientCard({ client }: ClientCardProps) {
                 Ver Detalle
               </Button>
             </Link>
-            <Link href={`/brand/clients/${client.id}/visits`}>
+            <Link href={`/brand/clients/${client.public_id}/visits`}>
               <Button size="sm" variant="outline">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -388,7 +390,7 @@ function ClientCard({ client }: ClientCardProps) {
               </Button>
             </Link>
           </div>
-          <Link href={`/brand/clients/${client.id}/edit`}>
+          <Link href={`/brand/clients/${client.public_id}/edit`}>
             <Button size="sm" variant="outline">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

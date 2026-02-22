@@ -19,6 +19,7 @@ import {
   User,
   Truck
 } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface Order {
   id: string
@@ -182,6 +183,7 @@ function formatDate(dateString: string): string {
 }
 
 export default function AdminOrdersPage() {
+  usePageTitle('Pedidos')
   const [data, setData] = useState<OrdersData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

@@ -9,6 +9,7 @@ import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/
 import { Package, Plus, Edit2, Trash2, ChevronDown, ChevronRight, DollarSign } from 'lucide-react'
 import { ExportButton } from '@/components/ui/export-button'
 import { cn } from '@/lib/utils'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface ProductVariant {
   id: string
@@ -65,6 +66,7 @@ interface Brand {
 }
 
 export default function BrandProductsPage() {
+  usePageTitle('Productos')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])

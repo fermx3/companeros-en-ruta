@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/form'
 import { ArrowLeft, MapPin, Play } from 'lucide-react'
 import { useGeolocation } from '@/hooks/useGeolocation'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface Client {
   id: string
@@ -42,6 +43,7 @@ const visitFormSchema = z.object({
 type VisitFormValues = z.infer<typeof visitFormSchema>
 
 export default function NuevaVisitaPage() {
+  usePageTitle('Nueva Visita')
   // Role protection is handled by the layout (promotor/layout.tsx)
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])

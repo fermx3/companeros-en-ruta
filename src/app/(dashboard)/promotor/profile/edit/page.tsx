@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidMxPhone } from '@/lib/utils/phone';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface PromotorProfile {
   id: string;
@@ -16,47 +17,22 @@ interface PromotorProfile {
   full_name: string;
   email: string;
   phone: string | null;
-  territory_assigned: string | null;
-  specialization: string | null;
+  zone_name: string;
+  specialization: string;
   experience_level: string;
   status: string;
 }
 
-/**
- * Página de edición del perfil del promotor
- */
 export default function EditPromotorProfilePage() {
+  usePageTitle('Editar Perfil');
   const router = useRouter();
   const [profile, setProfile] = useState<PromotorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  const [formData, setFormData] = useState({
-    phone: '',
-    territory_assigned: '',
-    specialization: '',
-    experience_level: 'junior'
-  });
-
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
-  const experienceLevels = [
-    { value: 'junior', label: 'Junior (0-2 años)' },
-    { value: 'mid', label: 'Intermedio (2-5 años)' },
-    { value: 'senior', label: 'Senior (5+ años)' },
-    { value: 'expert', label: 'Experto (10+ años)' }
-  ];
-
-  const specializations = [
-    { value: '', label: 'Sin especialización' },
-    { value: 'retail', label: 'Retail' },
-    { value: 'horeca', label: 'HORECA (Hotel/Restaurante/Café)' },
-    { value: 'wholesale', label: 'Mayoreo' },
-    { value: 'corporate', label: 'Corporativo' },
-    { value: 'institutional', label: 'Institucional' }
-  ];
+  const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -64,29 +40,16 @@ export default function EditPromotorProfilePage() {
       setError(null);
 
       try {
-        const response = await fetch('/api/promotor/profile', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await fetch('/api/promotor/profile');
 
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Error al cargar perfil');
         }
 
-        const data = await response.json();
-        const profileData = data.profile;
-
+        const profileData = await response.json();
         setProfile(profileData);
-        setFormData({
-          phone: profileData.phone || '',
-          territory_assigned: profileData.territory_assigned || '',
-          specialization: profileData.specialization || '',
-          experience_level: profileData.experience_level || 'junior'
-        });
-
+        setPhone(profileData.phone || '');
       } catch (err) {
         console.error('Error loading profile:', err);
         const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -99,36 +62,12 @@ export default function EditPromotorProfilePage() {
     loadProfile();
   }, []);
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-
-    // Limpiar error de validación cuando el usuario corrija el campo
-    if (validationErrors[field]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [field]: ''
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-
-    if (!isValidMxPhone(formData.phone)) {
-      errors.phone = 'El teléfono debe tener 10 dígitos';
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPhoneError('');
 
-    if (!validateForm()) {
+    if (!isValidMxPhone(phone)) {
+      setPhoneError('El teléfono debe tener 10 dígitos');
       return;
     }
 
@@ -139,10 +78,8 @@ export default function EditPromotorProfilePage() {
     try {
       const response = await fetch('/api/promotor/profile', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
       });
 
       if (!response.ok) {
@@ -150,13 +87,10 @@ export default function EditPromotorProfilePage() {
         throw new Error(errorData.error || 'Error al actualizar perfil');
       }
 
-      setSuccessMessage('Perfil actualizado correctamente');
-
-      // Redireccionar al perfil después de 2 segundos
+      setSuccessMessage('Teléfono actualizado correctamente');
       setTimeout(() => {
         router.push('/promotor');
       }, 2000);
-
     } catch (err) {
       console.error('Error saving profile:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -219,7 +153,7 @@ export default function EditPromotorProfilePage() {
               Editar Mi Perfil
             </h1>
             <p className="text-gray-600 mt-1">
-              Actualiza tu información personal y preferencias
+              Actualiza tu número de teléfono
             </p>
           </div>
         </div>
@@ -259,75 +193,31 @@ export default function EditPromotorProfilePage() {
                     <label className="block text-sm font-medium text-gray-500">ID de Promotor</label>
                     <p className="mt-1 text-sm text-gray-900">{profile.public_id}</p>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Zona</label>
+                    <p className="mt-1 text-sm text-gray-900">{profile.zone_name}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Especialización</label>
+                    <p className="mt-1 text-sm text-gray-900">{profile.specialization}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Nivel de Experiencia</label>
+                    <p className="mt-1 text-sm text-gray-900">{profile.experience_level}</p>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Información Editable */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Teléfono */}
+            {/* Solo teléfono es editable */}
+            <div className="max-w-sm">
               <PhoneInput
-                value={formData.phone}
-                onChange={(digits) => handleInputChange('phone', digits)}
+                value={phone}
+                onChange={(digits) => { setPhone(digits); setPhoneError(''); }}
                 label="Teléfono"
                 id="phone"
-                error={validationErrors.phone}
+                error={phoneError}
               />
-
-              {/* Nivel de Experiencia */}
-              <div>
-                <label htmlFor="experience_level" className="block text-sm font-medium text-gray-700 mb-2">
-                  Nivel de Experiencia <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="experience_level"
-                  value={formData.experience_level}
-                  onChange={(e) => handleInputChange('experience_level', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {experienceLevels.map(level => (
-                    <option key={level.value} value={level.value}>
-                      {level.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Territorio Asignado */}
-              <div>
-                <label htmlFor="territory_assigned" className="block text-sm font-medium text-gray-700 mb-2">
-                  Territorio Asignado
-                </label>
-                <input
-                  type="text"
-                  id="territory_assigned"
-                  value={formData.territory_assigned}
-                  onChange={(e) => handleInputChange('territory_assigned', e.target.value)}
-                  placeholder="Ej: Zona Norte CDMX"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              {/* Especialización */}
-              <div>
-                <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 mb-2">
-                  Especialización
-                </label>
-                <select
-                  id="specialization"
-                  value={formData.specialization}
-                  onChange={(e) => handleInputChange('specialization', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {specializations.map(spec => (
-                    <option key={spec.value} value={spec.value}>
-                      {spec.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             {/* Botones */}

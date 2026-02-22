@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Award, Star, TrendingUp, Building2, Plus, Clock, Check } from "lucide-react"
 import Link from 'next/link'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface CurrentTier {
   id: string
@@ -109,6 +110,7 @@ function MembershipStatusBadge({ status }: { status: string }) {
 }
 
 export default function ClientBrandsPage() {
+  usePageTitle('Mis Marcas')
   const [memberships, setMemberships] = useState<ClientMembership[]>([])
   const [availableBrands, setAvailableBrands] = useState<AvailableBrand[]>([])
   const [loading, setLoading] = useState(true)

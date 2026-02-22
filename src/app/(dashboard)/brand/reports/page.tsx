@@ -17,6 +17,7 @@ import {
   BarChart3,
   ShoppingCart
 } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 type Period = 'week' | 'month' | 'quarter' | 'year'
 
@@ -62,6 +63,7 @@ function formatNumber(num: number): string {
 }
 
 export default function BrandReportsPage() {
+  usePageTitle('Reportes')
   const { user } = useAuth()
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [metrics, setMetrics] = useState<BrandMetrics | null>(null)

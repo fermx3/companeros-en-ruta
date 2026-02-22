@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
 import { User } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function SupervisorProfilePage() {
+  usePageTitle('Mi Perfil')
   const { user, userProfile, userRoles } = useAuth()
 
   const profile = userProfile as {

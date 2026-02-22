@@ -9,6 +9,7 @@ import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/
 import { LayoutGrid, Plus, Edit2, Trash2, Package, MapPin, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface Exhibition {
   id: string
@@ -30,6 +31,7 @@ interface CommunicationPlan {
 }
 
 export default function BrandExhibitionsPage() {
+  usePageTitle('Exhibiciones')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
   const [plans, setPlans] = useState<CommunicationPlan[]>([])

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
 import { Switch } from '@/components/ui/switch'
 import { Package, ClipboardCheck } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface ProductVariant {
   id: string
@@ -33,6 +34,7 @@ interface Category {
 }
 
 export default function AssessmentConfigPage() {
+  usePageTitle('Configuración de Evaluación')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])

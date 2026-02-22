@@ -7,6 +7,7 @@ import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface MemberInfo {
   id: string;
@@ -57,6 +58,7 @@ const EXPERIENCE_LEVEL_OPTIONS = [
 ];
 
 export default function BrandTeamMemberEditPage() {
+  usePageTitle('Editar Miembro');
   const params = useParams();
   const router = useRouter();
   const memberId = params.id as string;

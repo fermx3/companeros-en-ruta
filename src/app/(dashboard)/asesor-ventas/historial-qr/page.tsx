@@ -7,6 +7,7 @@ import { MetricCard } from '@/components/ui/metric-card'
 import { ActionButton } from '@/components/ui/action-button'
 import { LoadingSpinner, Alert, EmptyState } from '@/components/ui/feedback'
 import { Input } from '@/components/ui/input'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   History,
   ArrowLeft,
@@ -45,6 +46,7 @@ interface QRRedemption {
 }
 
 export default function HistorialQRPage() {
+  usePageTitle('Historial QR')
   const [redemptions, setRedemptions] = useState<QRRedemption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

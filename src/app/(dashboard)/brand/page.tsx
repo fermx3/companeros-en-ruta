@@ -9,6 +9,7 @@ import {
   Gift, ChevronRight, ClipboardList, BarChart3,
 } from "lucide-react"
 import { displayPhone } from '@/lib/utils/phone'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import Link from 'next/link'
 
 interface BrandDashboardMetrics {
@@ -54,6 +55,7 @@ interface BrandDashboardMetrics {
 }
 
 export default function BrandDashboard() {
+  usePageTitle('Dashboard de Marca')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [metrics, setMetrics] = useState<BrandDashboardMetrics | null>(null)
   const [loading, setLoading] = useState(true)

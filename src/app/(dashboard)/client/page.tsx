@@ -8,6 +8,7 @@ import { TierProgressCard } from "@/components/client/TierProgressCard"
 import { LoyaltyPlansSection } from "@/components/client/LoyaltyPlansSection"
 import { WeeklyPromotionsBanner } from "@/components/client/WeeklyPromotionsBanner"
 import { Store, ShoppingCart, Star, MapPin, Building2, QrCode, ClipboardList } from "lucide-react"
+import { usePageTitle } from '@/hooks/usePageTitle'
 import Link from 'next/link'
 
 interface ClientProfile {
@@ -86,6 +87,7 @@ interface Promotion {
 }
 
 export default function ClientPortal() {
+  usePageTitle('Portal de Cliente')
   const [profile, setProfile] = useState<ClientProfile | null>(null)
   const [memberships, setMemberships] = useState<ClientMembership[]>([])
   const [promotions, setPromotions] = useState<Promotion[]>([])

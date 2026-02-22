@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
 import { Gift, Plus, Search, Calendar, DollarSign, Users, TrendingUp, Pause, Play, Eye, Edit } from 'lucide-react'
 import { ExportButton } from '@/components/ui/export-button'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface Promotion {
   id: string
@@ -70,6 +71,7 @@ const PROMOTION_TYPE_ICONS: Record<string, string> = {
 }
 
 export default function BrandPromotionsPage() {
+  usePageTitle('Promociones')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [metrics, setMetrics] = useState<Metrics | null>(null)
@@ -486,14 +488,14 @@ export default function BrandPromotionsPage() {
                               )}
                             </Button>
                           )}
-                          <Link href={`/brand/promotions/${promo.id}`}>
+                          <Link href={`/brand/promotions/${promo.public_id}`}>
                             <Button size="sm" variant="outline">
                               <Eye className="h-4 w-4 mr-1" />
                               Ver
                             </Button>
                           </Link>
                           {['draft', 'approved'].includes(promo.status) && (
-                            <Link href={`/brand/promotions/${promo.id}/edit`}>
+                            <Link href={`/brand/promotions/${promo.public_id}/edit`}>
                               <Button size="sm" variant="outline">
                                 <Edit className="h-4 w-4 mr-1" />
                                 Editar
@@ -574,14 +576,14 @@ export default function BrandPromotionsPage() {
                             )}
                           </Button>
                         )}
-                        <Link href={`/brand/promotions/${promo.id}`}>
+                        <Link href={`/brand/promotions/${promo.public_id}`}>
                           <Button size="sm" variant="outline">
                             <Eye className="h-4 w-4 mr-1" />
                             Ver
                           </Button>
                         </Link>
                         {['draft', 'approved'].includes(promo.status) && (
-                          <Link href={`/brand/promotions/${promo.id}/edit`}>
+                          <Link href={`/brand/promotions/${promo.public_id}/edit`}>
                             <Button size="sm" variant="outline">
                               <Edit className="h-4 w-4 mr-1" />
                               Editar

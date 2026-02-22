@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/feedback'
 import { SurveyQuestionBuilder, type QuestionData } from '@/components/surveys/SurveyQuestionBuilder'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import type { SurveyTargetRoleEnum } from '@/lib/types/database'
 
 const STEPS = [
@@ -33,6 +34,7 @@ const CLIENT_CATEGORIES = [
 ]
 
 export default function CreateSurveyPage() {
+  usePageTitle('Crear Encuesta')
   const router = useRouter()
   const { brandFetch } = useBrandFetch()
   const [step, setStep] = useState(0)

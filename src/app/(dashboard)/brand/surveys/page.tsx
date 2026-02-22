@@ -9,6 +9,7 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { Plus, Search, ClipboardList, BarChart3, Clock, Users } from 'lucide-react'
 import { ExportButton } from '@/components/ui/export-button'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
 
 interface SurveyListItem {
@@ -40,6 +41,7 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 export default function BrandSurveysPage() {
+  usePageTitle('Encuestas')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [surveys, setSurveys] = useState<SurveyListItem[]>([])
   const [metrics, setMetrics] = useState<Metrics | null>(null)
@@ -249,11 +251,11 @@ export default function BrandSurveysPage() {
                       <td className="py-3 text-right font-medium">{survey.response_count}</td>
                       <td className="py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Link href={`/brand/surveys/${survey.id}`}>
+                          <Link href={`/brand/surveys/${survey.public_id}`}>
                             <Button variant="outline" size="sm">Ver</Button>
                           </Link>
                           {(survey.survey_status === 'active' || survey.survey_status === 'closed') && (
-                            <Link href={`/brand/surveys/${survey.id}/results`}>
+                            <Link href={`/brand/surveys/${survey.public_id}/results`}>
                               <Button variant="outline" size="sm">
                                 <BarChart3 className="w-3.5 h-3.5" />
                               </Button>

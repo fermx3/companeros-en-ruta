@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { PageLoader, StatusBadge, Alert } from '@/components/ui/feedback';
 import { displayPhone } from '@/lib/utils/phone';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface PromotorProfile {
   id: string;
@@ -43,6 +44,7 @@ interface PromotorStats {
  * Muestra información personal, estadísticas y accesos rápidos
  */
 export default function PromotorProfilePage() {
+  usePageTitle('Dashboard Promotor');
   // Role protection is handled by the layout (promotor/layout.tsx)
   const [profile, setProfile] = useState<PromotorProfile | null>(null);
   const [stats, setStats] = useState<PromotorStats | null>(null);

@@ -9,11 +9,13 @@ import { Input, Select } from '@/components/ui/form-legacy';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { adminService } from '@/lib/services/adminService';
 import { brandCreateSchema, type BrandCreateForm } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 /**
  * Formulario para crear una nueva brand
  */
 export default function CreateBrandPage() {
+  usePageTitle('Crear Marca');
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

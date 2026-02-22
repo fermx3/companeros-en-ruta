@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { PageLoader, StatusBadge, Alert } from '@/components/ui/feedback';
 import { displayPhone } from '@/lib/utils/phone';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface AsesorVentasProfile {
   id: string;
@@ -38,6 +39,7 @@ interface AsesorVentasStats {
  * Muestra informacion personal, estadisticas y accesos rapidos
  */
 export default function AsesorVentasPage() {
+  usePageTitle('Dashboard Asesor de Ventas');
   const [profile, setProfile] = useState<AsesorVentasProfile | null>(null);
   const [stats, setStats] = useState<AsesorVentasStats | null>(null);
   const [loading, setLoading] = useState(true);

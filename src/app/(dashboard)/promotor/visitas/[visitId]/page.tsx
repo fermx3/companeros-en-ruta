@@ -12,8 +12,10 @@ import { PageLoader } from '@/components/ui/feedback'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/Card'
 import { ArrowLeft, Play, MapPin, Clock, CheckCircle } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function VisitDetailPage() {
+  usePageTitle('Detalle de Visita')
   const params = useParams()
   const router = useRouter()
   const visitId = params.visitId as string

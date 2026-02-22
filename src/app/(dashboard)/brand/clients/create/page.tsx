@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/components/ui/feedback'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { isValidMxPhone } from '@/lib/utils/phone'
 import { ArrowLeft } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface ClientCreateForm {
   business_name: string
@@ -62,6 +63,7 @@ const MEXICAN_STATES = [
 ]
 
 export default function BrandCreateClientPage() {
+  usePageTitle('Crear Cliente')
   const router = useRouter()
   const { brandFetch } = useBrandFetch()
   const [loading, setLoading] = useState(false)

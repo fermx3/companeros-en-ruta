@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Zone } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface ZoneEditForm {
   name: string;
@@ -23,6 +24,7 @@ interface ZoneEditForm {
 }
 
 export default function EditZonePage() {
+  usePageTitle('Editar Zona');
   const router = useRouter();
   const params = useParams();
   const zoneId = params.id as string;

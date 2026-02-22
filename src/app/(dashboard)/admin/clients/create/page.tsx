@@ -15,6 +15,7 @@ import type {
   ClientType,
   CommercialStructure
 } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface ClientCreateForm {
   business_name: string;
@@ -46,6 +47,7 @@ interface ClientCreateForm {
  * Permite al admin registrar un nuevo cliente con toda su información
  */
 export default function CreateClientPage() {
+  usePageTitle('Crear Cliente');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);

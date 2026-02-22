@@ -9,8 +9,10 @@ import { PromotorMetrics } from '@/components/visits/PromotorMetrics'
 import { useMyVisits } from '@/hooks/useVisits'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function VisitasPage() {
+  usePageTitle('Mis Visitas')
   // Role protection is handled by the layout (promotor/layout.tsx)
   const router = useRouter()
   const { user } = useAuth()

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Users, CheckCircle, Clock, Star, Mail, Phone } from 'lucide-react'
 import { displayPhone } from '@/lib/utils/phone'
 import Link from 'next/link'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface MemberProfile {
   id: string
@@ -68,6 +69,7 @@ const visitStatusColors: Record<string, string> = {
 }
 
 export default function SupervisorTeamMemberPage() {
+  usePageTitle('Detalle de Miembro')
   const params = useParams()
   const memberId = params.id as string
   const [data, setData] = useState<MemberDetail | null>(null)

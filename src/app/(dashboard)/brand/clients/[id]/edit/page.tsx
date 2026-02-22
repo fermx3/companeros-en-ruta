@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidMxPhone } from '@/lib/utils/phone';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface FormData {
   business_name: string;
@@ -24,6 +25,7 @@ interface FormData {
 }
 
 export default function BrandClientEditPage() {
+  usePageTitle('Editar Cliente');
   const params = useParams();
   const router = useRouter();
   const clientId = params.id as string;

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Users, Search, ArrowLeft, MapPin, Mail, Phone } from 'lucide-react'
 import Link from 'next/link'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface TeamClient {
   id: string
@@ -26,6 +27,7 @@ interface TeamMember {
 }
 
 export default function SupervisorClientsPage() {
+  usePageTitle('Clientes')
   const [clients, setClients] = useState<TeamClient[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)

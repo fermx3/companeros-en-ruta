@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
 import { adminService } from '@/lib/services/adminService';
 import type { Brand } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 /**
  * Lista de brands con funciones de gestión
  */
 export default function BrandsListPage() {
+  usePageTitle('Marcas');
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -344,7 +346,7 @@ function BrandCard({ brand, onDelete, onToggleStatus, isDeleting }: BrandCardPro
         {/* Actions */}
         <div className="mt-6 flex justify-between items-center pt-4 border-t border-gray-100">
           <div className="flex space-x-2">
-            <Link href={`/admin/brands/${brand.id}/edit`}>
+            <Link href={`/admin/brands/${brand.public_id}/edit`}>
               <Button size="sm" variant="outline">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

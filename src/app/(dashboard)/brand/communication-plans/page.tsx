@@ -9,6 +9,7 @@ import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/
 import { Calendar, Plus, Edit2, Trash2, ChevronDown, ChevronRight, Layers, Megaphone } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface PlanMaterial {
   id: string
@@ -51,6 +52,7 @@ interface POPMaterial {
 }
 
 export default function BrandCommunicationPlansPage() {
+  usePageTitle('Planes de Comunicación')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [plans, setPlans] = useState<CommunicationPlan[]>([])
   const [materials, setMaterials] = useState<POPMaterial[]>([])

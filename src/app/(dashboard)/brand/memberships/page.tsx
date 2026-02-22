@@ -8,6 +8,7 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Users, Search, Check, Award, ChevronLeft, ChevronRight, X, Plus, UserPlus, Coins, TrendingUp, TrendingDown } from 'lucide-react'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { ExportButton } from '@/components/ui/export-button'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface MembershipTier {
   id: string
@@ -459,6 +460,7 @@ function PointsModal({
 }
 
 export default function BrandMembershipsPage() {
+  usePageTitle('Membresías')
   const [memberships, setMemberships] = useState<Membership[]>([])
   const [tiers, setTiers] = useState<BrandTier[]>([])
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 })

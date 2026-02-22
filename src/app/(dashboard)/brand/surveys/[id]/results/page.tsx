@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { ArrowLeft, Users, BarChart3 } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface DistributionItem {
   value: string | number
@@ -40,6 +41,7 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 export default function SurveyResultsPage() {
+  usePageTitle('Resultados de Encuesta')
   const router = useRouter()
   const params = useParams()
   const surveyId = params.id as string

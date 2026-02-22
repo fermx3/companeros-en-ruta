@@ -6,6 +6,7 @@ import { PageLoader, Alert } from '@/components/ui/feedback'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import type { AdminDashboardMetrics, RecentActivity } from '@/lib/types/admin'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 // Componente AlertDescription simple
 const AlertDescription: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -17,6 +18,7 @@ const AlertDescription: React.FC<{ children: React.ReactNode }> = ({ children })
  * Muestra métricas clave y navegación rápida a las secciones principales
  */
 export default function AdminDashboard() {
+  usePageTitle('Panel de Administración')
   const [metrics, setMetrics] = useState<AdminDashboardMetrics | null>(null)
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)

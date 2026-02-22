@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
 import { Gift, Search, Calendar, Clock, Check, X, Eye, Building2, AlertCircle } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface Brand {
   id: string
@@ -70,6 +71,7 @@ const STATUS_COLORS: Record<string, 'active' | 'inactive' | 'pending' | 'suspend
 }
 
 export default function AdminPromotionsPage() {
+  usePageTitle('Promociones')
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [brands, setBrands] = useState<Array<{ id: string; name: string }>>([])
@@ -504,7 +506,7 @@ export default function AdminPromotionsPage() {
                     {/* Actions */}
                     <div className="flex flex-col items-end space-y-2 ml-4">
                       <div className="flex items-center space-x-2">
-                        <Link href={`/admin/promotions/${promo.id}`}>
+                        <Link href={`/admin/promotions/${promo.public_id}`}>
                           <Button size="sm" variant="outline">
                             <Eye className="h-4 w-4 mr-1" />
                             Ver Detalles

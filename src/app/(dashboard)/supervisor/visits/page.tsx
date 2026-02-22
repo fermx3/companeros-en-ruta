@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, MapPin, Star } from 'lucide-react'
 import Link from 'next/link'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface Visit {
   id: string
@@ -47,6 +48,7 @@ const visitStatusOptions = [
 ]
 
 export default function SupervisorVisitsPage() {
+  usePageTitle('Visitas')
   const [visits, setVisits] = useState<Visit[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)

@@ -10,11 +10,13 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidMxPhone } from '@/lib/utils/phone';
 import { adminService } from '@/lib/services/adminService';
 import type { Brand, Zone, Distributor } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 /**
  * Página para crear nuevos usuarios directamente en el sistema
  */
 export default function CreateUserPage() {
+  usePageTitle('Crear Usuario');
   const router = useRouter();
 
   const [availableBrands, setAvailableBrands] = useState<Brand[]>([]);

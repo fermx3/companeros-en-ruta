@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert, StatusBadge, EmptyState } from '@/components/ui/feedback'
 import { displayPhone, extractDigits } from '@/lib/utils/phone'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   Building2,
   Phone,
@@ -134,6 +135,7 @@ function OrderStatusBadge({ status }: { status: string }) {
 }
 
 export default function ClientDetailPage() {
+  usePageTitle('Detalle de Cliente')
   const params = useParams()
   const clientId = params.id as string
 

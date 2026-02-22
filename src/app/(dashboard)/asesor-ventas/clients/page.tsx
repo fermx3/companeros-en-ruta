@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, StatusBadge, Alert, EmptyState } from '@/components/ui/feedback'
 import { displayPhone } from '@/lib/utils/phone'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   Users,
   Building2,
@@ -34,6 +35,7 @@ interface Client {
 }
 
 export default function AsesorVentasClientsPage() {
+  usePageTitle('Clientes')
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])
   const [totalClients, setTotalClients] = useState(0)

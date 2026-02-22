@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Zone } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface ZoneCreateForm {
   name: string;
@@ -23,6 +24,7 @@ interface ZoneCreateForm {
 }
 
 export default function CreateZonePage() {
+  usePageTitle('Crear Zona');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);

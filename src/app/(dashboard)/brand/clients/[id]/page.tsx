@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { displayPhone } from '@/lib/utils/phone';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface ClientDetail {
   id: string;
@@ -47,6 +48,7 @@ interface Stats {
 }
 
 export default function BrandClientDetailPage() {
+  usePageTitle('Detalle de Cliente');
   const params = useParams();
   const clientId = params.id as string;
   const { brandFetch } = useBrandFetch();

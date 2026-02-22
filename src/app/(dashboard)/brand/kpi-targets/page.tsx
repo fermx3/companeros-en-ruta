@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import type { KpiTarget } from '@/lib/types/database'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 const KPI_OPTIONS = [
   { slug: 'volume', label: 'Avances de Volumen', defaultUnit: 'MXN' },
@@ -37,6 +38,7 @@ function getMonthEnd(start: string): string {
 }
 
 export default function KpiTargetsPage() {
+  usePageTitle('Metas de KPI')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [targets, setTargets] = useState<KpiTarget[]>([])
   const [zones, setZones] = useState<Array<{ id: string; name: string }>>([])

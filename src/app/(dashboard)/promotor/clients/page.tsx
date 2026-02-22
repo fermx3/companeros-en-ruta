@@ -8,8 +8,10 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Search, MapPin, Phone, Mail, Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 import { displayPhone } from '@/lib/utils/phone'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function PromotorClientsPage() {
+  usePageTitle('Mis Clientes')
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')

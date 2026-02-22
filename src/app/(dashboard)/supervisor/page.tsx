@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Users, MapPin, CheckCircle, Clock, Star, TrendingUp, ShoppingCart, ArrowRight } from "lucide-react"
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/AuthProvider'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface TeamMember {
   id: string
@@ -30,6 +31,7 @@ interface SupervisorMetrics {
 }
 
 export default function SupervisorDashboard() {
+  usePageTitle('Dashboard Supervisor')
   const { userRoles } = useAuth()
   const [metrics, setMetrics] = useState<SupervisorMetrics | null>(null)
   const [loading, setLoading] = useState(true)

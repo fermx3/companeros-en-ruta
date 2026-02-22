@@ -5,8 +5,10 @@ import { ShieldX, ArrowLeft, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function UnauthorizedPage() {
+  usePageTitle('Acceso Denegado')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const supabase = createClient()
 

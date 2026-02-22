@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
 import { ExportButton } from '@/components/ui/export-button';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface Visit {
   id: string;
@@ -29,6 +30,7 @@ interface Summary {
 }
 
 export default function BrandVisitsPage() {
+  usePageTitle('Visitas');
   const { brandFetch, currentBrandId } = useBrandFetch();
   const [visits, setVisits] = useState<Visit[]>([]);
   const [summary, setSummary] = useState<Summary>({ total: 0, active: 0, completed: 0, avg_rating: 0 });

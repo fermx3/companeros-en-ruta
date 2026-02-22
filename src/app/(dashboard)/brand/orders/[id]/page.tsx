@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { displayPhone, extractDigits } from '@/lib/utils/phone'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   ShoppingBag,
   Package,
@@ -150,6 +151,7 @@ export default function BrandOrderDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  usePageTitle('Detalle de Pedido')
   const { id: orderId } = use(params)
 
   const { brandFetch, currentBrandId } = useBrandFetch()

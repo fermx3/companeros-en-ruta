@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/feedback'
 import { ChevronLeft, ChevronRight, MapPin, Clock, User, Calendar } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 type Visit = {
   id: string
@@ -103,6 +104,7 @@ function getEndOfMonth(date: Date): Date {
 }
 
 export default function SchedulePage() {
+  usePageTitle('Mi Agenda')
   const router = useRouter()
   const { user } = useAuth()
   const [visits, setVisits] = useState<Visit[]>([])

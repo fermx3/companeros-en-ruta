@@ -9,11 +9,13 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { adminService } from '@/lib/services/adminService';
 import type { Brand, Zone, Distributor } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 /**
  * Página para invitar nuevos usuarios al sistema
  */
 export default function InviteUserPage() {
+  usePageTitle('Invitar Usuario');
   const router = useRouter();
 
   const [availableBrands, setAvailableBrands] = useState<Brand[]>([]);

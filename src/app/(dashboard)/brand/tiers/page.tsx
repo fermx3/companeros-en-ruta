@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Award, Users, Plus, Pencil, Trash2, Star, Percent, X } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface BrandTier {
   id: string
@@ -254,6 +255,7 @@ function TierFormModal({
 }
 
 export default function BrandTiersPage() {
+  usePageTitle('Niveles')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [tiers, setTiers] = useState<BrandTier[]>([])
   const [loading, setLoading] = useState(true)

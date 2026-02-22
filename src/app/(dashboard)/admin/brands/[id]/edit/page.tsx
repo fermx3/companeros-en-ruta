@@ -8,6 +8,7 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { adminService } from '@/lib/services/adminService';
 import type { Brand, BrandCreateForm } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 // ===========================================
 // Types & Interfaces
@@ -38,6 +39,7 @@ interface FormState {
  * Permite modificar todos los campos editables de una marca
  */
 export default function BrandEditPage({ params }: BrandEditPageProps) {
+  usePageTitle('Editar Marca');
   // Desenvolver params Promise para Next.js 16
   const resolvedParams = React.use(params)
   const { id: brandId } = resolvedParams

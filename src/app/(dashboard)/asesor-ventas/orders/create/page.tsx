@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   ShoppingBag,
   Building2,
@@ -63,6 +64,7 @@ function formatCurrency(amount: number): string {
 }
 
 export default function CreateOrderPage() {
+  usePageTitle('Crear Pedido')
   const router = useRouter()
 
   // State management

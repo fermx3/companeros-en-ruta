@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { isValidMxPhone, displayPhone } from '@/lib/utils/phone'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   Store,
   Phone,
@@ -57,6 +58,7 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
 }
 
 export default function ClientProfilePage() {
+  usePageTitle('Mi Perfil')
   const [profile, setProfile] = useState<ClientProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

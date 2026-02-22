@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
 import { Layers, Plus, Edit2, Trash2, Tag } from 'lucide-react'
 import { ExportButton } from '@/components/ui/export-button'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface POPMaterial {
   id: string
@@ -39,6 +40,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 export default function BrandPOPMaterialsPage() {
+  usePageTitle('Material POP')
   const { brandFetch, currentBrandId } = useBrandFetch()
   const [materials, setMaterials] = useState<POPMaterial[]>([])
   const [systemTemplates, setSystemTemplates] = useState<POPMaterial[]>([])

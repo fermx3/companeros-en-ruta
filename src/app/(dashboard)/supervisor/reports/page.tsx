@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Users, CheckCircle, Clock, Star, TrendingUp, MapPin } from 'lucide-react'
 import Link from 'next/link'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface TeamMember {
   id: string
@@ -29,6 +30,7 @@ interface Metrics {
 }
 
 export default function SupervisorReportsPage() {
+  usePageTitle('Reportes')
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

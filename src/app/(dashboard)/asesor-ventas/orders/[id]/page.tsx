@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, PageLoader, Alert } from '@/components/ui/feedback'
 import { displayPhone, extractDigits } from '@/lib/utils/phone'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   ShoppingBag,
   Package,
@@ -176,6 +177,7 @@ export default function OrderDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  usePageTitle('Detalle de Pedido')
   const { id: orderId } = use(params)
   const router = useRouter()
 

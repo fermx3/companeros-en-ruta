@@ -9,8 +9,10 @@ import { Download } from 'lucide-react'
 import { DatasetSelector, type DatasetKey } from '@/components/exports/DatasetSelector'
 import { SegmentationFilters, type ExportFilters } from '@/components/exports/SegmentationFilters'
 import { FilterPreview } from '@/components/exports/FilterPreview'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function BrandExportsPage() {
+  usePageTitle('Exportaciones')
   const { brandFetch } = useBrandFetch()
   const [selectedDatasets, setSelectedDatasets] = useState<DatasetKey[]>([])
   const [filters, setFilters] = useState<ExportFilters>({})

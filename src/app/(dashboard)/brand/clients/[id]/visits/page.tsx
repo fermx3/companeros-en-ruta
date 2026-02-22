@@ -7,6 +7,7 @@ import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface Visit {
   id: string;
@@ -27,6 +28,7 @@ interface ClientInfo {
 }
 
 export default function BrandClientVisitsPage() {
+  usePageTitle('Visitas del Cliente');
   const params = useParams();
   const clientId = params.id as string;
   const { brandFetch, currentBrandId } = useBrandFetch();

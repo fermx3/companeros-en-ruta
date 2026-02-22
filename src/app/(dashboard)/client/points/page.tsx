@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Coins, TrendingUp, TrendingDown, ArrowLeft, ChevronLeft, ChevronRight, Gift, ShoppingBag, Star, Calendar } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface PointsTransaction {
   id: string
@@ -102,6 +103,7 @@ function ReferenceIcon({ type }: { type: string | null }) {
 }
 
 export default function ClientPointsPage() {
+  usePageTitle('Mis Puntos')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pointsData, setPointsData] = useState<PointsData | null>(null)

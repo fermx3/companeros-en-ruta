@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { adminService } from '@/lib/services/adminService'
 import type { UserProfile, UserRoleRecord, Brand, Distributor } from '@/lib/types/admin'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 // ===========================================
 // Types
@@ -37,6 +38,7 @@ interface NewRoleData {
  * Requiere rol: admin
  */
 export default function UserRolesPage() {
+  usePageTitle('Roles de Usuario')
   // ===========================================
   // Hooks y State
   // ===========================================

@@ -9,6 +9,7 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { SurveyQuestionBuilder, type QuestionData } from '@/components/surveys/SurveyQuestionBuilder'
 import { ArrowLeft, Send, Edit, BarChart3, AlertCircle } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -35,6 +36,7 @@ interface SurveyDetail {
 }
 
 export default function BrandSurveyDetailPage() {
+  usePageTitle('Detalle de Encuesta')
   const router = useRouter()
   const params = useParams()
   const { brandFetch, currentBrandId } = useBrandFetch()

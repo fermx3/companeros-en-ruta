@@ -5,6 +5,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/feedback'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   Calendar,
   Users,
@@ -37,6 +38,7 @@ const PERIOD_LABELS: Record<Period, string> = {
 }
 
 export default function PromotorReportsPage() {
+  usePageTitle('Reportes')
   const { user } = useAuth()
   const [stats, setStats] = useState<PromotorStats | null>(null)
   const [loading, setLoading] = useState(true)

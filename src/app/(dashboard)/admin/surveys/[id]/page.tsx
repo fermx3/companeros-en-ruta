@@ -9,6 +9,7 @@ import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { SurveyQuestionBuilder, type QuestionData } from '@/components/surveys/SurveyQuestionBuilder'
 import { ArrowLeft, CheckCircle, XCircle, Users, Edit } from 'lucide-react'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 const ROLE_LABELS: Record<string, string> = {
   promotor: 'Promotor',
@@ -45,6 +46,7 @@ interface AdminSurveyDetail {
 }
 
 export default function AdminSurveyReviewPage() {
+  usePageTitle('Detalle de Encuesta')
   const router = useRouter()
   const params = useParams()
   const surveyId = params.id as string

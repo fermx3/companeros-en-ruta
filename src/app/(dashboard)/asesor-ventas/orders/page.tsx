@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert, EmptyState } from '@/components/ui/feedback'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   ShoppingBag,
   Package,
@@ -174,6 +175,7 @@ function formatDate(dateString: string): string {
 }
 
 export default function AsesorVentasOrdersPage() {
+  usePageTitle('Pedidos')
   const [data, setData] = useState<OrdersData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

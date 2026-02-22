@@ -8,6 +8,7 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { QRCouponCard } from '@/components/qr/qr-coupon-card'
 import { BrandCarousel } from '@/components/qr/brand-carousel'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   QrCode,
   Plus,
@@ -72,6 +73,7 @@ function formatDiscount(type: string | null, value: number | null, description: 
 }
 
 export default function ClientQRPage() {
+  usePageTitle('Mi Código QR')
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)

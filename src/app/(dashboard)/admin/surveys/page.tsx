@@ -8,6 +8,7 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { Search, ClipboardList, Clock, BarChart3 } from 'lucide-react'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface AdminSurvey {
   id: string
@@ -29,6 +30,7 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 export default function AdminSurveysPage() {
+  usePageTitle('Encuestas')
   const [surveys, setSurveys] = useState<AdminSurvey[]>([])
   const [metrics, setMetrics] = useState<{ total: number; pending: number; active: number; closed: number } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -199,7 +201,7 @@ export default function AdminSurveysPage() {
                         {survey.target_roles.map(r => ROLE_LABELS[r] || r).join(', ')}
                       </td>
                       <td className="py-3 text-right">
-                        <Link href={`/admin/surveys/${survey.id}`}>
+                        <Link href={`/admin/surveys/${survey.public_id}`}>
                           <Button variant="outline" size="sm">
                             {survey.survey_status === 'pending_approval' ? 'Revisar' : 'Ver'}
                           </Button>

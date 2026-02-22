@@ -15,6 +15,7 @@ import type {
   ClientType,
   CommercialStructure
 } from '@/lib/types/admin';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface ClientDetail {
   id: string;
@@ -77,6 +78,7 @@ interface ClientEditForm {
  * Permite al admin actualizar la información de un cliente
  */
 export default function EditClientPage() {
+  usePageTitle('Editar Cliente');
   const router = useRouter();
   const params = useParams();
   const clientId = params?.clientId as string;
