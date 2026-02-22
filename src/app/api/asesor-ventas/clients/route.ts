@@ -27,6 +27,7 @@ export async function GET() {
           public_id,
           business_name,
           owner_name,
+          owner_last_name,
           email,
           phone,
           whatsapp,
@@ -50,6 +51,7 @@ export async function GET() {
       public_id: string
       business_name: string
       owner_name: string | null
+      owner_last_name: string | null
       email: string | null
       phone: string | null
       whatsapp: string | null
@@ -72,6 +74,7 @@ export async function GET() {
           public_id: client?.public_id,
           business_name: client?.business_name,
           owner_name: client?.owner_name,
+          owner_last_name: client?.owner_last_name,
           email: client?.email,
           phone: client?.phone,
           whatsapp: client?.whatsapp,
@@ -99,6 +102,7 @@ export async function GET() {
             public_id,
             business_name,
             owner_name,
+            owner_last_name,
             email,
             phone,
             whatsapp,
@@ -124,6 +128,7 @@ export async function GET() {
             public_id: client?.public_id,
             business_name: client?.business_name,
             owner_name: client?.owner_name,
+            owner_last_name: client?.owner_last_name,
             email: client?.email,
             phone: client?.phone,
             whatsapp: client?.whatsapp,

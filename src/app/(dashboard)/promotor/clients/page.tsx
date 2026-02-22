@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Search, MapPin, Phone, Mail, Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 import { displayPhone } from '@/lib/utils/phone'
+import { fullOwnerName } from '@/lib/utils/client'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function PromotorClientsPage() {
@@ -229,6 +230,7 @@ interface ClientCardProps {
     public_id: string
     business_name: string
     owner_name: string
+    owner_last_name: string | null
     address: string
     phone: string
     email: string
@@ -256,8 +258,8 @@ function ClientCard({ client, formatDate, formatPhoneForWhatsApp }: ClientCardPr
                 <h3 className="text-lg font-semibold text-gray-900 truncate">
                   {client.business_name || 'Sin nombre'}
                 </h3>
-                {client.owner_name && (
-                  <p className="text-sm text-gray-600">{client.owner_name}</p>
+                {(client.owner_name || client.owner_last_name) && (
+                  <p className="text-sm text-gray-600">{fullOwnerName(client.owner_name, client.owner_last_name)}</p>
                 )}
                 <p className="text-xs text-gray-400 mt-1">ID: {client.public_id}</p>
               </div>

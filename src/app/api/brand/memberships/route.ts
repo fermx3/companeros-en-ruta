@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { fullOwnerName } from '@/lib/utils/client'
 
 interface MembershipResponse {
   id: string
@@ -61,6 +62,7 @@ export async function GET(request: NextRequest) {
           public_id,
           business_name,
           owner_name,
+          owner_last_name,
           email,
           phone
         ),
@@ -116,7 +118,7 @@ export async function GET(request: NextRequest) {
 
     // 7. Transform and filter by search
     let transformedMemberships: MembershipResponse[] = (memberships || []).map((m) => {
-      const client = m.clients as unknown as { id: string; public_id: string; business_name: string; owner_name: string | null; email: string | null; phone: string | null } | null
+      const client = m.clients as unknown as { id: string; public_id: string; business_name: string; owner_name: string | null; owner_last_name: string | null; email: string | null; phone: string | null } | null
       const tier = m.tiers as unknown as { id: string; name: string; tier_level: number; tier_color: string | null } | null
 
       return {
@@ -124,7 +126,7 @@ export async function GET(request: NextRequest) {
         public_id: m.public_id,
         client_id: m.client_id,
         client_public_id: client?.public_id || null,
-        client_name: client?.business_name || client?.owner_name || `Cliente ${m.public_id}`,
+        client_name: client?.business_name || fullOwnerName(client?.owner_name, client?.owner_last_name) || `Cliente ${m.public_id}`,
         client_email: client?.email || null,
         client_phone: client?.phone || null,
         membership_status: m.membership_status,

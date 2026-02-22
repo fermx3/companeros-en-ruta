@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       .from('visits')
       .select(`
         *,
-        client:clients(id, public_id, business_name, owner_name, address_street, address_neighborhood, phone)
+        client:clients(id, public_id, business_name, owner_name, owner_last_name, address_street, address_neighborhood, phone)
       `, { count: 'exact' })
       .eq('promotor_id', promotorId)
       .is('deleted_at', null)
@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
       .insert(visitData)
       .select(`
         *,
-        client:clients(id, public_id, business_name, owner_name, address_street, address_neighborhood, phone)
+        client:clients(id, public_id, business_name, owner_name, owner_last_name, address_street, address_neighborhood, phone)
       `)
       .single()
 

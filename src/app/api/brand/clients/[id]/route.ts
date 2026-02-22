@@ -26,6 +26,7 @@ export async function GET(
         business_name,
         legal_name,
         owner_name,
+        owner_last_name,
         email,
         phone,
         whatsapp,

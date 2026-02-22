@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
           client:clients(
             id,
             business_name,
-            owner_name
+            owner_name,
+            owner_last_name
           )
         )
       `)

@@ -24,6 +24,7 @@ type Visit = {
     public_id?: string
     business_name: string
     owner_name?: string
+    owner_last_name?: string
     address_street?: string
     address_neighborhood?: string
     phone?: string
@@ -302,6 +303,7 @@ export function useAssignedClients(options?: { search?: string; page?: number; l
     public_id: string
     business_name: string
     owner_name: string
+    owner_last_name: string | null
     address: string
     phone: string
     email: string

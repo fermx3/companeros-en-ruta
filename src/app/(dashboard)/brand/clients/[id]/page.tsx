@@ -10,6 +10,7 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { displayPhone } from '@/lib/utils/phone'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
+import { fullOwnerName } from '@/lib/utils/client'
 import { Check, Coins, Award } from 'lucide-react'
 import {
   TierAssignModal,
@@ -24,6 +25,7 @@ interface ClientDetail {
   business_name: string
   legal_name: string | null
   owner_name: string | null
+  owner_last_name: string | null
   email: string | null
   phone: string | null
   whatsapp: string | null
@@ -339,7 +341,7 @@ export default function BrandClientDetailPage() {
                   )}
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Propietario</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{client.owner_name || 'N/A'}</dd>
+                    <dd className="mt-1 text-sm text-gray-900">{fullOwnerName(client.owner_name, client.owner_last_name) || 'N/A'}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Cliente Desde</dt>

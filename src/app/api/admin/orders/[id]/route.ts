@@ -55,6 +55,7 @@ interface OrderDetail {
     public_id: string
     business_name: string
     owner_name: string | null
+    owner_last_name: string | null
     email: string | null
     phone: string | null
     address_street: string | null
@@ -161,6 +162,7 @@ export async function GET(
           public_id,
           business_name,
           owner_name,
+          owner_last_name,
           email,
           phone,
           address_street,

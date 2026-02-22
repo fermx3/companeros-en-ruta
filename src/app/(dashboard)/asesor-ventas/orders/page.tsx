@@ -29,6 +29,7 @@ interface Order {
     public_id: string
     business_name: string
     owner_name: string | null
+    owner_last_name: string | null
   } | null
   brand: {
     id: string

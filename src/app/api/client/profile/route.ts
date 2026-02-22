@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { extractDigits } from '@/lib/utils/phone'
+import { fullOwnerName } from '@/lib/utils/client'
 
 interface ClientProfile {
   id: string
@@ -50,6 +51,7 @@ export async function GET() {
         business_name,
         legal_name,
         owner_name,
+        owner_last_name,
         email,
         phone,
         whatsapp,
@@ -120,7 +122,7 @@ export async function GET() {
       public_id: client.public_id,
       business_name: client.business_name,
       legal_name: client.legal_name,
-      owner_name: client.owner_name,
+      owner_name: fullOwnerName(client.owner_name, client.owner_last_name),
       email: client.email,
       phone: client.phone,
       whatsapp: client.whatsapp,

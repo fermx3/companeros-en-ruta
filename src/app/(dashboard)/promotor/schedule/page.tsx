@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/providers/AuthProvider'
+import { fullOwnerName } from '@/lib/utils/client'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/feedback'
@@ -20,6 +21,7 @@ type Visit = {
     id: string
     business_name: string
     owner_name?: string
+    owner_last_name?: string
     address_street?: string
     address_neighborhood?: string
   }
@@ -411,10 +413,10 @@ export default function SchedulePage() {
                                 </h4>
 
                                 {/* Owner Name */}
-                                {visit.client?.owner_name && (
+                                {(visit.client?.owner_name || visit.client?.owner_last_name) && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
                                     <User className="h-3 w-3" />
-                                    {visit.client.owner_name}
+                                    {fullOwnerName(visit.client?.owner_name, visit.client?.owner_last_name)}
                                   </div>
                                 )}
 

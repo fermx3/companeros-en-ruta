@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
             public_id,
             business_name,
             owner_name,
+            owner_last_name,
             phone,
             address_street,
             address_city,

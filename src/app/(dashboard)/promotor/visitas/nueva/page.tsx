@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
+import { fullOwnerName } from '@/lib/utils/client'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
@@ -27,6 +28,7 @@ interface Client {
   public_id: string
   business_name: string
   owner_name?: string
+  owner_last_name?: string
   address: string
   phone: string
   brands: Array<{ id: string; name: string; logo_url: string | null }>
@@ -237,9 +239,9 @@ export default function NuevaVisitaPage() {
                             </div>
                             <p className="font-semibold text-gray-900">{selectedClient.business_name}</p>
                           </div>
-                          {selectedClient.owner_name && (
+                          {(selectedClient.owner_name || selectedClient.owner_last_name) && (
                             <p className="text-sm text-gray-700 pl-10">
-                              <span className="font-medium">Propietario:</span> {selectedClient.owner_name}
+                              <span className="font-medium">Propietario:</span> {fullOwnerName(selectedClient.owner_name, selectedClient.owner_last_name)}
                             </p>
                           )}
                           <p className="text-sm text-gray-600 pl-10">{selectedClient.address}</p>

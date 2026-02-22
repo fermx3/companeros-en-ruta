@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
           business_name,
           legal_name,
           owner_name,
+          owner_last_name,
           email,
           phone,
           whatsapp,
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     // Aplicar filtros de búsqueda
     if (search) {
-      query = query.or(`public_id.ilike.%${search}%,clients.business_name.ilike.%${search}%,clients.owner_name.ilike.%${search}%,clients.email.ilike.%${search}%`)
+      query = query.or(`public_id.ilike.%${search}%,clients.business_name.ilike.%${search}%,clients.owner_name.ilike.%${search}%,clients.owner_last_name.ilike.%${search}%,clients.email.ilike.%${search}%`)
     }
 
     // Aplicar filtros de tipo de membresía
@@ -115,6 +116,7 @@ export async function GET(request: NextRequest) {
         public_id: client?.public_id || m.public_id,
         name: client?.business_name || client?.legal_name || `Cliente ${m.public_id}`,
         owner_name: client?.owner_name,
+        owner_last_name: client?.owner_last_name,
         contact_email: client?.email,
         contact_phone: client?.phone,
         whatsapp: client?.whatsapp,

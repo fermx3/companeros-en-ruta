@@ -20,6 +20,7 @@ interface VisitListItem {
     id: string
     business_name: string
     owner_name?: string
+    owner_last_name?: string
     address_street?: string
     address_neighborhood?: string
   }

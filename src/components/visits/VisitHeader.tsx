@@ -1,6 +1,7 @@
 'use client'
 
 import { Card } from '@/components/ui/Card'
+import { fullOwnerName } from '@/lib/utils/client'
 
 // ===========================================
 // Types
@@ -10,6 +11,7 @@ interface VisitClient {
   name?: string
   business_name?: string
   owner_name?: string
+  owner_last_name?: string
   address_street?: string
   address_neighborhood?: string
 }
@@ -109,12 +111,12 @@ export function VisitHeader({ visit }: VisitHeaderProps) {
 
             {/* Owner Name & Address in a compact grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-7">
-              {visit.client?.owner_name && (
+              {(visit.client?.owner_name || visit.client?.owner_last_name) && (
                 <div className="flex items-center gap-1.5 text-sm">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  <span className="text-gray-700 font-medium truncate">{visit.client.owner_name}</span>
+                  <span className="text-gray-700 font-medium truncate">{fullOwnerName(visit.client?.owner_name, visit.client?.owner_last_name)}</span>
                 </div>
               )}
 

@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Client } from '@/lib/types/admin';
+import { fullOwnerName } from '@/lib/utils/client';
 import { displayPhone, extractDigits } from '@/lib/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
@@ -125,7 +126,7 @@ export default function ClientDetailPage() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{client.business_name}</h1>
                 <p className="text-sm text-gray-600 mt-1">
-                  {client.public_id} • {client.owner_name}
+                  {client.public_id} • {fullOwnerName(client.owner_name, client.owner_last_name)}
                 </p>
               </div>
             </div>
@@ -165,7 +166,7 @@ export default function ClientDetailPage() {
                   )}
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Propietario</label>
-                    <p className="mt-1 text-sm text-gray-900">{client.owner_name}</p>
+                    <p className="mt-1 text-sm text-gray-900">{fullOwnerName(client.owner_name, client.owner_last_name)}</p>
                   </div>
                   {client.tax_id && (
                     <div>

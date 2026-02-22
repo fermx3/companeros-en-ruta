@@ -200,7 +200,7 @@ export async function GET(request: NextRequest) {
         valid_from,
         valid_until,
         created_at,
-        client:clients(id, public_id, business_name, owner_name),
+        client:clients(id, public_id, business_name, owner_name, owner_last_name),
         promotion:promotions(id, public_id, name, description),
         brand:brands(id, name, logo_url)
       `)

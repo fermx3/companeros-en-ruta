@@ -55,6 +55,7 @@ export interface Client {
   business_name: string;
   legal_name: string | null;
   owner_name: string;
+  owner_last_name: string | null;
   email: string | null;
   phone: string | null;
   whatsapp: string | null;
@@ -290,6 +291,7 @@ export const clientCreateSchema = z.object({
   business_name: z.string().min(1, 'Nombre del negocio es requerido').max(100),
   legal_name: z.string().optional(),
   owner_name: z.string().min(1, 'Nombre del propietario es requerido').max(100),
+  owner_last_name: z.string().max(255).optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   phone: z.string().optional(),
   whatsapp: z.string().optional(),

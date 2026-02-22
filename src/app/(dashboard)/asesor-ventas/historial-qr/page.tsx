@@ -41,6 +41,7 @@ interface QRRedemption {
       id: string
       business_name: string
       owner_name: string | null
+      owner_last_name: string | null
     } | null
   } | null
 }

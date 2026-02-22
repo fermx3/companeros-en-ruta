@@ -310,7 +310,7 @@ async function generateClientsCsv(supabase: any, brandId: string, clientIds: str
     .from('client_brand_memberships')
     .select(`
       membership_status, joined_date, lifetime_points, points_balance, last_purchase_date,
-      client:clients!client_brand_memberships_client_id_fkey(public_id, business_name, legal_name, owner_name, email, phone, whatsapp, status,
+      client:clients!client_brand_memberships_client_id_fkey(public_id, business_name, legal_name, owner_name, owner_last_name, email, phone, whatsapp, status,
         address_street, address_city, address_state, address_postal_code,
         client_type:client_types(name), commercial_structure:commercial_structures(name))
     `)
@@ -324,7 +324,7 @@ async function generateClientsCsv(supabase: any, brandId: string, clientIds: str
   const headers = ['ID', 'Nombre', 'Propietario', 'Email', 'Teléfono', 'Tipo', 'Estado', 'Ciudad', 'Estado/Prov', 'Membresía', 'Puntos', 'Lifetime', 'Última Compra']
   const rows = (data || []).map((m: any) => {
     const c = m.client as any
-    return [c?.public_id || '', c?.business_name || c?.legal_name || '', c?.owner_name || '', c?.email || '', c?.phone || '',
+    return [c?.public_id || '', c?.business_name || c?.legal_name || '', [c?.owner_name, c?.owner_last_name].filter(Boolean).join(' ') || '', c?.email || '', c?.phone || '',
       (c?.client_type as any)?.name || '', c?.status || '', c?.address_city || '', c?.address_state || '',
       m.membership_status || '', String(m.points_balance ?? 0), String(m.lifetime_points ?? 0), formatCsvDate(m.last_purchase_date)]
   })

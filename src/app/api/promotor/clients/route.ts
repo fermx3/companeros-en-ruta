@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
           public_id,
           business_name,
           owner_name,
+          owner_last_name,
           address_street,
           address_neighborhood,
           phone,
@@ -110,6 +111,7 @@ export async function GET(request: NextRequest) {
       public_id: string
       business_name: string
       owner_name: string
+      owner_last_name: string | null
       address_street: string
       address_neighborhood: string
       phone: string
@@ -155,6 +157,7 @@ export async function GET(request: NextRequest) {
       public_id: string
       business_name: string
       owner_name: string
+      owner_last_name: string | null
       address: string
       phone: string
       email: string
@@ -184,6 +187,7 @@ export async function GET(request: NextRequest) {
           public_id: client.public_id,
           business_name: client.business_name,
           owner_name: client.owner_name,
+          owner_last_name: client.owner_last_name,
           address: fullAddress,
           phone: client.phone,
           email: client.email,

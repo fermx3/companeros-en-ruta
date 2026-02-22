@@ -17,12 +17,14 @@ import {
   Search,
   Plus
 } from 'lucide-react'
+import { fullOwnerName } from '@/lib/utils/client'
 
 interface Client {
   id: string
   public_id: string
   business_name: string
   owner_name: string | null
+  owner_last_name: string | null
   email: string | null
   phone: string | null
   whatsapp: string | null
@@ -186,9 +188,9 @@ export default function AsesorVentasClientsPage() {
                             <h3 className="font-semibold text-gray-900">
                               {client.business_name}
                             </h3>
-                            {client.owner_name && (
+                            {(client.owner_name || client.owner_last_name) && (
                               <p className="text-sm text-gray-600">
-                                {client.owner_name}
+                                {fullOwnerName(client.owner_name, client.owner_last_name)}
                               </p>
                             )}
                           </div>

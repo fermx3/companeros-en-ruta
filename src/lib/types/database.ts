@@ -87,6 +87,7 @@ export interface Client {
   code: string;
   business_name: string;
   owner_name?: string;
+  owner_last_name?: string;
   phone?: string;
   email?: string;
   address?: string;
@@ -97,6 +98,15 @@ export interface Client {
   latitude?: number;
   longitude?: number;
   is_active: boolean;
+  gender?: string;
+  date_of_birth?: string;
+  email_opt_in?: boolean;
+  whatsapp_opt_in?: boolean;
+  has_meat_fridge?: boolean;
+  has_soda_fridge?: boolean;
+  accepts_card?: boolean;
+  onboarding_completed?: boolean;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 

@@ -23,12 +23,14 @@ import {
   Plus,
   ExternalLink
 } from 'lucide-react'
+import { fullOwnerName } from '@/lib/utils/client'
 
 interface ClientDetail {
   id: string
   public_id: string
   business_name: string
   owner_name: string | null
+  owner_last_name: string | null
   email: string | null
   phone: string | null
   whatsapp: string | null
@@ -242,8 +244,8 @@ export default function ClientDetailPage() {
                   <h1 className="text-2xl font-bold text-gray-900">
                     {client.business_name}
                   </h1>
-                  {client.owner_name && (
-                    <p className="text-gray-600">{client.owner_name}</p>
+                  {(client.owner_name || client.owner_last_name) && (
+                    <p className="text-gray-600">{fullOwnerName(client.owner_name, client.owner_last_name)}</p>
                   )}
                   <div className="flex items-center gap-2 mt-1">
                     <StatusBadge status={client.status as 'active' | 'inactive'} size="sm" />

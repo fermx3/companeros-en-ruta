@@ -21,6 +21,7 @@ interface ClientCreateForm {
   business_name: string;
   legal_name: string;
   owner_name: string;
+  owner_last_name: string;
   email: string;
   phone: string;
   whatsapp: string;
@@ -64,6 +65,7 @@ export default function CreateClientPage() {
     business_name: '',
     legal_name: '',
     owner_name: '',
+    owner_last_name: '',
     email: '',
     phone: '',
     whatsapp: '',
@@ -328,11 +330,24 @@ export default function CreateClientPage() {
                     className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                       validationErrors.owner_name ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="Nombre completo del dueño"
+                    placeholder="Nombre(s) del dueño"
                   />
                   {validationErrors.owner_name && (
                     <p className="mt-1 text-sm text-red-600">{validationErrors.owner_name}</p>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Apellido del Propietario
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.owner_last_name}
+                    onChange={(e) => handleInputChange('owner_last_name', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Apellido(s) del dueño"
+                  />
                 </div>
 
                 <div>

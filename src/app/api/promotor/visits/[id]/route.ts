@@ -65,7 +65,7 @@ export async function GET(
       .from('visits')
       .select(`
         *,
-        client:clients(id, public_id, business_name, owner_name, address_street, address_neighborhood, phone, latitude, longitude)
+        client:clients(id, public_id, business_name, owner_name, owner_last_name, address_street, address_neighborhood, phone, latitude, longitude)
       `)
       .eq(resolveIdColumn(id), id)
       .eq('promotor_id', promotorId)
@@ -185,7 +185,7 @@ export async function PUT(
       .eq('id', existingVisit.id)
       .select(`
         *,
-        client:clients(id, public_id, business_name, owner_name, address_street, address_neighborhood, phone)
+        client:clients(id, public_id, business_name, owner_name, owner_last_name, address_street, address_neighborhood, phone)
       `)
       .single()
 

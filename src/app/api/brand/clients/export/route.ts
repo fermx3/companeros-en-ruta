@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         id, public_id, membership_status, joined_date, lifetime_points,
         points_balance, last_purchase_date, created_at,
         client:clients(
-          id, public_id, business_name, legal_name, owner_name,
+          id, public_id, business_name, legal_name, owner_name, owner_last_name,
           email, phone, whatsapp, status, registration_date,
           address_street, address_city, address_state, address_postal_code,
           client_type:client_types(name),
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         client?.public_id || m.public_id || '',
         name,
         client?.legal_name || '',
-        client?.owner_name || '',
+        [client?.owner_name, client?.owner_last_name].filter(Boolean).join(' ') || '',
         client?.email || '',
         client?.phone || '',
         client?.whatsapp || '',

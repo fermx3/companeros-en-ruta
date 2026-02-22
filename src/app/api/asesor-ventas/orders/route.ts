@@ -12,6 +12,7 @@ interface AsesorOrder {
     public_id: string
     business_name: string
     owner_name: string | null
+    owner_last_name: string | null
   } | null
   brand: {
     id: string
@@ -70,7 +71,8 @@ export async function GET(request: NextRequest) {
           id,
           public_id,
           business_name,
-          owner_name
+          owner_name,
+          owner_last_name
         ),
         brand:brands(
           id,
@@ -122,6 +124,7 @@ export async function GET(request: NextRequest) {
         public_id: string
         business_name: string
         owner_name: string | null
+        owner_last_name: string | null
       } | null
 
       // Handle brand - can be object or array

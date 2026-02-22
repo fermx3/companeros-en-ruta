@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import { adminService } from '@/lib/services/adminService';
+import { fullOwnerName } from '@/lib/utils/client';
 import type {
   Client,
   PaginatedResponse,
@@ -353,7 +354,7 @@ export default function AdminClientsPage() {
                             {client.business_name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {client.owner_name}
+                            {fullOwnerName(client.owner_name, client.owner_last_name)}
                           </div>
                           <div className="text-xs text-gray-400 mt-1">
                             {client.public_id}

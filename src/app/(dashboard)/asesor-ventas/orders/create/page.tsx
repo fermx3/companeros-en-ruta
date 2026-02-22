@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { fullOwnerName } from '@/lib/utils/client'
 import {
   ShoppingBag,
   Building2,
@@ -24,6 +25,7 @@ interface Client {
   public_id: string
   business_name: string
   owner_name: string | null
+  owner_last_name: string | null
   email: string | null
   phone: string | null
   address_street: string | null
@@ -249,7 +251,8 @@ export default function CreateOrderPage() {
 
   const filteredClients = clients.filter(client =>
     client.business_name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-    (client.owner_name && client.owner_name.toLowerCase().includes(clientSearch.toLowerCase()))
+    (client.owner_name && client.owner_name.toLowerCase().includes(clientSearch.toLowerCase())) ||
+    (client.owner_last_name && client.owner_last_name.toLowerCase().includes(clientSearch.toLowerCase()))
   )
 
   const filteredProducts = products.filter(product =>
@@ -393,8 +396,8 @@ export default function CreateOrderPage() {
                           <h3 className="font-semibold text-gray-900 truncate">
                             {client.business_name}
                           </h3>
-                          {client.owner_name && (
-                            <p className="text-sm text-gray-600 truncate">{client.owner_name}</p>
+                          {(client.owner_name || client.owner_last_name) && (
+                            <p className="text-sm text-gray-600 truncate">{fullOwnerName(client.owner_name, client.owner_last_name)}</p>
                           )}
                           {client.address_city && (
                             <p className="text-xs text-gray-400 mt-1">{client.address_city}</p>
@@ -593,8 +596,8 @@ export default function CreateOrderPage() {
                     Cliente
                   </h3>
                   <p className="text-gray-700">{selectedClient?.business_name}</p>
-                  {selectedClient?.owner_name && (
-                    <p className="text-sm text-gray-500">{selectedClient.owner_name}</p>
+                  {(selectedClient?.owner_name || selectedClient?.owner_last_name) && (
+                    <p className="text-sm text-gray-500">{fullOwnerName(selectedClient.owner_name, selectedClient.owner_last_name)}</p>
                   )}
                 </div>
 

@@ -144,7 +144,7 @@ export class QRService {
         .from('qr_codes')
         .select(`
           *,
-          client:clients(id, business_name, owner_name),
+          client:clients(id, business_name, owner_name, owner_last_name),
           promotion:promotions(id, name, description),
           brand:brands(id, name, logo_url)
         `)
@@ -272,7 +272,7 @@ export class QRService {
             id,
             code,
             discount_description,
-            client:clients(id, business_name, owner_name)
+            client:clients(id, business_name, owner_name, owner_last_name)
           )
         `)
         .eq('redeemed_by', profile.id)

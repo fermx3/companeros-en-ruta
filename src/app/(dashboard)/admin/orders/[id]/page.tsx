@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { displayPhone, extractDigits } from '@/lib/utils/phone'
+import { fullOwnerName } from '@/lib/utils/client'
 import {
   ShoppingBag,
   Package,
@@ -78,6 +79,7 @@ interface OrderDetail {
     public_id: string
     business_name: string
     owner_name: string | null
+    owner_last_name: string | null
     email: string | null
     phone: string | null
     address_street: string | null
@@ -504,8 +506,8 @@ export default function AdminOrderDetailPage({
                 <CardContent className="space-y-3">
                   <div>
                     <p className="font-medium text-gray-900">{order.client.business_name}</p>
-                    {order.client.owner_name && (
-                      <p className="text-sm text-gray-600">{order.client.owner_name}</p>
+                    {(order.client.owner_name || order.client.owner_last_name) && (
+                      <p className="text-sm text-gray-600">{fullOwnerName(order.client.owner_name, order.client.owner_last_name)}</p>
                     )}
                   </div>
 

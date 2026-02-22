@@ -19,6 +19,7 @@ import {
   MapPin
 } from 'lucide-react'
 import { useGeolocation } from '@/hooks/useGeolocation'
+import { fullOwnerName } from '@/lib/utils/client'
 
 interface QRValidationResult {
   valid: boolean
@@ -47,6 +48,7 @@ interface QRValidationResult {
       public_id: string
       business_name: string
       owner_name: string | null
+      owner_last_name: string | null
     } | null
     promotion: {
       id: string
@@ -281,9 +283,9 @@ export default function EntregarPromocionPage() {
                         <p className="font-medium text-gray-900">
                           {validation.qr_code.client.business_name}
                         </p>
-                        {validation.qr_code.client.owner_name && (
+                        {(validation.qr_code.client.owner_name || validation.qr_code.client.owner_last_name) && (
                           <p className="text-sm text-gray-600">
-                            {validation.qr_code.client.owner_name}
+                            {fullOwnerName(validation.qr_code.client.owner_name, validation.qr_code.client.owner_last_name)}
                           </p>
                         )}
                         <p className="text-xs text-gray-500 font-mono">

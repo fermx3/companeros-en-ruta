@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { PageLoader } from '@/components/ui/feedback';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -9,6 +10,7 @@ import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { SideNavigation } from '@/components/layout/SideNavigation';
 import { BottomNavigation } from '@/components/layout/bottom-navigation';
 import { clientNavConfig } from '@/lib/navigation-config';
+import { fullOwnerName } from '@/lib/utils/client';
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -21,23 +23,35 @@ interface ClientLayoutProps {
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('client');
   const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
   const [ownerName, setOwnerName] = useState<string | null>(null);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     const supabase = createClient();
     supabase
       .from('clients')
-      .select('owner_name')
+      .select('owner_name, owner_last_name, onboarding_completed')
       .eq('user_id', user.id)
       .is('deleted_at', null)
       .single()
       .then(({ data }) => {
-        if (data?.owner_name) setOwnerName(data.owner_name);
-      });
-  }, [user]);
+        if (data) {
+          const name = fullOwnerName(data.owner_name, data.owner_last_name);
+          if (name) setOwnerName(name);
 
-  if (roleLoading) {
+          // Redirect to onboarding if not completed
+          if (data.onboarding_completed === false && !pathname.startsWith('/client/onboarding')) {
+            router.push('/client/onboarding');
+          }
+        }
+        setOnboardingChecked(true);
+      });
+  }, [user, pathname, router]);
+
+  if (roleLoading || !onboardingChecked) {
     return <PageLoader message="Verificando permisos..." />;
   }
 

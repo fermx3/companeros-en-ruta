@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/feedback'
 import { Search, X } from 'lucide-react'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
+import { fullOwnerName } from '@/lib/utils/client'
 
 interface AvailableClient {
   id: string
   public_id: string
   business_name: string
   owner_name: string | null
+  owner_last_name: string | null
   email: string | null
 }
 
@@ -150,7 +152,7 @@ export function AddMembersModal({
                     className="mr-3 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{client.business_name || client.owner_name}</p>
+                    <p className="font-medium text-gray-900 truncate">{client.business_name || fullOwnerName(client.owner_name, client.owner_last_name)}</p>
                     <p className="text-xs text-gray-500 truncate">
                       {client.public_id} {client.email && `• ${client.email}`}
                     </p>

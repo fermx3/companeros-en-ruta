@@ -7,12 +7,14 @@ import { Alert } from '@/components/ui/feedback'
 import { useToast } from '@/components/ui/toaster'
 import { ArrowLeft, ArrowRight, Save, CheckCircle2, MapPin, Store, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { fullOwnerName } from '@/lib/utils/client'
 
 interface VisitInfo {
   client?: {
     name?: string
     business_name?: string
     owner_name?: string
+    owner_last_name?: string
     address_street?: string
     address_neighborhood?: string
   } | null
@@ -173,7 +175,7 @@ export function VisitAssessmentWizard({
 
   // Client info helpers
   const clientName = visit?.client?.name || visit?.client?.business_name || 'Cliente'
-  const ownerName = visit?.client?.owner_name
+  const ownerName = fullOwnerName(visit?.client?.owner_name, visit?.client?.owner_last_name)
   const clientAddress = [visit?.client?.address_street, visit?.client?.address_neighborhood].filter(Boolean).join(', ')
   const brandName = visit?.brand?.name
   const startTime = visit?.check_in_time ? new Date(visit.check_in_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null

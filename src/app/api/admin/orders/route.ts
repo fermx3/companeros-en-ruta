@@ -10,6 +10,7 @@ interface AdminOrder {
     id: string
     business_name: string
     owner_name: string | null
+    owner_last_name: string | null
   } | null
   brand: {
     id: string
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
                 `
                 id, public_id, order_number, order_status, order_type, source_channel,
                 order_date, total_amount, priority, created_at,
-                client:clients(id, business_name, owner_name),
+                client:clients(id, business_name, owner_name, owner_last_name),
                 brand:brands(id, name),
                 distributor:distributors(id, name),
                 assigned_user:user_profiles!assigned_to(id, first_name, last_name),
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
                 `
                 id, public_id, order_number, order_status, order_type,
                 order_date, total_amount, created_at,
-                client:clients!client_id(id, business_name, owner_name),
+                client:clients!client_id(id, business_name, owner_name, owner_last_name),
                 promotor:user_profiles!promotor_id(id, first_name, last_name),
                 visit:visits!visit_id(brand_id, brand:brands!brand_id(id, name)),
                 visit_order_items(count)
