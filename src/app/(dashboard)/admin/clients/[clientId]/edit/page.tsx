@@ -165,11 +165,11 @@ export default function EditClientPage() {
         address_state: clientData.address_state || '',
         address_postal_code: clientData.address_postal_code || '',
         address_country: clientData.address_country || 'MX',
-        visit_frequency_days: clientData.visit_frequency_days || 30,
-        assessment_frequency_days: clientData.assessment_frequency_days || 30,
+        visit_frequency_days: Number(clientData.visit_frequency_days) || 30,
+        assessment_frequency_days: Number(clientData.assessment_frequency_days) || 30,
         payment_terms: clientData.payment_terms || '',
-        minimum_order: clientData.minimum_order || 1,
-        credit_limit: clientData.credit_limit || 0,
+        minimum_order: Number(clientData.minimum_order) || 1,
+        credit_limit: Number(clientData.credit_limit) || 0,
         status: clientData.status || 'active'
       });
 
@@ -293,6 +293,13 @@ export default function EditClientPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (errorData.details?.length) {
+          const fieldErrors: Record<string, string> = {};
+          for (const d of errorData.details) {
+            if (d.field) fieldErrors[d.field] = d.message;
+          }
+          setValidationErrors(fieldErrors);
+        }
         throw new Error(errorData.error || 'Error al actualizar el cliente');
       }
 
@@ -494,7 +501,7 @@ export default function EditClientPage() {
                   >
                     <option value="active">Activo</option>
                     <option value="inactive">Inactivo</option>
-                    <option value="pending">Pendiente</option>
+                    <option value="prospect">Prospecto</option>
                     <option value="suspended">Suspendido</option>
                   </select>
                 </div>

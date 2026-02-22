@@ -17,6 +17,9 @@ interface RouteParams {
   }>;
 }
 
+// UUID shape regex (accepts any hex UUID, not just RFC 4122 versions)
+const uuidShape = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
 // Schema de validación para el request de actualización
 const updateClientSchema = z.object({
   business_name: z.string().min(1, 'Nombre del negocio es requerido').max(100),
@@ -27,21 +30,21 @@ const updateClientSchema = z.object({
   phone: mxPhoneSchema,
   whatsapp: mxPhoneSchema,
   tax_id: z.string().optional(),
-  zone_id: z.string().uuid('Zona inválida'),
-  market_id: z.string().uuid('Mercado inválido'),
-  client_type_id: z.string().uuid('Tipo de cliente inválido'),
-  commercial_structure_id: z.string().uuid('Estructura comercial inválida'),
+  zone_id: z.string().regex(uuidShape, 'Zona inválida'),
+  market_id: z.string().regex(uuidShape, 'Mercado inválido'),
+  client_type_id: z.string().regex(uuidShape, 'Tipo de cliente inválido'),
+  commercial_structure_id: z.string().regex(uuidShape, 'Estructura comercial inválida'),
   address_street: z.string().min(1, 'Dirección es requerida'),
   address_neighborhood: z.string().optional(),
   address_city: z.string().min(1, 'Ciudad es requerida'),
   address_state: z.string().length(2, 'Código de estado debe tener 2 caracteres').regex(/^[A-Z]{2}$/, 'Código de estado inválido'),
   address_postal_code: z.string().optional(),
   address_country: z.string().length(2, 'Código de país debe tener 2 caracteres').regex(/^[A-Z]{2}$/, 'Código de país inválido'),
-  visit_frequency_days: z.number().min(1, 'Frecuencia de visitas debe ser mayor a 0'),
-  assessment_frequency_days: z.number().min(1, 'Frecuencia de evaluación debe ser mayor a 0'),
+  visit_frequency_days: z.coerce.number().min(1, 'Frecuencia de visitas debe ser mayor a 0'),
+  assessment_frequency_days: z.coerce.number().min(1, 'Frecuencia de evaluación debe ser mayor a 0'),
   payment_terms: z.string().optional(),
-  minimum_order: z.number().min(1, 'El pedido mínimo debe ser mayor a 0'),
-  credit_limit: z.number().min(0, 'El límite de crédito no puede ser negativo'),
+  minimum_order: z.coerce.number().min(1, 'El pedido mínimo debe ser mayor a 0'),
+  credit_limit: z.coerce.number().min(0, 'El límite de crédito no puede ser negativo'),
   status: z.enum(['active', 'inactive', 'prospect', 'suspended'])
 });
 

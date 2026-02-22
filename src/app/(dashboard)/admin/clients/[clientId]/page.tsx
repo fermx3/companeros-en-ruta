@@ -31,6 +31,12 @@ export default function ClientDetailPage() {
     client_type_name?: string;
     commercial_structure_name?: string;
   }) | null>(null);
+  const [stats, setStats] = useState<{
+    total_visits: number;
+    total_orders: number;
+    total_revenue: number;
+    last_order_date: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +55,7 @@ export default function ClientDetailPage() {
       }
 
       setClient(result.data);
+      setStats(result.stats ?? null);
     } catch (err) {
       console.error('Error loading client:', err);
       setError('Error al cargar la información del cliente');
@@ -452,19 +459,23 @@ export default function ClientDetailPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">Total Visitas</span>
-                    <span className="text-sm font-medium text-gray-900">-</span>
+                    <span className="text-sm font-medium text-gray-900">{stats?.total_visits ?? 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">Total Pedidos</span>
-                    <span className="text-sm font-medium text-gray-900">-</span>
+                    <span className="text-sm font-medium text-gray-900">{stats?.total_orders ?? 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">Facturación Total</span>
-                    <span className="text-sm font-medium text-gray-900">$0</span>
+                    <span className="text-sm font-medium text-gray-900">${(stats?.total_revenue ?? 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">Último Pedido</span>
-                    <span className="text-sm font-medium text-gray-900">-</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {stats?.last_order_date
+                        ? new Date(stats.last_order_date).toLocaleDateString('es-ES')
+                        : 'Sin pedidos'}
+                    </span>
                   </div>
                 </div>
               </div>

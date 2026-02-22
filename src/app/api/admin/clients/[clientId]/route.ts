@@ -97,6 +97,31 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Queries de estadísticas en paralelo
+    const [visitsResult, ordersResult] = await Promise.all([
+      serviceSupabase
+        .from('visits')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', client.id)
+        .is('deleted_at', null)
+        .not('visit_status', 'in', '(cancelled,no_show)'),
+      serviceSupabase
+        .from('orders')
+        .select('total_amount, order_status, order_date')
+        .eq('client_id', client.id)
+        .is('deleted_at', null),
+    ]);
+
+    const totalVisits = visitsResult.count ?? 0;
+    const orders = ordersResult.data ?? [];
+    const totalOrders = orders.length;
+    const totalRevenue = orders
+      .filter(o => o.order_status === 'delivered' || o.order_status === 'completed')
+      .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+    const lastOrderDate = orders.length > 0
+      ? orders.reduce((max, o) => (o.order_date && o.order_date > max ? o.order_date : max), orders[0]?.order_date ?? '')
+      : null;
+
     // Formatear la respuesta con nombres de relaciones
     const formattedClient = {
       ...client,
@@ -114,6 +139,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(
       {
         data: formattedClient,
+        stats: {
+          total_visits: totalVisits,
+          total_orders: totalOrders,
+          total_revenue: totalRevenue,
+          last_order_date: lastOrderDate || null,
+        },
         message: 'Cliente obtenido exitosamente'
       },
       { status: 200 }
