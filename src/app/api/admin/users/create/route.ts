@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedServiceClient } from '@/lib/utils/tenant';
 import { extractDigits } from '@/lib/utils/phone';
+import { createNotification } from '@/lib/notifications';
 
 /**
  * API Route para crear usuarios con permisos de administrador
@@ -162,6 +163,19 @@ export async function POST(request: NextRequest) {
         }
 
         profile = newProfile;
+      }
+
+      // Send welcome notification to the new user
+      try {
+        await createNotification({
+          tenant_id: tenantId,
+          user_profile_id: profile.id,
+          title: 'Bienvenido',
+          message: 'Tu cuenta ha sido creada en el sistema',
+          notification_type: 'welcome',
+        })
+      } catch (notifError) {
+        console.error('[POST /api/admin/users/create] Notification error:', notifError)
       }
 
       return NextResponse.json({ user: profile }, { status: 201 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { resolveIdColumn } from '@/lib/utils/public-id'
+import { createNotification, createBulkNotifications } from '@/lib/notifications'
 
 /**
  * PUT /api/brand/team/[id]/supervisor
@@ -92,6 +93,28 @@ export async function PUT(
       )
     }
 
+    // Notify both the team member and the supervisor
+    try {
+      await createBulkNotifications([
+        {
+          tenant_id: tenantId,
+          user_profile_id: memberProfile.id,
+          title: 'Supervisor asignado',
+          message: 'Se te ha asignado un nuevo supervisor',
+          notification_type: 'supervisor_changed',
+        },
+        {
+          tenant_id: tenantId,
+          user_profile_id: supervisor_id,
+          title: 'Nuevo miembro en tu equipo',
+          message: 'Se te ha asignado un nuevo miembro para supervisar',
+          notification_type: 'supervisor_changed',
+        },
+      ])
+    } catch (notifError) {
+      console.error('[PUT /api/brand/team/[id]/supervisor] Notification error:', notifError)
+    }
+
     return NextResponse.json({ message: 'Supervisor asignado exitosamente' })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
@@ -159,6 +182,19 @@ export async function DELETE(
         { error: `Error al quitar supervisor: ${updateError.message}` },
         { status: 500 }
       )
+    }
+
+    // Notify the team member about the supervisor removal
+    try {
+      await createNotification({
+        tenant_id: tenantId,
+        user_profile_id: memberProfile.id,
+        title: 'Supervisor removido',
+        message: 'Tu supervisor ha sido removido',
+        notification_type: 'supervisor_changed',
+      })
+    } catch (notifError) {
+      console.error('[DELETE /api/brand/team/[id]/supervisor] Notification error:', notifError)
     }
 
     return NextResponse.json({ message: 'Supervisor removido exitosamente' })

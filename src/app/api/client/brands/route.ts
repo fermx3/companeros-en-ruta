@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createBulkNotifications } from '@/lib/notifications'
 
 interface AvailableBrand {
   id: string
@@ -212,6 +213,33 @@ export async function POST(request: NextRequest) {
 
     if (createError) {
       throw new Error(`Error al crear membresía: ${createError.message}`)
+    }
+
+    // Notify brand managers about the new membership request
+    try {
+      const serviceClient = createServiceClient()
+      const { data: brandManagers } = await serviceClient
+        .from('user_roles')
+        .select('user_profile_id')
+        .eq('brand_id', brand.id)
+        .in('role', ['brand_manager', 'brand_admin'])
+        .eq('status', 'active')
+        .is('deleted_at', null)
+
+      if (brandManagers?.length) {
+        await createBulkNotifications(
+          brandManagers.map(bm => ({
+            tenant_id: clientData.tenant_id,
+            user_profile_id: bm.user_profile_id,
+            title: 'Nueva solicitud de membresía',
+            message: `Un cliente ha solicitado unirse a ${brand.name}`,
+            notification_type: 'membership_pending' as const,
+            action_url: '/brand/clients',
+          }))
+        )
+      }
+    } catch (notifError) {
+      console.error('[POST /api/client/brands] Notification error:', notifError)
     }
 
     return NextResponse.json({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { createNotification, getClientUserProfileId } from '@/lib/notifications'
 
 interface PointsTransactionRequest {
   membership_id: string
@@ -195,6 +196,23 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       throw new Error(`Error al actualizar balance: ${updateError.message}`)
+    }
+
+    // Notify the client about the points change
+    try {
+      const clientProfileId = await getClientUserProfileId(supabase, membership.client_id)
+      if (clientProfileId) {
+        await createNotification({
+          tenant_id: membership.tenant_id,
+          user_profile_id: clientProfileId,
+          title: isDeduction ? 'Puntos deducidos' : 'Puntos otorgados',
+          message: `${Math.abs(effectiveAmount)} puntos ${isDeduction ? 'deducidos' : 'otorgados'}. Nuevo saldo: ${newBalance}`,
+          notification_type: 'points_adjusted',
+          action_url: '/client/loyalty',
+        })
+      }
+    } catch (notifError) {
+      console.error('[POST /api/brand/points] Notification error:', notifError)
     }
 
     return NextResponse.json({

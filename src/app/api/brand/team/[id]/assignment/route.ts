@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { resolveIdColumn } from '@/lib/utils/public-id'
+import { createNotification } from '@/lib/notifications'
 
 const VALID_SPECIALIZATIONS = [
   'general', 'retail', 'wholesale', 'pharma', 'food_service', 'convenience', 'supermarket'
@@ -239,6 +240,19 @@ export async function PUT(
         { error: 'Error al guardar asignación', details: error.message },
         { status: 500 }
       )
+    }
+
+    // Notify the promotor about the assignment change
+    try {
+      await createNotification({
+        tenant_id: tenantId,
+        user_profile_id: memberProfile.id,
+        title: 'Asignación actualizada',
+        message: existing ? 'Tu asignación ha sido modificada' : 'Se te ha creado una nueva asignación',
+        notification_type: 'assignment_changed',
+      })
+    } catch (notifError) {
+      console.error('[PUT /api/brand/team/[id]/assignment] Notification error:', notifError)
     }
 
     return NextResponse.json({ assignment })

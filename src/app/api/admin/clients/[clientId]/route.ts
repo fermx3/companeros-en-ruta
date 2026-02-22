@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { resolveIdColumn } from '@/lib/utils/public-id';
+import { createNotification, getClientUserProfileId } from '@/lib/notifications';
 
 /**
  * API Route para obtener un cliente específico por su public_id
@@ -196,7 +197,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .eq(resolveIdColumn(clientId), clientId)
       .eq('tenant_id', profile.tenant_id)
       .is('deleted_at', null)
-      .select('public_id, status')
+      .select('id, public_id, status')
       .single();
 
     if (updateError) {
@@ -213,8 +214,30 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Notify the client about the status change
+    try {
+      const clientProfileId = await getClientUserProfileId(serviceSupabase, updatedClient.id)
+      if (clientProfileId) {
+        const statusLabels: Record<string, string> = {
+          active: 'Activo',
+          inactive: 'Inactivo',
+          suspended: 'Suspendido',
+        }
+        await createNotification({
+          tenant_id: profile.tenant_id,
+          user_profile_id: clientProfileId,
+          title: 'Estado actualizado',
+          message: `Tu estado ha sido cambiado a: ${statusLabels[updatedClient.status] ?? updatedClient.status}`,
+          notification_type: 'client_status_changed',
+          action_url: '/client/profile',
+        })
+      }
+    } catch (notifError) {
+      console.error('[PATCH /api/admin/clients/[clientId]] Notification error:', notifError)
+    }
+
     return NextResponse.json(
-      { data: updatedClient, message: 'Estado del cliente actualizado exitosamente' },
+      { data: { public_id: updatedClient.public_id, status: updatedClient.status }, message: 'Estado del cliente actualizado exitosamente' },
       { status: 200 }
     );
 

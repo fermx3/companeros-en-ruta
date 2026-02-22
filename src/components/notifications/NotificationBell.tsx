@@ -21,6 +21,12 @@ const NOTIFICATION_TYPE_ICONS: Record<string, string> = {
   survey_approved: '✅',
   survey_rejected: '❌',
   new_survey_pending: '📋',
+  points_adjusted: '💰',
+  assignment_changed: '📋',
+  supervisor_changed: '👥',
+  welcome: '👋',
+  membership_pending: '🔔',
+  client_status_changed: '🔄',
   system: '🔔',
 };
 
