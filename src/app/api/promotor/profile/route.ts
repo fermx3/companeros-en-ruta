@@ -45,7 +45,8 @@ export async function GET() {
         `)
         .eq('user_profile_id', userProfileId)
         .eq('is_active', true)
-        .single(),
+        .limit(1)
+        .maybeSingle(),
 
       supabase
         .from('client_assignments')
@@ -56,7 +57,7 @@ export async function GET() {
 
     const promotorInfo = promotorInfoResult.data
     const totalAssignedClients = assignedClientsResult.data?.length || 0
-    const zoneInfo = (promotorInfo?.zones as ZoneInfo[])?.[0] || null
+    const zoneInfo = (promotorInfo?.zones as unknown as ZoneInfo | null) || null
 
     // 4. Build promotor profile response
     const firstName = profileData?.first_name || ''
@@ -122,55 +123,35 @@ export async function PUT(request: NextRequest) {
 
     // 2. Obtener datos del body
     const body = await request.json()
-    const {
-      phone,
-      territory_assigned,
-      specialization,
-      experience_level
-    } = body
+    const { phone } = body
+
+    if (!phone) {
+      return NextResponse.json(
+        { error: 'El teléfono es requerido' },
+        { status: 400 }
+      )
+    }
 
     // Validate phone (10 digits for Mexico)
-    if (phone) {
-      const phoneDigits = extractDigits(phone)
-      if (phoneDigits.length !== 10) {
-        return NextResponse.json(
-          { error: 'El teléfono debe tener 10 dígitos' },
-          { status: 400 }
-        )
-      }
+    const phoneDigits = extractDigits(phone)
+    if (phoneDigits.length !== 10) {
+      return NextResponse.json(
+        { error: 'El teléfono debe tener 10 dígitos' },
+        { status: 400 }
+      )
     }
 
-    // 3. Actualizar user_profile
-    if (phone) {
-      const phoneDigits = extractDigits(phone)
-      const { error: updateProfileError } = await supabase
-        .from('user_profiles')
-        .update({
-          phone: phoneDigits,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userProfileId)
-
-      if (updateProfileError) {
-        throw new Error(`Error al actualizar perfil: ${updateProfileError.message}`)
-      }
-    }
-
-    // 4. Actualizar user_role de promotor
-    const { error: updateRoleError } = await supabase
-      .from('user_roles')
+    // 3. Actualizar user_profile (solo teléfono)
+    const { error: updateProfileError } = await supabase
+      .from('user_profiles')
       .update({
-        territory_assigned,
-        specialization,
-        experience_level,
+        phone: phoneDigits,
         updated_at: new Date().toISOString()
       })
-      .eq('user_profile_id', userProfileId)
-      .eq('role', 'promotor')
-      .eq('status', 'active')
+      .eq('id', userProfileId)
 
-    if (updateRoleError) {
-      throw new Error(`Error al actualizar rol de promotor: ${updateRoleError.message}`)
+    if (updateProfileError) {
+      throw new Error(`Error al actualizar perfil: ${updateProfileError.message}`)
     }
 
     return NextResponse.json({
