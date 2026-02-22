@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { mxPhoneSchema } from '@/lib/utils/phone';
+import { resolveIdColumn } from '@/lib/utils/public-id';
 
 /**
  * API Route para actualizar un cliente específico
@@ -100,7 +101,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { data: existingClient, error: clientError } = await serviceSupabase
       .from('clients')
       .select('id, public_id, tenant_id')
-      .eq('public_id', clientId)
+      .eq(resolveIdColumn(clientId), clientId)
       .eq('tenant_id', profile.tenant_id)
       .is('deleted_at', null)
       .single();

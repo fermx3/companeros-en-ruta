@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { data: visit, error: visitError } = await supabase
     .from('visits')
     .select('id, client_id')
-    .eq('id', visitId)
+    .eq(resolveIdColumn(visitId), visitId)
     .single()
 
   if (visitError || !visit) {
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       total_amount,
       created_at
     `)
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
     .is('deleted_at', null)
 
   if (status) {

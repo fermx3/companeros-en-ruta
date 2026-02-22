@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 import type { SurveyTargetRoleEnum } from '@/lib/types/database'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function POST(
   request: NextRequest,
@@ -61,34 +62,39 @@ export async function POST(
       )
     }
 
-    // Fetch survey, check duplicates, and determine role IN PARALLEL
-    const [surveyResult, existingResponseResult, userRolesResult] = await Promise.all([
-      supabase
-        .from('surveys')
-        .select(`
+    // First: resolve the survey (may use public_id)
+    const { data: survey, error: surveyError } = await supabase
+      .from('surveys')
+      .select(`
+        id,
+        tenant_id,
+        survey_status,
+        target_roles,
+        start_date,
+        end_date,
+        max_responses_per_user,
+        survey_questions(
           id,
-          tenant_id,
-          survey_status,
-          target_roles,
-          start_date,
-          end_date,
-          max_responses_per_user,
-          survey_questions(
-            id,
-            question_type,
-            is_required
-          )
-        `)
-        .eq('id', id)
-        .eq('tenant_id', tenantId)
-        .eq('survey_status', 'active')
-        .is('deleted_at', null)
-        .single(),
+          question_type,
+          is_required
+        )
+      `)
+      .eq(resolveIdColumn(id), id)
+      .eq('tenant_id', tenantId)
+      .eq('survey_status', 'active')
+      .is('deleted_at', null)
+      .single()
 
+    if (surveyError || !survey) {
+      return NextResponse.json({ error: 'Encuesta no encontrada o no activa' }, { status: 404 })
+    }
+
+    // Then: check duplicates and determine role IN PARALLEL (using resolved survey.id)
+    const [existingResponseResult, userRolesResult] = await Promise.all([
       supabase
         .from('survey_responses')
         .select('id')
-        .eq('survey_id', id)
+        .eq('survey_id', survey.id)
         .eq('respondent_id', profileId)
         .limit(1),
 
@@ -99,11 +105,6 @@ export async function POST(
         .eq('status', 'active')
         .is('deleted_at', null),
     ])
-
-    const survey = surveyResult.data
-    if (surveyResult.error || !survey) {
-      return NextResponse.json({ error: 'Encuesta no encontrada o no activa' }, { status: 404 })
-    }
 
     // Check date range
     const today = new Date().toISOString().split('T')[0]
@@ -157,7 +158,7 @@ export async function POST(
     const { data: newResponse, error: responseError } = await supabase
       .from('survey_responses')
       .insert({
-        survey_id: id,
+        survey_id: survey.id,
         tenant_id: survey.tenant_id,
         respondent_id: profileId,
         respondent_role: respondentRole

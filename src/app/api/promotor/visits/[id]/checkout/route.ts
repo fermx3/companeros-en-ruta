@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 // Helper to get promotor profile from auth
 async function getPromotorProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -65,7 +66,7 @@ export async function POST(
     const { data: visit, error: fetchError } = await supabase
       .from('visits')
       .select('id, visit_status, check_in_time')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('promotor_id', promotorId)
       .is('deleted_at', null)
       .single()
@@ -107,7 +108,7 @@ export async function POST(
       const { data: currentVisit } = await supabase
         .from('visits')
         .select('promotor_notes')
-        .eq('id', id)
+        .eq('id', visit.id)
         .single()
 
       const existingNotes = currentVisit?.promotor_notes || ''
@@ -122,7 +123,7 @@ export async function POST(
     const { data: updatedVisit, error: updateError } = await supabase
       .from('visits')
       .update(updateData)
-      .eq('id', id)
+      .eq('id', visit.id)
       .select(`
         *,
         client:clients(id, public_id, business_name, owner_name, address_street, address_neighborhood, phone)
@@ -168,7 +169,7 @@ export async function POST(
             message: `Visita completada en ${clientName}`,
             notification_type: 'visit_completed' as const,
             action_url: '/supervisor/',
-            metadata: { visit_id: id },
+            metadata: { visit_id: visit.id },
           }))
         )
       }

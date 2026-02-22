@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { data: visit, error: visitError } = await supabase
     .from('visits')
     .select('id, brand_id, client_id')
-    .eq('id', visitId)
+    .eq(resolveIdColumn(visitId), visitId)
     .eq('promotor_id', userProfile.id)
     .is('deleted_at', null)
     .single()
@@ -43,38 +44,38 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { data: stageAssessment } = await supabase
     .from('visit_stage_assessments')
     .select('*')
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
     .single()
 
   // Fetch brand product assessments
   const { data: brandProductAssessments } = await supabase
     .from('visit_brand_product_assessments')
     .select('*')
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
 
   // Fetch competitor assessments
   const { data: competitorAssessments } = await supabase
     .from('visit_competitor_assessments')
     .select('*')
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
 
   // Fetch POP material checks
   const { data: popMaterialChecks } = await supabase
     .from('visit_pop_material_checks')
     .select('*')
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
 
   // Fetch exhibition checks
   const { data: exhibitionChecks } = await supabase
     .from('visit_exhibition_checks')
     .select('*')
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
 
   // Fetch evidence photos
   const { data: evidence } = await supabase
     .from('visit_evidence')
     .select('*')
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: true })
 
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   const { data: visit, error: visitError } = await supabase
     .from('visits')
     .select('id, brand_id, client_id, visit_status, tenant_id, promotor_id')
-    .eq('id', visitId)
+    .eq(resolveIdColumn(visitId), visitId)
     .eq('promotor_id', userProfile.id)  // Ensure visit belongs to this promotor
     .is('deleted_at', null)
     .single()
@@ -164,7 +165,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const notesField = stage === 1 ? 'pricing_audit_notes' : stage === 2 ? 'purchase_inventory_notes' : 'pop_execution_notes'
 
     const stageAssessmentData: Record<string, unknown> = {
-      visit_id: visitId,
+      visit_id: visit.id,
       tenant_id: userProfile.tenant_id,
       [stageField]: new Date().toISOString()
     }
@@ -207,10 +208,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         await supabase
           .from('visit_brand_product_assessments')
           .delete()
-          .eq('visit_id', visitId)
+          .eq('visit_id', visit.id)
 
         const brandAssessments = data.brandProductAssessments.map((a: Record<string, unknown>) => ({
-          visit_id: visitId,
+          visit_id: visit.id,
           product_id: a.product_id,
           product_variant_id: a.product_variant_id || null,
           current_price: a.current_price || null,
@@ -236,10 +237,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         await supabase
           .from('visit_competitor_assessments')
           .delete()
-          .eq('visit_id', visitId)
+          .eq('visit_id', visit.id)
 
         const competitorAssessments = data.competitorAssessments.map((a: Record<string, unknown>) => ({
-          visit_id: visitId,
+          visit_id: visit.id,
           competitor_id: a.competitor_id,
           competitor_product_id: a.competitor_product_id || null,
           product_name_observed: a.product_name_observed || null,
@@ -264,10 +265,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         await supabase
           .from('visit_pop_material_checks')
           .delete()
-          .eq('visit_id', visitId)
+          .eq('visit_id', visit.id)
 
         const popChecks = data.popMaterialChecks.map((c: Record<string, unknown>) => ({
-          visit_id: visitId,
+          visit_id: visit.id,
           pop_material_id: c.pop_material_id,
           is_present: c.is_present || false,
           condition: c.condition || null,
@@ -288,10 +289,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         await supabase
           .from('visit_exhibition_checks')
           .delete()
-          .eq('visit_id', visitId)
+          .eq('visit_id', visit.id)
 
         const exhibitionChecks = data.exhibitionChecks.map((c: Record<string, unknown>) => ({
-          visit_id: visitId,
+          visit_id: visit.id,
           exhibition_id: c.exhibition_id,
           is_executed: c.is_executed || false,
           execution_quality: c.execution_quality || null,
@@ -344,7 +345,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { data: visit, error: visitError } = await supabase
     .from('visits')
     .select('id, visit_status')
-    .eq('id', visitId)
+    .eq(resolveIdColumn(visitId), visitId)
     .eq('promotor_id', userProfile.id)
     .is('deleted_at', null)
     .single()
@@ -357,7 +358,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { data: stageAssessment } = await supabase
     .from('visit_stage_assessments')
     .select('stage1_completed_at, stage2_completed_at, stage3_completed_at')
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
     .single()
 
   if (!stageAssessment) {
@@ -384,7 +385,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { error: updateError } = await supabase
     .from('visit_stage_assessments')
     .update({ all_stages_completed: true })
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
 
   if (updateError) {
     console.error('Error marking assessment complete:', updateError)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { resolveIdColumn } from '@/lib/utils/public-id';
 
 /**
  * API Route para obtener un cliente específico por su public_id
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         client_types:client_type_id(name),
         commercial_structures:commercial_structure_id(name)
       `)
-      .eq('public_id', clientId)
+      .eq(resolveIdColumn(clientId), clientId)
       .eq('tenant_id', profile.tenant_id)
       .is('deleted_at', null)
       .single();
@@ -192,7 +193,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         status: validatedData.status,
         updated_at: new Date().toISOString(),
       })
-      .eq('public_id', clientId)
+      .eq(resolveIdColumn(clientId), clientId)
       .eq('tenant_id', profile.tenant_id)
       .is('deleted_at', null)
       .select('public_id, status')

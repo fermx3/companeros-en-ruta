@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { data: visit, error: visitError } = await supabase
     .from('visits')
     .select('id')
-    .eq('id', visitId)
+    .eq(resolveIdColumn(visitId), visitId)
     .eq('promotor_id', userProfile.id)
     .is('deleted_at', null)
     .single()
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { data: evidence, error } = await supabase
     .from('visit_evidence')
     .select('*')
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: true })
 
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   const { data: visit, error: visitError } = await supabase
     .from('visits')
     .select('id, visit_status')
-    .eq('id', visitId)
+    .eq(resolveIdColumn(visitId), visitId)
     .eq('promotor_id', userProfile.id)
     .is('deleted_at', null)
     .single()
@@ -110,11 +111,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Evidence stage is required' }, { status: 400 })
     }
 
-    // Generate unique file name
+    // Generate unique file name (use resolved UUID for storage path)
     const fileExt = file.name.split('.').pop()
     const timestamp = Date.now()
     const randomId = Math.random().toString(36).substring(2, 10)
-    const fileName = `${visitId}/${evidenceStage}/${timestamp}-${randomId}.${fileExt}`
+    const fileName = `${visit.id}/${evidenceStage}/${timestamp}-${randomId}.${fileExt}`
 
     // Convert File to ArrayBuffer for upload
     const arrayBuffer = await file.arrayBuffer()
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { data: evidence, error: insertError } = await supabase
       .from('visit_evidence')
       .insert({
-        visit_id: visitId,
+        visit_id: visit.id,
         tenant_id: userProfile.tenant_id,
         evidence_stage: evidenceStage,
         evidence_type: evidenceType || null,
@@ -206,7 +207,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { data: visit } = await supabase
     .from('visits')
     .select('id')
-    .eq('id', visitId)
+    .eq(resolveIdColumn(visitId), visitId)
     .eq('promotor_id', userProfile.id)
     .is('deleted_at', null)
     .single()
@@ -220,7 +221,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     .from('visit_evidence')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', evidenceId)
-    .eq('visit_id', visitId)
+    .eq('visit_id', visit.id)
 
   if (deleteError) {
     console.error('Error deleting evidence:', deleteError)

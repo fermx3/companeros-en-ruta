@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
 import { env } from '@/lib/env';
+import { resolveIdColumn } from '@/lib/utils/public-id';
 import type {
   AdminDashboardMetrics,
   RecentActivity,
@@ -637,7 +638,7 @@ export class AdminService {
       .from('user_profiles')
       .select('*')
       .eq('tenant_id', tenantId)
-      .eq('id', userId)
+      .eq(resolveIdColumn(userId), userId)
       .is('deleted_at', null)
       .single();
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function GET(
   request: NextRequest,
@@ -65,7 +66,7 @@ export async function GET(
           options
         )
       `)
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('tenant_id', tenantId)
       .eq('survey_status', 'active')
       .is('deleted_at', null)
@@ -86,7 +87,7 @@ export async function GET(
       const { data } = await supabase
         .from('survey_responses')
         .select('id, submitted_at')
-        .eq('survey_id', id)
+        .eq('survey_id', survey.id)
         .eq('respondent_id', profileId)
         .limit(1)
       existingResponse = data
