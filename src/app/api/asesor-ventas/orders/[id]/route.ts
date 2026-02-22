@@ -162,12 +162,12 @@ export async function GET(
         line_total,
         unit_type,
         item_status,
-        product:products(
+        product:products!fk_order_items_product(
           id,
           name,
           sku
         ),
-        product_variant:product_variants(
+        product_variant:product_variants!fk_order_items_product_variant(
           id,
           name:variant_name
         )
