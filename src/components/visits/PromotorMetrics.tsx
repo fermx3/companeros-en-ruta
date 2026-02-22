@@ -21,10 +21,7 @@ export function PromotorMetrics({ metrics }: PromotorMetricsProps) {
               {metrics.monthlyQuota}
             </div>
             <div className="text-sm text-gray-600 mt-1">
-              Cuota del mes
-            </div>
-            <div className="text-xs text-gray-400">
-              No hay cuota asignada
+              Cuota mensual
             </div>
           </div>
         </CardContent>
@@ -37,10 +34,7 @@ export function PromotorMetrics({ metrics }: PromotorMetricsProps) {
               {metrics.completedVisits}
             </div>
             <div className="text-sm text-gray-600 mt-1">
-              Avance de compra
-            </div>
-            <div className="text-xs text-gray-400">
-              0 cajas
+              Visitas completadas
             </div>
           </div>
         </CardContent>
@@ -53,7 +47,7 @@ export function PromotorMetrics({ metrics }: PromotorMetricsProps) {
               {metrics.effectiveness.toFixed(1)}%
             </div>
             <div className="text-sm text-gray-600 mt-1">
-              % de avance de compra
+              Efectividad
             </div>
           </div>
         </CardContent>
@@ -66,10 +60,7 @@ export function PromotorMetrics({ metrics }: PromotorMetricsProps) {
               {metrics.totalClients}
             </div>
             <div className="text-sm text-gray-600 mt-1">
-              Clientes totales
-            </div>
-            <div className="text-xs text-gray-400">
-              No hay promociones
+              Clientes asignados
             </div>
           </div>
         </CardContent>
