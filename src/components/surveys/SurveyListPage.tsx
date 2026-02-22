@@ -71,7 +71,7 @@ export function SurveyListPage({ basePath }: SurveyListPageProps) {
                   <SurveyCard
                     key={survey.id}
                     survey={survey}
-                    href={`${basePath}/${survey.id}`}
+                    href={`${basePath}/${survey.public_id}`}
                     showBrand
                   />
                 ))}
@@ -87,7 +87,7 @@ export function SurveyListPage({ basePath }: SurveyListPageProps) {
                   <SurveyCard
                     key={survey.id}
                     survey={survey}
-                    href={`${basePath}/${survey.id}`}
+                    href={`${basePath}/${survey.public_id}`}
                     showBrand
                   />
                 ))}

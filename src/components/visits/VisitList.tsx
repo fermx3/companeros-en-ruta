@@ -91,8 +91,8 @@ export function VisitList({ visits, loading, error, onRefresh }: VisitListProps)
   /**
    * Navegar a detalle de visita
    */
-  const handleVisitClick = (visitId: string) => {
-    router.push(`/promotor/visitas/${visitId}`)
+  const handleVisitClick = (publicId: string) => {
+    router.push(`/promotor/visitas/${publicId}`)
   }
 
   // ===========================================
@@ -146,13 +146,13 @@ export function VisitList({ visits, loading, error, onRefresh }: VisitListProps)
         <Card
           key={visit.id}
           className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleVisitClick(visit.id)}
+          onClick={() => handleVisitClick(visit.visit_number)}
           role="button"
           tabIndex={0}
           aria-label={`Ver detalles de visita a ${visit.client?.business_name || 'cliente'}`}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
-              handleVisitClick(visit.id)
+              handleVisitClick(visit.visit_number)
             }
           }}
         >

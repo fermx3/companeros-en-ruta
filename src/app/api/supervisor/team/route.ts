@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 interface TeamMember {
   id: string
+  public_id: string
   full_name: string
   email: string
   phone: string | null
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
     // 4. Get team members (subordinates by manager_id)
     const { data: teamProfiles } = await supabase
       .from('user_profiles')
-      .select('id, first_name, last_name, email, phone, status')
+      .select('id, public_id, first_name, last_name, email, phone, status')
       .eq('manager_id', userProfile.id)
       .eq('status', 'active')
 
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
 
         teamMembers.push({
           id: profile.id,
+          public_id: profile.public_id,
           full_name: fullName,
           email: profile.email,
           phone: profile.phone,
