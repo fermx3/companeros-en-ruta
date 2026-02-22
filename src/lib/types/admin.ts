@@ -81,6 +81,14 @@ export interface Client {
   last_visit_date: string | null;
   notes: string | null;
   metadata: Record<string, unknown> | null;
+  gender: string | null;
+  date_of_birth: string | null;
+  email_opt_in: boolean | null;
+  whatsapp_opt_in: boolean | null;
+  has_meat_fridge: boolean | null;
+  has_soda_fridge: boolean | null;
+  accepts_card: boolean | null;
+  onboarding_completed: boolean | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

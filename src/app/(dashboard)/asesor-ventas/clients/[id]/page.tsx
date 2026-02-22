@@ -24,6 +24,13 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { fullOwnerName } from '@/lib/utils/client'
+import {
+  GENDER_LABELS,
+  EMPLOYEES_LABELS,
+  SUPPLY_SOURCE_LABELS,
+  formatBoolean,
+  formatOnboardingDate,
+} from '@/lib/utils/onboarding-labels'
 
 interface ClientDetail {
   id: string
@@ -49,6 +56,15 @@ interface ClientDetail {
   market: { id: string; name: string } | null
   client_type: { id: string; name: string } | null
   created_at: string
+  gender: string | null
+  date_of_birth: string | null
+  email_opt_in: boolean | null
+  whatsapp_opt_in: boolean | null
+  has_meat_fridge: boolean | null
+  has_soda_fridge: boolean | null
+  accepts_card: boolean | null
+  onboarding_completed: boolean | null
+  metadata: Record<string, unknown> | null
 }
 
 interface Membership {
@@ -411,6 +427,98 @@ export default function ClientDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Onboarding Data */}
+            {client.onboarding_completed ? (
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Datos de Onboarding
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-gray-500">Género</p>
+                        <p className="font-medium">{client.gender ? (GENDER_LABELS[client.gender] || client.gender) : 'No especificado'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Nacimiento</p>
+                        <p className="font-medium">{formatOnboardingDate(client.date_of_birth)}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-gray-500">Email</p>
+                        <p className="font-medium">{formatBoolean(client.email_opt_in)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">WhatsApp</p>
+                        <p className="font-medium">{formatBoolean(client.whatsapp_opt_in)}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-gray-500">Refri Carne</p>
+                        <p className="font-medium">{formatBoolean(client.has_meat_fridge)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Refri Refrescos</p>
+                        <p className="font-medium">{formatBoolean(client.has_soda_fridge)}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Acepta Tarjeta</p>
+                      <p className="font-medium">{formatBoolean(client.accepts_card)}</p>
+                    </div>
+                    {client.metadata?.employees != null && (
+                      <div>
+                        <p className="text-gray-500">Empleados</p>
+                        <p className="font-medium">{EMPLOYEES_LABELS[client.metadata.employees as string] || String(client.metadata.employees)}</p>
+                      </div>
+                    )}
+                    {client.metadata?.offers_topups != null && (
+                      <div>
+                        <p className="text-gray-500">Recargas</p>
+                        <p className="font-medium">{formatBoolean(client.metadata.offers_topups as boolean)}</p>
+                      </div>
+                    )}
+                    {Array.isArray(client.metadata?.supply_sources) && (
+                      <div>
+                        <p className="text-gray-500">Abastecimiento</p>
+                        <p className="font-medium">
+                          {(client.metadata.supply_sources as string[]).map(s => SUPPLY_SOURCE_LABELS[s] || s).join(', ')}
+                        </p>
+                      </div>
+                    )}
+                    {client.metadata?.digital_restock != null && (
+                      <div>
+                        <p className="text-gray-500">Resurtido Digital</p>
+                        <p className="font-medium">{formatBoolean(client.metadata.digital_restock as boolean)}</p>
+                      </div>
+                    )}
+                    {client.metadata?.digital_restock_detail != null && (
+                      <div>
+                        <p className="text-gray-500">App de Resurtido</p>
+                        <p className="font-medium">{String(client.metadata.digital_restock_detail)}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
+                    Datos de Onboarding
+                  </h3>
+                  <div className="rounded-md bg-amber-50 border border-amber-200 p-3">
+                    <p className="text-sm text-amber-800">
+                      Este cliente no ha completado su onboarding.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Brand Memberships */}
             <Card>

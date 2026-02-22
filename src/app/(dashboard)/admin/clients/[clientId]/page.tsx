@@ -10,6 +10,13 @@ import type { Client } from '@/lib/types/admin';
 import { fullOwnerName } from '@/lib/utils/client';
 import { displayPhone, extractDigits } from '@/lib/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import {
+  GENDER_LABELS,
+  EMPLOYEES_LABELS,
+  SUPPLY_SOURCE_LABELS,
+  formatBoolean,
+  formatOnboardingDate,
+} from '@/lib/utils/onboarding-labels';
 
 /**
  * Página de detalle de cliente
@@ -293,6 +300,91 @@ export default function ClientDetailPage() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </Card>
+
+            {/* Datos de Onboarding */}
+            <Card>
+              <div className="p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Datos de Onboarding</h3>
+                {client.onboarding_completed ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Género</label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {client.gender ? (GENDER_LABELS[client.gender] || client.gender) : 'No especificado'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Fecha de Nacimiento</label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {formatOnboardingDate(client.date_of_birth)}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Acepta Email</label>
+                      <p className="mt-1 text-sm text-gray-900">{formatBoolean(client.email_opt_in)}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Acepta WhatsApp</label>
+                      <p className="mt-1 text-sm text-gray-900">{formatBoolean(client.whatsapp_opt_in)}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Refrigerador de Carne</label>
+                      <p className="mt-1 text-sm text-gray-900">{formatBoolean(client.has_meat_fridge)}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Refrigerador de Refrescos</label>
+                      <p className="mt-1 text-sm text-gray-900">{formatBoolean(client.has_soda_fridge)}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Acepta Tarjeta</label>
+                      <p className="mt-1 text-sm text-gray-900">{formatBoolean(client.accepts_card)}</p>
+                    </div>
+                    {client.metadata?.employees != null && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500">Empleados</label>
+                        <p className="mt-1 text-sm text-gray-900">
+                          {EMPLOYEES_LABELS[client.metadata.employees as string] || String(client.metadata.employees)}
+                        </p>
+                      </div>
+                    )}
+                    {client.metadata?.offers_topups != null && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500">Ofrece Recargas</label>
+                        <p className="mt-1 text-sm text-gray-900">{formatBoolean(client.metadata.offers_topups as boolean)}</p>
+                      </div>
+                    )}
+                    {Array.isArray(client.metadata?.supply_sources) && (
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-500">Fuentes de Abastecimiento</label>
+                        <p className="mt-1 text-sm text-gray-900">
+                          {(client.metadata.supply_sources as string[])
+                            .map(s => SUPPLY_SOURCE_LABELS[s] || s)
+                            .join(', ')}
+                        </p>
+                      </div>
+                    )}
+                    {client.metadata?.digital_restock != null && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500">Resurtido Digital</label>
+                        <p className="mt-1 text-sm text-gray-900">{formatBoolean(client.metadata.digital_restock as boolean)}</p>
+                      </div>
+                    )}
+                    {client.metadata?.digital_restock_detail != null && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500">App de Resurtido</label>
+                        <p className="mt-1 text-sm text-gray-900">{String(client.metadata.digital_restock_detail)}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-md bg-amber-50 border border-amber-200 p-4">
+                    <p className="text-sm text-amber-800">
+                      Este cliente no ha completado su onboarding. Los datos de perfil, equipamiento y encuesta de negocio no están disponibles.
+                    </p>
+                  </div>
+                )}
               </div>
             </Card>
           </div>

@@ -11,7 +11,14 @@ import { displayPhone } from '@/lib/utils/phone'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
 import { fullOwnerName } from '@/lib/utils/client'
-import { Check, Coins, Award } from 'lucide-react'
+import {
+  GENDER_LABELS,
+  EMPLOYEES_LABELS,
+  SUPPLY_SOURCE_LABELS,
+  formatBoolean,
+  formatOnboardingDate,
+} from '@/lib/utils/onboarding-labels'
+import { Check, Coins, Award, ClipboardList } from 'lucide-react'
 import {
   TierAssignModal,
   PointsModal,
@@ -38,6 +45,17 @@ interface ClientDetail {
   status: string
   created_at: string
   updated_at: string
+  gender: string | null
+  date_of_birth: string | null
+  email_opt_in: boolean | null
+  whatsapp_opt_in: boolean | null
+  has_meat_fridge: boolean | null
+  has_soda_fridge: boolean | null
+  accepts_card: boolean | null
+  onboarding_completed: boolean | null
+  latitude: number | null
+  longitude: number | null
+  metadata: Record<string, unknown> | null
   zones: { id: string; name: string } | null
   markets: { id: string; name: string } | null
   client_types: { id: string; name: string; code: string; category: string } | null
@@ -400,6 +418,94 @@ export default function BrandClientDetailPage() {
                     <dd className="mt-1 text-sm text-gray-900">{client.address_postal_code || 'N/A'}</dd>
                   </div>
                 </dl>
+              </div>
+            </Card>
+
+            {/* Datos de Onboarding */}
+            <Card>
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-indigo-600" />
+                  Datos de Onboarding
+                </h2>
+                {client.onboarding_completed ? (
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Género</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        {client.gender ? (GENDER_LABELS[client.gender] || client.gender) : 'No especificado'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Fecha de Nacimiento</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        {formatOnboardingDate(client.date_of_birth)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Acepta Email</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{formatBoolean(client.email_opt_in)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Acepta WhatsApp</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{formatBoolean(client.whatsapp_opt_in)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Refrigerador de Carne</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{formatBoolean(client.has_meat_fridge)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Refrigerador de Refrescos</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{formatBoolean(client.has_soda_fridge)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Acepta Tarjeta</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{formatBoolean(client.accepts_card)}</dd>
+                    </div>
+                    {client.metadata?.employees != null && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Empleados</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {EMPLOYEES_LABELS[client.metadata.employees as string] || String(client.metadata.employees)}
+                        </dd>
+                      </div>
+                    )}
+                    {client.metadata?.offers_topups != null && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Ofrece Recargas</dt>
+                        <dd className="mt-1 text-sm text-gray-900">{formatBoolean(client.metadata.offers_topups as boolean)}</dd>
+                      </div>
+                    )}
+                    {Array.isArray(client.metadata?.supply_sources) && (
+                      <div className="sm:col-span-2">
+                        <dt className="text-sm font-medium text-gray-500">Fuentes de Abastecimiento</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {(client.metadata.supply_sources as string[])
+                            .map(s => SUPPLY_SOURCE_LABELS[s] || s)
+                            .join(', ')}
+                        </dd>
+                      </div>
+                    )}
+                    {client.metadata?.digital_restock != null && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Resurtido Digital</dt>
+                        <dd className="mt-1 text-sm text-gray-900">{formatBoolean(client.metadata.digital_restock as boolean)}</dd>
+                      </div>
+                    )}
+                    {client.metadata?.digital_restock_detail != null && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">App de Resurtido</dt>
+                        <dd className="mt-1 text-sm text-gray-900">{String(client.metadata.digital_restock_detail)}</dd>
+                      </div>
+                    )}
+                  </dl>
+                ) : (
+                  <div className="rounded-md bg-amber-50 border border-amber-200 p-4">
+                    <p className="text-sm text-amber-800">
+                      Este cliente no ha completado su onboarding. Los datos de perfil, equipamiento y encuesta de negocio no están disponibles.
+                    </p>
+                  </div>
+                )}
               </div>
             </Card>
           </div>

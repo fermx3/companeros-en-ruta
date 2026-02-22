@@ -38,6 +38,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         latitude,
         longitude,
         created_at,
+        gender,
+        date_of_birth,
+        email_opt_in,
+        whatsapp_opt_in,
+        has_meat_fridge,
+        has_soda_fridge,
+        accepts_card,
+        onboarding_completed,
+        metadata,
         zone:zones(id, name),
         market:markets(id, name),
         client_type:client_types(id, name)
@@ -188,7 +197,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       zone: Array.isArray(clientData.zone) ? clientData.zone[0] : clientData.zone,
       market: Array.isArray(clientData.market) ? clientData.market[0] : clientData.market,
       client_type: Array.isArray(clientData.client_type) ? clientData.client_type[0] : clientData.client_type,
-      created_at: clientData.created_at
+      created_at: clientData.created_at,
+      gender: clientData.gender,
+      date_of_birth: clientData.date_of_birth,
+      email_opt_in: clientData.email_opt_in,
+      whatsapp_opt_in: clientData.whatsapp_opt_in,
+      has_meat_fridge: clientData.has_meat_fridge,
+      has_soda_fridge: clientData.has_soda_fridge,
+      accepts_card: clientData.accepts_card,
+      onboarding_completed: clientData.onboarding_completed,
+      metadata: clientData.metadata,
     }
 
     const formattedMemberships = (memberships || []).map(m => ({
