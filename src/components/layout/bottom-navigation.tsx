@@ -1,22 +1,25 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { NavItem } from '@/lib/navigation-config'
+import type { NavEntry } from '@/lib/navigation-config'
+import { flattenEntries, isNavGroup } from '@/lib/navigation-config'
 
 export interface BottomNavigationProps {
-  items: NavItem[]
+  entries: NavEntry[]
 }
 
 const MAX_VISIBLE = 5
 
-export function BottomNavigation({ items }: BottomNavigationProps) {
+export function BottomNavigation({ entries }: BottomNavigationProps) {
   const pathname = usePathname()
   const [moreOpen, setMoreOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+
+  const items = useMemo(() => flattenEntries(entries), [entries])
 
   const hasOverflow = items.length > MAX_VISIBLE
   const visibleItems = hasOverflow ? items.slice(0, MAX_VISIBLE - 1) : items.slice(0, MAX_VISIBLE)
@@ -30,6 +33,30 @@ export function BottomNavigation({ items }: BottomNavigationProps) {
   }
 
   const isOverflowActive = overflowItems.some(item => isCurrentPath(item.href))
+
+  // Build overflow items with group headers as separators
+  const overflowWithHeaders = useMemo(() => {
+    if (!hasOverflow) return []
+
+    const overflowSet = new Set(overflowItems.map(i => i.id))
+    const result: Array<{ type: 'header'; label: string } | { type: 'item'; item: typeof items[0] }> = []
+
+    for (const entry of entries) {
+      if (isNavGroup(entry)) {
+        const groupOverflowItems = entry.items.filter(i => overflowSet.has(i.id))
+        if (groupOverflowItems.length > 0) {
+          result.push({ type: 'header', label: entry.label })
+          for (const item of groupOverflowItems) {
+            result.push({ type: 'item', item })
+          }
+        }
+      } else if (overflowSet.has(entry.id)) {
+        result.push({ type: 'item', item: entry })
+      }
+    }
+
+    return result
+  }, [entries, hasOverflow, overflowItems, items])
 
   // Close menu on outside click
   useEffect(() => {
@@ -53,10 +80,21 @@ export function BottomNavigation({ items }: BottomNavigationProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border lg:hidden z-40">
       {/* Overflow menu */}
-      {moreOpen && overflowItems.length > 0 && (
-        <div ref={menuRef} className="absolute bottom-full left-0 right-0 bg-white border-t border-border shadow-lg">
+      {moreOpen && overflowWithHeaders.length > 0 && (
+        <div ref={menuRef} className="absolute bottom-full left-0 right-0 bg-white border-t border-border shadow-lg max-h-80 overflow-y-auto">
           <div className="py-2">
-            {overflowItems.map(item => {
+            {overflowWithHeaders.map((entry, idx) => {
+              if (entry.type === 'header') {
+                return (
+                  <div
+                    key={`header-${idx}`}
+                    className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 first:pt-1"
+                  >
+                    {entry.label}
+                  </div>
+                )
+              }
+              const item = entry.item
               const Icon = item.icon
               const current = isCurrentPath(item.href)
               return (

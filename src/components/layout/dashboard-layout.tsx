@@ -2,10 +2,10 @@ import React from 'react'
 import { DashboardHeader } from './dashboard-header'
 import { BottomNavigation } from './bottom-navigation'
 import { cn } from '@/lib/utils'
-import type { NavItem } from '@/lib/navigation-config'
+import type { NavEntry } from '@/lib/navigation-config'
 
 export interface DashboardLayoutProps {
-    items?: NavItem[]
+    entries?: NavEntry[]
     brandName?: string
     subtitle?: string
     children: React.ReactNode
@@ -13,7 +13,7 @@ export interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({
-    items,
+    entries,
     brandName,
     subtitle,
     children,
@@ -27,7 +27,7 @@ export function DashboardLayout({
                 {children}
             </main>
 
-            {items && <BottomNavigation items={items} />}
+            {entries && <BottomNavigation entries={entries} />}
         </div>
     )
 }

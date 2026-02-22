@@ -54,12 +54,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SideNavigation items={adminNavConfig.items} title={adminNavConfig.title} profileHref="/admin/profile" />
+      <SideNavigation entries={adminNavConfig.entries} title={adminNavConfig.title} profileHref="/admin/profile" />
       <div className="lg:pl-64">
         <DashboardHeader title={adminNavConfig.title} profileHref="/admin/profile" />
         <main className="pb-20 lg:pb-0">{children}</main>
       </div>
-      <BottomNavigation items={adminNavConfig.items} />
+      <BottomNavigation entries={adminNavConfig.entries} />
     </div>
   );
 }

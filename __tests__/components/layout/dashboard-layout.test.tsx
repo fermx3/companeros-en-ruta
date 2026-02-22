@@ -41,7 +41,7 @@ describe('DashboardLayout', () => {
 
     it('renders BottomNavigation when items are provided', () => {
         render(
-            <DashboardLayout items={brandNavConfig.items}>
+            <DashboardLayout entries={brandNavConfig.entries}>
                 <div>Content</div>
             </DashboardLayout>
         )

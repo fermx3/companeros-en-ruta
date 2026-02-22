@@ -30,54 +30,107 @@ export interface NavItem {
   href: string
 }
 
-export interface RoleNavConfig {
-  role: string
-  title: string
+export interface NavGroup {
+  id: string
+  label: string
   items: NavItem[]
 }
 
-export const brandNavConfig: RoleNavConfig = {
-  role: 'brand_manager',
-  title: 'Brand Manager',
-  items: [
-    { id: 'home', label: 'Inicio', icon: Home, href: '/brand' },
-    { id: 'kpis', label: 'KPIs', icon: BarChart3, href: '/brand/kpis' },
-    { id: 'clients', label: 'Clientes', icon: Users, href: '/brand/clients' },
-    { id: 'products', label: 'Productos', icon: Package, href: '/brand/products' },
-    { id: 'team', label: 'Equipo', icon: UsersRound, href: '/brand/team' },
-    { id: 'visits', label: 'Visitas', icon: MapPin, href: '/brand/visits' },
-    { id: 'orders', label: 'Ordenes', icon: ShoppingCart, href: '/brand/orders' },
-    { id: 'promotions', label: 'Promociones', icon: Tag, href: '/brand/promotions' },
-    { id: 'tiers', label: 'Niveles', icon: Layers, href: '/brand/tiers' },
-    { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/brand/reports' },
-    { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/brand/surveys' },
-    { id: 'exports', label: 'Exportar Datos', icon: Download, href: '/brand/exports' },
-    { id: 'competitors', label: 'Competidores', icon: Building2, href: '/brand/competitors' },
-    { id: 'pop-materials', label: 'Materiales POP', icon: LayoutGrid, href: '/brand/pop-materials' },
-    { id: 'exhibitions', label: 'Exhibiciones', icon: Eye, href: '/brand/exhibitions' },
-    { id: 'communication-plans', label: 'Planes Comunicación', icon: Megaphone, href: '/brand/communication-plans' },
-    { id: 'assessment-config', label: 'Config Assessment', icon: ClipboardList, href: '/brand/assessment-config' },
-    { id: 'settings', label: 'Configuración', icon: Settings, href: '/brand/settings' },
-  ],
+export type NavEntry = NavItem | NavGroup
+
+export function isNavGroup(entry: NavEntry): entry is NavGroup {
+  return 'items' in entry
 }
 
-export const promotorNavConfig: RoleNavConfig = {
-  role: 'promotor',
-  title: 'Promotor',
-  items: [
+export function flattenEntries(entries: NavEntry[]): NavItem[] {
+  return entries.flatMap(e => isNavGroup(e) ? e.items : [e])
+}
+
+export interface RoleNavConfig {
+  role: string
+  title: string
+  entries: NavEntry[]
+  /** @deprecated Use entries + flattenEntries() instead */
+  items: NavItem[]
+}
+
+function buildConfig(role: string, title: string, entries: NavEntry[]): RoleNavConfig {
+  return {
+    role,
+    title,
+    entries,
+    get items() {
+      return flattenEntries(this.entries)
+    },
+  }
+}
+
+export const brandNavConfig: RoleNavConfig = buildConfig(
+  'brand_manager',
+  'Brand Manager',
+  [
+    { id: 'home', label: 'Inicio', icon: Home, href: '/brand' },
+    { id: 'kpis', label: 'KPIs', icon: BarChart3, href: '/brand/kpis' },
+    {
+      id: 'group-comercial',
+      label: 'Comercial',
+      items: [
+        { id: 'clients', label: 'Clientes', icon: Users, href: '/brand/clients' },
+        { id: 'products', label: 'Productos', icon: Package, href: '/brand/products' },
+        { id: 'orders', label: 'Ordenes', icon: ShoppingCart, href: '/brand/orders' },
+        { id: 'promotions', label: 'Promociones', icon: Tag, href: '/brand/promotions' },
+        { id: 'tiers', label: 'Niveles', icon: Layers, href: '/brand/tiers' },
+      ],
+    },
+    {
+      id: 'group-operaciones',
+      label: 'Operaciones',
+      items: [
+        { id: 'team', label: 'Equipo', icon: UsersRound, href: '/brand/team' },
+        { id: 'visits', label: 'Visitas', icon: MapPin, href: '/brand/visits' },
+        { id: 'competitors', label: 'Competidores', icon: Building2, href: '/brand/competitors' },
+        { id: 'pop-materials', label: 'Materiales POP', icon: LayoutGrid, href: '/brand/pop-materials' },
+        { id: 'exhibitions', label: 'Exhibiciones', icon: Eye, href: '/brand/exhibitions' },
+        { id: 'communication-plans', label: 'Planes Comunicación', icon: Megaphone, href: '/brand/communication-plans' },
+        { id: 'assessment-config', label: 'Config Assessment', icon: ClipboardList, href: '/brand/assessment-config' },
+      ],
+    },
+    {
+      id: 'group-reportes',
+      label: 'Reportes',
+      items: [
+        { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/brand/reports' },
+        { id: 'exports', label: 'Exportar Datos', icon: Download, href: '/brand/exports' },
+      ],
+    },
+    { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/brand/surveys' },
+    {
+      id: 'group-config',
+      label: 'Configuración',
+      items: [
+        { id: 'settings', label: 'Configuración', icon: Settings, href: '/brand/settings' },
+      ],
+    },
+  ],
+)
+
+export const promotorNavConfig: RoleNavConfig = buildConfig(
+  'promotor',
+  'Promotor',
+  [
     { id: 'home', label: 'Inicio', icon: Home, href: '/promotor' },
     { id: 'visits', label: 'Visitas', icon: MapPin, href: '/promotor/visitas' },
     { id: 'clients', label: 'Clientes', icon: Users, href: '/promotor/clients' },
     { id: 'schedule', label: 'Agenda', icon: Calendar, href: '/promotor/schedule' },
-    { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/promotor/reports' },
     { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/promotor/surveys' },
+    { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/promotor/reports' },
   ],
-}
+)
 
-export const asesorVentasNavConfig: RoleNavConfig = {
-  role: 'asesor_de_ventas',
-  title: 'Asesor de Ventas',
-  items: [
+export const asesorVentasNavConfig: RoleNavConfig = buildConfig(
+  'asesor_de_ventas',
+  'Asesor de Ventas',
+  [
     { id: 'home', label: 'Inicio', icon: Home, href: '/asesor-ventas' },
     { id: 'clients', label: 'Clientes', icon: Users, href: '/asesor-ventas/clients' },
     { id: 'orders', label: 'Órdenes', icon: ShoppingCart, href: '/asesor-ventas/orders' },
@@ -85,12 +138,12 @@ export const asesorVentasNavConfig: RoleNavConfig = {
     { id: 'qr-history', label: 'Historial QR', icon: History, href: '/asesor-ventas/historial-qr' },
     { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/asesor-ventas/surveys' },
   ],
-}
+)
 
-export const clientNavConfig: RoleNavConfig = {
-  role: 'client',
-  title: 'Mi Portal',
-  items: [
+export const clientNavConfig: RoleNavConfig = buildConfig(
+  'client',
+  'Mi Portal',
+  [
     { id: 'home', label: 'Inicio', icon: Home, href: '/client' },
     { id: 'qr', label: 'Mi QR', icon: QrCode, href: '/client/qr' },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart, href: '/client/orders' },
@@ -99,33 +152,33 @@ export const clientNavConfig: RoleNavConfig = {
     { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/client/surveys' },
     { id: 'profile', label: 'Mi Perfil', icon: UserCircle, href: '/client/profile' },
   ],
-}
+)
 
-export const adminNavConfig: RoleNavConfig = {
-  role: 'admin',
-  title: 'Administración',
-  items: [
+export const adminNavConfig: RoleNavConfig = buildConfig(
+  'admin',
+  'Administración',
+  [
     { id: 'home', label: 'Inicio', icon: Home, href: '/admin' },
     { id: 'brands', label: 'Marcas', icon: Building2, href: '/admin/brands' },
     { id: 'users', label: 'Usuarios', icon: Users, href: '/admin/users' },
-    { id: 'orders', label: 'Ordenes', icon: ShoppingCart, href: '/admin/orders' },
     { id: 'clients', label: 'Clientes', icon: UsersRound, href: '/admin/clients' },
     { id: 'zones', label: 'Zonas', icon: MapPin, href: '/admin/zones' },
+    { id: 'orders', label: 'Ordenes', icon: ShoppingCart, href: '/admin/orders' },
     { id: 'promotions', label: 'Promociones', icon: Tag, href: '/admin/promotions' },
-    { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/admin/surveys' },
     { id: 'kpi-definitions', label: 'Definiciones KPI', icon: BarChart3, href: '/admin/kpi-definitions' },
+    { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/admin/surveys' },
     { id: 'settings', label: 'Configuración', icon: Settings, href: '/admin/settings' },
   ],
-}
+)
 
-export const supervisorNavConfig: RoleNavConfig = {
-  role: 'supervisor',
-  title: 'Supervisor',
-  items: [
+export const supervisorNavConfig: RoleNavConfig = buildConfig(
+  'supervisor',
+  'Supervisor',
+  [
     { id: 'home', label: 'Inicio', icon: Home, href: '/supervisor' },
     { id: 'team', label: 'Equipo', icon: UsersRound, href: '/supervisor/team' },
     { id: 'clients', label: 'Clientes', icon: Users, href: '/supervisor/clients' },
     { id: 'visits', label: 'Visitas', icon: Eye, href: '/supervisor/visits' },
     { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/supervisor/reports' },
   ],
-}
+)

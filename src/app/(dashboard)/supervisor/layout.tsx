@@ -9,7 +9,7 @@ import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { SideNavigation } from '@/components/layout/SideNavigation';
 import { BottomNavigation } from '@/components/layout/bottom-navigation';
 import { supervisorNavConfig } from '@/lib/navigation-config';
-import type { NavItem } from '@/lib/navigation-config';
+import type { NavEntry } from '@/lib/navigation-config';
 
 interface SupervisorLayoutProps {
   children: React.ReactNode;
@@ -23,17 +23,18 @@ export default function SupervisorLayout({ children }: SupervisorLayoutProps) {
   const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('supervisor');
   const { userRoles } = useAuth();
 
-  const navItems = useMemo(() => {
-    const items: NavItem[] = [...supervisorNavConfig.items];
+  const navEntries = useMemo(() => {
+    const entries: NavEntry[] = [...supervisorNavConfig.entries];
 
+    const moduleItems: NavEntry[] = [];
     if (userRoles.includes('promotor')) {
-      items.push({ id: 'module-promotor', label: 'Promotor', icon: MapPin, href: '/promotor' });
+      moduleItems.push({ id: 'module-promotor', label: 'Promotor', icon: MapPin, href: '/promotor' });
     }
     if (userRoles.includes('asesor_de_ventas')) {
-      items.push({ id: 'module-asesor', label: 'Asesor Ventas', icon: ShoppingCart, href: '/asesor-ventas' });
+      moduleItems.push({ id: 'module-asesor', label: 'Asesor Ventas', icon: ShoppingCart, href: '/asesor-ventas' });
     }
 
-    return items;
+    return [...entries, ...moduleItems];
   }, [userRoles]);
 
   if (roleLoading) {
@@ -68,12 +69,12 @@ export default function SupervisorLayout({ children }: SupervisorLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SideNavigation items={navItems} title={supervisorNavConfig.title} profileHref="/supervisor/profile" />
+      <SideNavigation entries={navEntries} title={supervisorNavConfig.title} profileHref="/supervisor/profile" />
       <div className="lg:pl-64">
         <DashboardHeader title={supervisorNavConfig.title} profileHref="/supervisor/profile" />
         <main className="pb-20 lg:pb-0">{children}</main>
       </div>
-      <BottomNavigation items={navItems} />
+      <BottomNavigation entries={navEntries} />
     </div>
   );
 }

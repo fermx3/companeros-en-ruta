@@ -59,12 +59,12 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
   return (
     <TenantProvider>
       <div className="min-h-screen bg-gray-50">
-        <SideNavigation items={brandNavConfig.items} title={brandNavConfig.title} profileHref="/brand/profile" />
+        <SideNavigation entries={brandNavConfig.entries} title={brandNavConfig.title} profileHref="/brand/profile" />
         <div className="lg:pl-64">
           <DashboardHeader title={brandNavConfig.title} headerExtra={<BrandSwitcher />} profileHref="/brand/profile" />
           <main className="pb-20 lg:pb-0">{children}</main>
         </div>
-        <BottomNavigation items={brandNavConfig.items} />
+        <BottomNavigation entries={brandNavConfig.entries} />
       </div>
     </TenantProvider>
   );
