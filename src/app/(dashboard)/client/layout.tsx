@@ -43,7 +43,11 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
           if (name) setOwnerName(name);
 
           // Redirect to onboarding if not completed
-          if (data.onboarding_completed === false && !pathname.startsWith('/client/onboarding')) {
+          if (
+            data.onboarding_completed === false
+            && !pathname.startsWith('/client/onboarding')
+            && !sessionStorage.getItem('onboarding_dismissed')
+          ) {
             router.push('/client/onboarding');
           }
         }

@@ -37,7 +37,10 @@ export default function ClientOnboardingWelcomePage() {
               <ArrowRight className="h-4 w-4" />
             </Button>
             <Button
-              onClick={() => router.push('/client')}
+              onClick={() => {
+                sessionStorage.setItem('onboarding_dismissed', '1')
+                router.push('/client')
+              }}
               variant="ghost"
               className="w-full text-gray-500 hover:text-gray-700"
             >
