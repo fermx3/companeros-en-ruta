@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-02-20
+**Last Updated:** 2026-02-22
 **Target:** Implementación requerimientos PerfectApp según especificaciones cliente
 
 ---
@@ -35,12 +35,12 @@
 | **Encuestas** | ✅ Completo | Schema + Builder + Aprobación + Segmentación + Form + Resultados | None |
 
 **Overall MVP Progress:** ✅ 100% P0 features | ~89% total (incluyendo P1 y polish)
-**Audit Status:** 32 hallazgos documentados (0 P0 pendientes ✅, 16 P1, 8 P2) across 6 perfiles — 72/83 páginas funcionales, 86/86 APIs OK
+**Audit Status:** 32 hallazgos documentados (0 P0 pendientes ✅, 14 P1, 7 P2) across 6 perfiles — 72/83 páginas funcionales, 86/86 APIs OK
 **Cambios 2026-02-17:** SUPV-001/002/003 ✅, ADMIN-002 ✅, BRAND-001/002/003 ✅ (commits fd4b58b, c0fdfb5, 1f56248) · CLI-001 ✅ (client/profile page)
 **Cambios 2026-02-19:** CLI-006 documentado (Carga Evidencia Cliente — spec completa en CLI-P1, tabla `client_evidence`, archivos a crear/editar, criterios de verificación, REQ-047 marcado como parcial)
 **Cambios 2026-02-20:** OPT-004 ✅ (initplan fix 327 RLS policies), fix advisor_id→promotor_id en RLS, field_users products RLS, notifications delete, survey service client
 **Cambios 2026-02-21:** OPT-005 ✅ (RLS consolidation 364→135 policies, 63% reduction), OPT-006 ✅ (drop 46 unused GIN indexes), fix function_search_path (87 functions), fix audit_logs RLS+FK indexes, move pg_trgm→extensions schema
-**Cambios 2026-02-22:** BRAND-007 ✅ (Unificar brand/clients + memberships — read-only + inline membership actions, eliminar create/edit cliente por marca)
+**Cambios 2026-02-22:** BRAND-007 ✅ (Unificar brand/clients + memberships — read-only + inline membership actions, eliminar create/edit cliente por marca), CLI-004 ✅ (onboarding wizard 2 pasos + migración 10 cols + refactor owner_name 55 archivos), ADMIN-007 ✅ (estadísticas reales en detalle cliente), ADMIN-008 ✅ (fix edit form validation — status enum, UUID, numeric coercion, field-level errors), toast notifications + unsaved changes warning, debounce 300ms en search fields, collapsible sidebar groups brand nav, notifications expandidas a 6 API routes más, fix metric labels promotor visits, fix zones RLS policy advisor→promotor
 
 ---
 
@@ -567,13 +567,13 @@ El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users
 | ADMIN-004 | **Settings: placeholder "Página en Construcción"** — Muestra icono amarillo y texto placeholder, sin funcionalidad real. | `src/app/(dashboard)/admin/settings/page.tsx` | Implementar formulario GET/PUT contra `/api/admin/settings` que lea/escriba `tenants` table (nombre, email, teléfono, zona horaria, país). |
 | ADMIN-005 | **Distribuidores sin CRUD** — `adminService.getDistributors()` existe y se usa en role assignment (asesor_de_ventas), pero no hay UI para crear/editar distribuidores. Si no existen distribuidores, no se puede asignar el rol asesor_de_ventas. | Crear: `admin/distributors/page.tsx`, `api/admin/distributors/route.ts`, `api/admin/distributors/[id]/route.ts` | Crear CRUD + agregar link en sidebar nav. |
 | ADMIN-006 | **Catálogos sin administración (Markets, Client Types, Commercial Structures)** — Se usan como filtros/asignación en clientes pero no son administrables por el admin. | Crear: `admin/catalogs/page.tsx` + API routes para markets, client_types, commercial_structures | Página con tabs por catálogo, CRUD por cada uno. O bien secciones dentro de Settings. |
-| ADMIN-007 | **Estadísticas de cliente: placeholders** — La sección de estadísticas (visitas, órdenes, última orden) en detalle de cliente muestra guiones "-" como placeholder. | `src/app/(dashboard)/admin/clients/[clientId]/page.tsx` | Queries reales contra `visits` y `orders` tables filtrando por `client_id`. |
+| ~~ADMIN-007~~ | ~~**Estadísticas de cliente: placeholders**~~ | `src/app/(dashboard)/admin/clients/[clientId]/page.tsx` | ✅ **DONE** (2026-02-22) — Queries reales contra `visits` y `orders` (total visitas, total órdenes, revenue, última orden). Commit: `12ecaa6`. |
 
 ### ADMIN-P2 — Nice to have (polish, no bloquean MVP)
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| ADMIN-008 | **Editar perfil de usuario incompleto** — Admin puede ver usuario y gestionar roles, pero no puede editar campos como nombre, teléfono, posición desde la UI. | `src/app/(dashboard)/admin/users/[id]/page.tsx` | Asegurar que la página de detalle tenga modo edición completo con PUT al API. |
+| ~~ADMIN-008~~ | ~~**Editar perfil de usuario incompleto**~~ | `src/app/(dashboard)/admin/users/[id]/page.tsx` | ✅ **DONE** (2026-02-22) — Fix edit form validation (status enum, UUID, numeric coercion, field-level errors). Commit: `12ecaa6`. |
 | ADMIN-009 | **Soft delete de clientes sin botón** — La API soporta soft delete pero la UI no tiene botón de eliminar/archivar. | `src/app/(dashboard)/admin/clients/[clientId]/page.tsx` | Agregar botón con confirmación modal. |
 | ADMIN-010 | **Verificar preview de encuesta antes de aprobar** — La página carga `survey_questions` pero verificar que se rendericen como preview (read-only) antes de aprobar. | `src/app/(dashboard)/admin/surveys/[id]/page.tsx` | Verificar/implementar renderizado de preguntas como preview. |
 | ADMIN-011 | **Indicador de ventana 48h en promociones** — REQ-012 menciona validación en 48 horas. No hay indicador visual de cuánto tiempo lleva pendiente una promoción. | `src/app/(dashboard)/admin/promotions/page.tsx` | Calcular `hours_pending = now - created_at` y mostrar badge de urgencia si > 24h. |
@@ -794,7 +794,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 |----|----------|------------|-----|
 | CLI-002 | **SuggestedProductsGrid no implementado** (REQ-043, TASK-033) — Componente falta completamente. Debería mostrar 8 productos sugeridos en home. | — | Crear `components/client/SuggestedProductsGrid.tsx` + integrar en home |
 | CLI-003 | **CouponsSection no implementado** (REQ-048, TASK-036) — Sección cupones/email con tracking QR no existe. | — | Crear `components/client/CouponsSection.tsx` |
-| CLI-004 | **Onboarding cliente no implementado** (REQ-044) — Flujo completo de onboarding con wizard de 2 pasos: datos personales/negocio + encuesta. Requiere migración `add_client_onboarding_fields` (10 columnas nuevas en `clients`) y refactor `owner_name` → `owner_name` + `owner_last_name` (~49 archivos). **Paso 1:** Nombre, Apellido (`owner_last_name` nueva), Género (`gender` nueva), Fecha nacimiento (`date_of_birth` nueva), Email (pre-llenar), Email opt-in (`email_opt_in` nueva), WhatsApp (pre-llenar), WhatsApp opt-in (`whatsapp_opt_in` nueva), Nombre negocio (read-only), Tipo negocio (dropdown catálogo), Estado, CP, Compartir ubicación (geolocation). **Paso 2 — Encuesta:** Colaboradores (`metadata.employees`), Refri carnes (`has_meat_fridge` nueva), Refri refrescos (`has_soda_fridge` nueva), Pago tarjeta (`accepts_card` nueva), Recarga/servicios (`metadata.offers_topups`), Dónde compras (`metadata.supply_sources` array), Plataforma digital (`metadata.digital_restock` array), Cuál página/app (`metadata.digital_restock_detail`). **Flujo:** Login → si `onboarding_completed = false` → bienvenida → "Completar" o "En otro momento" → wizard → `onboarding_completed = true` → dashboard. | — | Migración + refactor owner_name + crear wizard onboarding |
+| ~~CLI-004~~ | ~~**Onboarding cliente no implementado** (REQ-044)~~ | — | ✅ **DONE** (2026-02-22) — Wizard 2 pasos + migración 10 columnas + refactor owner_name 55 archivos + CTA banner dashboard + vista staff. Commits: `f11734c`, `698df94`, `c46f420`, `74ed0f7`. |
 | CLI-006 | **Carga evidencia cliente no implementada** (REQ-047 parcial) — El cliente sube fotos como evidencia **solo cuando una campaña o plan de lealtad lo requiere**. Brand Manager activa toggle "Requiere evidencia del cliente" en campaña/promoción/tier; Admin aprueba (workflow existente). **Flujo:** Cliente ve "Evidencia" en nav → lista solo campañas/planes con `requires_client_evidence = true` → selecciona categoría (Campaña, Marca, Plan de Lealtad, Visibilidad) → toma foto con cámara + GPS → upload → confirmación. **Nueva tabla `client_evidence`:** `id` (UUID PK), `public_id` (CEV-XXXX auto), `tenant_id` (FK tenants), `client_id` (FK clients), `brand_id` (FK brands, nullable), `campaign_id` (FK campaigns, nullable), `promotion_id` (FK promotions, nullable), `tier_id` (FK tiers, nullable), `evidence_category` (enum: `'campaign'`, `'loyalty'`, `'visibility'`), `file_url` (varchar 500), `file_name` (varchar 255), `file_size_bytes` (int), `mime_type` (varchar 100), `captured_at` (timestamptz), `capture_latitude` (decimal 10,8), `capture_longitude` (decimal 11,8), `caption` (text), `status` (enum: `'pending'`, `'approved'`, `'rejected'`), `reviewed_by` (FK user_profiles, nullable), `reviewed_at` (timestamptz, nullable), `review_notes` (text, nullable), `created_at` (timestamptz), `deleted_at` (timestamptz, soft delete). **Columnas nuevas en tablas existentes:** `campaigns.requires_client_evidence` (boolean DEFAULT false), `promotions.requires_client_evidence` (boolean DEFAULT false), `tiers.requires_client_evidence` (boolean DEFAULT false). **Storage:** Nuevo bucket `client-evidence` o reusar `visit-evidence`. **RLS:** Tenant isolation + cliente solo ve/sube su propia evidencia + Brand Manager ve evidencia de su marca + Promotor ve evidencia de clientes asignados (via `promotor_client_assignments`) + Asesor de Ventas ve evidencia de clientes asignados. **Status workflow:** pending → approved/rejected (reviewed_by + reviewed_at). **Nota:** REQ-047 fue cerrado con TASK-035, pero TASK-035 implementó evidencia de **promotor** durante visitas (PhotoEvidenceUpload + `visit_evidence` table) — un flujo completamente diferente. CLI-006 cubre la parte de evidencia del **cliente**. **Depende parcialmente de CLI-004** (onboarding) si se requiere perfil completo antes de subir evidencia. | — | Migración `create_client_evidence` + bucket storage + RLS + UI cliente + toggle Brand Manager + vistas read-only promotor/asesor |
 
 ### CLI-P2 — Nice to have (polish, no bloquean MVP)
@@ -842,15 +842,15 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 
 | Perfil | Páginas OK | APIs OK | P0 | P1 | P2 | Total |
 |--------|-----------|---------|----|----|----|----|
-| Admin | 18/20 | 22/22 | 0 ✅ | 4 | 4 | 8 |
+| Admin | 18/20 | 22/22 | 0 ✅ | 3 | 3 | 6 |
 | Brand Manager | 21/21 | 31/31 | 0 ✅ | 2 | 1 | 3 |
 | Supervisor | 6/6 ✅ | 5/5 ✅ | 0 ✅ | 2 | 0 | 2 |
 | Promotor | 8/8 ✅ | 10/10 ✅ | 0 | 2 | 1 | 3 |
 | Asesor de Ventas | 11/11 ✅ | 9/9 ✅ | 0 | 2 | 1 | 3 |
-| Cliente | 8/8 ✅ | 8/8 ✅ | 0 ✅ | 4 | 1 | 5 |
-| **TOTAL** | **72/83** | **86/86** | **0 ✅** | **16** | **8** | **24** |
+| Cliente | 8/8 ✅ | 8/8 ✅ | 0 ✅ | 3 | 1 | 4 |
+| **TOTAL** | **72/83** | **86/86** | **0 ✅** | **14** | **7** | **21** |
 
-> Actualizado 2026-02-19 — CLI-006 documentado (Carga Evidencia Cliente). Anterior: 2026-02-17 commits fd4b58b (Supervisor), c0fdfb5 (Admin Zones), 1f56248 (Brand client pages + security_invoker migration), CLI-001 (client/profile)
+> Actualizado 2026-02-22 — CLI-004 ✅ (onboarding), ADMIN-007 ✅ (stats), ADMIN-008 ✅ (edit form). Anterior: 2026-02-19 CLI-006 documentado, 2026-02-17 commits fd4b58b (Supervisor), c0fdfb5 (Admin Zones), 1f56248 (Brand client pages + security_invoker migration), CLI-001 (client/profile)
 
 ### Todos los P0 pendientes (por orden de impacto)
 
@@ -899,7 +899,7 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 21. **ADMIN-004:** Settings — reemplazar placeholder con config tenant. Esfuerzo: 3.
 22. **ADMIN-005:** CRUD de Distribuidores. Esfuerzo: 3.
 23. **ADMIN-006:** CRUD de Catálogos (Markets, Client Types, Commercial Structures). Esfuerzo: 3.
-24. **ADMIN-007:** Estadísticas reales en detalle cliente. Esfuerzo: 2.
+24. ~~**ADMIN-007:** Estadísticas reales en detalle cliente. Esfuerzo: 2.~~ ✅ DONE
 25. **BRAND-004:** Dashboard KPIs completos (Volumen, Reach, Mix, Market Share, Precios). Esfuerzo: 3.
 26. **BRAND-005:** Team performance con rankings y métricas individuales. Esfuerzo: 3.
 27. ~~**SUPV-004:** Resolver inconsistencia "Asignaciones" (nav vs quick action). Esfuerzo: 1.~~ ✅ RESUELTO
@@ -910,12 +910,12 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 32. **ADV-002:** Integrar visitas/documentación en Asesor de Ventas (TASK-070). Esfuerzo: 3.
 33. **CLI-002:** SuggestedProductsGrid (TASK-033). Esfuerzo: 2.
 34. **CLI-003:** CouponsSection (TASK-036). Esfuerzo: 2.
-35. **CLI-004:** Onboarding cliente completo — wizard 2 pasos + migración 10 columnas + refactor owner_name ~49 archivos (REQ-044). Esfuerzo: 5.
+35. ~~**CLI-004:** Onboarding cliente completo — wizard 2 pasos + migración 10 columnas + refactor owner_name ~49 archivos (REQ-044). Esfuerzo: 5.~~ ✅ DONE
 36. **CLI-006:** Carga evidencia cliente — tabla nueva `client_evidence` + bucket storage + RLS + UI cliente (página + nav) + toggle `requires_client_evidence` en Brand Manager (campaigns/promotions/tiers) + vistas read-only promotor/asesor + adaptar PhotoEvidenceUpload (REQ-047 parte cliente). Depende parcialmente de CLI-004. Esfuerzo: 5.
 37. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.
 
 ### Tier 5 — All Profiles Audit (P2 — Polish) + Optimization
-38. **ADMIN-008:** Editar perfil usuario desde admin. Esfuerzo: 2.
+38. ~~**ADMIN-008:** Editar perfil usuario desde admin. Esfuerzo: 2.~~ ✅ DONE
 39. **ADMIN-009:** Soft delete clientes desde UI. Esfuerzo: 1.
 40. **ADMIN-010:** Verificar preview encuesta antes de aprobar. Esfuerzo: 1.
 41. **ADMIN-011:** Indicador ventana 48h en promociones. Esfuerzo: 1.
