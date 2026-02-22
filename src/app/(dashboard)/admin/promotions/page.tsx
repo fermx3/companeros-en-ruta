@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -81,6 +82,7 @@ export default function AdminPromotionsPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 300)
   const [selectedStatus, setSelectedStatus] = useState<string>('pending_approval')
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -96,7 +98,7 @@ export default function AdminPromotionsPage() {
         page: page.toString(),
         limit: '10',
         status: selectedStatus,
-        ...(searchTerm && { search: searchTerm }),
+        ...(debouncedSearch && { search: debouncedSearch }),
         ...(selectedBrand && { brand_id: selectedBrand })
       })
 
@@ -120,7 +122,7 @@ export default function AdminPromotionsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, searchTerm, selectedStatus, selectedBrand])
+  }, [page, debouncedSearch, selectedStatus, selectedBrand])
 
   useEffect(() => {
     loadPromotions()

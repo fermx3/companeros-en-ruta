@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Users, Search, ArrowLeft, MapPin, Mail, Phone } from 'lucide-react'
@@ -33,6 +34,7 @@ export default function SupervisorClientsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 300)
   const [selectedPromotor, setSelectedPromotor] = useState('')
   const [pagination, setPagination] = useState({ page: 1, totalPages: 0, total: 0 })
 
@@ -61,7 +63,7 @@ export default function SupervisorClientsPage() {
       setError(null)
 
       const params = new URLSearchParams()
-      if (search) params.set('search', search)
+      if (debouncedSearch) params.set('search', debouncedSearch)
       if (selectedPromotor) params.set('promotor_id', selectedPromotor)
       params.set('page', String(pagination.page))
 
@@ -79,7 +81,7 @@ export default function SupervisorClientsPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, selectedPromotor, pagination.page])
+  }, [debouncedSearch, selectedPromotor, pagination.page])
 
   useEffect(() => {
     loadClients()

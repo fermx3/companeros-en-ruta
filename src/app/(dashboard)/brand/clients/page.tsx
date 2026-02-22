@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
@@ -29,6 +30,7 @@ export default function BrandClientsPage() {
 
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'active'>('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 300)
   const [selectedTierId, setSelectedTierId] = useState('')
   const [page, setPage] = useState(1)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -84,7 +86,7 @@ export default function BrandClientsPage() {
           page: page.toString(),
           limit: '20',
           ...(statusParam && { status: statusParam }),
-          ...(searchTerm && { search: searchTerm }),
+          ...(debouncedSearch && { search: debouncedSearch }),
           ...(selectedTierId && { tier_id: selectedTierId })
         })
 
@@ -109,7 +111,7 @@ export default function BrandClientsPage() {
 
     loadMemberships()
     return () => controller.abort()
-  }, [activeTab, searchTerm, selectedTierId, page, brandFetch, currentBrandId, refreshKey])
+  }, [activeTab, debouncedSearch, selectedTierId, page, brandFetch, currentBrandId, refreshKey])
 
   const handleApprove = async (membership: Membership) => {
     if (!confirm(`¿Aprobar la membresía de "${membership.client_name}"?`)) {

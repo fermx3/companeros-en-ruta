@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Users, Star, Search, ArrowLeft } from 'lucide-react'
@@ -26,6 +27,7 @@ export default function SupervisorTeamPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 300)
 
   const loadTeam = useCallback(async () => {
     try {
@@ -33,7 +35,7 @@ export default function SupervisorTeamPage() {
       setError(null)
 
       const params = new URLSearchParams()
-      if (search) params.set('search', search)
+      if (debouncedSearch) params.set('search', debouncedSearch)
 
       const response = await fetch(`/api/supervisor/team?${params.toString()}`)
       if (!response.ok) {
@@ -48,7 +50,7 @@ export default function SupervisorTeamPage() {
     } finally {
       setLoading(false)
     }
-  }, [search])
+  }, [debouncedSearch])
 
   useEffect(() => {
     loadTeam()

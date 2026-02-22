@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAssignedClients } from '@/hooks/useVisits'
@@ -15,19 +16,8 @@ export default function PromotorClientsPage() {
   usePageTitle('Mis Clientes')
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 300)
   const [page, setPage] = useState(1)
-
-  // Debounce search input
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value)
-    setPage(1) // Reset to first page on search
-    // Simple debounce using setTimeout
-    const timeoutId = setTimeout(() => {
-      setDebouncedSearch(value)
-    }, 300)
-    return () => clearTimeout(timeoutId)
-  }
 
   const { clients, loading, error, pagination, total, refetch } = useAssignedClients({
     search: debouncedSearch,
@@ -112,7 +102,7 @@ export default function PromotorClientsPage() {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setPage(1) }}
                 placeholder="Buscar por nombre, dirección o ID..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
@@ -169,7 +159,7 @@ export default function PromotorClientsPage() {
                 : 'Cuando te asignen clientes, aparecerán aquí'}
             </p>
             {searchTerm && (
-              <Button onClick={() => { setSearchTerm(''); setDebouncedSearch(''); }} variant="outline">
+              <Button onClick={() => setSearchTerm('')} variant="outline">
                 Limpiar búsqueda
               </Button>
             )}

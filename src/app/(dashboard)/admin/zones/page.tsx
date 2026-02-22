@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ export default function AdminZonesPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 20;
+  const debouncedSearch = useDebounce(filters.search, 300);
 
   const loadZones = useCallback(async () => {
     setLoading(true);
@@ -33,7 +35,7 @@ export default function AdminZonesPage() {
       const params = new URLSearchParams();
       params.set('page', currentPage.toString());
       params.set('limit', limit.toString());
-      if (filters.search) params.set('search', filters.search);
+      if (debouncedSearch) params.set('search', debouncedSearch);
       if (filters.zone_type) params.set('zone_type', filters.zone_type);
       if (filters.is_active) params.set('is_active', filters.is_active);
 
@@ -53,7 +55,7 @@ export default function AdminZonesPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, limit, filters]);
+  }, [currentPage, limit, debouncedSearch, filters.zone_type, filters.is_active]);
 
   useEffect(() => {
     loadZones();

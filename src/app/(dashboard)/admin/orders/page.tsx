@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
@@ -191,6 +192,7 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 300)
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -202,7 +204,7 @@ export default function AdminOrdersPage() {
           page: page.toString(),
           limit: '10',
           ...(statusFilter && { status: statusFilter }),
-          ...(search && { search })
+          ...(debouncedSearch && { search: debouncedSearch })
         })
 
         const response = await fetch(`/api/admin/orders?${params}`)
@@ -224,7 +226,7 @@ export default function AdminOrdersPage() {
     }
 
     loadOrders()
-  }, [page, statusFilter, search])
+  }, [page, statusFilter, debouncedSearch])
 
   const statusOptions = [
     { value: '', label: 'Todos' },

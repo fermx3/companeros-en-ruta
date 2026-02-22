@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -50,6 +51,7 @@ export default function BrandSurveysPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 300)
   const [selectedStatus, setSelectedStatus] = useState('all')
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export default function BrandSurveysPage() {
           page: page.toString(),
           limit: '10',
           status: selectedStatus,
-          search: searchTerm
+          search: debouncedSearch
         })
 
         const res = await brandFetch(`/api/brand/surveys?${params}`, { signal: controller.signal })
@@ -86,7 +88,7 @@ export default function BrandSurveysPage() {
 
     fetchSurveys()
     return () => controller.abort()
-  }, [page, selectedStatus, searchTerm, brandFetch, currentBrandId])
+  }, [page, selectedStatus, debouncedSearch, brandFetch, currentBrandId])
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

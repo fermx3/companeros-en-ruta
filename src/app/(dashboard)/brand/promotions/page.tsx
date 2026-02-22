@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -80,6 +81,7 @@ export default function BrandPromotionsPage() {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 300)
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -97,7 +99,7 @@ export default function BrandPromotionsPage() {
         const params = new URLSearchParams({
           page: page.toString(),
           limit: '10',
-          ...(searchTerm && { search: searchTerm }),
+          ...(debouncedSearch && { search: debouncedSearch }),
           ...(selectedStatus !== 'all' && { status: selectedStatus })
         })
 
@@ -124,7 +126,7 @@ export default function BrandPromotionsPage() {
 
     loadPromotions()
     return () => controller.abort()
-  }, [page, searchTerm, selectedStatus, brandFetch, currentBrandId, refreshKey])
+  }, [page, debouncedSearch, selectedStatus, brandFetch, currentBrandId, refreshKey])
 
   const handlePauseResume = async (promotionId: string, currentStatus: string) => {
     setActionLoading(promotionId)

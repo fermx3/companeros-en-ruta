@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import Link from 'next/link';
 import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
@@ -39,6 +40,7 @@ export default function BrandTeamPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [sortBy, setSortBy] = useState<'visits' | 'orders' | 'activity' | 'name'>('visits');
@@ -56,7 +58,7 @@ export default function BrandTeamPage() {
         const params = new URLSearchParams({
           page: page.toString(),
           limit: '20',
-          ...(searchTerm && { search: searchTerm }),
+          ...(debouncedSearch && { search: debouncedSearch }),
           ...(selectedRole && { role: selectedRole }),
           ...(selectedStatus && { status: selectedStatus })
         });
@@ -82,7 +84,7 @@ export default function BrandTeamPage() {
 
     loadTeam();
     return () => controller.abort();
-  }, [page, searchTerm, selectedRole, selectedStatus, brandFetch, currentBrandId]);
+  }, [page, debouncedSearch, selectedRole, selectedStatus, brandFetch, currentBrandId]);
 
   const filteredTeam = team.filter(member => {
     const matchesSearch = !searchTerm ||

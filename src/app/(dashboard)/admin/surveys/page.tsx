@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
@@ -39,6 +40,7 @@ export default function AdminSurveysPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 300)
 
   const fetchSurveys = useCallback(async () => {
     setLoading(true)
@@ -47,7 +49,7 @@ export default function AdminSurveysPage() {
         page: page.toString(),
         limit: '10',
         status: selectedStatus,
-        search: searchTerm
+        search: debouncedSearch
       })
       const res = await fetch(`/api/admin/surveys?${params}`)
       if (!res.ok) throw new Error('Error al cargar encuestas')
@@ -60,7 +62,7 @@ export default function AdminSurveysPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, selectedStatus, searchTerm])
+  }, [page, selectedStatus, debouncedSearch])
 
   useEffect(() => {
     fetchSurveys()
