@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function GET(
   request: NextRequest,
@@ -29,7 +30,7 @@ export async function GET(
           options
         )
       `)
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -45,7 +46,7 @@ export async function GET(
     const { count } = await supabase
       .from('survey_responses')
       .select('*', { count: 'exact', head: true })
-      .eq('survey_id', id)
+      .eq('survey_id', survey.id)
 
     // Sort questions by sort_order
     if (survey.survey_questions) {
@@ -85,7 +86,7 @@ export async function PUT(
     const { data: currentSurvey, error: fetchError } = await supabase
       .from('surveys')
       .select('id, survey_status')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -134,7 +135,7 @@ export async function PUT(
       const { data, error: updateError } = await supabase
         .from('surveys')
         .update(updateData)
-        .eq('id', id)
+        .eq('id', currentSurvey.id)
         .select()
         .single()
 
@@ -147,12 +148,12 @@ export async function PUT(
     // Update questions if provided
     if (questions !== undefined) {
       // Delete existing questions
-      await supabase.from('survey_questions').delete().eq('survey_id', id)
+      await supabase.from('survey_questions').delete().eq('survey_id', currentSurvey.id)
 
       // Insert new questions
       if (questions.length > 0) {
         const questionRows = questions.map((q: { question_text: string; question_type: string; is_required?: boolean; sort_order: number; options?: unknown }, idx: number) => ({
-          survey_id: id,
+          survey_id: currentSurvey.id,
           tenant_id: tenantId,
           question_text: q.question_text,
           question_type: q.question_type,
@@ -202,7 +203,7 @@ export async function DELETE(
     const { data: currentSurvey } = await supabase
       .from('surveys')
       .select('id, survey_status')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -225,7 +226,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('surveys')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq('id', currentSurvey.id)
 
     if (deleteError) {
       throw new Error(`Error al eliminar encuesta: ${deleteError.message}`)

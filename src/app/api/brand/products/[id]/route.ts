@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         *
       )
     `)
-    .eq('id', productId)
+    .eq(resolveIdColumn(productId), productId)
     .is('deleted_at', null)
     .single()
 
@@ -69,7 +70,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { data: existingProduct } = await supabase
     .from('products')
     .select('id, brand_id')
-    .eq('id', productId)
+    .eq(resolveIdColumn(productId), productId)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .single()
@@ -117,7 +118,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { data: product, error: updateError } = await supabase
       .from('products')
       .update(updateData)
-      .eq('id', productId)
+      .eq('id', existingProduct.id)
       .select()
       .single()
 
@@ -156,7 +157,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             .from('product_variants')
             .insert({
               tenant_id: tenantId,
-              product_id: productId,
+              product_id: existingProduct.id,
               variant_name: variant.variant_name,
               variant_code: variant.variant_code,
               barcode: variant.barcode || null,
@@ -198,7 +199,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { data: existingProduct } = await supabase
     .from('products')
     .select('id, brand_id')
-    .eq('id', productId)
+    .eq(resolveIdColumn(productId), productId)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .single()
@@ -215,7 +216,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { error: deleteError } = await supabase
     .from('products')
     .update({ deleted_at: new Date().toISOString() })
-    .eq('id', productId)
+    .eq('id', existingProduct.id)
     .eq('tenant_id', tenantId)
 
   if (deleteError) {
@@ -227,7 +228,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   await supabase
     .from('product_variants')
     .update({ deleted_at: new Date().toISOString() })
-    .eq('product_id', productId)
+    .eq('product_id', existingProduct.id)
 
   return NextResponse.json({ success: true })
 }

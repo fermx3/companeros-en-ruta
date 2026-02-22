@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createNotification, getClientUserProfileId } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function PUT(
   request: NextRequest,
@@ -21,7 +22,7 @@ export async function PUT(
     const { data: membership, error: membershipError } = await supabase
       .from('client_brand_memberships')
       .select('id, brand_id, tenant_id, membership_status, client_id')
-      .eq('id', membershipId)
+      .eq(resolveIdColumn(membershipId), membershipId)
       .is('deleted_at', null)
       .single()
 
@@ -109,7 +110,7 @@ export async function PUT(
         joined_date: now,
         updated_at: now
       })
-      .eq('id', membershipId)
+      .eq('id', membership.id)
       .select()
       .single()
 
@@ -122,13 +123,13 @@ export async function PUT(
       await supabase
         .from('client_tier_assignments')
         .update({ is_current: false })
-        .eq('client_brand_membership_id', membershipId)
+        .eq('client_brand_membership_id', membership.id)
         .eq('is_current', true)
 
       await supabase
         .from('client_tier_assignments')
         .insert({
-          client_brand_membership_id: membershipId,
+          client_brand_membership_id: membership.id,
           tier_id: defaultTier.id,
           tenant_id: membership.tenant_id,
           assignment_type: 'automatic',
@@ -151,7 +152,7 @@ export async function PUT(
           message: 'Tu membresía ha sido aprobada',
           notification_type: 'system',
           action_url: '/client/brands',
-          metadata: { membership_id: membershipId },
+          metadata: { membership_id: membership.id },
         })
       }
     } catch (notifError) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 interface OrderDetailItem {
   id: string
@@ -88,7 +89,7 @@ export async function GET(
     const serviceSupabase = createServiceClient()
 
     // 2. Obtener la orden sin filtro de brand (verificaremos acceso después)
-    let orderQuery = supabase
+    const orderQuery = supabase
       .from('orders')
       .select(`
         id,
@@ -136,12 +137,7 @@ export async function GET(
         )
       `)
       .is('deleted_at', null)
-
-    if (orderId.startsWith('ORD-')) {
-      orderQuery = orderQuery.eq('public_id', orderId)
-    } else {
-      orderQuery = orderQuery.eq('id', orderId)
-    }
+      .eq(resolveIdColumn(orderId), orderId)
 
     const { data: orderData, error: orderError } = await orderQuery.single()
 

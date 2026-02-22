@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 /**
  * PUT /api/brand/team/[id]/supervisor
@@ -28,11 +29,22 @@ export async function PUT(
       return NextResponse.json({ error: 'supervisor_id es requerido' }, { status: 400 })
     }
 
+    // 2b. Resolve user profile first
+    const { data: memberProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq(resolveIdColumn(memberId), memberId)
+      .single()
+
+    if (!memberProfile) {
+      return NextResponse.json({ error: 'Miembro no encontrado' }, { status: 404 })
+    }
+
     // 3. Verify the member has an active role in this brand
     const { data: memberRole } = await supabase
       .from('user_roles')
       .select('id')
-      .eq('user_profile_id', memberId)
+      .eq('user_profile_id', memberProfile.id)
       .eq('brand_id', brandId)
       .eq('tenant_id', tenantId)
       .eq('status', 'active')
@@ -62,7 +74,7 @@ export async function PUT(
     }
 
     // 5. Prevent self-assignment (DB constraint also prevents this)
-    if (memberId === supervisor_id) {
+    if (memberProfile.id === supervisor_id) {
       return NextResponse.json({ error: 'Un usuario no puede ser su propio supervisor' }, { status: 400 })
     }
 
@@ -70,7 +82,7 @@ export async function PUT(
     const { error: updateError } = await supabase
       .from('user_profiles')
       .update({ manager_id: supervisor_id, updated_at: new Date().toISOString() })
-      .eq('id', memberId)
+      .eq('id', memberProfile.id)
       .eq('tenant_id', tenantId)
 
     if (updateError) {
@@ -108,11 +120,22 @@ export async function DELETE(
     if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId, tenantId } = result
 
-    // 2. Verify the member has an active role in this brand
+    // 2. Resolve user profile first
+    const { data: memberProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq(resolveIdColumn(memberId), memberId)
+      .single()
+
+    if (!memberProfile) {
+      return NextResponse.json({ error: 'Miembro no encontrado' }, { status: 404 })
+    }
+
+    // 2b. Verify the member has an active role in this brand
     const { data: memberRole } = await supabase
       .from('user_roles')
       .select('id')
-      .eq('user_profile_id', memberId)
+      .eq('user_profile_id', memberProfile.id)
       .eq('brand_id', brandId)
       .eq('tenant_id', tenantId)
       .eq('status', 'active')
@@ -128,7 +151,7 @@ export async function DELETE(
     const { error: updateError } = await supabase
       .from('user_profiles')
       .update({ manager_id: null, updated_at: new Date().toISOString() })
-      .eq('id', memberId)
+      .eq('id', memberProfile.id)
       .eq('tenant_id', tenantId)
 
     if (updateError) {

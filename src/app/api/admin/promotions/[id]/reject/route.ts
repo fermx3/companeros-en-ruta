@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 // Helper to get admin profile from auth
 async function getAdminProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -79,7 +80,7 @@ export async function POST(
     const { data: currentPromotion, error: fetchError } = await supabase
       .from('promotions')
       .select('id, status, name, created_by, tenant_id')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .single()
@@ -109,7 +110,7 @@ export async function POST(
         approval_notes: `RECHAZADA: ${rejection_reason.trim()}`,
         updated_at: new Date().toISOString()
       })
-      .eq('id', id)
+      .eq('id', currentPromotion.id)
       .eq('tenant_id', tenantId)
       .select()
       .single()

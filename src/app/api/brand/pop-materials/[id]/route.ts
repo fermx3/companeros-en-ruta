@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -19,7 +20,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const { data: existing } = await supabase
       .from('brand_pop_materials')
       .select('id, is_system_template')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -47,7 +48,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const { data: material, error: updateError } = await supabase
       .from('brand_pop_materials')
       .update(updates)
-      .eq('id', id)
+      .eq('id', existing.id)
       .select()
       .single()
 
@@ -83,7 +84,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { data: existing } = await supabase
       .from('brand_pop_materials')
       .select('id, is_system_template')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -105,7 +106,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { error: deleteError } = await supabase
       .from('brand_pop_materials')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq('id', existing.id)
 
     if (deleteError) {
       console.error('Error deleting material:', deleteError)

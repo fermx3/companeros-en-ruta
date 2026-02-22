@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 // Helper to get admin profile from auth
 async function getAdminProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -123,7 +124,7 @@ export async function GET(
           is_active
         )
       `)
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .single()
@@ -142,13 +143,13 @@ export async function GET(
     const { count: redemptionCount } = await supabase
       .from('promotion_redemptions')
       .select('*', { count: 'exact', head: true })
-      .eq('promotion_id', id)
+      .eq('promotion_id', promotion.id)
       .is('deleted_at', null)
 
     const { data: redemptionStats } = await supabase
       .from('promotion_redemptions')
       .select('applied_discount_amount, bonus_points_awarded')
-      .eq('promotion_id', id)
+      .eq('promotion_id', promotion.id)
       .is('deleted_at', null)
 
     const stats = {

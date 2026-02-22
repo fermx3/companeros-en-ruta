@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 interface OrderDetailItem {
   id: string
@@ -126,11 +127,7 @@ export async function GET(
       .is('deleted_at', null)
 
     // Buscar por UUID o public_id
-    if (orderId.startsWith('ORD-')) {
-      orderQuery = orderQuery.eq('public_id', orderId)
-    } else {
-      orderQuery = orderQuery.eq('id', orderId)
-    }
+    orderQuery = orderQuery.eq(resolveIdColumn(orderId), orderId)
 
     const { data: orderData, error: orderError } = await orderQuery.single()
 
@@ -278,11 +275,7 @@ export async function PUT(
       .select('id, public_id, order_status, assigned_to')
       .is('deleted_at', null)
 
-    if (orderId.startsWith('ORD-')) {
-      orderQuery = orderQuery.eq('public_id', orderId)
-    } else {
-      orderQuery = orderQuery.eq('id', orderId)
-    }
+    orderQuery = orderQuery.eq(resolveIdColumn(orderId), orderId)
 
     const { data: existingOrder, error: orderError } = await orderQuery.single()
 

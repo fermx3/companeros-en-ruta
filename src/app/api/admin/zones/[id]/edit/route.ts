@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { resolveIdColumn } from '@/lib/utils/public-id';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -77,7 +78,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { data: existingZone, error: zoneError } = await serviceSupabase
       .from('zones')
       .select('id, tenant_id')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('tenant_id', profile.tenant_id)
       .is('deleted_at', null)
       .single();
@@ -117,7 +118,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       .select('id')
       .eq('tenant_id', profile.tenant_id)
       .eq('code', validatedData.code)
-      .neq('id', id)
+      .neq('id', existingZone.id)
       .is('deleted_at', null)
       .maybeSingle();
 
@@ -206,7 +207,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { data: existingZone, error: zoneError } = await serviceSupabase
       .from('zones')
       .select('id')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('tenant_id', profile.tenant_id)
       .is('deleted_at', null)
       .single();
@@ -219,7 +220,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { count: clientCount } = await serviceSupabase
       .from('clients')
       .select('id', { count: 'exact', head: true })
-      .eq('zone_id', id)
+      .eq('zone_id', existingZone.id)
       .eq('tenant_id', profile.tenant_id)
       .is('deleted_at', null);
 

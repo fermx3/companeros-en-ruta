@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function GET(
   request: NextRequest,
@@ -18,7 +19,7 @@ export async function GET(
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
       .select('id, title, survey_status, target_roles')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -31,7 +32,7 @@ export async function GET(
     const { data: questions } = await supabase
       .from('survey_questions')
       .select('id, question_text, question_type, sort_order, options')
-      .eq('survey_id', id)
+      .eq('survey_id', survey.id)
       .order('sort_order', { ascending: true })
 
     // Get all responses with answers
@@ -50,7 +51,7 @@ export async function GET(
           answer_boolean
         )
       `)
-      .eq('survey_id', id)
+      .eq('survey_id', survey.id)
 
     // Build analytics per question
     const questionAnalytics = (questions || []).map(question => {

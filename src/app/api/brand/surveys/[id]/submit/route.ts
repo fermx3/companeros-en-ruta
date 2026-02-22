@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function POST(
   request: NextRequest,
@@ -19,7 +20,7 @@ export async function POST(
     const { data: survey, error: fetchError } = await supabase
       .from('surveys')
       .select('id, survey_status, title, tenant_id, brand_id')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -39,7 +40,7 @@ export async function POST(
     const { count } = await supabase
       .from('survey_questions')
       .select('*', { count: 'exact', head: true })
-      .eq('survey_id', id)
+      .eq('survey_id', survey.id)
 
     if (!count || count === 0) {
       return NextResponse.json(
@@ -55,7 +56,7 @@ export async function POST(
         survey_status: 'pending_approval',
         updated_at: new Date().toISOString()
       })
-      .eq('id', id)
+      .eq('id', survey.id)
       .select()
       .single()
 
@@ -87,8 +88,8 @@ export async function POST(
             title: 'Nueva encuesta pendiente de aprobación',
             message: `La encuesta "${survey.title}" requiere tu revisión y aprobación.`,
             notification_type: 'new_survey_pending' as const,
-            action_url: `/admin/surveys/${id}`,
-            metadata: { survey_id: id }
+            action_url: `/admin/surveys/${survey.id}`,
+            metadata: { survey_id: survey.id }
           }))
         )
       }

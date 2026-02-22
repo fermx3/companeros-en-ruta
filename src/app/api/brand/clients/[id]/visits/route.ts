@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -16,11 +17,25 @@ export async function GET(
     if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId } = result
 
+    // Resolve client first
+    const { data: clientRecord } = await supabase
+      .from('clients')
+      .select('id')
+      .eq(resolveIdColumn(id), id)
+      .single()
+
+    if (!clientRecord) {
+      return NextResponse.json(
+        { error: 'Cliente no encontrado' },
+        { status: 404 }
+      )
+    }
+
     // Verify client belongs to brand
     const { data: membership } = await supabase
       .from('client_brand_memberships')
       .select('id')
-      .eq('client_id', id)
+      .eq('client_id', clientRecord.id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -56,7 +71,7 @@ export async function GET(
           last_name
         )
       `, { count: 'exact' })
-      .eq('client_id', id)
+      .eq('client_id', clientRecord.id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .order('visit_date', { ascending: false })

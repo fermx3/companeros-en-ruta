@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createNotification, getClientUserProfileId } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function POST(
   request: NextRequest,
@@ -32,7 +33,7 @@ export async function POST(
     const { data: membership, error: membershipError } = await supabase
       .from('client_brand_memberships')
       .select('id, brand_id, client_id, membership_status')
-      .eq('id', membershipId)
+      .eq(resolveIdColumn(membershipId), membershipId)
       .is('deleted_at', null)
       .single()
 
@@ -91,7 +92,7 @@ export async function POST(
     await supabase
       .from('client_tier_assignments')
       .update({ is_current: false })
-      .eq('client_brand_membership_id', membershipId)
+      .eq('client_brand_membership_id', membership.id)
       .eq('is_current', true)
 
     // 7. Create new tier assignment
@@ -99,7 +100,7 @@ export async function POST(
     const { data: newAssignment, error: assignmentError } = await supabase
       .from('client_tier_assignments')
       .insert({
-        client_brand_membership_id: membershipId,
+        client_brand_membership_id: membership.id,
         tier_id: tier_id,
         tenant_id: tenantId,
         assignment_type: assignment_type,
@@ -123,7 +124,7 @@ export async function POST(
         current_tier_id: tier_id,
         updated_at: now
       })
-      .eq('id', membershipId)
+      .eq('id', membership.id)
 
     if (updateError) {
       throw new Error(`Error al actualizar membresía: ${updateError.message}`)
@@ -141,7 +142,7 @@ export async function POST(
           message: `Has sido asignado al nivel "${tier.name}"`,
           notification_type: 'tier_upgrade',
           action_url: '/client/brands',
-          metadata: { membership_id: membershipId, tier_id: tier.id },
+          metadata: { membership_id: membership.id, tier_id: tier.id },
         })
       }
     } catch (notifError) {

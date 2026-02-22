@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { resolveIdColumn } from '@/lib/utils/public-id';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         *,
         parent_zone:parent_zone_id(id, name, public_id)
       `)
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('tenant_id', profile.tenant_id)
       .is('deleted_at', null)
       .single();
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { count: clientCount } = await serviceSupabase
       .from('clients')
       .select('id', { count: 'exact', head: true })
-      .eq('zone_id', id)
+      .eq('zone_id', zone.id)
       .eq('tenant_id', profile.tenant_id)
       .is('deleted_at', null);
 

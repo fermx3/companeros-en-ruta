@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 // Promotion type labels
 const PROMOTION_TYPE_LABELS: Record<string, string> = {
@@ -66,7 +67,7 @@ export async function GET(
           is_active
         )
       `)
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -85,14 +86,14 @@ export async function GET(
     const { count: redemptionCount } = await supabase
       .from('promotion_redemptions')
       .select('*', { count: 'exact', head: true })
-      .eq('promotion_id', id)
+      .eq('promotion_id', promotion.id)
       .is('deleted_at', null)
 
     // Get applied discount stats
     const { data: redemptionStats } = await supabase
       .from('promotion_redemptions')
       .select('applied_discount_amount, bonus_points_awarded')
-      .eq('promotion_id', id)
+      .eq('promotion_id', promotion.id)
       .is('deleted_at', null)
 
     const stats = {
@@ -137,7 +138,7 @@ export async function PATCH(
     const { data: currentPromotion, error: fetchError } = await supabase
       .from('promotions')
       .select('id, status, name')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -238,7 +239,7 @@ export async function PATCH(
     const { data: updatedPromotion, error: updateError } = await supabase
       .from('promotions')
       .update(updateData)
-      .eq('id', id)
+      .eq('id', currentPromotion.id)
       .eq('brand_id', brandId)
       .select()
       .single()
@@ -273,7 +274,7 @@ export async function PATCH(
               message: `La promoción "${currentPromotion.name}" fue enviada para aprobación`,
               notification_type: 'new_promotion' as const,
               action_url: `/admin/promotions`,
-              metadata: { promotion_id: id },
+              metadata: { promotion_id: currentPromotion.id },
             }))
           )
         }
@@ -318,7 +319,7 @@ export async function DELETE(
     const { data: currentPromotion, error: fetchError } = await supabase
       .from('promotions')
       .select('id, status')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -342,7 +343,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('promotions')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq('id', currentPromotion.id)
       .eq('brand_id', brandId)
 
     if (deleteError) {

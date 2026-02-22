@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function POST(
   request: NextRequest,
@@ -43,7 +44,7 @@ export async function POST(
     const { data: survey, error: fetchError } = await supabase
       .from('surveys')
       .select('id, survey_status, title, tenant_id, created_by')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .single()
@@ -76,7 +77,7 @@ export async function POST(
         rejection_reason: rejection_reason.trim(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', id)
+      .eq('id', survey.id)
       .select()
       .single()
 
@@ -92,8 +93,8 @@ export async function POST(
         title: 'Encuesta rechazada',
         message: `Tu encuesta "${survey.title}" fue rechazada. Motivo: ${rejection_reason.trim()}`,
         notification_type: 'survey_rejected',
-        action_url: `/brand/surveys/${id}`,
-        metadata: { survey_id: id, rejection_reason: rejection_reason.trim() }
+        action_url: `/brand/surveys/${survey.id}`,
+        metadata: { survey_id: survey.id, rejection_reason: rejection_reason.trim() }
       })
     } catch (notifError) {
       console.error('Error creating rejection notification:', notifError)

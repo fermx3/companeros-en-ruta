@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function PUT(
   request: NextRequest,
@@ -20,7 +21,7 @@ export async function PUT(
     const { data: existingTier, error: tierError } = await supabase
       .from('tiers')
       .select('id, brand_id, is_default, tier_level')
-      .eq('id', tierId)
+      .eq(resolveIdColumn(tierId), tierId)
       .is('deleted_at', null)
       .single()
 
@@ -61,7 +62,7 @@ export async function PUT(
         .select('id')
         .eq('brand_id', targetBrandId)
         .eq('tier_level', tier_level)
-        .neq('id', tierId)
+        .neq('id', existingTier.id)
         .is('deleted_at', null)
         .single()
 
@@ -103,7 +104,7 @@ export async function PUT(
     const { data: updatedTier, error: updateError } = await supabase
       .from('tiers')
       .update(updateData)
-      .eq('id', tierId)
+      .eq('id', existingTier.id)
       .select()
       .single()
 
@@ -146,7 +147,7 @@ export async function DELETE(
     const { data: existingTier, error: tierError } = await supabase
       .from('tiers')
       .select('id, brand_id, is_default')
-      .eq('id', tierId)
+      .eq(resolveIdColumn(tierId), tierId)
       .is('deleted_at', null)
       .single()
 
@@ -186,20 +187,20 @@ export async function DELETE(
       await supabase
         .from('client_brand_memberships')
         .update({ current_tier_id: defaultTier.id })
-        .eq('current_tier_id', tierId)
+        .eq('current_tier_id', existingTier.id)
     } else {
       // If no default tier, just null out the tier_id
       await supabase
         .from('client_brand_memberships')
         .update({ current_tier_id: null })
-        .eq('current_tier_id', tierId)
+        .eq('current_tier_id', existingTier.id)
     }
 
     // 7. Soft delete tier
     const { error: deleteError } = await supabase
       .from('tiers')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', tierId)
+      .eq('id', existingTier.id)
 
     if (deleteError) {
       throw new Error(`Error al eliminar nivel: ${deleteError.message}`)

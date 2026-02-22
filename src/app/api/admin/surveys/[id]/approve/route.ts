@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification, createBulkNotifications } from '@/lib/notifications'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function POST(
   request: NextRequest,
@@ -43,7 +44,7 @@ export async function POST(
     const { data: survey, error: fetchError } = await supabase
       .from('surveys')
       .select('id, survey_status, title, tenant_id, created_by, start_date, target_roles')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .single()
@@ -75,7 +76,7 @@ export async function POST(
         approval_notes: approval_notes || null,
         updated_at: new Date().toISOString()
       })
-      .eq('id', id)
+      .eq('id', survey.id)
       .select()
       .single()
 
@@ -91,8 +92,8 @@ export async function POST(
         title: 'Encuesta aprobada',
         message: `Tu encuesta "${survey.title}" ha sido aprobada${newStatus === 'active' ? ' y activada' : ''}.`,
         notification_type: 'survey_approved',
-        action_url: `/brand/surveys/${id}`,
-        metadata: { survey_id: id }
+        action_url: `/brand/surveys/${survey.id}`,
+        metadata: { survey_id: survey.id }
       })
     } catch (notifError) {
       console.error('Error creating approval notification:', notifError)

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 import { z } from 'zod'
 
 const updateTargetSchema = z.object({
@@ -42,7 +43,7 @@ export async function PUT(
     const { data, error } = await supabase
       .from('kpi_targets')
       .update(updates)
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .select()
@@ -84,7 +85,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('kpi_targets')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
 

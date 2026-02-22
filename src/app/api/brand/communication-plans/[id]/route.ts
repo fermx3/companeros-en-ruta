@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
           is_recurring
         )
       `)
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -81,7 +82,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const { data: existing } = await supabase
       .from('brand_communication_plans')
       .select('id')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -117,7 +118,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       const { error: updateError } = await supabase
         .from('brand_communication_plans')
         .update(updates)
-        .eq('id', id)
+        .eq('id', existing.id)
 
       if (updateError) {
         console.error('Error updating plan:', updateError)
@@ -134,7 +135,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       await supabase
         .from('brand_communication_plan_materials')
         .delete()
-        .eq('communication_plan_id', id)
+        .eq('communication_plan_id', existing.id)
 
       // Add new materials
       for (const material of materials) {
@@ -143,7 +144,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         await supabase
           .from('brand_communication_plan_materials')
           .insert({
-            communication_plan_id: id,
+            communication_plan_id: existing.id,
             pop_material_id: material.pop_material_id,
             quantity_required: material.quantity_required || 1,
             placement_notes: material.placement_notes || null
@@ -157,7 +158,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       await supabase
         .from('brand_communication_plan_activities')
         .delete()
-        .eq('communication_plan_id', id)
+        .eq('communication_plan_id', existing.id)
 
       // Add new activities
       for (const activity of activities) {
@@ -166,7 +167,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         await supabase
           .from('brand_communication_plan_activities')
           .insert({
-            communication_plan_id: id,
+            communication_plan_id: existing.id,
             activity_name: activity.activity_name.trim(),
             activity_description: activity.activity_description || null,
             scheduled_date: activity.scheduled_date || null,
@@ -205,7 +206,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
           is_recurring
         )
       `)
-      .eq('id', id)
+      .eq('id', existing.id)
       .single()
 
     return NextResponse.json({ plan })
@@ -231,7 +232,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { data: existing } = await supabase
       .from('brand_communication_plans')
       .select('id')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -246,7 +247,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { error: deleteError } = await supabase
       .from('brand_communication_plans')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq('id', existing.id)
 
     if (deleteError) {
       console.error('Error deleting plan:', deleteError)

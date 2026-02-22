@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 // Helper to get promotor profile from auth
 async function getPromotorProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -66,7 +67,7 @@ export async function GET(
         *,
         client:clients(id, public_id, business_name, owner_name, address_street, address_neighborhood, phone, latitude, longitude)
       `)
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('promotor_id', promotorId)
       .is('deleted_at', null)
       .single()
@@ -140,7 +141,7 @@ export async function PUT(
     const { data: existingVisit, error: fetchError } = await supabase
       .from('visits')
       .select('id, visit_status')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('promotor_id', promotorId)
       .is('deleted_at', null)
       .single()
@@ -181,7 +182,7 @@ export async function PUT(
     const { data: updatedVisit, error: updateError } = await supabase
       .from('visits')
       .update(updateData)
-      .eq('id', id)
+      .eq('id', existingVisit.id)
       .select(`
         *,
         client:clients(id, public_id, business_name, owner_name, address_street, address_neighborhood, phone)

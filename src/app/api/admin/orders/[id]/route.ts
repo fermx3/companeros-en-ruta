@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 interface OrderDetailItem {
   id: string
@@ -183,11 +184,7 @@ export async function GET(
       .is('deleted_at', null)
 
     // Buscar por UUID o public_id
-    if (orderId.startsWith('ORD-')) {
-      orderQuery = orderQuery.eq('public_id', orderId)
-    } else {
-      orderQuery = orderQuery.eq('id', orderId)
-    }
+    orderQuery = orderQuery.eq(resolveIdColumn(orderId), orderId)
 
     const { data: orderData, error: orderError } = await orderQuery.single()
 
@@ -374,11 +371,7 @@ export async function PUT(
       .eq('tenant_id', userProfile.tenant_id)
       .is('deleted_at', null)
 
-    if (orderId.startsWith('ORD-')) {
-      orderQuery = orderQuery.eq('public_id', orderId)
-    } else {
-      orderQuery = orderQuery.eq('id', orderId)
-    }
+    orderQuery = orderQuery.eq(resolveIdColumn(orderId), orderId)
 
     const { data: existingOrder, error: orderError } = await orderQuery.single()
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { extractDigits } from '@/lib/utils/phone'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -16,22 +17,6 @@ export async function GET(
     const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
     if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId } = result
-
-    // Verify client belongs to brand via membership
-    const { data: membership, error: membershipError } = await supabase
-      .from('client_brand_memberships')
-      .select('id, membership_status, joined_date, lifetime_points, points_balance, last_purchase_date')
-      .eq('client_id', id)
-      .eq('brand_id', brandId)
-      .is('deleted_at', null)
-      .single()
-
-    if (membershipError || !membership) {
-      return NextResponse.json(
-        { error: 'Cliente no encontrado en esta marca' },
-        { status: 404 }
-      )
-    }
 
     // Get client details with joins
     const { data: client, error: clientError } = await supabase
@@ -59,7 +44,7 @@ export async function GET(
         client_types:client_type_id(id, name, code, category),
         commercial_structures:commercial_structure_id(id, name, code, structure_type)
       `)
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .single()
 
     if (clientError || !client) {
@@ -69,11 +54,27 @@ export async function GET(
       )
     }
 
+    // Verify client belongs to brand via membership
+    const { data: membership, error: membershipError } = await supabase
+      .from('client_brand_memberships')
+      .select('id, membership_status, joined_date, lifetime_points, points_balance, last_purchase_date')
+      .eq('client_id', client.id)
+      .eq('brand_id', brandId)
+      .is('deleted_at', null)
+      .single()
+
+    if (membershipError || !membership) {
+      return NextResponse.json(
+        { error: 'Cliente no encontrado en esta marca' },
+        { status: 404 }
+      )
+    }
+
     // Get visit count for this client+brand
     const { count: visitCount } = await supabase
       .from('visits')
       .select('id', { count: 'exact', head: true })
-      .eq('client_id', id)
+      .eq('client_id', client.id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
 
@@ -81,7 +82,7 @@ export async function GET(
     const { count: orderCount } = await supabase
       .from('active_orders')
       .select('id', { count: 'exact', head: true })
-      .eq('client_id', id)
+      .eq('client_id', client.id)
       .eq('brand_id', brandId)
 
     return NextResponse.json({
@@ -120,11 +121,25 @@ export async function PUT(
     if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
     const { brandId } = result
 
+    // Resolve client first
+    const { data: client } = await supabase
+      .from('clients')
+      .select('id')
+      .eq(resolveIdColumn(id), id)
+      .single()
+
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Cliente no encontrado' },
+        { status: 404 }
+      )
+    }
+
     // Verify client belongs to brand
     const { data: membership } = await supabase
       .from('client_brand_memberships')
       .select('id')
-      .eq('client_id', id)
+      .eq('client_id', client.id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -186,7 +201,7 @@ export async function PUT(
     const { data: updatedClient, error: updateError } = await supabase
       .from('clients')
       .update(updates)
-      .eq('id', id)
+      .eq('id', client.id)
       .select()
       .single()
 

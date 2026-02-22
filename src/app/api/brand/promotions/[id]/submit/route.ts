@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function POST(
   request: NextRequest,
@@ -19,7 +20,7 @@ export async function POST(
     const { data: currentPromotion, error: fetchError } = await supabase
       .from('promotions')
       .select('id, status, name')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -46,7 +47,7 @@ export async function POST(
         status: 'pending_approval',
         updated_at: new Date().toISOString()
       })
-      .eq('id', id)
+      .eq('id', currentPromotion.id)
       .eq('brand_id', brandId)
       .select()
       .single()
@@ -80,7 +81,7 @@ export async function POST(
             message: `La promoción "${currentPromotion.name}" fue enviada para aprobación`,
             notification_type: 'new_promotion' as const,
             action_url: `/admin/promotions`,
-            metadata: { promotion_id: id },
+            metadata: { promotion_id: currentPromotion.id },
           }))
         )
       }

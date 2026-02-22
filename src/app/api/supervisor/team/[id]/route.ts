@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function GET(
   request: NextRequest,
@@ -42,7 +43,7 @@ export async function GET(
     const { data: memberProfile } = await supabase
       .from('user_profiles')
       .select('id, first_name, last_name, email, phone, status')
-      .eq('id', memberId)
+      .eq(resolveIdColumn(memberId), memberId)
       .eq('manager_id', userProfile.id)
       .single()
 
@@ -67,7 +68,7 @@ export async function GET(
           contact_phone
         )
       `)
-      .eq('user_profile_id', memberId)
+      .eq('user_profile_id', memberProfile.id)
       .eq('is_active', true)
 
     const assignedClients = assignments?.map(a => {
@@ -106,7 +107,7 @@ export async function GET(
           name
         )
       `)
-      .eq('promotor_id', memberId)
+      .eq('promotor_id', memberProfile.id)
       .is('deleted_at', null)
       .order('visit_date', { ascending: false })
       .limit(20)
@@ -126,7 +127,7 @@ export async function GET(
     const { data: allVisits } = await supabase
       .from('visits')
       .select('id, visit_status, client_satisfaction_rating')
-      .eq('promotor_id', memberId)
+      .eq('promotor_id', memberProfile.id)
       .is('deleted_at', null)
 
     const completedVisits = allVisits?.filter(v => v.visit_status === 'completed').length || 0

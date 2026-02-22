@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveIdColumn } from '@/lib/utils/public-id'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -40,7 +41,7 @@ export async function GET(
           )
         )
       `)
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -81,7 +82,7 @@ export async function PUT(
     const { data: existing } = await supabase
       .from('brand_competitors')
       .select('id')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -105,7 +106,7 @@ export async function PUT(
       const { error: updateError } = await supabase
         .from('brand_competitors')
         .update(updates)
-        .eq('id', id)
+        .eq('id', existing.id)
 
       if (updateError) {
         console.error('Error updating competitor:', updateError)
@@ -122,7 +123,7 @@ export async function PUT(
       const { data: existingProducts } = await supabase
         .from('brand_competitor_products')
         .select('id')
-        .eq('competitor_id', id)
+        .eq('competitor_id', existing.id)
 
       const existingProductIds = new Set(existingProducts?.map(p => p.id) || [])
       const updatedProductIds = new Set<string>()
@@ -167,7 +168,7 @@ export async function PUT(
             .from('brand_competitor_products')
             .insert({
               tenant_id: tenantId,
-              competitor_id: id,
+              competitor_id: existing.id,
               product_name: product.product_name.trim(),
               default_size_grams: product.default_size_grams || null,
               default_size_ml: product.default_size_ml || null,
@@ -228,7 +229,7 @@ export async function PUT(
           )
         )
       `)
-      .eq('id', id)
+      .eq('id', existing.id)
       .single()
 
     return NextResponse.json({ competitor })
@@ -258,7 +259,7 @@ export async function DELETE(
     const { data: existing } = await supabase
       .from('brand_competitors')
       .select('id')
-      .eq('id', id)
+      .eq(resolveIdColumn(id), id)
       .eq('brand_id', brandId)
       .is('deleted_at', null)
       .single()
@@ -274,7 +275,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('brand_competitors')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq('id', existing.id)
 
     if (deleteError) {
       console.error('Error deleting competitor:', deleteError)
