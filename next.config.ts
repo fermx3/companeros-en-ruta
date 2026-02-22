@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
 
   // Configuración para imágenes externas
   images: {
+    unoptimized: process.env.NODE_ENV === 'development',
     remotePatterns: [
       {
         protocol: 'https',
