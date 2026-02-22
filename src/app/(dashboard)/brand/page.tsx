@@ -5,8 +5,8 @@ import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
 import {
-  Users, TrendingUp, MapPin, Settings, Building2, UserCheck, Layers,
-  Gift, ChevronRight, ClipboardList, BarChart3,
+  Users, TrendingUp, MapPin, Settings, Building2, Layers,
+  Gift, ChevronRight, ClipboardList, BarChart3, ShoppingCart,
 } from "lucide-react"
 import { displayPhone } from '@/lib/utils/phone'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -185,10 +185,10 @@ export default function BrandDashboard() {
                       <span className="text-sm font-medium">Clientes</span>
                     </Button>
                   </Link>
-                  <Link href="/brand/memberships">
+                  <Link href="/brand/orders">
                     <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                      <UserCheck className="h-6 w-6 text-indigo-600" />
-                      <span className="text-sm font-medium">Miembros</span>
+                      <ShoppingCart className="h-6 w-6 text-indigo-600" />
+                      <span className="text-sm font-medium">Órdenes</span>
                     </Button>
                   </Link>
                   <Link href="/brand/visits">

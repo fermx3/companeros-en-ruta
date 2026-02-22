@@ -6,6 +6,7 @@ interface MembershipResponse {
   id: string
   public_id: string
   client_id: string
+  client_public_id: string | null
   client_name: string
   client_email: string | null
   client_phone: string | null
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
         created_at,
         clients!client_brand_memberships_client_id_fkey(
           id,
+          public_id,
           business_name,
           owner_name,
           email,
@@ -113,13 +115,14 @@ export async function GET(request: NextRequest) {
 
     // 7. Transform and filter by search
     let transformedMemberships: MembershipResponse[] = (memberships || []).map((m) => {
-      const client = m.clients as unknown as { id: string; business_name: string; owner_name: string | null; email: string | null; phone: string | null } | null
+      const client = m.clients as unknown as { id: string; public_id: string; business_name: string; owner_name: string | null; email: string | null; phone: string | null } | null
       const tier = m.tiers as unknown as { id: string; name: string; tier_level: number; tier_color: string | null } | null
 
       return {
         id: m.id,
         public_id: m.public_id,
         client_id: m.client_id,
+        client_public_id: client?.public_id || null,
         client_name: client?.business_name || client?.owner_name || `Cliente ${m.public_id}`,
         client_email: client?.email || null,
         client_phone: client?.phone || null,

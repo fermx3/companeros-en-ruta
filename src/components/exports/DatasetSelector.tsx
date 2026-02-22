@@ -16,7 +16,7 @@ interface DatasetOption {
 const DATASETS: DatasetOption[] = [
   { key: 'clients', label: 'Clientes', description: 'Datos de contacto y clasificación', icon: Users, color: 'text-blue-600 bg-blue-50' },
   { key: 'visits', label: 'Visitas', description: 'Historial con métricas', icon: MapPin, color: 'text-green-600 bg-green-50' },
-  { key: 'memberships', label: 'Membresías', description: 'Tier, puntos, estado', icon: UserCheck, color: 'text-indigo-600 bg-indigo-50' },
+  { key: 'memberships', label: 'Clientes (Membresías)', description: 'Tier, puntos, estado', icon: UserCheck, color: 'text-indigo-600 bg-indigo-50' },
   { key: 'promotions', label: 'Promociones', description: 'Performance y métricas', icon: Tag, color: 'text-orange-600 bg-orange-50' },
   { key: 'surveys', label: 'Encuestas', description: 'Conteo de respuestas', icon: ClipboardList, color: 'text-purple-600 bg-purple-50' },
   { key: 'products', label: 'Productos', description: 'Catálogo con precios', icon: Package, color: 'text-emerald-600 bg-emerald-50' },

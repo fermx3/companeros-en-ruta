@@ -1,95 +1,229 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useBrandFetch } from '@/hooks/useBrandFetch';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/button';
-import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback';
-import { displayPhone } from '@/lib/utils/phone';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
+import { useBrandFetch } from '@/hooks/useBrandFetch'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/button'
+import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { displayPhone } from '@/lib/utils/phone'
+import { usePageTitle } from '@/hooks/usePageTitle'
+import { Check, Coins, Award } from 'lucide-react'
+import {
+  TierAssignModal,
+  PointsModal,
+  MembershipStatusBadge,
+} from '@/components/brand/membership-actions'
+import type { BrandTier, PointsOperationData } from '@/components/brand/membership-actions'
 
 interface ClientDetail {
-  id: string;
-  public_id: string;
-  business_name: string;
-  legal_name: string | null;
-  owner_name: string | null;
-  email: string | null;
-  phone: string | null;
-  whatsapp: string | null;
-  address_street: string | null;
-  address_neighborhood: string | null;
-  address_city: string | null;
-  address_state: string | null;
-  address_postal_code: string | null;
-  address_country: string | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  zones: { id: string; name: string } | null;
-  markets: { id: string; name: string } | null;
-  client_types: { id: string; name: string; code: string; category: string } | null;
-  commercial_structures: { id: string; name: string; code: string; structure_type: string } | null;
+  id: string
+  public_id: string
+  business_name: string
+  legal_name: string | null
+  owner_name: string | null
+  email: string | null
+  phone: string | null
+  whatsapp: string | null
+  address_street: string | null
+  address_neighborhood: string | null
+  address_city: string | null
+  address_state: string | null
+  address_postal_code: string | null
+  address_country: string | null
+  status: string
+  created_at: string
+  updated_at: string
+  zones: { id: string; name: string } | null
+  markets: { id: string; name: string } | null
+  client_types: { id: string; name: string; code: string; category: string } | null
+  commercial_structures: { id: string; name: string; code: string; structure_type: string } | null
+}
+
+interface MembershipTier {
+  id: string
+  name: string
+  tier_level: number
+  tier_color: string | null
 }
 
 interface Membership {
-  membership_status: string;
-  joined_date: string | null;
-  lifetime_points: number;
-  points_balance: number;
-  last_purchase_date: string | null;
+  id: string
+  public_id: string
+  membership_status: string
+  joined_date: string | null
+  lifetime_points: number
+  points_balance: number
+  last_purchase_date: string | null
+  current_tier: MembershipTier | null
 }
 
 interface Stats {
-  total_visits: number;
-  total_orders: number;
+  total_visits: number
+  total_orders: number
 }
 
 export default function BrandClientDetailPage() {
-  usePageTitle('Detalle de Cliente');
-  const params = useParams();
-  const clientId = params.id as string;
-  const { brandFetch } = useBrandFetch();
-  const [client, setClient] = useState<ClientDetail | null>(null);
-  const [membership, setMembership] = useState<Membership | null>(null);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  usePageTitle('Detalle de Cliente')
+  const params = useParams()
+  const clientId = params.id as string
+  const { brandFetch, currentBrandId } = useBrandFetch()
+  const [client, setClient] = useState<ClientDetail | null>(null)
+  const [membership, setMembership] = useState<Membership | null>(null)
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [tiers, setTiers] = useState<BrandTier[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
+  const [assignModal, setAssignModal] = useState(false)
+  const [pointsModal, setPointsModal] = useState(false)
+
+  // Load client detail
   useEffect(() => {
     const loadClient = async () => {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
       try {
-        const response = await brandFetch(`/api/brand/clients/${clientId}`);
+        const response = await brandFetch(`/api/brand/clients/${clientId}`)
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Error al cargar cliente');
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Error al cargar cliente')
         }
-        const data = await response.json();
-        setClient(data.client);
-        setMembership(data.membership);
-        setStats(data.stats);
+        const data = await response.json()
+        setClient(data.client)
+        setMembership(data.membership)
+        setStats(data.stats)
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Error desconocido';
-        setError(msg);
+        const msg = err instanceof Error ? err.message : 'Error desconocido'
+        setError(msg)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    loadClient();
-  }, [clientId, brandFetch]);
+    }
+    loadClient()
+  }, [clientId, brandFetch, refreshKey])
+
+  // Load tiers
+  useEffect(() => {
+    if (!currentBrandId) return
+    const controller = new AbortController()
+
+    const loadTiers = async () => {
+      try {
+        const response = await brandFetch('/api/brand/tiers', { signal: controller.signal })
+        if (response.ok) {
+          const data = await response.json()
+          if (!controller.signal.aborted) setTiers(data.tiers || [])
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+
+    loadTiers()
+    return () => controller.abort()
+  }, [brandFetch, currentBrandId])
+
+  const handleApprove = async () => {
+    if (!membership) return
+    if (!confirm(`¿Aprobar la membresía de "${client?.business_name}"?`)) return
+
+    try {
+      setActionLoading('approve')
+      const response = await brandFetch(`/api/brand/memberships/${membership.id}/approve`, {
+        method: 'PUT'
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al aprobar membresía')
+      }
+
+      setSuccessMessage('Membresía aprobada correctamente')
+      setTimeout(() => setSuccessMessage(null), 3000)
+      setRefreshKey(k => k + 1)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleAssignTier = async (tierId: string) => {
+    if (!membership) return
+
+    try {
+      setActionLoading('tier')
+      const response = await brandFetch(`/api/brand/memberships/${membership.id}/assign-tier`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier_id: tierId })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al asignar nivel')
+      }
+
+      const data = await response.json()
+      setSuccessMessage(data.message || 'Nivel asignado correctamente')
+      setTimeout(() => setSuccessMessage(null), 3000)
+      setAssignModal(false)
+      setRefreshKey(k => k + 1)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handlePointsOperation = async (data: PointsOperationData) => {
+    if (!membership) return
+
+    try {
+      setActionLoading('points')
+      const dbTransactionType = data.transaction_type === 'award' ? 'earned' : 'penalty'
+
+      const response = await brandFetch('/api/brand/points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          membership_id: membership.id,
+          points_amount: data.points_amount,
+          transaction_type: dbTransactionType,
+          description: data.description
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al procesar puntos')
+      }
+
+      const result = await response.json()
+      setSuccessMessage(result.message || 'Puntos procesados correctamente')
+      setTimeout(() => setSuccessMessage(null), 3000)
+      setPointsModal(false)
+      setRefreshKey(k => k + 1)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleDateString('es-MX', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    });
-  };
+    })
+  }
 
   if (loading) {
     return (
@@ -99,7 +233,7 @@ export default function BrandClientDetailPage() {
           <p className="text-gray-600">Cargando cliente...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (error || !client) {
@@ -114,7 +248,7 @@ export default function BrandClientDetailPage() {
           </Link>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -150,10 +284,28 @@ export default function BrandClientDetailPage() {
               <h1 className="text-2xl font-bold text-gray-900 mt-2">{client.business_name}</h1>
               <div className="flex items-center space-x-3 mt-1">
                 <span className="text-sm text-gray-500">{client.public_id}</span>
-                <StatusBadge status={client.status as 'active' | 'inactive' | 'suspended' | 'pending'} size="sm" />
+                {membership && <MembershipStatusBadge status={membership.membership_status} />}
               </div>
             </div>
             <div className="flex space-x-3">
+              {membership?.membership_status === 'pending' && (
+                <Button onClick={handleApprove} disabled={actionLoading === 'approve'}>
+                  {actionLoading === 'approve' ? <LoadingSpinner size="sm" className="mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                  Aprobar
+                </Button>
+              )}
+              {membership?.membership_status === 'active' && (
+                <>
+                  <Button variant="outline" onClick={() => setPointsModal(true)}>
+                    <Coins className="h-4 w-4 mr-2" />
+                    Gestionar Puntos
+                  </Button>
+                  <Button variant="outline" onClick={() => setAssignModal(true)}>
+                    <Award className="h-4 w-4 mr-2" />
+                    Asignar Nivel
+                  </Button>
+                </>
+              )}
               <Link href={`/brand/clients/${clientId}/visits`}>
                 <Button variant="outline">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,20 +315,18 @@ export default function BrandClientDetailPage() {
                   Ver Visitas
                 </Button>
               </Link>
-              <Link href={`/brand/clients/${clientId}/edit`}>
-                <Button>
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Editar
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {successMessage && (
+          <Alert variant="success" className="mb-6" onClose={() => setSuccessMessage(null)}>
+            {successMessage}
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Column - Client Info */}
           <div className="lg:col-span-2 space-y-6">
@@ -271,9 +421,23 @@ export default function BrandClientDetailPage() {
                     <div className="flex justify-between">
                       <dt className="text-sm text-gray-500">Estado</dt>
                       <dd>
-                        <StatusBadge status={membership.membership_status as 'active' | 'inactive' | 'suspended' | 'pending'} size="sm" />
+                        <MembershipStatusBadge status={membership.membership_status} />
                       </dd>
                     </div>
+                    {membership.current_tier && (
+                      <div className="flex justify-between items-center">
+                        <dt className="text-sm text-gray-500">Nivel</dt>
+                        <dd className="flex items-center space-x-2">
+                          <div
+                            className="h-6 w-6 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: membership.current_tier.tier_color || '#6366F1' }}
+                          >
+                            <Award className="h-3 w-3 text-white" />
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">{membership.current_tier.name}</span>
+                        </dd>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <dt className="text-sm text-gray-500">Fecha de ingreso</dt>
                       <dd className="text-sm text-gray-900">{formatDate(membership.joined_date)}</dd>
@@ -343,6 +507,30 @@ export default function BrandClientDetailPage() {
           </div>
         </div>
       </div>
+
+      {membership && (
+        <>
+          <TierAssignModal
+            isOpen={assignModal}
+            onClose={() => setAssignModal(false)}
+            onSubmit={handleAssignTier}
+            tiers={tiers.filter(t => t.id !== membership.current_tier?.id)}
+            membershipName={client.business_name}
+            saving={actionLoading === 'tier'}
+          />
+
+          <PointsModal
+            isOpen={pointsModal}
+            onClose={() => setPointsModal(false)}
+            onSubmit={handlePointsOperation}
+            membership={{
+              client_name: client.business_name,
+              points_balance: membership.points_balance,
+            }}
+            saving={actionLoading === 'points'}
+          />
+        </>
+      )}
     </div>
-  );
+  )
 }

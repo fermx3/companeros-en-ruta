@@ -12,7 +12,7 @@
 | Rol | Estado Actual | Cambio Requerido | Ready for Testing |
 |-----|---------------|------------------|-------------------|
 | Admin | ✅ Protegido con useRequireRole | Sin cambios | Yes |
-| Brand Manager | ✅ Protegido con useRequireRole | ✅ Client detail/edit/visits + /brand/visits implementados | Yes |
+| Brand Manager | ✅ Protegido con useRequireRole | ✅ Clientes unificados (read-only + membresías inline) + /brand/visits | Yes |
 | Supervisor | ✅ Protegido + UI condicional roles | ✅ team, team/[id], clients, visits, reports implementados | Yes |
 | **Promotor** | ✅ Assessment Wizard + useRequireRole | Assessment 3 secciones completo | Ready |
 | **Asesor de Ventas** | ✅ Implementado + useRequireRole | Dashboard, Órdenes, QR, Historial, Billing | Ready |
@@ -40,6 +40,7 @@
 **Cambios 2026-02-19:** CLI-006 documentado (Carga Evidencia Cliente — spec completa en CLI-P1, tabla `client_evidence`, archivos a crear/editar, criterios de verificación, REQ-047 marcado como parcial)
 **Cambios 2026-02-20:** OPT-004 ✅ (initplan fix 327 RLS policies), fix advisor_id→promotor_id en RLS, field_users products RLS, notifications delete, survey service client
 **Cambios 2026-02-21:** OPT-005 ✅ (RLS consolidation 364→135 policies, 63% reduction), OPT-006 ✅ (drop 46 unused GIN indexes), fix function_search_path (87 functions), fix audit_logs RLS+FK indexes, move pg_trgm→extensions schema
+**Cambios 2026-02-22:** BRAND-007 ✅ (Unificar brand/clients + memberships — read-only + inline membership actions, eliminar create/edit cliente por marca)
 
 ---
 
@@ -631,6 +632,7 @@ El perfil Brand Manager (`/brand`) tiene la mayoría de funcionalidades implemen
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
 | BRAND-006 | **Incentivos RTM/M&P no implementados** (REQ-013) — No hay página ni API para configurar incentivos. | — | Crear página config incentivos |
+| BRAND-007 | **Unificar clientes y membresías** — Brand no debe poder editar datos del negocio (conflicto multi-marca). Unificar en `/brand/clients` con datos read-only + acciones de membresía inline. Eliminar create/edit. | `brand/clients/page.tsx`, `brand/memberships/page.tsx` | ✅ RESUELTO |
 
 ### Resumen de archivos a tocar
 
@@ -642,6 +644,7 @@ El perfil Brand Manager (`/brand`) tiene la mayoría de funcionalidades implemen
 | BRAND-004 | Editar | `brand/page.tsx`, `api/brand/metrics/route.ts` — expandir KPIs |
 | BRAND-005 | Editar | `brand/team/page.tsx` — agregar rankings y métricas individuales |
 | BRAND-006 | Crear | `brand/incentives/page.tsx`, `api/brand/incentives/route.ts` |
+| BRAND-007 | Refactor | `brand/clients/page.tsx` (reescrito), `brand/memberships/page.tsx` (redirect), `brand/clients/[id]/page.tsx` (read-only + acciones), eliminados `create/`, `[id]/edit/`, `POST /api/brand/clients`, `PUT /api/brand/clients/[id]` |
 
 ### Criterios de verificación
 
@@ -917,13 +920,14 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 40. **ADMIN-010:** Verificar preview encuesta antes de aprobar. Esfuerzo: 1.
 41. **ADMIN-011:** Indicador ventana 48h en promociones. Esfuerzo: 1.
 42. **BRAND-006:** Incentivos RTM/M&P (REQ-013). Esfuerzo: 3.
-43. ~~**PROM-003:** Fix `full_name` inconsistency en Promotor. Esfuerzo: 1.~~ ✅ RESUELTO
-44. ~~**ADV-003:** Fix `full_name` inconsistency en Asesor de Ventas. Esfuerzo: 1.~~ ✅ RESUELTO
-45. ~~**CLI-005:** Remover `console.log` en API client promotions. Esfuerzo: 1.~~ ✅ RESUELTO
-46. **Calendario plan trabajo** (TASK-062) — Vista semanal para promotor. Esfuerzo: 3.
-47. **Email notifications** (TASK-043) — Notificaciones por email. Esfuerzo: 2.
-48. **OPT-001:** Optimize asesor-ventas orders API. Esfuerzo: 2.
-49. **E2E testing** (TASK-072) — Testing integración end-to-end. Esfuerzo: 3.
+43. **BRAND-008:** Flujo de prospectos — Promotor y Asesor de Ventas pueden enviar solicitudes de creación de cliente (prospecto) al Admin. El prospecto incluye: datos del negocio sugeridos, nivel sugerido, marcas sugeridas para afiliación. Admin aprueba/edita/rechaza. Al aprobar, se crea el cliente y sus membresías. Esfuerzo: 5.
+44. ~~**PROM-003:** Fix `full_name` inconsistency en Promotor. Esfuerzo: 1.~~ ✅ RESUELTO
+45. ~~**ADV-003:** Fix `full_name` inconsistency en Asesor de Ventas. Esfuerzo: 1.~~ ✅ RESUELTO
+46. ~~**CLI-005:** Remover `console.log` en API client promotions. Esfuerzo: 1.~~ ✅ RESUELTO
+47. **Calendario plan trabajo** (TASK-062) — Vista semanal para promotor. Esfuerzo: 3.
+48. **Email notifications** (TASK-043) — Notificaciones por email. Esfuerzo: 2.
+49. **OPT-001:** Optimize asesor-ventas orders API. Esfuerzo: 2.
+50. **E2E testing** (TASK-072) — Testing integración end-to-end. Esfuerzo: 3.
 
 ---
 
@@ -1012,12 +1016,14 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 - [x] Performance summary cards
 
 #### Client Management
-- [x] List clients for brand (`/brand/clients`)
-- [x] Search and filter clients
-- [x] Create client (`/brand/clients/create`)
+- [x] List clients with membership actions — unified view (`/brand/clients`)
+- [x] Search, filter by status tab (Todos/Pendientes/Activos), filter by tier
+- [x] Inline membership actions (approve, points, tier)
+- [x] Add Members modal (enroll existing clients)
 - [x] API: `GET /api/brand/clients`
-- [x] API: `POST /api/brand/clients`
-- [ ] Remove client from brand
+- ~~Create client / POST /api/brand/clients~~ — Removed (BRAND-007: brand cannot edit business data)
+- ~~Edit client / PUT /api/brand/clients/[id]~~ — Removed (BRAND-007)
+- ~~Remove client from brand~~ — N/A (future: prospect flow BRAND-008)
 
 #### Reports
 - [x] Reports page (`/brand/reports`)
@@ -1033,11 +1039,11 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 - [ ] Enable/disable auto-assignment
 
 #### Membership Management
-- [x] Pending memberships queue (`/brand/memberships`)
-- [x] Approve membership requests
-- [x] Active members list with tier filter
-- [x] Manual tier assignment
-- [x] Award/deduct points (Points modal)
+- [x] ~~Pending memberships queue (`/brand/memberships`)~~ — Unificado en `/brand/clients`, `/brand/memberships` redirige
+- [x] Approve membership requests (inline en lista + detalle)
+- [x] Active members list with tier filter (unificado en `/brand/clients`)
+- [x] Manual tier assignment (modal desde lista + detalle)
+- [x] Award/deduct points (modal desde lista + detalle)
 - [ ] View member tier history
 
 ---

@@ -16,7 +16,7 @@ interface FilterPreviewProps {
 const DATASET_LABELS: Record<DatasetKey, string> = {
   clients: 'Clientes',
   visits: 'Visitas',
-  memberships: 'Membresías',
+  memberships: 'Clientes (Membresías)',
   promotions: 'Promociones',
   surveys: 'Encuestas',
   products: 'Productos',
