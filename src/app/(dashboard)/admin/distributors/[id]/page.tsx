@@ -19,6 +19,8 @@ export default function DistributorDetailPage() {
   const [distributor, setDistributor] = useState<DistributorDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [assignedBrands, setAssignedBrands] = useState<Array<{ id: string; name: string; logo_url: string | null }>>([]);
+  const [brandsLoading, setBrandsLoading] = useState(true);
 
   const loadDistributor = useCallback(async () => {
     setLoading(true);
@@ -43,6 +45,27 @@ export default function DistributorDetailPage() {
   useEffect(() => {
     loadDistributor();
   }, [loadDistributor]);
+
+  const loadBrands = useCallback(async () => {
+    setBrandsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/distributors/${distributorId}/brands`);
+      if (response.ok) {
+        const result = await response.json();
+        setAssignedBrands(
+          (result.brands || []).filter((b: { assigned: boolean }) => b.assigned)
+        );
+      }
+    } catch {
+      // Non-critical, just don't show brands
+    } finally {
+      setBrandsLoading(false);
+    }
+  }, [distributorId]);
+
+  useEffect(() => {
+    loadBrands();
+  }, [loadBrands]);
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
@@ -268,6 +291,39 @@ export default function DistributorDetailPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Marcas Disponibles</h3>
+                {brandsLoading ? (
+                  <div className="flex justify-center py-4">
+                    <LoadingSpinner size="sm" />
+                  </div>
+                ) : assignedBrands.length === 0 ? (
+                  <p className="text-sm text-gray-500">Sin marcas asignadas</p>
+                ) : (
+                  <div className="space-y-2">
+                    {assignedBrands.map(brand => (
+                      <div key={brand.id} className="flex items-center p-2 bg-gray-50 rounded-lg">
+                        {brand.logo_url && (
+                          <img
+                            src={brand.logo_url}
+                            alt={brand.name}
+                            className="w-6 h-6 object-contain rounded mr-2 flex-shrink-0"
+                          />
+                        )}
+                        <span className="text-sm font-medium text-gray-700">{brand.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Link href={`/admin/distributors/${distributorId}/edit`} className="block mt-3">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Gestionar marcas
+                  </Button>
+                </Link>
               </div>
             </Card>
           </div>

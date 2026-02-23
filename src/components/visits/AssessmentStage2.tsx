@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ShoppingCart, Package, Gift, Clipboard } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { PhotoEvidenceUpload, EvidencePhoto } from './PhotoEvidenceUpload'
@@ -84,11 +84,24 @@ export function AssessmentStage2({
     })
   }
 
+  const refreshOrders = useCallback(async () => {
+    try {
+      const ordersRes = await fetch(`/api/promotor/visits/${visitId}/orders?status=pending`)
+      if (ordersRes.ok) {
+        const ordersData = await ordersRes.json()
+        setPendingOrders(ordersData.orders || [])
+      }
+    } catch (error) {
+      console.error('Error refreshing orders:', error)
+    }
+  }, [visitId])
+
   const handleOrderCreated = (orderId: string) => {
     onDataChange({
       orderId,
       hasPurchaseOrder: true
     })
+    refreshOrders()
   }
 
   const handleInventorySave = async (inventoryData: { inventory_skipped: boolean; items: Array<{ product_id: string; current_stock: number; notes?: string | null }> }) => {
@@ -236,6 +249,7 @@ export function AssessmentStage2({
         onOrderCreated={handleOrderCreated}
         clientId={clientId}
         visitId={visitId}
+        brandId={brandId}
       />
     </div>
   )

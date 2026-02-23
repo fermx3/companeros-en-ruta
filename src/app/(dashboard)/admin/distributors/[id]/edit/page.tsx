@@ -9,6 +9,13 @@ import { LoadingSpinner } from '@/components/ui/feedback';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import type { DistributorUpdateForm } from '@/lib/types/admin';
 
+interface BrandAssignment {
+  id: string
+  name: string
+  logo_url: string | null
+  assigned: boolean
+}
+
 export default function EditDistributorPage() {
   usePageTitle('Editar Distribuidor');
   const router = useRouter();
@@ -20,6 +27,11 @@ export default function EditDistributorPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [employeeCount, setEmployeeCount] = useState(0);
+  const [brands, setBrands] = useState<BrandAssignment[]>([]);
+  const [brandsLoading, setBrandsLoading] = useState(false);
+  const [brandsSaving, setBrandsSaving] = useState(false);
+  const [brandsError, setBrandsError] = useState<string | null>(null);
+  const [brandsSuccess, setBrandsSuccess] = useState(false);
 
   const [formData, setFormData] = useState<DistributorUpdateForm>({
     name: '',
@@ -76,6 +88,53 @@ export default function EditDistributorPage() {
   useEffect(() => {
     loadDistributor();
   }, [loadDistributor]);
+
+  const loadBrands = useCallback(async () => {
+    setBrandsLoading(true);
+    setBrandsError(null);
+    try {
+      const response = await fetch(`/api/admin/distributors/${distributorId}/brands`);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Error al cargar marcas');
+      setBrands(result.brands || []);
+    } catch (err) {
+      setBrandsError(err instanceof Error ? err.message : 'Error al cargar marcas');
+    } finally {
+      setBrandsLoading(false);
+    }
+  }, [distributorId]);
+
+  useEffect(() => {
+    loadBrands();
+  }, [loadBrands]);
+
+  const handleBrandToggle = (brandId: string) => {
+    setBrands(prev => prev.map(b =>
+      b.id === brandId ? { ...b, assigned: !b.assigned } : b
+    ));
+    setBrandsSuccess(false);
+  };
+
+  const handleSaveBrands = async () => {
+    setBrandsSaving(true);
+    setBrandsError(null);
+    setBrandsSuccess(false);
+    try {
+      const assignedIds = brands.filter(b => b.assigned).map(b => b.id);
+      const response = await fetch(`/api/admin/distributors/${distributorId}/brands`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand_ids: assignedIds }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Error al guardar marcas');
+      setBrandsSuccess(true);
+    } catch (err) {
+      setBrandsError(err instanceof Error ? err.message : 'Error al guardar marcas');
+    } finally {
+      setBrandsSaving(false);
+    }
+  };
 
   const handleInputChange = (field: keyof DistributorUpdateForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -380,6 +439,79 @@ export default function EditDistributorPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Notas adicionales sobre el distribuidor..."
               />
+            </div>
+          </Card>
+
+          {/* Marcas Disponibles */}
+          <Card>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Marcas Disponibles</h3>
+                <Button
+                  type="button"
+                  onClick={handleSaveBrands}
+                  disabled={brandsSaving || brandsLoading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  size="sm"
+                >
+                  {brandsSaving && <LoadingSpinner size="sm" className="mr-2" />}
+                  {brandsSaving ? 'Guardando...' : 'Guardar Marcas'}
+                </Button>
+              </div>
+
+              {brandsError && (
+                <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+                  {brandsError}
+                </div>
+              )}
+
+              {brandsSuccess && (
+                <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded text-sm">
+                  Marcas actualizadas correctamente
+                </div>
+              )}
+
+              {brandsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingSpinner size="md" />
+                </div>
+              ) : brands.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4">
+                  No hay marcas activas en el tenant
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {brands.map(brand => (
+                    <label
+                      key={brand.id}
+                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                        brand.assigned
+                          ? 'border-blue-300 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={brand.assigned}
+                        onChange={() => handleBrandToggle(brand.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3"
+                      />
+                      <div className="flex items-center min-w-0">
+                        {brand.logo_url && (
+                          <img
+                            src={brand.logo_url}
+                            alt={brand.name}
+                            className="w-6 h-6 object-contain rounded mr-2 flex-shrink-0"
+                          />
+                        )}
+                        <span className="text-sm font-medium text-gray-700 truncate">
+                          {brand.name}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
 
