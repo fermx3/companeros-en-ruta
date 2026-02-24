@@ -114,11 +114,3 @@ snippets/
 db_esquema_actual_completo.md
 database_actual.md
 database_main_doc.md
-
-# ===================
-# Project-specific: AI Agents (local configuration)
-# ===================
-agents.md
-skills/
-blueprints/
-.github/agents/
