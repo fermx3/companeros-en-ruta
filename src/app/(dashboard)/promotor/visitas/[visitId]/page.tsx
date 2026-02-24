@@ -68,7 +68,15 @@ export default function VisitDetailPage() {
 
           // Stage 2 data
           const inventoryEvidence = mapEvidence('inventory')
-          if (data.stageAssessment || inventoryEvidence.length > 0) {
+          // Map inventory items from DB format (separate product_id/product_variant_id) back to form format
+          const inventoryItems = (data.inventoryItems || []).map((item: Record<string, unknown>) => ({
+            product_id: item.product_variant_id
+              ? `${item.product_id}:${item.product_variant_id}`
+              : item.product_id as string,
+            current_stock: item.current_stock as number,
+            notes: (item.notes as string) || null
+          }))
+          if (data.stageAssessment || inventoryEvidence.length > 0 || inventoryItems.length > 0) {
             wizardData.stage2 = {
               hasInventory: data.stageAssessment?.has_inventory || false,
               hasPurchaseOrder: data.stageAssessment?.has_purchase_order || false,
@@ -76,6 +84,7 @@ export default function VisitDetailPage() {
               orderId: data.stageAssessment?.order_id,
               whyNotBuying: data.stageAssessment?.why_not_buying || null,
               purchaseInventoryNotes: data.stageAssessment?.purchase_inventory_notes || '',
+              inventoryItems,
               evidence: inventoryEvidence,
               completedAt: data.stageAssessment?.stage2_completed_at ? new Date(data.stageAssessment.stage2_completed_at) : undefined
             }

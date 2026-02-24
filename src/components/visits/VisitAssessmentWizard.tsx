@@ -69,6 +69,12 @@ export interface WizardData {
     orderId?: string
     whyNotBuying: string | null
     purchaseInventoryNotes: string
+    inventoryItems: Array<{
+      product_id: string
+      product_name?: string
+      current_stock: number
+      notes?: string | null
+    }>
     evidence: Array<{
       id: string
       file?: File
@@ -148,6 +154,7 @@ const getInitialData = (): WizardData => ({
     purchaseOrderNumber: '',
     whyNotBuying: null,
     purchaseInventoryNotes: '',
+    inventoryItems: [],
     evidence: []
   },
   stage3: {

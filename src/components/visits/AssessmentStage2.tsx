@@ -62,7 +62,14 @@ export function AssessmentStage2({
         const ordersRes = await fetch(`/api/promotor/visits/${visitId}/orders`).catch(() => null)
         if (ordersRes?.ok) {
           const ordersData = await ordersRes.json()
-          setOrders(ordersData.orders || [])
+          const loadedOrders = ordersData.orders || []
+          setOrders(loadedOrders)
+
+          // Sync hasPurchaseOrder flag if active orders exist
+          const hasActive = loadedOrders.some((o: VisitOrder) => o.order_status !== 'cancelled')
+          if (hasActive && !data.hasPurchaseOrder) {
+            onDataChange({ hasPurchaseOrder: true })
+          }
         }
       } catch (error) {
         console.error('Error loading stage 2 data:', error)
@@ -160,10 +167,33 @@ export function AssessmentStage2({
   }
 
   const handleInventorySave = async (inventoryData: { inventory_skipped: boolean; items: Array<{ product_id: string; current_stock: number; notes?: string | null }> }) => {
+    // Update wizard state with inventory items
     onDataChange({
-      hasInventory: !inventoryData.inventory_skipped
+      hasInventory: !inventoryData.inventory_skipped,
+      inventoryItems: inventoryData.items
     })
+
+    // Save immediately to the API
+    const stageData = {
+      ...data,
+      hasInventory: !inventoryData.inventory_skipped,
+      inventoryItems: inventoryData.items
+    }
+
+    const response = await fetch(`/api/promotor/visits/${visitId}/assessment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stage: 2, data: stageData })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.details || errorData.error || 'Error al guardar inventario')
+    }
   }
+
+  const missingWhyNotBuying = !data.hasPurchaseOrder && !data.orderId && !data.whyNotBuying
+  const hasValidationIssues = showValidation && missingWhyNotBuying
 
   return (
     <div className={cn('space-y-6', className)}>
