@@ -384,6 +384,7 @@ export default function KpiTargetsPage() {
                 </label>
                 <input
                   type="number"
+                  onFocus={(e) => e.target.select()}
                   value={formTargetValue}
                   onChange={e => setFormTargetValue(e.target.value)}
                   placeholder="Ej: 150000"

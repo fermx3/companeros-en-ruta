@@ -471,6 +471,7 @@ export default function BrandProductsPage() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                       <input
                         type="number"
+                        onFocus={(e) => e.target.select()}
                         step="0.01"
                         min="0"
                         value={formData.base_price}
@@ -489,6 +490,7 @@ export default function BrandProductsPage() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                       <input
                         type="number"
+                        onFocus={(e) => e.target.select()}
                         step="0.01"
                         min="0"
                         value={formData.cost}
@@ -590,6 +592,7 @@ export default function BrandProductsPage() {
                               </label>
                               <input
                                 type="number"
+                                onFocus={(e) => e.target.select()}
                                 step="0.01"
                                 min="0"
                                 value={variant.price}
@@ -604,6 +607,7 @@ export default function BrandProductsPage() {
                               </label>
                               <input
                                 type="number"
+                                onFocus={(e) => e.target.select()}
                                 step="0.01"
                                 min="0"
                                 value={variant.cost}
@@ -617,6 +621,7 @@ export default function BrandProductsPage() {
                               </label>
                               <input
                                 type="number"
+                                onFocus={(e) => e.target.select()}
                                 step="0.01"
                                 min="0"
                                 value={variant.size_value}

@@ -114,6 +114,7 @@ function TierFormModal({
               </label>
               <input
                 type="number"
+                onFocus={(e) => e.target.select()}
                 min="1"
                 value={formData.tier_level}
                 onChange={(e) => setFormData({ ...formData, tier_level: parseInt(e.target.value) || 1 })}
@@ -153,6 +154,7 @@ function TierFormModal({
                 </label>
                 <input
                   type="number"
+                  onFocus={(e) => e.target.select()}
                   min="0"
                   value={formData.min_points_required}
                   onChange={(e) => setFormData({ ...formData, min_points_required: parseInt(e.target.value) || 0 })}
@@ -165,6 +167,7 @@ function TierFormModal({
                 </label>
                 <input
                   type="number"
+                  onFocus={(e) => e.target.select()}
                   min="0"
                   value={formData.min_visits_required}
                   onChange={(e) => setFormData({ ...formData, min_visits_required: parseInt(e.target.value) || 0 })}
@@ -177,6 +180,7 @@ function TierFormModal({
                 </label>
                 <input
                   type="number"
+                  onFocus={(e) => e.target.select()}
                   min="0"
                   value={formData.min_purchases_required}
                   onChange={(e) => setFormData({ ...formData, min_purchases_required: parseInt(e.target.value) || 0 })}
@@ -195,6 +199,7 @@ function TierFormModal({
                 </label>
                 <input
                   type="number"
+                  onFocus={(e) => e.target.select()}
                   min="1"
                   step="0.1"
                   value={formData.points_multiplier}
@@ -209,6 +214,7 @@ function TierFormModal({
                 </label>
                 <input
                   type="number"
+                  onFocus={(e) => e.target.select()}
                   min="0"
                   max="100"
                   value={formData.discount_percentage}

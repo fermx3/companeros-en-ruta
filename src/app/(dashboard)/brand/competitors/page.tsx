@@ -399,6 +399,7 @@ export default function BrandCompetitorsPage() {
                                 </label>
                                 <input
                                   type="number"
+                                  onFocus={(e) => e.target.select()}
                                   value={product.default_size_grams || ''}
                                   onChange={(e) => updateProduct(pIdx, 'default_size_grams', e.target.value ? parseInt(e.target.value) : null)}
                                   className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -411,6 +412,7 @@ export default function BrandCompetitorsPage() {
                                 </label>
                                 <input
                                   type="number"
+                                  onFocus={(e) => e.target.select()}
                                   value={product.default_size_ml || ''}
                                   onChange={(e) => updateProduct(pIdx, 'default_size_ml', e.target.value ? parseInt(e.target.value) : null)}
                                   className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -444,6 +446,7 @@ export default function BrandCompetitorsPage() {
                                   <div key={sIdx} className="flex items-center gap-1 bg-white px-2 py-1 rounded border">
                                     <input
                                       type="number"
+                                      onFocus={(e) => e.target.select()}
                                       value={size.size_value || ''}
                                       onChange={(e) => updateSize(pIdx, sIdx, 'size_value', parseInt(e.target.value) || 0)}
                                       className="w-16 px-1 py-0.5 text-xs border border-gray-200 rounded"

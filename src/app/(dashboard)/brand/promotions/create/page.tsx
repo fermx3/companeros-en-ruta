@@ -259,6 +259,7 @@ export default function CreatePromotionPage() {
             <Input
               label="Porcentaje de descuento"
               type="number"
+              onFocus={(e) => e.target.select()}
               min={1}
               max={100}
               placeholder="Ej: 15"
@@ -270,6 +271,7 @@ export default function CreatePromotionPage() {
             <Input
               label="Descuento máximo (opcional)"
               type="number"
+              onFocus={(e) => e.target.select()}
               min={0}
               placeholder="Ej: 500"
               value={formData.max_discount_amount || ''}
@@ -284,6 +286,7 @@ export default function CreatePromotionPage() {
           <Input
             label="Monto de descuento"
             type="number"
+            onFocus={(e) => e.target.select()}
             min={1}
             placeholder="Ej: 100"
             value={formData.discount_amount || ''}
@@ -299,6 +302,7 @@ export default function CreatePromotionPage() {
             <Input
               label="Cantidad a comprar"
               type="number"
+              onFocus={(e) => e.target.select()}
               min={1}
               placeholder="Ej: 2"
               value={formData.buy_quantity || ''}
@@ -309,6 +313,7 @@ export default function CreatePromotionPage() {
             <Input
               label="Cantidad gratis"
               type="number"
+              onFocus={(e) => e.target.select()}
               min={1}
               placeholder="Ej: 1"
               value={formData.get_quantity || ''}
@@ -325,6 +330,7 @@ export default function CreatePromotionPage() {
           <Input
             label="Multiplicador de puntos"
             type="number"
+            onFocus={(e) => e.target.select()}
             min={1.1}
             step={0.1}
             placeholder="Ej: 2"
@@ -410,6 +416,7 @@ export default function CreatePromotionPage() {
             <Input
               label="Compra mínima (opcional)"
               type="number"
+              onFocus={(e) => e.target.select()}
               min={0}
               placeholder="Ej: 500"
               value={formData.min_purchase_amount || ''}
@@ -496,6 +503,7 @@ export default function CreatePromotionPage() {
           <Input
             label="Por cliente (opcional)"
             type="number"
+            onFocus={(e) => e.target.select()}
             min={1}
             placeholder="Sin límite"
             value={formData.usage_limit_per_client || ''}
@@ -505,6 +513,7 @@ export default function CreatePromotionPage() {
           <Input
             label="Total (opcional)"
             type="number"
+            onFocus={(e) => e.target.select()}
             min={1}
             placeholder="Sin límite"
             value={formData.usage_limit_total || ''}
@@ -514,6 +523,7 @@ export default function CreatePromotionPage() {
           <Input
             label="Presupuesto (opcional)"
             type="number"
+            onFocus={(e) => e.target.select()}
             min={0}
             placeholder="Sin límite"
             value={formData.budget_allocated || ''}
@@ -589,6 +599,7 @@ export default function CreatePromotionPage() {
         <Input
           label="Nivel de prioridad"
           type="number"
+          onFocus={(e) => e.target.select()}
           min={0}
           max={100}
           value={formData.priority}

@@ -368,6 +368,7 @@ export default function BrandTeamMemberEditPage() {
                     </label>
                     <input
                       type="number"
+                      onFocus={(e) => e.target.select()}
                       id="monthly_quota"
                       min="0"
                       value={formData.monthly_quota}

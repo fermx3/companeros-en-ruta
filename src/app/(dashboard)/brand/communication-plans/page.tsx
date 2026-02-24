@@ -372,6 +372,7 @@ export default function BrandCommunicationPlansPage() {
                       <div className="w-20">
                         <input
                           type="number"
+                          onFocus={(e) => e.target.select()}
                           min="1"
                           value={mat.quantity_required}
                           onChange={(e) => {

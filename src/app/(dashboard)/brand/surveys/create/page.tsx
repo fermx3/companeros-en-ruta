@@ -268,6 +268,7 @@ export default function CreateSurveyPage() {
               </label>
               <input
                 type="number"
+                onFocus={(e) => e.target.select()}
                 value={maxResponses}
                 onChange={(e) => setMaxResponses(Math.max(1, Number(e.target.value)))}
                 min={1}
