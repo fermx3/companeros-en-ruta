@@ -71,6 +71,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     .select('*')
     .eq('visit_id', visit.id)
 
+  // Fetch inventory items
+  const { data: inventoryItems } = await supabase
+    .from('visit_inventories')
+    .select('*')
+    .eq('visit_id', visit.id)
+    .is('deleted_at', null)
+
   // Fetch evidence photos
   const { data: evidence } = await supabase
     .from('visit_evidence')
@@ -85,6 +92,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     competitorAssessments: competitorAssessments || [],
     popMaterialChecks: popMaterialChecks || [],
     exhibitionChecks: exhibitionChecks || [],
+    inventoryItems: inventoryItems || [],
     evidence: evidence || []
   })
 }
@@ -212,6 +220,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         const brandAssessments = data.brandProductAssessments.map((a: Record<string, unknown>) => ({
           visit_id: visit.id,
+          tenant_id: visit.tenant_id,
           product_id: a.product_id,
           product_variant_id: a.product_variant_id || null,
           current_price: a.current_price || null,
@@ -229,6 +238,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         if (brandError) {
           console.error('Error saving brand product assessments:', brandError)
+          return NextResponse.json({ error: 'Error saving brand product assessments', details: brandError.message }, { status: 500 })
         }
       }
 
@@ -241,6 +251,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         const competitorAssessments = data.competitorAssessments.map((a: Record<string, unknown>) => ({
           visit_id: visit.id,
+          tenant_id: visit.tenant_id,
           competitor_id: a.competitor_id,
           competitor_product_id: a.competitor_product_id || null,
           product_name_observed: a.product_name_observed || null,
@@ -257,6 +268,42 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         if (compError) {
           console.error('Error saving competitor assessments:', compError)
+          return NextResponse.json({ error: 'Error saving competitor assessments', details: compError.message }, { status: 500 })
+        }
+      }
+    } else if (stage === 2) {
+      // Save inventory items
+      if (data.inventoryItems?.length > 0) {
+        await supabase
+          .from('visit_inventories')
+          .delete()
+          .eq('visit_id', visit.id)
+
+        const inventoryRows = data.inventoryItems.map((item: Record<string, unknown>) => {
+          const rawId = item.product_id as string
+          const [productId, variantId] = rawId.includes(':')
+            ? rawId.split(':')
+            : [rawId, null]
+
+          return {
+            visit_id: visit.id,
+            tenant_id: visit.tenant_id,
+            product_id: productId,
+            product_variant_id: variantId || null,
+            current_stock: item.current_stock as number,
+            unit_type: 'pieza',
+            counted_by: userProfile.id,
+            notes: item.notes || null
+          }
+        })
+
+        const { error: invError } = await supabase
+          .from('visit_inventories')
+          .insert(inventoryRows)
+
+        if (invError) {
+          console.error('Error saving inventory items:', invError)
+          return NextResponse.json({ error: 'Error saving inventory items', details: invError.message }, { status: 500 })
         }
       }
     } else if (stage === 3) {
@@ -269,6 +316,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         const popChecks = data.popMaterialChecks.map((c: Record<string, unknown>) => ({
           visit_id: visit.id,
+          tenant_id: visit.tenant_id,
           pop_material_id: c.pop_material_id,
           is_present: c.is_present || false,
           condition: c.condition || null,
@@ -281,6 +329,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         if (popError) {
           console.error('Error saving POP material checks:', popError)
+          return NextResponse.json({ error: 'Error saving POP material checks', details: popError.message }, { status: 500 })
         }
       }
 
@@ -293,6 +342,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         const exhibitionChecks = data.exhibitionChecks.map((c: Record<string, unknown>) => ({
           visit_id: visit.id,
+          tenant_id: visit.tenant_id,
           exhibition_id: c.exhibition_id,
           is_executed: c.is_executed || false,
           execution_quality: c.execution_quality || null,
@@ -305,6 +355,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         if (exhibError) {
           console.error('Error saving exhibition checks:', exhibError)
+          return NextResponse.json({ error: 'Error saving exhibition checks', details: exhibError.message }, { status: 500 })
         }
       }
     }
