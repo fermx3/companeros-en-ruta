@@ -13,18 +13,25 @@ This file defines **non-negotiable rules** for how Claude must operate when work
 ### 1. Schema Truth & No Guessing
 
 * You **MUST NOT assume** any table, column, type, relation, policy, view, function, or enum.
-* You **MUST base all schema-dependent work** on the **current project state**:
+* You **MUST base all schema-dependent work** on the **current project state**, using the following hierarchy:
 
-  * **Versioned migrations in this repo** (primary)
-  * A **local Supabase Postgres** instance mounted via **Docker** that is built from those migrations (primary)
+  1. **`src/lib/types/database.ts`** — Primary reference for column names, field types, and relationships when writing TypeScript code (frontend/API)
+  2. **Versioned migrations in this repo** — Authoritative for DDL, structural understanding, and schema history
+  3. **Local Supabase Postgres instance (Docker)** — Runtime verification, built from migrations
+  4. **Hosted Supabase DB** — Final production checks when needed
 
 The working assumption for this repository is:
 
 * The schema is controlled via migrations.
 * No one is changing the database structure outside this repository.
-* Therefore, the **local Supabase DB + migrations** represent the **most current schema** when kept in sync.
+* The types file (`src/lib/types/database.ts`) maps 1:1 to the DB schema and is kept in sync with migrations.
+* Therefore, the **types file + migrations + local Supabase DB** represent the **most current schema** when kept in sync.
 
-If you have not verified the schema from **migrations and/or the local Supabase DB**, you are operating on invalid assumptions.
+For **TypeScript code tasks** (queries, data access, API routes, components), consulting the types file is sufficient for column/field verification.
+
+For **structural changes** (DDL, new tables, RLS, migrations), you must verify against migrations and/or the local DB.
+
+If you have not verified the schema from **at least one of these sources**, you are operating on invalid assumptions.
 
 **DO NOT PROCEED.**
 
@@ -82,11 +89,14 @@ Instead:
 
 When a task impacts database structure or access control, you **MUST base decisions on a verified snapshot**.
 
+**Fast path (no DDL impact):** If the task only involves reading/writing existing columns (no schema changes), consulting `src/lib/types/database.ts` is sufficient. A full DB snapshot is not required.
+
 ### Preferred sources (in order)
 
-1. **Repo migrations** (authoritative history)
-2. **Local Supabase DB (Docker)** built from migrations (authoritative current state)
-3. **Hosted Supabase DB** (verification when needed)
+1. **`src/lib/types/database.ts`** (fast-path for TypeScript code tasks)
+2. **Repo migrations** (authoritative history)
+3. **Local Supabase DB (Docker)** built from migrations (authoritative current state)
+4. **Hosted Supabase DB** (verification when needed)
 
 ### Minimum required understanding:
 
@@ -218,7 +228,11 @@ const { data } = await supabase
   .eq('order_status', 'draft')  // NOT status!
 ```
 
-### TypeScript Types Reference
+### TypeScript Types — Primary Code Reference
+
+`src/lib/types/database.ts` is the **primary source of truth** for column names and types when writing TypeScript code.
+
+**Before writing any Supabase query or data access code**, consult this file for correct field names.
 
 Always import and use types from `@/lib/types/database`:
 
@@ -226,7 +240,7 @@ Always import and use types from `@/lib/types/database`:
 import type { UserProfile, Order, VisitOrder, VisitStageAssessment } from '@/lib/types/database'
 ```
 
-These types are documented with the correct field names. See `/src/lib/types/database.ts`.
+**Maintenance rule**: When a migration adds, renames, or removes columns, the corresponding types in `src/lib/types/database.ts` **MUST be updated in the same commit**. Failing to do so creates drift between the schema and the codebase.
 
 ---
 
