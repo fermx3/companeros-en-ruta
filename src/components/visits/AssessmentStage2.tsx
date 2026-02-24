@@ -49,7 +49,10 @@ export function AssessmentStage2({
       setLoadingPromotions(true)
       try {
         // Load client promotions
-        const promotionsRes = await fetch(`/api/client/${clientId}/promotions`).catch(() => null)
+        const promotionsUrl = brandId
+          ? `/api/client/${clientId}/promotions?brand_id=${brandId}`
+          : `/api/client/${clientId}/promotions`
+        const promotionsRes = await fetch(promotionsUrl).catch(() => null)
         if (promotionsRes?.ok) {
           const promotionsData = await promotionsRes.json()
           setPromotions(promotionsData.promotions || [])

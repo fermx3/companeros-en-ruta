@@ -15,30 +15,56 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get promotions available to this client
-  // This includes general promotions and client-specific promotions
-  const { data: promotions, error } = await supabase
+  const { searchParams } = new URL(request.url)
+  const brandId = searchParams.get('brand_id')
+
+  // Find client_brand_membership IDs for this client
+  let membershipsQuery = supabase
+    .from('client_brand_memberships')
+    .select('id')
+    .eq('client_id', clientId)
+    .is('deleted_at', null)
+
+  if (brandId) {
+    membershipsQuery = membershipsQuery.eq('brand_id', brandId)
+  }
+
+  const { data: memberships } = await membershipsQuery
+
+  const membershipIds = (memberships || []).map(m => m.id)
+
+  let promotionsQuery = supabase
     .from('promotions')
     .select(`
       id,
       name,
       description,
       promotion_type,
-      discount_type,
-      discount_value,
+      status,
       start_date,
       end_date,
-      usage_limit,
-      is_active,
+      discount_percentage,
+      discount_amount,
+      buy_quantity,
+      get_quantity,
+      usage_limit_per_client,
+      usage_limit_total,
+      usage_count_total,
       promotion_redemptions (
         id,
-        client_id
+        client_brand_membership_id
       )
     `)
-    .eq('is_active', true)
-    .lte('start_date', new Date().toISOString())
-    .gte('end_date', new Date().toISOString())
+    .eq('status', 'active')
+    .lte('start_date', new Date().toISOString().split('T')[0])
+    .gte('end_date', new Date().toISOString().split('T')[0])
     .is('deleted_at', null)
+
+  if (brandId) {
+    promotionsQuery = promotionsQuery.eq('brand_id', brandId)
+  }
+
+  const { data: promotions, error } = await promotionsQuery
 
   if (error) {
     console.error('Error fetching promotions:', error)
@@ -48,30 +74,32 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   // Transform promotions to include usage info for this client
   const clientPromotions = (promotions || []).map(promo => {
     const redemptionsByClient = promo.promotion_redemptions?.filter(
-      (r: { client_id: string }) => r.client_id === clientId
+      (r: { client_brand_membership_id: string }) =>
+        membershipIds.includes(r.client_brand_membership_id)
     ) || []
     const timesUsed = redemptionsByClient.length
-    const remainingUses = promo.usage_limit ? promo.usage_limit - timesUsed : null
+    const usageLimit = promo.usage_limit_per_client
+    const remainingUses = usageLimit ? usageLimit - timesUsed : null
 
-    let status: 'available' | 'partially_used' | 'fully_used' | 'expired' = 'available'
+    let clientStatus: 'available' | 'partially_used' | 'fully_used' = 'available'
     if (remainingUses !== null) {
       if (remainingUses <= 0) {
-        status = 'fully_used'
+        clientStatus = 'fully_used'
       } else if (timesUsed > 0) {
-        status = 'partially_used'
+        clientStatus = 'partially_used'
       }
     } else if (timesUsed > 0) {
-      status = 'partially_used'
+      clientStatus = 'partially_used'
     }
 
-    // Format discount display
+    // Format discount display based on promotion_type and available fields
     let discountDisplay = ''
-    if (promo.discount_type === 'percentage') {
-      discountDisplay = `${promo.discount_value}% OFF`
-    } else if (promo.discount_type === 'fixed') {
-      discountDisplay = `$${promo.discount_value} descuento`
-    } else if (promo.discount_type === 'bogo') {
-      discountDisplay = '2x1'
+    if (promo.discount_percentage) {
+      discountDisplay = `${promo.discount_percentage}% OFF`
+    } else if (promo.discount_amount) {
+      discountDisplay = `$${promo.discount_amount} descuento`
+    } else if (promo.buy_quantity && promo.get_quantity) {
+      discountDisplay = `Lleva ${promo.buy_quantity}, paga ${promo.buy_quantity - promo.get_quantity}`
     }
 
     return {
@@ -81,8 +109,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       promotion_type: promo.promotion_type,
       discount_display: discountDisplay,
       valid_until: promo.end_date,
-      status,
-      usage_limit: promo.usage_limit,
+      status: clientStatus,
+      usage_limit: usageLimit,
       times_used: timesUsed,
       remaining_uses: remainingUses
     }
