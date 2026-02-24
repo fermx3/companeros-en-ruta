@@ -20,6 +20,7 @@ interface AdminSurvey {
   start_date: string
   end_date: string
   created_at: string
+  response_count: number
   brands: { name: string } | null
   creator: { first_name: string; last_name: string } | null
 }
@@ -177,6 +178,7 @@ export default function AdminSurveysPage() {
                     <th className="pb-3 font-medium">Estado</th>
                     <th className="pb-3 font-medium">Creada por</th>
                     <th className="pb-3 font-medium">Dirigida a</th>
+                    <th className="pb-3 font-medium text-right">Respuestas</th>
                     <th className="pb-3 font-medium text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -201,12 +203,22 @@ export default function AdminSurveysPage() {
                       <td className="py-3 text-xs text-gray-600">
                         {survey.target_roles.map(r => ROLE_LABELS[r] || r).join(', ')}
                       </td>
+                      <td className="py-3 text-right font-medium">{survey.response_count}</td>
                       <td className="py-3 text-right">
-                        <Link href={`/admin/surveys/${survey.public_id}`}>
-                          <Button variant="outline" size="sm">
-                            {survey.survey_status === 'pending_approval' ? 'Revisar' : 'Ver'}
-                          </Button>
-                        </Link>
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={`/admin/surveys/${survey.public_id}`}>
+                            <Button variant="outline" size="sm">
+                              {survey.survey_status === 'pending_approval' ? 'Revisar' : 'Ver'}
+                            </Button>
+                          </Link>
+                          {(survey.survey_status === 'active' || survey.survey_status === 'closed') && (
+                            <Link href={`/admin/surveys/${survey.public_id}/results`}>
+                              <Button variant="outline" size="sm">
+                                <BarChart3 className="w-3.5 h-3.5" />
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

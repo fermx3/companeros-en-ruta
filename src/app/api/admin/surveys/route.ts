@@ -77,7 +77,8 @@ export async function GET(request: NextRequest) {
         created_at,
         rejection_reason,
         brands!inner(name),
-        creator:user_profiles!surveys_created_by_fkey(first_name, last_name)
+        creator:user_profiles!surveys_created_by_fkey(first_name, last_name),
+        survey_responses(count)
       `)
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
@@ -134,8 +135,15 @@ export async function GET(request: NextRequest) {
       closed: metricsData?.filter(s => s.survey_status === 'closed').length || 0
     }
 
+    // Map response_count from the nested count query
+    const surveysWithCount = (surveys || []).map((s: any) => ({
+      ...s,
+      response_count: s.survey_responses?.[0]?.count ?? 0,
+      survey_responses: undefined
+    }))
+
     return NextResponse.json({
-      surveys: surveys || [],
+      surveys: surveysWithCount,
       metrics,
       pagination: {
         page,
