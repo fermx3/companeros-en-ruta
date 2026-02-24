@@ -187,6 +187,31 @@ export function VisitAssessmentWizard({
   const clientAddress = [visit?.client?.address_street, visit?.client?.address_neighborhood].filter(Boolean).join(', ')
   const brandName = visit?.brand?.name
   const startTime = visit?.check_in_time ? new Date(visit.check_in_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null
+
+  // Live elapsed timer
+  const [elapsed, setElapsed] = useState(() => {
+    if (!visit?.check_in_time) return 0
+    return Math.floor((Date.now() - new Date(visit.check_in_time).getTime()) / 1000)
+  })
+
+  useEffect(() => {
+    if (!visit?.check_in_time) return
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - new Date(visit.check_in_time!).getTime()) / 1000))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [visit?.check_in_time])
+
+  const formatElapsed = (secs: number) => {
+    const mins = Math.floor(secs / 60)
+    const hrs = Math.floor(mins / 60)
+    const s = secs % 60
+    const m = mins % 60
+    return hrs > 0
+      ? `${hrs}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`
+      : `${m}m ${String(s).padStart(2, '0')}s`
+  }
+
   const [currentStage, setCurrentStage] = useState(0)
   const [data, setData] = useState<WizardData>(() => ({
     ...getInitialData(),
@@ -388,10 +413,14 @@ export function VisitAssessmentWizard({
                   <span className="hidden sm:inline text-gray-600 font-medium">{brandName}</span>
                 )}
                 {startTime && (
-                  <span className="flex items-center text-gray-500">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {startTime}
-                  </span>
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-0.5 sm:gap-2 text-sm">
+                    <span className="text-gray-500 text-xs sm:text-sm">{startTime}</span>
+                    <span className="hidden sm:inline text-gray-300">|</span>
+                    <span className="flex items-center text-green-600 font-medium tabular-nums">
+                      <Clock className="w-4 h-4 mr-1" />
+                      {formatElapsed(elapsed)}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>

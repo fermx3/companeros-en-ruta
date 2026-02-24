@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { VisitHeader } from '@/components/visits/VisitHeader'
 import type { VisitDetailData } from '@/lib/api/visit-detail'
@@ -50,6 +51,33 @@ function InfoRow({ label, value }: { label: string; value: string | number | nul
     <div>
       <span className="text-sm font-medium text-gray-500">{label}</span>
       <p className="text-sm text-gray-900">{value ?? 'N/A'}</p>
+    </div>
+  )
+}
+
+function LiveDuration({ checkInTime }: { checkInTime: string }) {
+  const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - new Date(checkInTime).getTime()) / 1000))
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - new Date(checkInTime).getTime()) / 1000))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [checkInTime])
+
+  const totalMinutes = Math.floor(elapsed / 60)
+  const secs = elapsed % 60
+  const hrs = Math.floor(totalMinutes / 60)
+  const mins = totalMinutes % 60
+
+  const time = hrs > 0
+    ? `${hrs}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`
+    : `${mins}m ${String(secs).padStart(2, '0')}s`
+
+  return (
+    <div>
+      <span className="text-sm font-medium text-gray-500">Duración</span>
+      <p className="text-sm text-green-600 font-medium tabular-nums">{time}</p>
     </div>
   )
 }
@@ -127,7 +155,11 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
             <InfoRow label="Promotor" value={promotorName} />
             <InfoRow label="Check-in" value={formatDateTime(visit.check_in_time)} />
             <InfoRow label="Check-out" value={formatDateTime(visit.check_out_time)} />
-            <InfoRow label="Duración" value={formatDuration(visit.duration_minutes)} />
+            {visit.visit_status === 'in_progress' && visit.check_in_time ? (
+              <LiveDuration checkInTime={visit.check_in_time} />
+            ) : (
+              <InfoRow label="Duración" value={formatDuration(visit.duration_minutes)} />
+            )}
             <InfoRow label="Rating" value={visit.client_satisfaction_rating != null ? `${visit.client_satisfaction_rating}/5` : null} />
             {visit.promotor_notes && (
               <div className="col-span-2 md:col-span-4">
