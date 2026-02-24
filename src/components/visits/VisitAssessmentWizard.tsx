@@ -130,7 +130,8 @@ interface VisitAssessmentWizardProps {
     stage: number,
     data: WizardData,
     updateData: (updates: Partial<WizardData>) => void,
-    updateStage: <K extends keyof WizardData>(stageKey: K, updates: Partial<WizardData[K]>) => void
+    updateStage: <K extends keyof WizardData>(stageKey: K, updates: Partial<WizardData[K]>) => void,
+    showValidation: boolean
   ) => React.ReactNode
   className?: string
 }
@@ -194,20 +195,22 @@ export function VisitAssessmentWizard({
   const [saving, setSaving] = useState(false)
   const [savingStage, setSavingStage] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showValidation, setShowValidation] = useState(false)
 
   // Validation: check if a stage has missing required fields
   const getStageWarning = (stageIndex: number): boolean => {
     switch (stageIndex) {
       case 0: {
-        // Stage 1: needs at least one product assessment with a price
+        // Stage 1: needs at least one product assessment with a price + evidence
         const s = data.stage1
         if (s.brandProductAssessments.length === 0) return true
-        return s.brandProductAssessments.some(a => a.current_price === null)
+        if (s.evidence.length === 0) return true
+        return s.brandProductAssessments.some(a => a.is_product_present && a.current_price === null)
       }
       case 1: {
-        // Stage 2: if no purchase order, must have a reason selected
+        // Stage 2: if no purchase order and no order created, must have a reason selected
         const s = data.stage2
-        if (!s.hasPurchaseOrder && !s.whyNotBuying) return true
+        if (!s.hasPurchaseOrder && !s.orderId && !s.whyNotBuying) return true
         return false
       }
       case 2:
@@ -251,6 +254,7 @@ export function VisitAssessmentWizard({
   }, [])
 
   const handleSaveStage = async () => {
+    setShowValidation(true)
     setSaving(true)
     setSavingStage(currentStage)
     setError(null)
@@ -294,6 +298,7 @@ export function VisitAssessmentWizard({
 
     if (currentStage < STAGES.length - 1) {
       setCurrentStage(prev => prev + 1)
+      setShowValidation(false)
     }
   }
 
@@ -308,6 +313,7 @@ export function VisitAssessmentWizard({
     const targetStage = wizardStages[index]
     if (targetStage.isCompleted || index <= currentStage) {
       setCurrentStage(index)
+      setShowValidation(false)
     }
   }
 
@@ -414,7 +420,7 @@ export function VisitAssessmentWizard({
 
       {/* Stage content */}
       <div className="flex-1 overflow-auto p-4">
-        {renderStage(currentStage, data, updateData, updateStage)}
+        {renderStage(currentStage, data, updateData, updateStage, showValidation)}
       </div>
 
       {/* Navigation buttons */}

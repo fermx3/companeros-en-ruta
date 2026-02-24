@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DollarSign, Package, Tag, TrendingUp } from 'lucide-react'
+import { AlertTriangle, DollarSign, Package, Tag, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { PhotoEvidenceUpload, EvidencePhoto } from './PhotoEvidenceUpload'
 import { CompetitorProductsForm, Competitor, CompetitorAssessment } from './CompetitorProductsForm'
@@ -39,6 +39,7 @@ interface AssessmentStage1Props {
   onDataChange: (updates: Partial<WizardData['stage1']>) => void
   brandId: string
   visitId?: string
+  showValidation?: boolean
   className?: string
 }
 
@@ -61,6 +62,7 @@ export function AssessmentStage1({
   onDataChange,
   brandId,
   visitId,
+  showValidation,
   className
 }: AssessmentStage1Props) {
   const [products, setProducts] = useState<Product[]>([])
@@ -177,6 +179,14 @@ export function AssessmentStage1({
     )
   }
 
+  // Validation helpers
+  const noProducts = data.brandProductAssessments.length === 0
+  const missingPriceCount = data.brandProductAssessments.filter(
+    a => a.is_product_present && a.current_price === null
+  ).length
+  const missingEvidence = data.evidence.length === 0
+  const hasValidationIssues = showValidation && (noProducts || missingPriceCount > 0 || missingEvidence)
+
   return (
     <div className={cn('space-y-6', className)}>
       {/* Header */}
@@ -189,6 +199,21 @@ export function AssessmentStage1({
           Registra los precios observados de tus productos y la competencia
         </p>
       </div>
+
+      {/* Validation summary banner */}
+      {hasValidationIssues && (
+        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <span>
+            Campos pendientes:{' '}
+            {[
+              noProducts && 'sin productos registrados',
+              missingPriceCount > 0 && `${missingPriceCount} producto${missingPriceCount > 1 ? 's' : ''} sin precio`,
+              missingEvidence && 'falta evidencia fotográfica'
+            ].filter(Boolean).join(' · ')}
+          </span>
+        </div>
+      )}
 
       {/* Brand Products */}
       <Card>
@@ -263,10 +288,18 @@ export function AssessmentStage1({
                                   assessment.product_variant_id,
                                   { current_price: parseFloat(e.target.value) || null }
                                 )}
-                                className="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className={cn(
+                                  'w-full pl-6 pr-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500',
+                                  showValidation && assessment.current_price === null
+                                    ? 'border-red-300'
+                                    : 'border-gray-200'
+                                )}
                                 placeholder="0.00"
                               />
                             </div>
+                            {showValidation && assessment.current_price === null && (
+                              <p className="text-xs text-red-500 mt-1">Precio requerido</p>
+                            )}
                           </div>
 
                           <div>
@@ -356,7 +389,7 @@ export function AssessmentStage1({
                           <div className="mt-2">
                             <input
                               type="text"
-                              value={assessment.promotion_description}
+                              value={assessment.promotion_description ?? ''}
                               onChange={(e) => updateProductAssessment(
                                 assessment.product_id,
                                 assessment.product_variant_id,
@@ -411,9 +444,12 @@ export function AssessmentStage1({
       </Card>
 
       {/* Photo Evidence */}
-      <Card>
+      <Card className={cn(showValidation && missingEvidence && 'border border-red-300')}>
         <CardHeader>
           <CardTitle className="text-base">Evidencia Fotográfica</CardTitle>
+          {showValidation && missingEvidence && (
+            <p className="text-xs text-red-500 mt-1">Se requiere al menos 1 foto</p>
+          )}
         </CardHeader>
         <CardContent>
           <PhotoEvidenceUpload

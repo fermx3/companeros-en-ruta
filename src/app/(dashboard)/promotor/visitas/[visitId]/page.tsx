@@ -185,7 +185,8 @@ export default function VisitDetailPage() {
     stage: number,
     data: WizardData,
     _updateData: (updates: Partial<WizardData>) => void,
-    updateStage: <K extends keyof WizardData>(stageKey: K, updates: Partial<WizardData[K]>) => void
+    updateStage: <K extends keyof WizardData>(stageKey: K, updates: Partial<WizardData[K]>) => void,
+    showValidation: boolean
   ) => {
     if (!visit) return null
 
@@ -197,6 +198,7 @@ export default function VisitDetailPage() {
             onDataChange={(updates) => updateStage('stage1', updates)}
             brandId={visit.brand_id}
             visitId={visitId}
+            showValidation={showValidation}
           />
         )
       case 1:
@@ -207,6 +209,7 @@ export default function VisitDetailPage() {
             visitId={visitId}
             clientId={visit.client_id}
             brandId={visit.brand_id}
+            showValidation={showValidation}
           />
         )
       case 2:

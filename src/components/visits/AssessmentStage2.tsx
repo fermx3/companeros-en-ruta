@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ShoppingCart, Package, Gift, Clipboard } from 'lucide-react'
+import { AlertTriangle, ShoppingCart, Package, Gift, Clipboard } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { PhotoEvidenceUpload, EvidencePhoto } from './PhotoEvidenceUpload'
 import { ClientPromotionsPanel, ClientPromotion } from './ClientPromotionsPanel'
@@ -17,6 +17,7 @@ interface AssessmentStage2Props {
   visitId: string
   clientId: string
   brandId?: string
+  showValidation?: boolean
   className?: string
 }
 
@@ -33,6 +34,7 @@ export function AssessmentStage2({
   visitId,
   clientId,
   brandId,
+  showValidation,
   className
 }: AssessmentStage2Props) {
   const [promotions, setPromotions] = useState<ClientPromotion[]>([])
@@ -208,6 +210,14 @@ export function AssessmentStage2({
         </p>
       </div>
 
+      {/* Validation summary banner */}
+      {hasValidationIssues && (
+        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <span>Campos pendientes: selecciona una razón de no compra</span>
+        </div>
+      )}
+
       {/* Client Promotions Panel */}
       <Card>
         <CardHeader>
@@ -225,12 +235,15 @@ export function AssessmentStage2({
       </Card>
 
       {/* Order Quick Access */}
-      <Card>
+      <Card className={cn(hasValidationIssues && 'border border-red-300')}>
         <CardHeader>
           <CardTitle className="text-base flex items-center">
             <Clipboard className="w-4 h-4 mr-2" />
             Orden de Compra
           </CardTitle>
+          {hasValidationIssues && (
+            <p className="text-xs text-red-500 mt-1">Selecciona una razón de no compra</p>
+          )}
         </CardHeader>
         <CardContent>
           <OrderQuickAccess
@@ -277,7 +290,7 @@ export function AssessmentStage2({
         {showInventorySection && (
           <CardContent>
             <VisitInventoryForm
-              visit={{ id: visitId }}
+              visit={{ id: visitId, inventory: data.inventoryItems }}
               brandId={brandId}
               onSave={handleInventorySave}
             />
