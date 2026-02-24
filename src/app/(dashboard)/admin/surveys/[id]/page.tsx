@@ -319,6 +319,7 @@ export default function AdminSurveyReviewPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Máx. respuestas por usuario</label>
                 <input
                   type="number"
+                  onFocus={(e) => e.target.select()}
                   min={1}
                   value={editMaxResponses}
                   onChange={(e) => setEditMaxResponses(Number(e.target.value))}

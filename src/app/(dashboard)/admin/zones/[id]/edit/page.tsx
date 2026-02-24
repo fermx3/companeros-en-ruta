@@ -444,6 +444,7 @@ export default function EditZonePage() {
                   </label>
                   <input
                     type="number"
+                    onFocus={(e) => e.target.select()}
                     min="0"
                     value={formData.sort_order}
                     onChange={(e) => handleInputChange('sort_order', parseInt(e.target.value) || 0)}

@@ -803,6 +803,7 @@ export default function EditClientPage() {
                   </label>
                   <input
                     type="number"
+                    onFocus={(e) => e.target.select()}
                     min="1"
                     value={formData.visit_frequency_days}
                     onChange={(e) => handleInputChange('visit_frequency_days', parseInt(e.target.value) || 1)}
@@ -821,6 +822,7 @@ export default function EditClientPage() {
                   </label>
                   <input
                     type="number"
+                    onFocus={(e) => e.target.select()}
                     min="1"
                     value={formData.assessment_frequency_days}
                     onChange={(e) => handleInputChange('assessment_frequency_days', parseInt(e.target.value) || 1)}
@@ -839,6 +841,7 @@ export default function EditClientPage() {
                   </label>
                   <input
                     type="number"
+                    onFocus={(e) => e.target.select()}
                     min="1"
                     step="0.01"
                     value={formData.minimum_order}
@@ -858,6 +861,7 @@ export default function EditClientPage() {
                   </label>
                   <input
                     type="number"
+                    onFocus={(e) => e.target.select()}
                     min="0"
                     step="0.01"
                     value={formData.credit_limit}
