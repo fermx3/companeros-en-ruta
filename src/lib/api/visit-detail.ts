@@ -44,6 +44,7 @@ export interface VisitDetailData {
   }
   orders: Array<{
     id: string
+    public_id: string
     order_number: string | null
     order_status: string
     total_amount: string | number
@@ -167,7 +168,7 @@ export async function fetchVisitDetail(
   const { data: orders } = await supabase
     .from('visit_orders')
     .select(`
-      id, order_number, order_status, total_amount, distributor_id,
+      id, public_id, order_number, order_status, total_amount, distributor_id,
       payment_method, order_notes, created_at,
       visit_order_items (
         id, product_id, product_variant_id, quantity_ordered, unit_price,
@@ -198,6 +199,7 @@ export async function fetchVisitDetail(
 
   const transformedOrders = (orders || []).map(order => ({
     id: order.id,
+    public_id: order.public_id,
     order_number: order.order_number,
     order_status: order.order_status,
     total_amount: order.total_amount,

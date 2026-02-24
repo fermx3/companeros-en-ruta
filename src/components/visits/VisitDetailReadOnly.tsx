@@ -393,9 +393,10 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
                 <div key={order.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-gray-900">
-                        {order.order_number || `Pedido ${orderIdx + 1}`}
-                      </span>
+                      <span className="text-sm font-mono text-gray-500">{order.public_id}</span>
+                      {order.order_number && (
+                        <span className="text-sm font-medium text-gray-900">{order.order_number}</span>
+                      )}
                       <OrderStatusBadge status={order.order_status} />
                     </div>
                     <span className="text-lg font-semibold text-gray-900">{formatCurrency(order.total_amount)}</span>
