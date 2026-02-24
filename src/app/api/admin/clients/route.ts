@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null);
 
     // Aplicar filtros
-    if (status) query = query.eq('status', status);
+    if (status) query = query.eq('status', status as any);
     if (zone_id) query = query.eq('zone_id', zone_id);
     if (market_id) query = query.eq('market_id', market_id);
 

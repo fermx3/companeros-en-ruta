@@ -161,8 +161,8 @@ export async function GET(
     return NextResponse.json({
       promotion: {
         ...promotion,
-        promotion_type_label: PROMOTION_TYPE_LABELS[promotion.promotion_type] || promotion.promotion_type,
-        status_label: STATUS_LABELS[promotion.status] || promotion.status
+        promotion_type_label: PROMOTION_TYPE_LABELS[promotion.promotion_type!] || promotion.promotion_type,
+        status_label: STATUS_LABELS[promotion.status!] || promotion.status
       },
       stats
     })

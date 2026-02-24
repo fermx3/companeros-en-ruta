@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
         discount_description: finalDiscountDescription || null,
         valid_until: valid_until || null,
         metadata
-      })
+      } as any)
       .select(`
         id,
         code,
@@ -274,7 +274,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
 
     if (status) {
-      query = query.eq('status', status)
+      query = query.eq('status', status as any)
     }
 
     const { data: qrCodes, error: qrError } = await query

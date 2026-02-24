@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
 
     // Apply status filter
     if (status && status !== 'all') {
-      query = query.eq('status', status)
+      query = query.eq('status', status as any)
     }
 
     // Apply brand filter
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      countQuery = countQuery.eq('status', status)
+      countQuery = countQuery.eq('status', status as any)
     }
 
     if (brandId) {
@@ -202,8 +202,8 @@ export async function GET(request: NextRequest) {
     // Transform promotions with labels
     const transformedPromotions = (promotions || []).map(promo => ({
       ...promo,
-      promotion_type_label: PROMOTION_TYPE_LABELS[promo.promotion_type] || promo.promotion_type,
-      status_label: STATUS_LABELS[promo.status] || promo.status
+      promotion_type_label: PROMOTION_TYPE_LABELS[promo.promotion_type!] || promo.promotion_type,
+      status_label: STATUS_LABELS[promo.status!] || promo.status
     }))
 
     const totalPages = Math.ceil((count || 0) / limit)

@@ -51,7 +51,7 @@ export class BrandService {
   async getBrandDashboardMetrics(brandId?: string): Promise<BrandDashboardMetrics | null> {
     try {
       let query = this.supabase
-        .from('brand_dashboard_metrics')
+        .from('brand_dashboard_metrics' as any)
         .select('*')
 
       // Si se proporciona brandId específico, filtrar por él
@@ -69,7 +69,7 @@ export class BrandService {
         throw new Error(`Error al obtener métricas de marca: ${error.message}`)
       }
 
-      return data as BrandDashboardMetrics
+      return data as unknown as BrandDashboardMetrics
     } catch (error) {
       console.error('Error in getBrandDashboardMetrics:', error)
       throw error
@@ -82,7 +82,7 @@ export class BrandService {
   async getBrandByPublicId(publicId: string): Promise<BrandDashboardMetrics | null> {
     try {
       const { data, error } = await this.supabase
-        .from('brand_dashboard_metrics')
+        .from('brand_dashboard_metrics' as any)
         .select('*')
         .eq('brand_public_id', publicId)
         .single()
@@ -92,7 +92,7 @@ export class BrandService {
         throw new Error(`Error al obtener marca: ${error.message}`)
       }
 
-      return data as BrandDashboardMetrics
+      return data as unknown as BrandDashboardMetrics
     } catch (error) {
       console.error('Error in getBrandByPublicId:', error)
       throw error

@@ -65,7 +65,7 @@ export async function GET() {
     }
 
     // Get clients from direct assignments
-    const assignedClients: ClientWithSource[] = (assignments || [])
+    const assignedClients: ClientWithSource[] = ((assignments || []) as any[])
       .filter(a => a.client)
       .map(a => {
         const client = Array.isArray(a.client) ? a.client[0] : a.client
@@ -95,7 +95,7 @@ export async function GET() {
         .from('client_brand_memberships')
         .select(`
           id,
-          status,
+          membership_status,
           created_at,
           client:clients(
             id,
@@ -119,7 +119,7 @@ export async function GET() {
         console.error('Error fetching brand memberships:', membershipsError)
       }
 
-      brandClients = (memberships || [])
+      brandClients = ((memberships || []) as any[])
         .filter(m => m.client)
         .map(m => {
           const client = Array.isArray(m.client) ? m.client[0] : m.client
@@ -138,7 +138,7 @@ export async function GET() {
             status: client?.status,
             source_id: m.id,
             source_type: 'membership' as const,
-            source_status: m.status
+            source_status: m.membership_status
           }
         })
     }

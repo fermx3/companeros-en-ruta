@@ -38,7 +38,7 @@ export async function GET() {
 
         orderStats = {
           total_orders: orders.length,
-          orders_this_month: orders.filter(o => new Date(o.created_at) >= firstDayOfMonth).length,
+          orders_this_month: orders.filter(o => new Date(o.created_at!) >= firstDayOfMonth).length,
           pending_orders: orders.filter(o =>
             ['draft', 'submitted', 'confirmed', 'processing'].includes(o.order_status || '')
           ).length,

@@ -32,7 +32,7 @@ export function usePromotionsForClient(clientId: string, brandId: string, purcha
         return;
       }
 
-      setPromotions(data || []);
+      setPromotions((data || []) as any);
       setLoading(false);
     }
 

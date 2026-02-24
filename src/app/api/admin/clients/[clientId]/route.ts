@@ -258,7 +258,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           tenant_id: profile.tenant_id,
           user_profile_id: clientProfileId,
           title: 'Estado actualizado',
-          message: `Tu estado ha sido cambiado a: ${statusLabels[updatedClient.status] ?? updatedClient.status}`,
+          message: `Tu estado ha sido cambiado a: ${statusLabels[updatedClient.status!] ?? updatedClient.status}`,
           notification_type: 'client_status_changed',
           action_url: '/client/profile',
         })

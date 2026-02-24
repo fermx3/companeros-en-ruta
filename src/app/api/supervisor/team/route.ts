@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
 
         const completedVisits = visits?.filter(v => v.visit_status === 'completed').length || 0
         const pendingVisits = visits?.filter(v =>
-          v.visit_status === 'planned' || v.visit_status === 'scheduled'
+          v.visit_status === 'planned'
         ).length || 0
 
         const ratedVisits = visits?.filter(v => v.client_satisfaction_rating) || []
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
           full_name: fullName,
           email: profile.email,
           phone: profile.phone,
-          status: profile.status,
+          status: profile.status!,
           total_clients: clientCount || 0,
           completed_visits: completedVisits,
           pending_visits: pendingVisits,

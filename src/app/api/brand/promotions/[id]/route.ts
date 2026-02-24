@@ -105,8 +105,8 @@ export async function GET(
     return NextResponse.json({
       promotion: {
         ...promotion,
-        promotion_type_label: PROMOTION_TYPE_LABELS[promotion.promotion_type] || promotion.promotion_type,
-        status_label: STATUS_LABELS[promotion.status] || promotion.status
+        promotion_type_label: PROMOTION_TYPE_LABELS[promotion.promotion_type!] || promotion.promotion_type,
+        status_label: STATUS_LABELS[promotion.status!] || promotion.status
       },
       stats
     })
@@ -151,9 +151,9 @@ export async function PATCH(
     }
 
     // Only allow edits in draft or approved status
-    if (!['draft', 'approved'].includes(currentPromotion.status)) {
+    if (!['draft', 'approved'].includes(currentPromotion.status!)) {
       return NextResponse.json(
-        { error: `No se puede editar una promoción en estado "${STATUS_LABELS[currentPromotion.status] || currentPromotion.status}"` },
+        { error: `No se puede editar una promoción en estado "${STATUS_LABELS[currentPromotion.status!] || currentPromotion.status}"` },
         { status: 400 }
       )
     }
@@ -286,8 +286,8 @@ export async function PATCH(
     return NextResponse.json({
       promotion: {
         ...updatedPromotion,
-        promotion_type_label: PROMOTION_TYPE_LABELS[updatedPromotion.promotion_type] || updatedPromotion.promotion_type,
-        status_label: STATUS_LABELS[updatedPromotion.status] || updatedPromotion.status
+        promotion_type_label: PROMOTION_TYPE_LABELS[updatedPromotion.promotion_type!] || updatedPromotion.promotion_type,
+        status_label: STATUS_LABELS[updatedPromotion.status!] || updatedPromotion.status
       },
       message: 'Promoción actualizada correctamente'
     })

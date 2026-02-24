@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('date_to')
 
     if (status && status !== 'all') {
-      query = query.eq('visit_status', status)
+      query = query.eq('visit_status', status as any)
     }
     if (dateFrom) query = query.gte('visit_date', dateFrom)
     if (dateTo) query = query.lte('visit_date', dateTo)

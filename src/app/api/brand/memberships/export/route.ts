@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const tierId = searchParams.get('tier_id')
 
     if (status && status !== 'all') {
-      query = query.eq('membership_status', status)
+      query = query.eq('membership_status', status as any)
     }
     if (tierId) query = query.eq('current_tier_id', tierId)
 

@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
     const stats = {
       total: count || 0,
-      today: statsData?.filter(r => new Date(r.redeemed_at) >= today).length || 0,
+      today: statsData?.filter(r => new Date(r.redeemed_at!) >= today).length || 0,
       totalValue: statsData?.reduce((sum, r) => sum + (r.discount_value || 0), 0) || 0
     }
 

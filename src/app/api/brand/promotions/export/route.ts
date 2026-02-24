@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const status = searchParams.get('status')
     if (status && status !== 'all') {
-      query = query.eq('status', status)
+      query = query.eq('status', status as any)
     }
 
     const { data: promotions, error } = await query
@@ -71,8 +71,8 @@ export async function GET(request: NextRequest) {
     let rows = (promotions || []).map(p => [
       p.public_id || '',
       p.name || '',
-      typeLabels[p.promotion_type] || p.promotion_type || '',
-      statusLabels[p.status] || p.status || '',
+      typeLabels[p.promotion_type!] || p.promotion_type || '',
+      statusLabels[p.status!] || p.status || '',
       getPromotionValue(p),
       formatCsvDate(p.start_date),
       formatCsvDate(p.end_date),

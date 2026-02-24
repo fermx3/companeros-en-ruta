@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       .eq('id', brandId)
       .single()
 
-    const selectedSlugs: string[] = brand?.dashboard_metrics || []
+    const selectedSlugs: string[] = (brand?.dashboard_metrics as string[]) || []
     const lastUpdated = brand?.dashboard_metrics_updated_at
     const canUpdate = !lastUpdated || (Date.now() - new Date(lastUpdated).getTime()) > 24 * 60 * 60 * 1000
 
@@ -95,7 +95,7 @@ export async function PATCH(request: NextRequest) {
       .eq('id', brandId)
       .single()
 
-    const currentSlugs: string[] = brand?.dashboard_metrics || []
+    const currentSlugs: string[] = (brand?.dashboard_metrics as string[]) || []
     const isReorderOnly =
       currentSlugs.length === kpiSlugs.length &&
       [...currentSlugs].sort().join(',') === [...kpiSlugs].sort().join(',')

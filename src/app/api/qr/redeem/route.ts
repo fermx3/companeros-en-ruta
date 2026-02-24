@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       .rpc('redeem_qr_code', {
         p_qr_code: qr_code,
         p_user_profile_id: userProfile.id,
-        p_distributor_id: userProfile.distributor_id || null,
+        p_distributor_id: userProfile.distributor_id ?? undefined,
         p_latitude: latitude || null,
         p_longitude: longitude || null,
         p_notes: notes || null
@@ -104,14 +104,14 @@ export async function POST(request: NextRequest) {
     // Notify brand managers about the QR redemption
     try {
       const serviceClient = createServiceClient()
-      const brandId = result.qr_data?.brand_id as string | undefined
+      const brandId = (result.qr_data as any)?.brand_id as string | undefined
 
       // Find brand_manager(s) for the tenant (optionally filtered by brand_id)
       let bmQuery = serviceClient
         .from('user_roles')
         .select('user_profile_id')
         .eq('tenant_id', userProfile.tenant_id)
-        .in('role', ['brand_manager', 'brand_admin'])
+        .in('role', ['brand_manager'])
         .eq('status', 'active')
 
       if (brandId) {

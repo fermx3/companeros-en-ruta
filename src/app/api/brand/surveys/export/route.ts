@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const status = searchParams.get('status')
     if (status && status !== 'all') {
-      query = query.eq('survey_status', status)
+      query = query.eq('survey_status', status as any)
     }
 
     const { data: surveys, error } = await query

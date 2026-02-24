@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
 
     // Apply status filter
     if (status !== 'all') {
-      query = query.eq('visit_status', status)
+      query = query.eq('visit_status', status as any)
     }
 
     // Apply date range filter
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
       const { data: brands } = await supabase
         .from('brands')
         .select('id, name, logo_url')
-        .in('id', brandIds)
+        .in('id', brandIds as any)
 
       brands?.forEach(brand => {
         brandsMap[brand.id] = brand
@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
 
     const { data: newVisit, error: insertError } = await supabase
       .from('visits')
-      .insert(visitData)
+      .insert(visitData as any)
       .select(`
         *,
         client:clients(id, public_id, business_name, owner_name, owner_last_name, address_street, address_neighborhood, phone)

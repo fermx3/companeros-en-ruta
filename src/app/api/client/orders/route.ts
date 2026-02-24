@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      directOrdersQuery = directOrdersQuery.eq('order_status', status)
+      directOrdersQuery = directOrdersQuery.eq('order_status', status as any)
     }
 
     // 5. Query visit orders (from visit_orders table)
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      visitOrdersQuery = visitOrdersQuery.eq('order_status', status)
+      visitOrdersQuery = visitOrdersQuery.eq('order_status', status as any)
     }
 
     // 6. Execute queries based on source filter

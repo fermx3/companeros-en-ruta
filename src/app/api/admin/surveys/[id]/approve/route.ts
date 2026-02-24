@@ -150,7 +150,7 @@ async function notifyTargetedRespondents(
       .from('user_roles')
       .select('user_profile_id')
       .eq('tenant_id', survey.tenant_id)
-      .in('role', dbRoles)
+      .in('role', dbRoles as any)
       .eq('status', 'active')
       .is('deleted_at', null)
 

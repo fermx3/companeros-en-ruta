@@ -2,11 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { env } from '../env'
+import type { Database } from '@/lib/types/supabase'
 
 export function createClient() {
   const cookieStore = cookies()
 
-  return createServerClient(
+  return createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
@@ -39,7 +40,7 @@ export function createServiceClient() {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured');
   }
 
-  return createSupabaseClient(
+  return createSupabaseClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.SUPABASE_SERVICE_ROLE_KEY,
   )

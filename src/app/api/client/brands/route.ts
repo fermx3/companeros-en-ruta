@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
         .from('user_roles')
         .select('user_profile_id')
         .eq('brand_id', brand.id)
-        .in('role', ['brand_manager', 'brand_admin'])
+        .in('role', ['brand_manager'])
         .eq('status', 'active')
         .is('deleted_at', null)
 

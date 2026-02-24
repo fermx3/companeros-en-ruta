@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     if (search) {
       query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%,public_id.ilike.%${search}%`);
     }
-    if (zone_type) query = query.eq('zone_type', zone_type);
+    if (zone_type) query = query.eq('zone_type', zone_type as any);
     if (is_active !== null && is_active !== '') {
       query = query.eq('is_active', is_active === 'true');
     }

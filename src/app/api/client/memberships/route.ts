@@ -95,7 +95,7 @@ export async function GET() {
 
     // 4. For each membership, calculate next tier
     const membershipsWithNextTier: ClientMembership[] = await Promise.all(
-      (memberships || []).map(async (membership) => {
+      ((memberships || []) as any[]).map(async (membership) => {
         const brand = membership.brands as unknown as { id: string; name: string; logo_url: string | null } | null
         const currentTier = membership.tiers as unknown as {
           id: string

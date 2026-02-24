@@ -133,7 +133,7 @@ export async function GET() {
       address_city: client.address_city,
       address_state: client.address_state,
       address_postal_code: client.address_postal_code,
-      status: client.status,
+      status: client.status!,
       zone_name: zones?.name || null,
       market_name: markets?.name || null,
       client_type_name: clientTypes?.name || null,
@@ -141,7 +141,7 @@ export async function GET() {
       total_orders: orderCount || 0,
       last_order_date: lastOrder?.created_at || null,
       last_visit_date: client.last_visit_date,
-      created_at: client.created_at,
+      created_at: client.created_at!,
       onboarding_completed: client.onboarding_completed
     }
 

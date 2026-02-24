@@ -127,7 +127,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     for (const ref of referencesToValidate) {
       const { data, error } = await serviceSupabase
-        .from(ref.table)
+        .from(ref.table as any)
         .select('id')
         .eq('id', ref.id)
         .eq('tenant_id', profile.tenant_id)

@@ -124,8 +124,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         name,
         description,
         promotion_type,
-        discount_value,
-        discount_type,
+        discount_amount,
+        discount_percentage,
         start_date,
         end_date,
         status,
@@ -166,10 +166,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       total_orders: orderStats?.length || 0,
       total_sales: orderStats?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0,
       pending_orders: orderStats?.filter(o =>
-        ['draft', 'submitted', 'confirmed', 'processing'].includes(o.order_status)
+        ['draft', 'submitted', 'confirmed', 'processing'].includes(o.order_status!)
       ).length || 0,
       completed_orders: orderStats?.filter(o =>
-        ['delivered', 'completed'].includes(o.order_status)
+        ['delivered', 'completed'].includes(o.order_status!)
       ).length || 0
     }
 
@@ -225,8 +225,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       name: p.name,
       description: p.description,
       promotion_type: p.promotion_type,
-      discount_value: p.discount_value,
-      discount_type: p.discount_type,
+      discount_amount: p.discount_amount,
+      discount_percentage: p.discount_percentage,
       start_date: p.start_date,
       end_date: p.end_date,
       status: p.status,

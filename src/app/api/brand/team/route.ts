@@ -131,8 +131,8 @@ export async function GET(request: NextRequest) {
         // Order counts
         supabase
           .from('orders')
-          .select('promotor_id')
-          .in('promotor_id', userProfileIds),
+          .select('assigned_to')
+          .in('assigned_to', userProfileIds),
       ])
 
       if (assignmentsResult.data) {
@@ -159,8 +159,8 @@ export async function GET(request: NextRequest) {
 
       if (ordersResult.data) {
         orderCounts = ordersResult.data.reduce((acc, o) => {
-          if (o.promotor_id) {
-            acc[o.promotor_id] = (acc[o.promotor_id] || 0) + 1
+          if (o.assigned_to) {
+            acc[o.assigned_to] = (acc[o.assigned_to] || 0) + 1
           }
           return acc
         }, {} as Record<string, number>)

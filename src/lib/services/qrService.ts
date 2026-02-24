@@ -119,7 +119,7 @@ export class QRService {
           discount_description: params.discount_description || null,
           valid_until: params.valid_until || null,
           metadata: params.metadata || {}
-        })
+        } as any)
         .select()
         .single()
 
@@ -203,7 +203,7 @@ export class QRService {
           p_latitude: params.latitude || null,
           p_longitude: params.longitude || null,
           p_notes: params.notes || null
-        })
+        } as any)
 
       if (error) {
         console.error('Error redeeming QR:', error)
@@ -231,7 +231,7 @@ export class QRService {
         success: result.success,
         message: result.message,
         redemption_id: result.redemption_id,
-        qr_data: result.qr_data
+        qr_data: result.qr_data as any
       }
     } catch (error) {
       console.error('Error in redeemQRCode:', error)

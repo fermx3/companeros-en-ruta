@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       .order('visit_date', { ascending: false })
 
     if (status) {
-      query = query.eq('visit_status', status)
+      query = query.eq('visit_status', status as any)
     }
     if (dateFrom) {
       query = query.gte('visit_date', dateFrom)

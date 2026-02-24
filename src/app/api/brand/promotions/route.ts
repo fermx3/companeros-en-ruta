@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
 
     // Apply status filter
     if (status && status !== 'all') {
-      query = query.eq('status', status)
+      query = query.eq('status', status as any)
     }
 
     // Apply search filter
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      countQuery = countQuery.eq('status', status)
+      countQuery = countQuery.eq('status', status as any)
     }
 
     if (search) {
@@ -141,8 +141,8 @@ export async function GET(request: NextRequest) {
     // Transform promotions with labels
     const transformedPromotions = (promotions || []).map(promo => ({
       ...promo,
-      promotion_type_label: PROMOTION_TYPE_LABELS[promo.promotion_type] || promo.promotion_type,
-      status_label: STATUS_LABELS[promo.status] || promo.status
+      promotion_type_label: PROMOTION_TYPE_LABELS[promo.promotion_type!] || promo.promotion_type,
+      status_label: STATUS_LABELS[promo.status!] || promo.status
     }))
 
     const totalPages = Math.ceil((count || 0) / limit)
@@ -313,7 +313,7 @@ export async function POST(request: NextRequest) {
 
     const { data: newPromotion, error: insertError } = await supabase
       .from('promotions')
-      .insert(promotionData)
+      .insert(promotionData as any)
       .select()
       .single()
 
@@ -363,8 +363,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       promotion: {
         ...newPromotion,
-        promotion_type_label: PROMOTION_TYPE_LABELS[newPromotion.promotion_type] || newPromotion.promotion_type,
-        status_label: STATUS_LABELS[newPromotion.status] || newPromotion.status
+        promotion_type_label: PROMOTION_TYPE_LABELS[newPromotion.promotion_type!] || newPromotion.promotion_type,
+        status_label: STATUS_LABELS[newPromotion.status!] || newPromotion.status
       },
       message: submit_for_approval
         ? 'Promoción creada y enviada para aprobación'

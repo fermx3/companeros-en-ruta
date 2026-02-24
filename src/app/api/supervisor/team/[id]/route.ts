@@ -132,7 +132,7 @@ export async function GET(
 
     const completedVisits = allVisits?.filter(v => v.visit_status === 'completed').length || 0
     const pendingVisits = allVisits?.filter(v =>
-      v.visit_status === 'planned' || v.visit_status === 'scheduled'
+      v.visit_status === 'planned'
     ).length || 0
     const ratedVisits = allVisits?.filter(v => v.client_satisfaction_rating) || []
     const avgRating = ratedVisits.length > 0

@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const rows = (materials || []).map(m => [
       m.public_id || '',
       m.material_name || '',
-      categoryLabels[m.material_category] || m.material_category || '',
+      categoryLabels[m.material_category!] || m.material_category || '',
       m.is_active ? 'Sí' : 'No',
       m.is_system_template ? 'Plantilla Sistema' : 'Marca',
       String(m.display_order ?? 0),

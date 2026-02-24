@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       .eq('id', brandId)
       .single()
 
-    const selectedSlugs: string[] = brand?.dashboard_metrics ||
+    const selectedSlugs: string[] = (brand?.dashboard_metrics as string[]) ||
       ['volume', 'reach_mix', 'assortment', 'market_share', 'share_of_shelf']
 
     // Fetch all view data + targets in parallel

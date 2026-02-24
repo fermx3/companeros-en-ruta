@@ -191,7 +191,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Upsert stage assessment
     const { error: upsertError } = await supabase
       .from('visit_stage_assessments')
-      .upsert(stageAssessmentData, {
+      .upsert(stageAssessmentData as any, {
         onConflict: 'visit_id'
       })
 

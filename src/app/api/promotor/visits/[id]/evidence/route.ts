@@ -157,7 +157,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         capture_latitude: captureLatitude ? parseFloat(captureLatitude) : null,
         capture_longitude: captureLongitude ? parseFloat(captureLongitude) : null,
         captured_at: new Date().toISOString()
-      })
+      } as any)
       .select()
       .single()
 

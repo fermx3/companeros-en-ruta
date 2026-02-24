@@ -56,7 +56,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     .is('deleted_at', null)
 
   if (status) {
-    query = query.eq('order_status', status)
+    query = query.eq('order_status', status as any)
   } else {
     // By default exclude cancelled orders
     query = query.neq('order_status', 'cancelled')
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         tax_amount: '0.00',
         total_amount: totalAmount.toFixed(2),
         currency: 'MXN',
-      })
+      } as any)
       .select('id')
       .single()
 
@@ -256,7 +256,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const { error: itemsError } = await supabase
       .from('visit_order_items')
-      .insert(orderItems)
+      .insert(orderItems as any)
 
     if (itemsError) {
       console.error('Error creating visit_order_items:', itemsError)

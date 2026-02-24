@@ -212,7 +212,7 @@ export async function POST(
     if (answerRows.length > 0) {
       const { error: answersError } = await supabase
         .from('survey_answers')
-        .insert(answerRows)
+        .insert(answerRows as any)
 
       if (answersError) {
         // Clean up response if answers fail

@@ -77,7 +77,7 @@ export async function GET(
       .order('visit_date', { ascending: false })
 
     if (status) {
-      query = query.eq('visit_status', status)
+      query = query.eq('visit_status', status as any)
     }
 
     const { data: visits, error: visitsError, count } = await query

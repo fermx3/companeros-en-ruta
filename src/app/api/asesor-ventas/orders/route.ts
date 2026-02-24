@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
 
     // Aplicar filtros
     if (status && status !== 'all') {
-      ordersQuery = ordersQuery.eq('order_status', status)
+      ordersQuery = ordersQuery.eq('order_status', status as any)
     }
 
     if (clientId) {
@@ -367,7 +367,7 @@ export async function POST(request: NextRequest) {
 
     const { error: itemsError } = await supabase
       .from('order_items')
-      .insert(orderItems)
+      .insert(orderItems as any)
 
     if (itemsError) {
       console.error('Error creating order items:', itemsError)

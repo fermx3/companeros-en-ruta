@@ -142,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (roles && roles.length > 0) {
-          const rolesList = roles.map(r => r.role)
+          const rolesList = roles.map(r => r.role) as UserRole[]
           setUserRoles(rolesList)
 
           // Build brand-specific roles array

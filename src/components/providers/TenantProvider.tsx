@@ -94,7 +94,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           .eq('status', 'active')
           .order('name');
 
-        brands = data || [];
+        brands = (data || []) as unknown as TenantBrand[];
       } else {
         // Filter brands to only those the user has roles for
         const { data } = await supabase
@@ -104,7 +104,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           .eq('status', 'active')
           .order('name');
 
-        brands = data || [];
+        brands = (data || []) as unknown as TenantBrand[];
       }
 
       setAvailableBrands(brands);

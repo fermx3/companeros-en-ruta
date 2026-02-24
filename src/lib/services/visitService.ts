@@ -27,7 +27,7 @@ export class VisitService {
         visit_number: visitNumber,
         status: "in_progress",
         start_time: new Date().toISOString(),
-      })
+      } as any)
       .select()
       .single();
 
@@ -46,7 +46,7 @@ export class VisitService {
 
     const { error } = await this.supabase
       .from("visit_assessments")
-      .upsert(assessments, {
+      .upsert(assessments as any, {
         onConflict: "tenant_id,visit_id,product_id",
       });
 
@@ -66,10 +66,10 @@ export class VisitService {
         item.quantity * item.unit_price - (item.discount_amount || 0),
     }));
 
-    const { data: createdPurchases, error: purchaseError } = await this.supabase
-      .from("visit_purchases")
-      .insert(purchases)
-      .select();
+    const { data: createdPurchases, error: purchaseError } = await (this.supabase
+      .from("visit_purchases" as any)
+      .insert(purchases as any)
+      .select() as any);
 
     if (purchaseError) {
       return {
@@ -92,7 +92,7 @@ export class VisitService {
     }
 
     const totalAmount = createdPurchases.reduce(
-      (sum, p) => sum + p.total_amount,
+      (sum: number, p: any) => sum + p.total_amount,
       0
     );
     const totalDiscount = appliedPromotions.reduce(
@@ -101,7 +101,7 @@ export class VisitService {
     );
 
     return {
-      purchase_ids: createdPurchases.map((p) => p.id),
+      purchase_ids: createdPurchases.map((p: any) => p.id),
       applied_promotions: appliedPromotions,
       total_amount: totalAmount,
       final_amount: totalAmount - totalDiscount,

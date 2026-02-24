@@ -238,7 +238,7 @@ export async function GET(
       priority: orderData.priority || 'normal',
       client_notes: orderData.client_notes,
       internal_notes: orderData.internal_notes,
-      created_at: orderData.created_at,
+      created_at: orderData.created_at!,
       updated_at: orderData.updated_at,
       client,
       brand,

@@ -96,7 +96,7 @@ export async function GET() {
 
         const completedVisits = visits?.filter(v => v.visit_status === 'completed').length || 0
         const pendingVisits = visits?.filter(v =>
-          v.visit_status === 'planned' || v.visit_status === 'scheduled'
+          v.visit_status === 'planned'
         ).length || 0
 
         const ratedVisits = visits?.filter(v => v.client_satisfaction_rating) || []
@@ -107,8 +107,8 @@ export async function GET() {
         teamMembers.push({
           id: profile.id,
           full_name: `${profile.first_name} ${profile.last_name}`.trim(),
-          email: profile.email,
-          status: profile.status,
+          email: profile.email!,
+          status: profile.status!,
           total_clients: clientCount || 0,
           completed_visits: completedVisits,
           pending_visits: pendingVisits,

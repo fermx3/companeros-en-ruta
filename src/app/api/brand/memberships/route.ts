@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
 
     // Apply status filter
     if (status && ['pending', 'active', 'suspended', 'cancelled'].includes(status)) {
-      query = query.eq('membership_status', status)
+      query = query.eq('membership_status', status as any)
     }
 
     // Apply tier filter
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && ['pending', 'active', 'suspended', 'cancelled'].includes(status)) {
-      countQuery = countQuery.eq('membership_status', status)
+      countQuery = countQuery.eq('membership_status', status as any)
     }
     if (tierId) {
       countQuery = countQuery.eq('current_tier_id', tierId)
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 7. Transform and filter by search
-    let transformedMemberships: MembershipResponse[] = (memberships || []).map((m) => {
+    let transformedMemberships: MembershipResponse[] = ((memberships || []) as any[]).map((m) => {
       const client = m.clients as unknown as { id: string; public_id: string; business_name: string; owner_name: string | null; owner_last_name: string | null; email: string | null; phone: string | null } | null
       const tier = m.tiers as unknown as { id: string; name: string; tier_level: number; tier_color: string | null } | null
 
@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
 
     const { data: createdMemberships, error: createError } = await supabase
       .from('client_brand_memberships')
-      .insert(membershipsToCreate)
+      .insert(membershipsToCreate as any)
       .select('id, client_id')
 
     if (createError) {
@@ -311,7 +311,7 @@ export async function POST(request: NextRequest) {
 
       await supabase
         .from('client_tier_assignments')
-        .insert(tierAssignments)
+        .insert(tierAssignments as any)
     }
 
     return NextResponse.json({

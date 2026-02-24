@@ -170,7 +170,7 @@ export class AdminService {
           action: 'CREATE',
           resource_type: 'visits',
           resource_id: v.id,
-          created_at: v.created_at,
+          created_at: v.created_at!,
           action_type: 'visit_created',
           description: `Visita ${v.visit_status === 'completed' ? 'completada' : 'registrada'} para ${clientName}`
         });
@@ -185,7 +185,7 @@ export class AdminService {
           action: 'CREATE',
           resource_type: 'orders',
           resource_id: o.id,
-          created_at: o.created_at,
+          created_at: o.created_at!,
           action_type: 'order_created',
           description: `Orden ${o.order_number || ''} creada por $${(o.total_amount || 0).toLocaleString('es-MX')}`
         });
@@ -200,7 +200,7 @@ export class AdminService {
           action: 'CREATE',
           resource_type: 'clients',
           resource_id: c.id,
-          created_at: c.created_at,
+          created_at: c.created_at!,
           action_type: 'client_created',
           description: `Cliente ${c.business_name} registrado`
         });
@@ -240,7 +240,7 @@ export class AdminService {
     if (error) throw new Error(`Error al obtener brands: ${error.message}`);
 
     return {
-      data: data || [],
+      data: (data || []) as unknown as Brand[],
       count: count || 0,
       page,
       limit,
@@ -264,7 +264,7 @@ export class AdminService {
 
     if (error) throw new Error(`Error al obtener distribuidores: ${error.message}`);
 
-    return data || [];
+    return (data || []) as unknown as Distributor[];
   }
 
   async getBrandById(id: string): Promise<ApiResponse<Brand>> {
@@ -331,7 +331,7 @@ export class AdminService {
 
       const { data, error } = await this.supabase
         .from('brands')
-        .insert(brand)
+        .insert(brand as any)
         .select()
         .single();
 
@@ -597,7 +597,7 @@ export class AdminService {
         .in('user_id', userIds)
         .is('deleted_at', null);
 
-      clientUserIdSet = new Set((clientRecords || []).map(c => c.user_id).filter(Boolean));
+      clientUserIdSet = new Set((clientRecords || []).map(c => c.user_id).filter(Boolean)) as Set<string>;
     }
 
     // Para cada perfil, obtener sus roles
@@ -622,7 +622,7 @@ export class AdminService {
     const staffUsers = usersWithRoles.filter(u => !u.is_client);
 
     return {
-      data: staffUsers,
+      data: staffUsers as unknown as (UserProfile & { user_roles?: UserRoleRecord[]; is_client?: boolean })[],
       count: staffUsers.length,
       page,
       limit,
@@ -659,8 +659,8 @@ export class AdminService {
 
     return {
       ...profile,
-      user_roles: roles || []
-    };
+      user_roles: (roles || []) as unknown as UserRoleRecord[]
+    } as unknown as UserProfile & { user_roles?: UserRoleRecord[] };
   }
 
   async updateUser(userId: string, userData: Partial<UserProfile>): Promise<UserProfile> {
@@ -684,7 +684,7 @@ export class AdminService {
       .update({
         ...userData,
         updated_at: new Date().toISOString()
-      })
+      } as any)
       .eq('id', userId)
       .eq('tenant_id', tenantId)
       .select()
@@ -692,7 +692,7 @@ export class AdminService {
 
     if (error) throw new Error(`Error al actualizar usuario: ${error.message}`);
 
-    return data;
+    return data as unknown as UserProfile;
   }
 
   async deactivateUser(userId: string): Promise<void> {
@@ -775,7 +775,7 @@ export class AdminService {
       .order('name');
 
     if (error) throw new Error(`Error al obtener zonas: ${error.message}`);
-    return data || [];
+    return (data || []) as unknown as Zone[];
   }
 
   async getMarkets(): Promise<Market[]> {
@@ -790,7 +790,7 @@ export class AdminService {
       .order('name');
 
     if (error) throw new Error(`Error al obtener mercados: ${error.message}`);
-    return data || [];
+    return (data || []) as unknown as Market[];
   }
 
   async getClientTypes(): Promise<ClientType[]> {
@@ -805,7 +805,7 @@ export class AdminService {
       .order('name');
 
     if (error) throw new Error(`Error al obtener tipos de cliente: ${error.message}`);
-    return data || [];
+    return (data || []) as unknown as ClientType[];
   }
 
   async getCommercialStructures(): Promise<CommercialStructure[]> {
@@ -820,7 +820,7 @@ export class AdminService {
       .order('name');
 
     if (error) throw new Error(`Error al obtener estructuras comerciales: ${error.message}`);
-    return data || [];
+    return (data || []) as unknown as CommercialStructure[];
   }
 
   /**
@@ -854,7 +854,7 @@ export class AdminService {
         .update({
           ...tenantData,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', tenantId)
         .select()
         .single();
@@ -1026,7 +1026,7 @@ export class AdminService {
         .single();
 
       if (reviveError) throw new Error(`Error al asignar rol: ${reviveError.message}`);
-      data = revived;
+      data = revived as unknown as UserRoleRecord;
     } else {
       // Insert a new role record
       const insertData: Record<string, unknown> = {
@@ -1047,12 +1047,12 @@ export class AdminService {
 
       const { data: inserted, error: insertError } = await this.supabase
         .from('user_roles')
-        .insert(insertData)
+        .insert(insertData as any)
         .select()
         .single();
 
       if (insertError) throw new Error(`Error al asignar rol: ${insertError.message}`);
-      data = inserted;
+      data = inserted as unknown as UserRoleRecord;
     }
 
     // Si es asesor_de_ventas, actualizar el distributor_id en user_profiles

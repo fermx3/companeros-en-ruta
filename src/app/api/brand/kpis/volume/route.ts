@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const weeklyMap = new Map<string, { revenue: number; weight_tons: number }>()
     for (const row of weeklyData || []) {
-      const key = row.period_week
+      const key = row.period_week!
       const existing = weeklyMap.get(key) || { revenue: 0, weight_tons: 0 }
       existing.revenue += Number(row.revenue_mxn) || 0
       existing.weight_tons += Number(row.weight_tons) || 0

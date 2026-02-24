@@ -43,10 +43,10 @@ export async function GET(request: NextRequest) {
         marketMap.set(row.market_id, {
           market_id: row.market_id,
           market_name: row.market_name || '',
-          clients: new Set([row.client_id]),
+          clients: new Set([row.client_id!]),
         })
       } else {
-        existing.clients.add(row.client_id)
+        existing.clients.add(row.client_id!)
       }
     }
 

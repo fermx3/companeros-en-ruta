@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
 
     const { data: transaction, error: transactionError } = await supabase
       .from('points_transactions')
-      .insert(insertData)
+      .insert(insertData as any)
       .select()
       .single()
 
@@ -288,7 +288,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (transactionType) {
-      query = query.eq('transaction_type', transactionType)
+      query = query.eq('transaction_type', transactionType as any)
     }
 
     // 6. Get total count
@@ -298,7 +298,7 @@ export async function GET(request: NextRequest) {
       .eq('client_brand_membership_id', membershipId)
 
     if (transactionType) {
-      countQuery = countQuery.eq('transaction_type', transactionType)
+      countQuery = countQuery.eq('transaction_type', transactionType as any)
     }
 
     const { count } = await countQuery

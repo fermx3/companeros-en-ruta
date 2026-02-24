@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (status && status !== 'all') {
-      query = query.eq('survey_status', status)
+      query = query.eq('survey_status', status as any)
     }
 
     if (search) {
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      countQuery = countQuery.eq('survey_status', status)
+      countQuery = countQuery.eq('survey_status', status as any)
     }
 
     if (search) {

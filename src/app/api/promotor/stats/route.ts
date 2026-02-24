@@ -75,9 +75,9 @@ export async function GET() {
 
         visitStats = {
           total_visits: visits.length,
-          pending_visits: visits.filter(v => v.visit_status === 'planned' || v.visit_status === 'scheduled').length,
+          pending_visits: visits.filter(v => v.visit_status === 'planned').length,
           completed_visits: visits.filter(v => v.visit_status === 'completed').length,
-          visits_this_month: visits.filter(v => new Date(v.created_at) >= firstDayOfMonth).length,
+          visits_this_month: visits.filter(v => new Date(v.created_at!) >= firstDayOfMonth).length,
           avg_visit_rating: 0
         }
 
@@ -111,7 +111,7 @@ export async function GET() {
 
         clientStats = {
           total_clients: clientAssignments.length,
-          new_clients_month: clientAssignments.filter(c => new Date(c.created_at) >= firstDayOfMonth).length
+          new_clients_month: clientAssignments.filter(c => new Date(c.created_at!) >= firstDayOfMonth).length
         }
       }
     } catch {

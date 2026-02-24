@@ -90,14 +90,14 @@ export async function GET(request: NextRequest) {
               .eq('tenant_id', tenantId)
               .is('deleted_at', null)
 
-            if (status && status !== 'all') ordersQuery = ordersQuery.eq('order_status', status)
+            if (status && status !== 'all') ordersQuery = ordersQuery.eq('order_status', status as any)
             if (clientId) ordersQuery = ordersQuery.eq('client_id', clientId)
             if (brandId) ordersQuery = ordersQuery.eq('brand_id', brandId)
             if (distributorId) ordersQuery = ordersQuery.eq('distributor_id', distributorId)
             if (assignedTo) ordersQuery = ordersQuery.eq('assigned_to', assignedTo)
             if (dateFrom) ordersQuery = ordersQuery.gte('order_date', dateFrom)
             if (dateTo) ordersQuery = ordersQuery.lte('order_date', dateTo)
-            if (sourceChannel) ordersQuery = ordersQuery.eq('source_channel', sourceChannel)
+            if (sourceChannel) ordersQuery = ordersQuery.eq('source_channel', sourceChannel as any)
             if (search) ordersQuery = ordersQuery.ilike('order_number', `%${search}%`)
             ordersQuery = ordersQuery.order('created_at', { ascending: false })
 
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
               .eq('tenant_id', tenantId)
               .is('deleted_at', null)
 
-            if (status && status !== 'all') visitQuery = visitQuery.eq('order_status', status)
+            if (status && status !== 'all') visitQuery = visitQuery.eq('order_status', status as any)
             if (clientId) visitQuery = visitQuery.eq('client_id', clientId)
             if (dateFrom) visitQuery = visitQuery.gte('order_date', dateFrom)
             if (dateTo) visitQuery = visitQuery.lte('order_date', dateTo)

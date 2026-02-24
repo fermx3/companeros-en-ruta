@@ -77,12 +77,12 @@ export async function GET() {
       `)
       .eq('user_profile_id', userProfileId)
 
-    const userProfile: UserProfile = {
+    const userProfile = {
       id: userProfileId,
       ...profileData,
       distributor_id: distributorId || undefined,
-      user_roles: roles || []
-    }
+      user_roles: (roles || []) as unknown as UserRole[]
+    } as UserProfile & { user_roles: UserRole[] }
 
     const asesorVentasRole = userProfile.user_roles.find((role: UserRole) =>
       role.role === 'asesor_de_ventas'

@@ -54,7 +54,7 @@ export async function createNotification(params: CreateNotificationParams) {
       notification_type: params.notification_type ?? 'system',
       action_url: params.action_url,
       metadata: params.metadata ?? {},
-    })
+    } as any)
     .select('id')
     .single();
 
@@ -87,7 +87,7 @@ export async function createBulkNotifications(params: CreateNotificationParams[]
 
   const { data, error } = await supabase
     .from('notifications')
-    .insert(rows)
+    .insert(rows as any)
     .select('id');
 
   if (error) {

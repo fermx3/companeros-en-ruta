@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     for (const ref of referencesToValidate) {
       const { data, error } = await serviceSupabase
-        .from(ref.table)
+        .from(ref.table as any)
         .select('id')
         .eq('id', ref.id)
         .eq('tenant_id', profile.tenant_id)
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     const { data: newClient, error: insertError } = await serviceSupabase
       .from('clients')
-      .insert(clientData)
+      .insert(clientData as any)
       .select('*')
       .single();
 
