@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { fullOwnerName } from '@/lib/utils/client'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -48,6 +48,8 @@ export default function NuevaVisitaPage() {
   usePageTitle('Nueva Visita')
   // Role protection is handled by the layout (promotor/layout.tsx)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const clientIdParam = searchParams.get('clientId')
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -89,6 +91,12 @@ export default function NuevaVisitaPage() {
     fetchClients()
   }, [])
 
+  // Pre-fill client from query param
+  useEffect(() => {
+    if (clientIdParam && clients.length > 0 && clients.some(c => c.id === clientIdParam)) {
+      form.setValue('client_id', clientIdParam)
+    }
+  }, [clientIdParam, clients, form])
 
   /**
    * Handle form submission
