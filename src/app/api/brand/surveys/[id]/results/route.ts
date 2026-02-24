@@ -48,7 +48,9 @@ export async function GET(
           answer_number,
           answer_choice,
           answer_scale,
-          answer_boolean
+          answer_boolean,
+          answer_choices,
+          answer_json
         )
       `)
       .eq('survey_id', survey.id)
@@ -119,6 +121,67 @@ export async function GET(
             { value: 'No', count: noCount, percentage: answers.length > 0 ? Math.round((noCount / answers.length) * 100) : 0 }
           ]
           break
+
+        case 'checkbox': {
+          const checkboxCounts: Record<string, number> = {}
+          answers.forEach(a => {
+            const choices = a.answer_choices as string[] | null
+            if (Array.isArray(choices)) {
+              choices.forEach(c => {
+                checkboxCounts[c] = (checkboxCounts[c] || 0) + 1
+              })
+            }
+          })
+          analytics.distribution = Object.entries(checkboxCounts).map(([value, count]) => ({
+            value,
+            count,
+            percentage: answers.length > 0 ? Math.round((count / answers.length) * 100) : 0
+          }))
+          break
+        }
+
+        case 'ordered_list': {
+          const rankSums: Record<string, number> = {}
+          const rankCounts: Record<string, number> = {}
+          answers.forEach(a => {
+            const json = a.answer_json as { ordered_values?: string[] } | null
+            const ordered = json?.ordered_values
+            if (Array.isArray(ordered)) {
+              ordered.forEach((val, idx) => {
+                rankSums[val] = (rankSums[val] || 0) + (idx + 1)
+                rankCounts[val] = (rankCounts[val] || 0) + 1
+              })
+            }
+          })
+          analytics.average_ranks = Object.entries(rankSums).map(([value, sum]) => ({
+            value,
+            average_rank: Math.round((sum / rankCounts[value]) * 100) / 100,
+            response_count: rankCounts[value]
+          })).sort((a, b) => a.average_rank - b.average_rank)
+          break
+        }
+
+        case 'percentage_distribution': {
+          const pctSums: Record<string, number> = {}
+          const pctCounts: Record<string, number> = {}
+          answers.forEach(a => {
+            const json = a.answer_json as Record<string, number> | null
+            if (json && typeof json === 'object') {
+              Object.entries(json).forEach(([key, val]) => {
+                if (typeof val === 'number') {
+                  pctSums[key] = (pctSums[key] || 0) + val
+                  pctCounts[key] = (pctCounts[key] || 0) + 1
+                }
+              })
+            }
+          })
+          analytics.average_percentages = Object.entries(pctSums).map(([value, sum]) => ({
+            value,
+            average_percentage: Math.round((sum / pctCounts[value]) * 100) / 100,
+            response_count: pctCounts[value]
+          }))
+          break
+        }
       }
 
       return analytics

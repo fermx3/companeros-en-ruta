@@ -15,6 +15,18 @@ interface DistributionItem {
   percentage: number
 }
 
+interface RankItem {
+  value: string
+  average_rank: number
+  response_count: number
+}
+
+interface PercentageItem {
+  value: string
+  average_percentage: number
+  response_count: number
+}
+
 interface QuestionAnalytics {
   question_id: string
   question_text: string
@@ -25,6 +37,8 @@ interface QuestionAnalytics {
   max?: number | null
   distribution?: DistributionItem[]
   sample_answers?: string[]
+  average_ranks?: RankItem[]
+  average_percentages?: PercentageItem[]
 }
 
 interface ResultsData {
@@ -163,7 +177,7 @@ export default function SurveyResultsPage() {
               </div>
             )}
 
-            {/* Distribution chart (multiple_choice, scale, yes_no) */}
+            {/* Distribution chart (multiple_choice, scale, yes_no, checkbox) */}
             {qa.distribution && qa.distribution.length > 0 && (
               <div className="space-y-2">
                 {qa.question_type === 'scale' && qa.average !== null && qa.average !== undefined && (
@@ -172,9 +186,12 @@ export default function SurveyResultsPage() {
                     <p className="text-xs text-gray-500">Promedio</p>
                   </div>
                 )}
+                {qa.question_type === 'checkbox' && (
+                  <p className="text-xs text-gray-500 mb-2">Porcentaje de respondentes que seleccionaron cada opción</p>
+                )}
                 {qa.distribution.map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <span className="text-sm text-gray-700 w-24 text-right">{item.value}</span>
+                    <span className="text-sm text-gray-700 w-24 text-right truncate">{item.value}</span>
                     <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
                       <div
                         className="bg-blue-500 h-full rounded-full flex items-center justify-end px-2 transition-all"
@@ -186,6 +203,43 @@ export default function SurveyResultsPage() {
                       </div>
                     </div>
                     <span className="text-sm text-gray-500 w-16">{item.count} ({item.percentage}%)</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Ordered list - average ranks */}
+            {qa.question_type === 'ordered_list' && qa.average_ranks && qa.average_ranks.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500 mb-2">Posición promedio (1 = más alto)</p>
+                {qa.average_ranks.map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-bold text-blue-600 w-8 text-center">{i + 1}</span>
+                    <span className="flex-1 text-sm text-gray-700">{item.value}</span>
+                    <span className="text-xs text-gray-500">Promedio: {item.average_rank}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Percentage distribution - averages */}
+            {qa.question_type === 'percentage_distribution' && qa.average_percentages && qa.average_percentages.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500 mb-2">Distribución promedio</p>
+                {qa.average_percentages.map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-sm text-gray-700 w-24 text-right truncate">{item.value}</span>
+                    <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+                      <div
+                        className="bg-green-500 h-full rounded-full flex items-center justify-end px-2 transition-all"
+                        style={{ width: `${Math.max(item.average_percentage, 3)}%` }}
+                      >
+                        {item.average_percentage > 10 && (
+                          <span className="text-xs text-white font-medium">{item.average_percentage.toFixed(1)}%</span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-sm text-gray-500 w-16">{item.average_percentage.toFixed(1)}%</span>
                   </div>
                 ))}
               </div>
