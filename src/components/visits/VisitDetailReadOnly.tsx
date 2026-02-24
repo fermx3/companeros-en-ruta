@@ -44,6 +44,12 @@ const whyNotBuyingLabels: Record<string, string> = {
   not_applicable: 'No aplica',
 }
 
+const complianceLevelLabels: Record<string, { label: string; style: string }> = {
+  full: { label: 'Cumple', style: 'text-green-600' },
+  partial: { label: 'Parcial', style: 'text-yellow-600' },
+  non_compliant: { label: 'No cumple', style: 'text-red-600' },
+}
+
 const evidenceTypeLabels: Record<string, string> = {
   shelf_photo: 'Foto de anaquel',
   price_tag: 'Etiqueta de precio',
@@ -338,7 +344,25 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
           {sa ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <InfoRow label="Tiene inventario" value={sa.has_inventory ? 'Sí' : 'No'} />
-              <InfoRow label="Tiene orden de compra" value={sa.has_purchase_order ? 'Sí' : 'No'} />
+              <div>
+                <span className="text-sm font-medium text-gray-500">Tiene orden de compra</span>
+                {sa.has_purchase_order ? (
+                  <p>
+                    <a
+                      href="#ordenes-de-compra"
+                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        document.getElementById('ordenes-de-compra')?.scrollIntoView({ behavior: 'smooth' })
+                      }}
+                    >
+                      Sí — ver órdenes ↓
+                    </a>
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-900">No</p>
+                )}
+              </div>
               {typeof sa.purchase_order_number === 'string' && sa.purchase_order_number && (
                 <InfoRow label="No. Orden de Compra" value={sa.purchase_order_number as string} />
               )}
@@ -476,7 +500,12 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
 
           {sa?.communication_compliance !== undefined && sa?.communication_compliance !== null && (
             <div className="mt-4">
-              <InfoRow label="Cumplimiento de comunicación" value={`${sa.communication_compliance}%`} />
+              <div>
+                <span className="text-sm font-medium text-gray-500">Cumplimiento de comunicación</span>
+                <p className={`text-sm font-medium ${complianceLevelLabels[sa.communication_compliance as string]?.style || ''}`}>
+                  {complianceLevelLabels[sa.communication_compliance as string]?.label || (sa.communication_compliance as string)}
+                </p>
+              </div>
             </div>
           )}
 
@@ -492,9 +521,9 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
       </Card>
 
       {/* Orders */}
-      <Card>
+      <Card id="ordenes-de-compra">
         <div className="p-6">
-          <SectionTitle>Pedidos</SectionTitle>
+          <SectionTitle>Órdenes de compra</SectionTitle>
 
           {orders.length > 0 ? (
             <div className="space-y-4">
@@ -551,7 +580,7 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
               ))}
             </div>
           ) : (
-            <EmptySection message="Sin pedidos registrados" />
+            <EmptySection message="Sin órdenes de compra registradas" />
           )}
         </div>
       </Card>
