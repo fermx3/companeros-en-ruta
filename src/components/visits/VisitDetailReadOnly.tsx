@@ -28,6 +28,22 @@ const stockLevelLabels: Record<string, { label: string; style: string }> = {
   high: { label: 'Alto', style: 'text-green-600' },
 }
 
+const executionQualityLabels: Record<string, string> = {
+  excellent: 'Excelente',
+  good: 'Bueno',
+  fair: 'Regular',
+  poor: 'Deficiente',
+}
+
+const whyNotBuyingLabels: Record<string, string> = {
+  lack_of_budget: 'Falta de presupuesto',
+  low_turnover: 'Bajo desplazamiento',
+  sufficient_inventory: 'Tiene suficiente inventario',
+  prefers_other_brand: 'Prefiere otra marca',
+  distributor_issues: 'Problemas con distribuidor',
+  not_applicable: 'No aplica',
+}
+
 const evidenceTypeLabels: Record<string, string> = {
   shelf_photo: 'Foto de anaquel',
   price_tag: 'Etiqueta de precio',
@@ -113,7 +129,7 @@ function LiveDuration({ checkInTime }: { checkInTime: string }) {
 
 export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
   const { visit, assessment, orders } = data
-  const { stageAssessment, brandProductAssessments, competitorAssessments, popMaterialChecks, exhibitionChecks, evidence } = assessment
+  const { stageAssessment, brandProductAssessments, competitorAssessments, popMaterialChecks, exhibitionChecks, inventoryItems, evidence } = assessment
 
   const sa = stageAssessment as Record<string, unknown> | null
 
@@ -244,7 +260,9 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
                         </td>
                         <td className="px-4 py-2 text-center">
                           {bpa.has_active_promotion ? (
-                            <span className="text-green-600" title={bpa.promotion_description as string || ''}>Sí</span>
+                            <span className="text-green-600">
+                              {(bpa.promotion_description as string) || 'Sí'}
+                            </span>
                           ) : (
                             <span className="text-gray-400">No</span>
                           )}
@@ -280,7 +298,9 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
                         <td className="px-4 py-2 text-right">{ca.observed_price != null ? formatCurrency(ca.observed_price as number) : '—'}</td>
                         <td className="px-4 py-2 text-center">
                           {ca.has_active_promotion ? (
-                            <span className="text-green-600" title={ca.promotion_description as string || ''}>Sí</span>
+                            <span className="text-green-600">
+                              {(ca.promotion_description as string) || 'Sí'}
+                            </span>
                           ) : (
                             <span className="text-gray-400">No</span>
                           )}
@@ -325,7 +345,7 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
               {typeof sa.why_not_buying === 'string' && sa.why_not_buying && (
                 <div className="col-span-2">
                   <span className="text-sm font-medium text-gray-500">Razón de no compra</span>
-                  <p className="text-sm text-gray-900">{sa.why_not_buying as string}</p>
+                  <p className="text-sm text-gray-900">{whyNotBuyingLabels[sa.why_not_buying as string] || (sa.why_not_buying as string)}</p>
                 </div>
               )}
               {typeof sa.purchase_inventory_notes === 'string' && sa.purchase_inventory_notes && (
@@ -337,6 +357,32 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
             </div>
           ) : (
             <EmptySection message="Sin datos recopilados" />
+          )}
+
+          {inventoryItems.length > 0 && (
+            <div className="mt-6">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Inventario</h4>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Producto</th>
+                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Stock</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Notas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {inventoryItems.map((inv) => (
+                      <tr key={inv.id as string}>
+                        <td className="px-4 py-2 text-gray-900">{inv.product_name as string}</td>
+                        <td className="px-4 py-2 text-right">{inv.current_stock as number}</td>
+                        <td className="px-4 py-2 text-gray-700">{(inv.notes as string) || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
 
           <EvidenceGrid evidence={evidence} stage="inventory" />
@@ -414,7 +460,7 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
                             <span className="text-red-600">No</span>
                           )}
                         </td>
-                        <td className="px-4 py-2 text-center">{(ec.execution_quality as string) || '—'}</td>
+                        <td className="px-4 py-2 text-center">{ec.execution_quality ? (executionQualityLabels[ec.execution_quality as string] || (ec.execution_quality as string)) : '—'}</td>
                         <td className="px-4 py-2 text-gray-700">{(ec.notes as string) || '—'}</td>
                       </tr>
                     ))}

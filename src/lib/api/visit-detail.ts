@@ -40,6 +40,7 @@ export interface VisitDetailData {
     competitorAssessments: Array<Record<string, unknown>>
     popMaterialChecks: Array<Record<string, unknown>>
     exhibitionChecks: Array<Record<string, unknown>>
+    inventoryItems: Array<Record<string, unknown>>
     evidence: Array<Record<string, unknown>>
   }
   orders: Array<{
@@ -97,6 +98,7 @@ export async function fetchVisitDetail(
     popMaterialRes,
     exhibitionRes,
     evidenceRes,
+    inventoryRes,
   ] = await Promise.all([
     supabase
       .from('visit_stage_assessments')
@@ -125,6 +127,11 @@ export async function fetchVisitDetail(
       .eq('visit_id', visitId)
       .is('deleted_at', null)
       .order('created_at', { ascending: true }),
+    supabase
+      .from('visit_inventories')
+      .select('id, product_id, current_stock, notes, product:products!visit_inventories_product_id_fkey(name)')
+      .eq('visit_id', visitId)
+      .is('deleted_at', null),
   ])
 
   // 3. Resolve product names into flat fields
@@ -162,6 +169,15 @@ export async function fetchVisitDetail(
       : exhibition?.exhibition_name || 'Exhibición'
     const { exhibition: _e, ...rest } = ec
     return { ...rest, exhibition_name: exhibitionName }
+  })
+
+  const inventoryItems = (inventoryRes.data || []).map((inv) => {
+    const product = inv.product as { name: string } | { name: string }[] | null
+    const productName = Array.isArray(product)
+      ? product[0]?.name || 'Producto'
+      : product?.name || 'Producto'
+    const { product: _p, ...rest } = inv
+    return { ...rest, product_name: productName }
   })
 
   // 4. Fetch orders
@@ -239,6 +255,7 @@ export async function fetchVisitDetail(
       competitorAssessments,
       popMaterialChecks,
       exhibitionChecks,
+      inventoryItems,
       evidence: evidenceRes.data || [],
     },
     orders: transformedOrders,
