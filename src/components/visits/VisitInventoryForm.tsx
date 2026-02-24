@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Save, Package, X, Loader2 } from 'lucide-react'
+import { Save, Package, X, Loader2, CheckCircle2 } from 'lucide-react'
 
 interface InventoryItem {
   product_id: string
@@ -38,8 +38,14 @@ export function VisitInventoryForm({ visit, brandId, products: propProducts, onS
     visit.inventory || []
   )
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [loadingProducts, setLoadingProducts] = useState(false)
   const [products, setProducts] = useState<Product[]>(propProducts || [])
+
+  // Clear saved confirmation when inventory changes
+  useEffect(() => {
+    setSaved(false)
+  }, [inventoryItems])
 
   // Load products if not provided via props
   useEffect(() => {
@@ -109,6 +115,7 @@ export function VisitInventoryForm({ visit, brandId, products: propProducts, onS
         item.product_id && item.current_stock >= 0
       )
       await onSave({ inventory_skipped: false, items: validItems })
+      setSaved(true)
     } catch (error) {
       console.error('Error saving inventory:', error)
     } finally {
@@ -150,7 +157,9 @@ export function VisitInventoryForm({ visit, brandId, products: propProducts, onS
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">Seleccionar producto</option>
-                        {availableProducts.map(product => (
+                        {availableProducts
+                          .filter(product => product.id === item.product_id || !inventoryItems.some(i => i.product_id === product.id))
+                          .map(product => (
                           <option key={product.id} value={product.id}>
                             {product.name}
                           </option>
@@ -166,8 +175,9 @@ export function VisitInventoryForm({ visit, brandId, products: propProducts, onS
                       <input
                         type="number"
                         min="0"
-                        value={item.current_stock}
+                        value={item.current_stock || ''}
                         onChange={(e) => updateInventoryItem(index, 'current_stock', parseInt(e.target.value) || 0)}
+                        onFocus={(e) => e.target.select()}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="0"
                       />
@@ -217,7 +227,7 @@ export function VisitInventoryForm({ visit, brandId, products: propProducts, onS
 
           {/* Submit button */}
           {inventoryItems.length > 0 && (
-            <div className="pt-4 border-t border-gray-200">
+            <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center gap-3">
               <Button
                 type="submit"
                 disabled={saving}
@@ -226,6 +236,12 @@ export function VisitInventoryForm({ visit, brandId, products: propProducts, onS
                 <Save className="mr-2 h-4 w-4" />
                 {saving ? 'Guardando...' : 'Guardar Inventario'}
               </Button>
+              {saved && (
+                <span className="flex items-center gap-1.5 text-sm text-green-600 animate-in fade-in duration-300">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Inventario guardado
+                </span>
+              )}
             </div>
           )}
         </form>
