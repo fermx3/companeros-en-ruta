@@ -5,6 +5,13 @@ import { X, ShoppingCart, Plus, Minus, Trash2, Search, Loader2 } from 'lucide-re
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+export interface EditOrderData {
+  distributor_id: string
+  payment_method: string
+  order_notes: string
+  items: CartItem[]
+}
+
 interface OrderModalProps {
   isOpen: boolean
   onClose: () => void
@@ -12,6 +19,8 @@ interface OrderModalProps {
   clientId: string
   visitId: string
   brandId?: string
+  editOrderId?: string | null
+  editOrderData?: EditOrderData | null
 }
 
 interface ProductVariant {
@@ -40,7 +49,7 @@ interface Distributor {
   contact_phone: string | null
 }
 
-interface CartItem {
+export interface CartItem {
   product_id: string
   product_variant_id: string | null
   name: string
@@ -63,8 +72,11 @@ export function OrderModal({
   onOrderCreated,
   clientId,
   visitId,
-  brandId
+  brandId,
+  editOrderId,
+  editOrderData
 }: OrderModalProps) {
+  const isEditMode = Boolean(editOrderId)
   const [distributors, setDistributors] = useState<Distributor[]>([])
   const [selectedDistributorId, setSelectedDistributorId] = useState('')
   const [products, setProducts] = useState<Product[]>([])
@@ -76,6 +88,7 @@ export function OrderModal({
   const [loadingProducts, setLoadingProducts] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'catalog' | 'cart'>('catalog')
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -122,7 +135,7 @@ export function OrderModal({
       .finally(() => setLoadingProducts(false))
   }, [isOpen, brandId])
 
-  // Reset state when modal closes
+  // Reset state when modal closes, or pre-populate in edit mode when it opens
   useEffect(() => {
     if (!isOpen) {
       setCart([])
@@ -131,8 +144,15 @@ export function OrderModal({
       setPaymentMethod('cash')
       setOrderNotes('')
       setError(null)
+      setActiveTab('catalog')
+    } else if (editOrderData) {
+      setSelectedDistributorId(editOrderData.distributor_id)
+      setPaymentMethod(editOrderData.payment_method || 'cash')
+      setOrderNotes(editOrderData.order_notes || '')
+      setCart(editOrderData.items)
+      setActiveTab('cart')
     }
-  }, [isOpen])
+  }, [isOpen, editOrderData])
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products
@@ -197,6 +217,18 @@ export function OrderModal({
     setError(null)
 
     try {
+      // In edit mode, delete the old order first
+      if (editOrderId) {
+        const deleteRes = await fetch(
+          `/api/promotor/visits/${visitId}/orders?order_id=${editOrderId}`,
+          { method: 'DELETE' }
+        )
+        if (!deleteRes.ok) {
+          const deleteResult = await deleteRes.json()
+          throw new Error(deleteResult.error || 'Error al actualizar la orden')
+        }
+      }
+
       const response = await fetch(`/api/promotor/visits/${visitId}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -256,7 +288,7 @@ export function OrderModal({
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={submitting ? undefined : onClose} />
 
-      <div className="absolute inset-2 sm:inset-4 md:inset-8 lg:inset-12 bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="absolute inset-0 sm:inset-2 md:inset-8 lg:inset-12 bg-white sm:rounded-xl shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b flex-shrink-0">
           <div className="flex items-center space-x-3">
@@ -265,7 +297,7 @@ export function OrderModal({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-                Crear Nueva Orden
+                {isEditMode ? 'Editar Orden' : 'Crear Nueva Orden'}
               </h2>
               <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
                 Levantamiento de pedido durante la visita
@@ -316,10 +348,48 @@ export function OrderModal({
           </div>
         )}
 
+        {/* Mobile tab bar */}
+        <div className="flex md:hidden border-b bg-gray-50 px-4 py-2 flex-shrink-0">
+          <div className="flex w-full rounded-lg bg-gray-200 p-0.5">
+            <button
+              type="button"
+              onClick={() => setActiveTab('catalog')}
+              className={cn(
+                'flex-1 py-1.5 text-sm font-medium rounded-md transition-colors',
+                activeTab === 'catalog'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600'
+              )}
+            >
+              Productos
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('cart')}
+              className={cn(
+                'flex-1 py-1.5 text-sm font-medium rounded-md transition-colors',
+                activeTab === 'cart'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600'
+              )}
+            >
+              Carrito
+              {cart.length > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center bg-blue-600 text-white text-xs font-medium w-5 h-5 rounded-full">
+                  {cart.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Content: catalog + cart */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
           {/* Catalog panel */}
-          <div className="flex-1 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r">
+          <div className={cn(
+            'flex-1 flex-col overflow-hidden md:border-r',
+            activeTab === 'catalog' ? 'flex' : 'hidden md:flex'
+          )}>
             {/* Search */}
             <div className="px-4 sm:px-6 py-3 border-b flex-shrink-0">
               <div className="relative">
@@ -362,7 +432,10 @@ export function OrderModal({
           </div>
 
           {/* Cart panel */}
-          <div className="w-full md:w-[360px] lg:w-[400px] flex flex-col overflow-hidden bg-gray-50">
+          <div className={cn(
+            'w-full md:w-[360px] lg:w-[400px] flex-col overflow-hidden bg-gray-50',
+            activeTab === 'cart' ? 'flex' : 'hidden md:flex'
+          )}>
             <div className="px-4 sm:px-6 py-3 border-b bg-white flex-shrink-0">
               <h3 className="font-semibold text-gray-900 flex items-center">
                 <ShoppingCart className="w-4 h-4 mr-2" />
@@ -502,16 +575,33 @@ export function OrderModal({
                   {submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Creando...
+                      {isEditMode ? 'Guardando...' : 'Creando...'}
                     </>
                   ) : (
-                    'Crear Orden'
+                    isEditMode ? 'Guardar Cambios' : 'Crear Orden'
                   )}
                 </Button>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Floating cart summary bar on mobile (catalog tab with items) */}
+        {activeTab === 'catalog' && cart.length > 0 && (
+          <div className="md:hidden flex-shrink-0 border-t bg-white px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setActiveTab('cart')}
+              className="w-full flex items-center justify-between bg-blue-600 text-white rounded-lg px-4 py-2.5 active:bg-blue-700 transition-colors"
+            >
+              <span className="flex items-center text-sm font-medium">
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Ver carrito ({cart.length} {cart.length === 1 ? 'item' : 'items'})
+              </span>
+              <span className="text-sm font-bold">${cartTotal.toFixed(2)}</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

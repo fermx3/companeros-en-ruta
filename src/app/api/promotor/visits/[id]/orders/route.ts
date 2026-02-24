@@ -40,13 +40,26 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       order_status,
       total_amount,
       distributor_id,
-      created_at
+      payment_method,
+      order_notes,
+      created_at,
+      visit_order_items (
+        id,
+        product_id,
+        product_variant_id,
+        quantity_ordered,
+        unit_price,
+        product:products (name)
+      )
     `)
     .eq('visit_id', visit.id)
     .is('deleted_at', null)
 
   if (status) {
     query = query.eq('order_status', status)
+  } else {
+    // By default exclude cancelled orders
+    query = query.neq('order_status', 'cancelled')
   }
 
   const { data: orders, error } = await query.order('created_at', { ascending: false })
@@ -77,10 +90,35 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const transformedOrders = (orders || []).map(order => ({
     id: order.id,
     order_number: order.order_number,
-    status: order.order_status,
+    order_status: order.order_status,
     total_amount: order.total_amount,
+    distributor_id: order.distributor_id,
     distributor_name: order.distributor_id ? distributorNames[order.distributor_id] || null : null,
-    created_at: order.created_at
+    payment_method: order.payment_method,
+    order_notes: order.order_notes,
+    created_at: order.created_at,
+    items: (
+      (order.visit_order_items as unknown as Array<{
+        id: string
+        product_id: string
+        product_variant_id: string | null
+        quantity_ordered: number
+        unit_price: number
+        product: { name: string } | { name: string }[] | null
+      }>) || []
+    ).map(item => {
+      const product = item.product
+      const productName = Array.isArray(product)
+        ? product[0]?.name || 'Producto'
+        : product?.name || 'Producto'
+      return {
+        product_id: item.product_id,
+        product_variant_id: item.product_variant_id,
+        product_name: productName,
+        quantity: item.quantity_ordered,
+        unit_price: Number(item.unit_price),
+      }
+    }),
   }))
 
   return NextResponse.json({ orders: transformedOrders })
@@ -170,7 +208,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         tenant_id: tenantId,
         visit_id: visit.id,
         client_id: visit.client_id,
-        advisor_id: userProfileId,
+        promotor_id: userProfileId,
         distributor_id,
         order_date: new Date().toISOString().split('T')[0],
         order_status: 'draft',
@@ -235,6 +273,76 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     )
   } catch (error) {
     console.error('Error in POST /api/promotor/visits/[id]/orders:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
+}
+
+// DELETE: Cancel a visit order (set status to 'cancelled')
+// Note: Soft-delete (setting deleted_at) is blocked by RLS policies that check
+// deleted_at IS NULL in WITH CHECK. We use order_status = 'cancelled' instead.
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id: visitId } = await params
+    const supabase = await createClient()
+
+    const auth = await resolvePromotorAuth(supabase)
+    if (isPromotorAuthError(auth)) return promotorAuthErrorResponse(auth)
+
+    const { userProfileId } = auth
+
+    const { searchParams } = new URL(request.url)
+    const orderId = searchParams.get('order_id')
+
+    if (!orderId) {
+      return NextResponse.json({ error: 'order_id es requerido' }, { status: 400 })
+    }
+
+    // Verify visit exists and belongs to the promotor
+    const { data: visit, error: visitError } = await supabase
+      .from('visits')
+      .select('id, promotor_id')
+      .eq(resolveIdColumn(visitId), visitId)
+      .single()
+
+    if (visitError || !visit) {
+      return NextResponse.json({ error: 'Visita no encontrada' }, { status: 404 })
+    }
+
+    if (visit.promotor_id !== userProfileId) {
+      return NextResponse.json({ error: 'No tienes acceso a esta visita' }, { status: 403 })
+    }
+
+    // Verify order belongs to this visit and is in draft status
+    const { data: order, error: orderError } = await supabase
+      .from('visit_orders')
+      .select('id, order_status')
+      .eq('id', orderId)
+      .eq('visit_id', visit.id)
+      .is('deleted_at', null)
+      .single()
+
+    if (orderError || !order) {
+      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 })
+    }
+
+    if (order.order_status !== 'draft') {
+      return NextResponse.json({ error: 'Solo se pueden eliminar órdenes en borrador' }, { status: 400 })
+    }
+
+    // Cancel the order instead of soft-deleting
+    const { error: cancelError } = await supabase
+      .from('visit_orders')
+      .update({ order_status: 'cancelled' })
+      .eq('id', orderId)
+
+    if (cancelError) {
+      console.error('Error cancelling visit_order:', cancelError)
+      return NextResponse.json({ error: 'Error al eliminar la orden' }, { status: 500 })
+    }
+
+    return NextResponse.json({ message: 'Orden eliminada exitosamente' })
+  } catch (error) {
+    console.error('Error in DELETE /api/promotor/visits/[id]/orders:', error)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

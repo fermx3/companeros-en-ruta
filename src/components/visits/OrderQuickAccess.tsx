@@ -1,17 +1,26 @@
 'use client'
 
-import { useState } from 'react'
-import { ShoppingCart, Plus, AlertCircle, ExternalLink } from 'lucide-react'
+import { ShoppingCart, Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-export interface PendingOrder {
+export interface VisitOrder {
   id: string
   order_number: string
-  status: string
-  status_label: string
+  order_status: string
   total_amount: number
+  distributor_id: string | null
+  distributor_name: string | null
+  payment_method: string
+  order_notes: string | null
   created_at: string
+  items: Array<{
+    product_id: string
+    product_variant_id: string | null
+    product_name: string
+    quantity: number
+    unit_price: number
+  }>
 }
 
 export type WhyNotBuyingReason =
@@ -31,6 +40,22 @@ const WHY_NOT_BUYING_LABELS: Record<WhyNotBuyingReason, string> = {
   not_applicable: 'No aplica'
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  draft: 'Borrador',
+  confirmed: 'Confirmada',
+  processed: 'Procesada',
+  delivered: 'Entregada',
+  cancelled: 'Cancelada',
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  draft: 'bg-gray-100 text-gray-700',
+  confirmed: 'bg-blue-100 text-blue-700',
+  processed: 'bg-indigo-100 text-indigo-700',
+  delivered: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
+}
+
 interface OrderQuickAccessProps {
   hasPurchaseOrder: boolean
   onHasPurchaseOrderChange: (value: boolean) => void
@@ -38,9 +63,11 @@ interface OrderQuickAccessProps {
   onPurchaseOrderNumberChange: (value: string) => void
   whyNotBuying: WhyNotBuyingReason | null
   onWhyNotBuyingChange: (value: WhyNotBuyingReason | null) => void
-  pendingOrders: PendingOrder[]
+  orders: VisitOrder[]
   onCreateOrder: () => void
-  onViewOrderHistory: () => void
+  onEditOrder: (orderId: string) => void
+  onDeleteOrder: (orderId: string) => void
+  deletingOrderId: string | null
   className?: string
 }
 
@@ -51,11 +78,15 @@ export function OrderQuickAccess({
   onPurchaseOrderNumberChange,
   whyNotBuying,
   onWhyNotBuyingChange,
-  pendingOrders,
+  orders,
   onCreateOrder,
-  onViewOrderHistory,
+  onEditOrder,
+  onDeleteOrder,
+  deletingOrderId,
   className
 }: OrderQuickAccessProps) {
+  const hasActiveOrders = orders.some(o => o.order_status !== 'cancelled')
+
   return (
     <div className={cn('space-y-4', className)}>
       {/* Header */}
@@ -65,80 +96,91 @@ export function OrderQuickAccess({
           <h3 className="text-sm font-medium text-gray-900">Orden de Compra</h3>
         </div>
 
-        {pendingOrders.length > 0 && (
-          <button
-            type="button"
-            onClick={onViewOrderHistory}
-            className="text-xs text-blue-600 hover:text-blue-700 flex items-center"
-          >
-            Ver historial
-            <ExternalLink className="w-3 h-3 ml-1" />
-          </button>
-        )}
       </div>
 
-      {/* Pending orders */}
-      {pendingOrders.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <div className="flex items-start space-x-2">
-            <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-yellow-800">
-                {pendingOrders.length} orden{pendingOrders.length !== 1 ? 'es' : ''} pendiente{pendingOrders.length !== 1 ? 's' : ''}
-              </p>
-              <div className="mt-1 space-y-1">
-                {pendingOrders.slice(0, 3).map((order) => (
-                  <p key={order.id} className="text-xs text-yellow-700">
-                    #{order.order_number} - ${order.total_amount.toLocaleString()} ({order.status_label})
-                  </p>
-                ))}
+      {/* Order cards */}
+      {orders.length > 0 && (
+        <div className="space-y-3">
+          {orders.map((order, index) => {
+            const isDraft = order.order_status === 'draft'
+            const isDeleting = deletingOrderId === order.id
+
+            return (
+              <div
+                key={order.id}
+                className={cn(
+                  'border rounded-lg p-3 transition-colors',
+                  isDraft ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'
+                )}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-semibold text-gray-900">
+                        {order.order_number
+                          ? `#${order.order_number}`
+                          : `Orden ${index + 1}`}
+                      </span>
+                      <span className={cn(
+                        'text-xs font-medium px-2 py-0.5 rounded-full',
+                        STATUS_COLORS[order.order_status] || 'bg-gray-100 text-gray-700'
+                      )}>
+                        {STATUS_LABELS[order.order_status] || order.order_status}
+                      </span>
+                    </div>
+                    {order.distributor_name && (
+                      <p className="text-xs text-gray-500 truncate">
+                        {order.distributor_name}
+                      </p>
+                    )}
+                    <p className="text-sm font-semibold text-gray-900 mt-1">
+                      ${Number(order.total_amount).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    </p>
+                    {order.items.length > 0 && (
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {order.items.length} producto{order.items.length !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Action buttons — only for draft orders */}
+                  {isDraft && (
+                    <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => onEditOrder(order.id)}
+                        disabled={isDeleting}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        title="Editar orden"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteOrder(order.id)}
+                        disabled={isDeleting}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        title="Eliminar orden"
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
+            )
+          })}
         </div>
       )}
 
-      {/* Toggle: Has purchase order? */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <p className="text-sm font-medium text-gray-700 mb-3">
-          ¿Se realizó orden de compra en esta visita?
-        </p>
-
-        <div className="flex space-x-3">
-          <button
-            type="button"
-            onClick={() => onHasPurchaseOrderChange(true)}
-            className={cn(
-              'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-colors',
-              hasPurchaseOrder
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-            )}
-          >
-            Sí
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onHasPurchaseOrderChange(false)
-              onPurchaseOrderNumberChange('')
-            }}
-            className={cn(
-              'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-colors',
-              !hasPurchaseOrder
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-            )}
-          >
-            No
-          </button>
-        </div>
-      </div>
-
-      {/* Order details or reason */}
-      {hasPurchaseOrder ? (
+      {/* Toggle & details: only show when no active orders exist */}
+      {hasActiveOrders ? (
+        /* When orders exist, just show the create button */
         <div className="space-y-4">
-          {/* Order number input */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Número de orden (opcional)
@@ -152,7 +194,6 @@ export function OrderQuickAccess({
             />
           </div>
 
-          {/* Create order button */}
           <Button
             type="button"
             onClick={onCreateOrder}
@@ -163,36 +204,102 @@ export function OrderQuickAccess({
           </Button>
         </div>
       ) : (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            ¿Por qué no se realizó compra?
-          </label>
-          <div className="grid grid-cols-1 gap-2">
-            {(Object.entries(WHY_NOT_BUYING_LABELS) as [WhyNotBuyingReason, string][]).map(
-              ([value, label]) => (
-                <label
-                  key={value}
-                  className={cn(
-                    'flex items-center p-3 border rounded-lg cursor-pointer transition-colors',
-                    whyNotBuying === value
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="why_not_buying"
-                    value={value}
-                    checked={whyNotBuying === value}
-                    onChange={() => onWhyNotBuyingChange(value)}
-                    className="mr-3 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">{label}</span>
-                </label>
-              )
-            )}
+        <>
+          {/* Toggle: Has purchase order? */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-sm font-medium text-gray-700 mb-3">
+              ¿Se realizó orden de compra en esta visita?
+            </p>
+
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={() => onHasPurchaseOrderChange(true)}
+                className={cn(
+                  'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-colors',
+                  hasPurchaseOrder
+                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                )}
+              >
+                Sí
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onHasPurchaseOrderChange(false)
+                  onPurchaseOrderNumberChange('')
+                }}
+                className={cn(
+                  'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-colors',
+                  !hasPurchaseOrder
+                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                )}
+              >
+                No
+              </button>
+            </div>
           </div>
-        </div>
+
+          {/* Order details or reason */}
+          {hasPurchaseOrder ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Número de orden (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={purchaseOrderNumber}
+                  onChange={(e) => onPurchaseOrderNumberChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: ORD-2026-001"
+                />
+              </div>
+
+              <Button
+                type="button"
+                onClick={onCreateOrder}
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Nueva Orden
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ¿Por qué no se realizó compra?
+              </label>
+              <div className="grid grid-cols-1 gap-2">
+                {(Object.entries(WHY_NOT_BUYING_LABELS) as [WhyNotBuyingReason, string][]).map(
+                  ([value, label]) => (
+                    <label
+                      key={value}
+                      className={cn(
+                        'flex items-center p-3 border rounded-lg cursor-pointer transition-colors',
+                        whyNotBuying === value
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="why_not_buying"
+                        value={value}
+                        checked={whyNotBuying === value}
+                        onChange={() => onWhyNotBuyingChange(value)}
+                        className="mr-3 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{label}</span>
+                    </label>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

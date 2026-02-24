@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 
 type Visit = {
@@ -137,14 +137,16 @@ export function useMyVisits(filters: VisitFilters) {
 // Hook para obtener una visita específica
 export function useVisit(visitId: string) {
   const { user } = useAuth()
+  const userRef = useRef(user)
+  userRef.current = user
+
   const [visit, setVisit] = useState<Visit | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchVisit = useCallback(async () => {
-    if (!user || !visitId) return
+    if (!userRef.current || !visitId) return
 
-    setLoading(true)
     setError(null)
 
     try {
@@ -162,7 +164,7 @@ export function useVisit(visitId: string) {
     } finally {
       setLoading(false)
     }
-  }, [user, visitId])
+  }, [visitId])
 
   const updateVisit = async (updates: Partial<Visit>) => {
     if (!visit) return
@@ -239,9 +241,11 @@ export function useVisit(visitId: string) {
     return checkout()
   }
 
+  // Only fetch once on mount (or if visitId changes), not on user reference changes
   useEffect(() => {
+    if (!user) return
     fetchVisit()
-  }, [fetchVisit])
+  }, [fetchVisit, user?.id])
 
   return {
     visit,

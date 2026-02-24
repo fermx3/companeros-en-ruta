@@ -5,8 +5,8 @@ import { ShoppingCart, Package, Gift, Clipboard } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { PhotoEvidenceUpload, EvidencePhoto } from './PhotoEvidenceUpload'
 import { ClientPromotionsPanel, ClientPromotion } from './ClientPromotionsPanel'
-import { OrderQuickAccess, WhyNotBuyingReason, PendingOrder } from './OrderQuickAccess'
-import { OrderModal } from './OrderModal'
+import { OrderQuickAccess, WhyNotBuyingReason, VisitOrder } from './OrderQuickAccess'
+import { OrderModal, CartItem, EditOrderData } from './OrderModal'
 import { VisitInventoryForm } from './VisitInventoryForm'
 import { cn } from '@/lib/utils'
 import type { WizardData } from './VisitAssessmentWizard'
@@ -36,12 +36,14 @@ export function AssessmentStage2({
   className
 }: AssessmentStage2Props) {
   const [promotions, setPromotions] = useState<ClientPromotion[]>([])
-  const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([])
+  const [orders, setOrders] = useState<VisitOrder[]>([])
   const [loadingPromotions, setLoadingPromotions] = useState(true)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [showInventorySection, setShowInventorySection] = useState(data.hasInventory)
+  const [editingOrder, setEditingOrder] = useState<{ id: string; data: EditOrderData } | null>(null)
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
 
-  // Load client promotions and pending orders
+  // Load client promotions and orders
   useEffect(() => {
     const loadData = async () => {
       setLoadingPromotions(true)
@@ -53,11 +55,11 @@ export function AssessmentStage2({
           setPromotions(promotionsData.promotions || [])
         }
 
-        // Load pending orders for this client
-        const ordersRes = await fetch(`/api/promotor/visits/${visitId}/orders?status=pending`).catch(() => null)
+        // Load all orders for this visit (no status filter)
+        const ordersRes = await fetch(`/api/promotor/visits/${visitId}/orders`).catch(() => null)
         if (ordersRes?.ok) {
           const ordersData = await ordersRes.json()
-          setPendingOrders(ordersData.orders || [])
+          setOrders(ordersData.orders || [])
         }
       } catch (error) {
         console.error('Error loading stage 2 data:', error)
@@ -86,10 +88,10 @@ export function AssessmentStage2({
 
   const refreshOrders = useCallback(async () => {
     try {
-      const ordersRes = await fetch(`/api/promotor/visits/${visitId}/orders?status=pending`)
+      const ordersRes = await fetch(`/api/promotor/visits/${visitId}/orders`)
       if (ordersRes.ok) {
         const ordersData = await ordersRes.json()
-        setPendingOrders(ordersData.orders || [])
+        setOrders(ordersData.orders || [])
       }
     } catch (error) {
       console.error('Error refreshing orders:', error)
@@ -101,7 +103,57 @@ export function AssessmentStage2({
       orderId,
       hasPurchaseOrder: true
     })
+    setEditingOrder(null)
     refreshOrders()
+  }
+
+  const handleEditOrder = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId)
+    if (!order) return
+
+    const editData: EditOrderData = {
+      distributor_id: order.distributor_id || '',
+      payment_method: order.payment_method || 'cash',
+      order_notes: order.order_notes || '',
+      items: order.items.map(item => ({
+        product_id: item.product_id,
+        product_variant_id: item.product_variant_id,
+        name: item.product_name,
+        variant_name: null,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      } satisfies CartItem)),
+    }
+
+    setEditingOrder({ id: orderId, data: editData })
+    setShowOrderModal(true)
+  }
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta orden?')) return
+
+    setDeletingOrderId(orderId)
+    try {
+      const res = await fetch(
+        `/api/promotor/visits/${visitId}/orders?order_id=${orderId}`,
+        { method: 'DELETE' }
+      )
+      if (res.ok) {
+        await refreshOrders()
+      } else {
+        const result = await res.json()
+        console.error('Error deleting order:', result.error)
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error)
+    } finally {
+      setDeletingOrderId(null)
+    }
+  }
+
+  const handleCloseModal = () => {
+    setShowOrderModal(false)
+    setEditingOrder(null)
   }
 
   const handleInventorySave = async (inventoryData: { inventory_skipped: boolean; items: Array<{ product_id: string; current_stock: number; notes?: string | null }> }) => {
@@ -155,12 +207,14 @@ export function AssessmentStage2({
             onPurchaseOrderNumberChange={(value) => onDataChange({ purchaseOrderNumber: value })}
             whyNotBuying={data.whyNotBuying as WhyNotBuyingReason | null}
             onWhyNotBuyingChange={(value) => onDataChange({ whyNotBuying: value })}
-            pendingOrders={pendingOrders}
-            onCreateOrder={() => setShowOrderModal(true)}
-            onViewOrderHistory={() => {
-              // Navigate to order history or open modal
-              window.open(`/promotor/visitas/${visitId}/orders`, '_blank')
+            orders={orders}
+            onCreateOrder={() => {
+              setEditingOrder(null)
+              setShowOrderModal(true)
             }}
+            onEditOrder={handleEditOrder}
+            onDeleteOrder={handleDeleteOrder}
+            deletingOrderId={deletingOrderId}
           />
         </CardContent>
       </Card>
@@ -245,11 +299,13 @@ export function AssessmentStage2({
       {/* Order Modal */}
       <OrderModal
         isOpen={showOrderModal}
-        onClose={() => setShowOrderModal(false)}
+        onClose={handleCloseModal}
         onOrderCreated={handleOrderCreated}
         clientId={clientId}
         visitId={visitId}
         brandId={brandId}
+        editOrderId={editingOrder?.id}
+        editOrderData={editingOrder?.data}
       />
     </div>
   )
