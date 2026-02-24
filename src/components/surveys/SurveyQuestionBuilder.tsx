@@ -10,8 +10,11 @@ const QUESTION_TYPE_LABELS: Record<SurveyQuestionTypeEnum, string> = {
   text: 'Texto libre',
   number: 'Número',
   multiple_choice: 'Opción múltiple',
+  checkbox: 'Selección múltiple',
   scale: 'Escala',
-  yes_no: 'Sí / No'
+  yes_no: 'Sí / No',
+  ordered_list: 'Lista ordenada',
+  percentage_distribution: 'Distribución porcentual'
 }
 
 export interface QuestionData {
@@ -55,7 +58,8 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
 
     // Reset options when type changes
     if (updates.question_type) {
-      if (updates.question_type === 'multiple_choice') {
+      const typesWithOptions = ['multiple_choice', 'checkbox', 'ordered_list', 'percentage_distribution']
+      if (typesWithOptions.includes(updates.question_type)) {
         updated[index].options = [{ value: 'option_1', label: 'Opción 1' }]
       } else if (updates.question_type === 'scale') {
         updated[index].options = { min: 1, max: 5, min_label: 'Muy malo', max_label: 'Excelente' }
@@ -173,12 +177,23 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
                 </label>
               </div>
 
-              {/* Multiple choice options */}
-              {question.question_type === 'multiple_choice' && (
+              {/* Options editor for types that use MultipleChoiceOption[] */}
+              {['multiple_choice', 'checkbox', 'ordered_list', 'percentage_distribution'].includes(question.question_type) && (
                 <div className="pl-6 space-y-2">
                   {normalizeMultipleChoiceOptions(question.options).map((option, optIdx) => (
                     <div key={optIdx} className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full border-2 border-gray-300" />
+                      {question.question_type === 'multiple_choice' && (
+                        <div className="w-3 h-3 rounded-full border-2 border-gray-300" />
+                      )}
+                      {question.question_type === 'checkbox' && (
+                        <div className="w-3 h-3 rounded border-2 border-gray-300" />
+                      )}
+                      {question.question_type === 'ordered_list' && (
+                        <span className="text-xs text-gray-400 w-4">{optIdx + 1}.</span>
+                      )}
+                      {question.question_type === 'percentage_distribution' && (
+                        <span className="text-xs text-gray-400 w-4">%</span>
+                      )}
                       <input
                         type="text"
                         value={option.label}
