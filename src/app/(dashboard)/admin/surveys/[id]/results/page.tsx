@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
@@ -54,38 +53,31 @@ const ROLE_LABELS: Record<string, string> = {
   client: 'Cliente'
 }
 
-export default function SurveyResultsPage() {
+export default function AdminSurveyResultsPage() {
   usePageTitle('Resultados de Encuesta')
   const router = useRouter()
   const params = useParams()
   const surveyId = params.id as string
-  const { brandFetch, currentBrandId } = useBrandFetch()
 
   const [data, setData] = useState<ResultsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!currentBrandId) return
-
-    const controller = new AbortController()
-
-    const fetchResults = async () => {
-      try {
-        const res = await brandFetch(`/api/brand/surveys/${surveyId}/results`, { signal: controller.signal })
-        if (!res.ok) throw new Error('Error al cargar resultados')
-        setData(await res.json())
-      } catch (err) {
-        if (controller.signal.aborted) return
-        setError(err instanceof Error ? err.message : 'Error')
-      } finally {
-        if (!controller.signal.aborted) setLoading(false)
-      }
+  const fetchResults = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/surveys/${surveyId}/results`)
+      if (!res.ok) throw new Error('Error al cargar resultados')
+      setData(await res.json())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error')
+    } finally {
+      setLoading(false)
     }
+  }, [surveyId])
 
+  useEffect(() => {
     fetchResults()
-    return () => controller.abort()
-  }, [surveyId, brandFetch, currentBrandId])
+  }, [fetchResults])
 
   if (loading) return <div className="p-6"><LoadingSpinner /></div>
   if (error) return <div className="p-6"><Alert variant="error">{error}</Alert></div>
@@ -95,7 +87,7 @@ export default function SurveyResultsPage() {
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={() => router.push(`/brand/surveys/${surveyId}`)} className="text-gray-500 hover:text-gray-700">
+        <button onClick={() => router.push(`/admin/surveys/${surveyId}`)} className="text-gray-500 hover:text-gray-700">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
@@ -256,7 +248,7 @@ export default function SurveyResultsPage() {
       ))}
 
       <div className="flex justify-center">
-        <Button variant="outline" onClick={() => router.push(`/brand/surveys/${surveyId}`)}>
+        <Button variant="outline" onClick={() => router.push(`/admin/surveys/${surveyId}`)}>
           Volver al detalle
         </Button>
       </div>

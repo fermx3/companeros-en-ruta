@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { resolveIdColumn } from '@/lib/utils/public-id'
 
 export async function GET(
@@ -10,17 +9,42 @@ export async function GET(
   try {
     const { id } = await params
     const supabase = await createClient()
-    const { searchParams } = new URL(request.url)
-    const result = await resolveBrandAuth(supabase, searchParams.get('brand_id'))
-    if (isBrandAuthError(result)) return brandAuthErrorResponse(result)
-    const { brandId } = result
 
-    // Verify survey belongs to brand
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 })
+    }
+
+    const { data: userProfile } = await supabase
+      .from('user_profiles')
+      .select(`
+        id,
+        tenant_id,
+        user_roles!user_roles_user_profile_id_fkey(tenant_id, role, status)
+      `)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!userProfile) {
+      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
+    }
+
+    const adminRole = userProfile.user_roles.find(r =>
+      r.status === 'active' && ['tenant_admin', 'admin', 'super_admin'].includes(r.role)
+    )
+
+    if (!adminRole) {
+      return NextResponse.json({ error: 'Sin permisos de administrador' }, { status: 403 })
+    }
+
+    const tenantId = adminRole.tenant_id || userProfile.tenant_id
+
+    // Verify survey belongs to tenant
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
       .select('id, title, survey_status, target_roles')
       .eq(resolveIdColumn(id), id)
-      .eq('brand_id', brandId)
+      .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .single()
 
@@ -76,14 +100,15 @@ export async function GET(
             .slice(0, 10)
           break
 
-        case 'number':
+        case 'number': {
           const numbers = answers.map(a => Number(a.answer_number)).filter(n => !isNaN(n))
           analytics.average = numbers.length > 0 ? numbers.reduce((s, n) => s + n, 0) / numbers.length : null
           analytics.min = numbers.length > 0 ? Math.min(...numbers) : null
           analytics.max = numbers.length > 0 ? Math.max(...numbers) : null
           break
+        }
 
-        case 'multiple_choice':
+        case 'multiple_choice': {
           const choiceCounts: Record<string, number> = {}
           answers.forEach(a => {
             if (a.answer_choice) {
@@ -96,8 +121,9 @@ export async function GET(
             percentage: answers.length > 0 ? Math.round((count / answers.length) * 100) : 0
           }))
           break
+        }
 
-        case 'scale':
+        case 'scale': {
           const scales = answers.map(a => Number(a.answer_scale)).filter(n => !isNaN(n))
           analytics.average = scales.length > 0 ? scales.reduce((s, n) => s + n, 0) / scales.length : null
           const scaleCounts: Record<number, number> = {}
@@ -112,8 +138,9 @@ export async function GET(
               percentage: scales.length > 0 ? Math.round((count / scales.length) * 100) : 0
             }))
           break
+        }
 
-        case 'yes_no':
+        case 'yes_no': {
           const yesCount = answers.filter(a => a.answer_boolean === true).length
           const noCount = answers.filter(a => a.answer_boolean === false).length
           analytics.distribution = [
@@ -121,6 +148,7 @@ export async function GET(
             { value: 'No', count: noCount, percentage: answers.length > 0 ? Math.round((noCount / answers.length) * 100) : 0 }
           ]
           break
+        }
 
         case 'checkbox': {
           const checkboxCounts: Record<string, number> = {}
@@ -201,7 +229,7 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('Error en GET /api/brand/surveys/[id]/results:', error)
+    console.error('Error en GET /api/admin/surveys/[id]/results:', error)
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
     return NextResponse.json(
       { error: 'Error interno del servidor', details: errorMessage },

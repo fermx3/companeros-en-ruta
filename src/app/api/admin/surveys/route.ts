@@ -85,6 +85,9 @@ export async function GET(request: NextRequest) {
 
     if (status && status !== 'all') {
       query = query.eq('survey_status', status as any)
+    } else {
+      // Admin should not see drafts — those belong to brand managers
+      query = query.neq('survey_status', 'draft' as any)
     }
 
     if (search) {
@@ -100,6 +103,8 @@ export async function GET(request: NextRequest) {
 
     if (status && status !== 'all') {
       countQuery = countQuery.eq('survey_status', status as any)
+    } else {
+      countQuery = countQuery.neq('survey_status', 'draft' as any)
     }
     if (search) {
       countQuery = countQuery.or(`title.ilike.%${search}%,public_id.ilike.%${search}%`)
@@ -114,11 +119,12 @@ export async function GET(request: NextRequest) {
       throw new Error(`Error al obtener encuestas: ${dataError.message}`)
     }
 
-    // Metrics
+    // Metrics (exclude drafts — admin shouldn't see them)
     const { data: metricsData } = await supabase
       .from('surveys')
       .select('survey_status')
       .eq('tenant_id', tenantId)
+      .neq('survey_status', 'draft' as any)
       .is('deleted_at', null)
 
     const metrics = {

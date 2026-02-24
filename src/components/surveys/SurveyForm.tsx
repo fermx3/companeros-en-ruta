@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { ChevronUp, ChevronDown } from 'lucide-react'
 import type { SurveyQuestionTypeEnum, MultipleChoiceOption } from '@/lib/types/database'
 import { normalizeMultipleChoiceOptions, normalizeScaleOptions } from './normalize-options'
 
@@ -44,7 +45,21 @@ export function SurveyForm({ questions, onSubmit, loading = false }: SurveyFormP
     for (const q of questions) {
       if (q.is_required) {
         const val = answers[q.id]
-        if (val === undefined || val === null || val === '') {
+        if (q.question_type === 'checkbox' || q.question_type === 'ordered_list') {
+          if (!Array.isArray(val) || val.length === 0) {
+            newErrors[q.id] = 'Esta pregunta es obligatoria'
+          }
+        } else if (q.question_type === 'percentage_distribution') {
+          if (!val || typeof val !== 'object') {
+            newErrors[q.id] = 'Esta pregunta es obligatoria'
+          } else {
+            const values = Object.values(val as Record<string, number>)
+            const sum = values.reduce((s: number, n: number) => s + n, 0)
+            if (Math.abs(sum - 100) > 0.01) {
+              newErrors[q.id] = 'Los porcentajes deben sumar 100%'
+            }
+          }
+        } else if (val === undefined || val === null || val === '') {
           newErrors[q.id] = 'Esta pregunta es obligatoria'
         }
       }
@@ -174,6 +189,127 @@ export function SurveyForm({ questions, onSubmit, loading = false }: SurveyFormP
             ))}
           </div>
         )
+
+      case 'checkbox': {
+        const checkboxOptions = normalizeMultipleChoiceOptions(question.options)
+        const selected = (answers[question.id] as string[]) || []
+        return (
+          <div className="space-y-2">
+            {checkboxOptions.map((option) => {
+              const isChecked = selected.includes(option.value)
+              return (
+                <label
+                  key={option.value}
+                  className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                    isChecked
+                      ? 'border-blue-500 bg-blue-50'
+                      : `border-gray-200 hover:bg-gray-50 ${error ? 'border-red-200' : ''}`
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      const next = isChecked
+                        ? selected.filter(v => v !== option.value)
+                        : [...selected, option.value]
+                      setAnswer(question.id, next)
+                    }}
+                    className="rounded border-gray-300 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">{option.label}</span>
+                </label>
+              )
+            })}
+          </div>
+        )
+      }
+
+      case 'ordered_list': {
+        const listOptions = normalizeMultipleChoiceOptions(question.options)
+        const orderedValues = (answers[question.id] as string[]) || listOptions.map(o => o.value)
+        // Initialize on first render
+        if (!answers[question.id]) {
+          // Use a timeout to avoid setting state during render
+          setTimeout(() => setAnswer(question.id, listOptions.map(o => o.value)), 0)
+        }
+        const labelMap = Object.fromEntries(listOptions.map(o => [o.value, o.label]))
+
+        const moveItem = (idx: number, direction: 'up' | 'down') => {
+          const newIdx = direction === 'up' ? idx - 1 : idx + 1
+          if (newIdx < 0 || newIdx >= orderedValues.length) return
+          const next = [...orderedValues]
+          const temp = next[idx]
+          next[idx] = next[newIdx]
+          next[newIdx] = temp
+          setAnswer(question.id, next)
+        }
+
+        return (
+          <div className="space-y-2">
+            {orderedValues.map((val, idx) => (
+              <div
+                key={val}
+                className={`flex items-center gap-3 p-3 border rounded-lg bg-white ${error ? 'border-red-200' : 'border-gray-200'}`}
+              >
+                <span className="text-xs font-bold text-gray-400 w-6 text-center">{idx + 1}</span>
+                <span className="flex-1 text-sm text-gray-700">{labelMap[val] || val}</span>
+                <div className="flex flex-col gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => moveItem(idx, 'up')}
+                    disabled={idx === 0}
+                    className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveItem(idx, 'down')}
+                    disabled={idx === orderedValues.length - 1}
+                    className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      }
+
+      case 'percentage_distribution': {
+        const pctOptions = normalizeMultipleChoiceOptions(question.options)
+        const pctValues = (answers[question.id] as Record<string, number>) || {}
+        const sum = Object.values(pctValues).reduce((s, n) => s + (n || 0), 0)
+
+        return (
+          <div className="space-y-3">
+            {pctOptions.map((option) => (
+              <div key={option.value} className="flex items-center gap-3">
+                <span className="text-sm text-gray-700 w-1/3 truncate">{option.label}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={pctValues[option.value] ?? ''}
+                  onChange={(e) => {
+                    const next = { ...pctValues }
+                    next[option.value] = e.target.value ? Number(e.target.value) : 0
+                    setAnswer(question.id, next)
+                  }}
+                  placeholder="0"
+                  className={`w-20 border rounded-md px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-300' : 'border-gray-300'}`}
+                />
+                <span className="text-sm text-gray-400">%</span>
+              </div>
+            ))}
+            <div className={`text-sm font-medium text-right ${Math.abs(sum - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+              Total: {sum}%
+            </div>
+          </div>
+        )
+      }
 
       default:
         return null

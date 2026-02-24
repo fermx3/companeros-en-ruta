@@ -204,6 +204,15 @@ export async function POST(
           case 'yes_no':
             row.answer_boolean = Boolean(a.value)
             break
+          case 'checkbox':
+            row.answer_choices = Array.isArray(a.value) ? a.value : []
+            break
+          case 'ordered_list':
+            row.answer_json = { ordered_values: Array.isArray(a.value) ? a.value : [] }
+            break
+          case 'percentage_distribution':
+            row.answer_json = a.value && typeof a.value === 'object' ? a.value : {}
+            break
         }
 
         return row
