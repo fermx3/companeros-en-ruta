@@ -101,6 +101,7 @@ export function PointsModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">Cantidad de puntos</label>
             <input
               type="number"
+              onFocus={(e) => e.target.select()}
               min="1"
               value={pointsAmount}
               onChange={(e) => setPointsAmount(e.target.value)}

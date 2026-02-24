@@ -209,11 +209,13 @@ export function SegmentationFilters({ filters, onChange }: SegmentationFiltersPr
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Puntos balance mín</label>
               <input type="number" className="w-full px-3 py-1.5 text-sm border rounded-md" placeholder="0"
+              onFocus={(e) => e.target.select()}
                 value={filters.points_balance_min ?? ''} onChange={(e) => updateFilter('points_balance_min', e.target.value ? Number(e.target.value) : undefined)} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Puntos balance máx</label>
               <input type="number" className="w-full px-3 py-1.5 text-sm border rounded-md" placeholder="Sin límite"
+              onFocus={(e) => e.target.select()}
                 value={filters.points_balance_max ?? ''} onChange={(e) => updateFilter('points_balance_max', e.target.value ? Number(e.target.value) : undefined)} />
             </div>
           </div>
@@ -221,11 +223,13 @@ export function SegmentationFilters({ filters, onChange }: SegmentationFiltersPr
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Puntos lifetime mín</label>
               <input type="number" className="w-full px-3 py-1.5 text-sm border rounded-md" placeholder="0"
+              onFocus={(e) => e.target.select()}
                 value={filters.points_lifetime_min ?? ''} onChange={(e) => updateFilter('points_lifetime_min', e.target.value ? Number(e.target.value) : undefined)} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Puntos lifetime máx</label>
               <input type="number" className="w-full px-3 py-1.5 text-sm border rounded-md" placeholder="Sin límite"
+              onFocus={(e) => e.target.select()}
                 value={filters.points_lifetime_max ?? ''} onChange={(e) => updateFilter('points_lifetime_max', e.target.value ? Number(e.target.value) : undefined)} />
             </div>
           </div>

@@ -537,6 +537,7 @@ export default function CreateOrderPage() {
                               <span className="text-xs text-gray-500">x</span>
                               <input
                                 type="number"
+                                onFocus={(e) => e.target.select()}
                                 value={item.unit_price}
                                 onChange={(e) => handleUpdatePrice(item.product_id, parseFloat(e.target.value) || 0)}
                                 className="w-20 text-sm px-2 py-1 border rounded"
