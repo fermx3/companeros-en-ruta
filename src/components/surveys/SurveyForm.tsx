@@ -96,6 +96,7 @@ export function SurveyForm({ questions, onSubmit, loading = false }: SurveyFormP
         return (
           <input
             type="number"
+            onFocus={(e) => e.target.select()}
             value={(answers[question.id] as number) ?? ''}
             onChange={(e) => setAnswer(question.id, e.target.value ? Number(e.target.value) : '')}
             placeholder="0"
@@ -290,6 +291,7 @@ export function SurveyForm({ questions, onSubmit, loading = false }: SurveyFormP
                 <span className="text-sm text-gray-700 w-1/3 truncate">{option.label}</span>
                 <input
                   type="number"
+                  onFocus={(e) => e.target.select()}
                   min={0}
                   max={100}
                   value={pctValues[option.value] ?? ''}

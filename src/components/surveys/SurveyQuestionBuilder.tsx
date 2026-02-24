@@ -235,6 +235,7 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
                     <div className="flex gap-2">
                       <input
                         type="number"
+                        onFocus={(e) => e.target.select()}
                         value={scaleOpts.min}
                         onChange={(e) => updateQuestion(index, {
                           options: { ...scaleOpts, min: Number(e.target.value) }
@@ -259,6 +260,7 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
                     <div className="flex gap-2">
                       <input
                         type="number"
+                        onFocus={(e) => e.target.select()}
                         value={scaleOpts.max}
                         onChange={(e) => updateQuestion(index, {
                           options: { ...scaleOpts, max: Number(e.target.value) }
