@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { SurveyQuestionBuilder, type QuestionData } from '@/components/surveys/SurveyQuestionBuilder'
-import { ArrowLeft, CheckCircle, XCircle, Users, Edit } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, Users, Edit, BarChart3 } from 'lucide-react'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
@@ -234,11 +234,18 @@ export default function AdminSurveyReviewPage() {
             <p className="text-sm text-gray-500">{survey.public_id} &middot; {survey.brands?.name}</p>
           </div>
         </div>
-        {canEdit && !editing && (
-          <Button variant="outline" onClick={enterEditMode}>
-            <Edit className="w-4 h-4 mr-2" /> Editar
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {survey.response_count > 0 && (
+            <Button variant="outline" onClick={() => router.push(`/admin/surveys/${surveyId}/results`)}>
+              <BarChart3 className="w-4 h-4 mr-2" /> Ver resultados
+            </Button>
+          )}
+          {canEdit && !editing && (
+            <Button variant="outline" onClick={enterEditMode}>
+              <Edit className="w-4 h-4 mr-2" /> Editar
+            </Button>
+          )}
+        </div>
       </div>
 
       {error && <Alert variant="error">{error}</Alert>}
