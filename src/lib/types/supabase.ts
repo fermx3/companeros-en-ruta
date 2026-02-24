@@ -5847,6 +5847,8 @@ export type Database = {
         Row: {
           answer_boolean: boolean | null
           answer_choice: string | null
+          answer_choices: string[] | null
+          answer_json: Json | null
           answer_number: number | null
           answer_scale: number | null
           answer_text: string | null
@@ -5859,6 +5861,8 @@ export type Database = {
         Insert: {
           answer_boolean?: boolean | null
           answer_choice?: string | null
+          answer_choices?: string[] | null
+          answer_json?: Json | null
           answer_number?: number | null
           answer_scale?: number | null
           answer_text?: string | null
@@ -5871,6 +5875,8 @@ export type Database = {
         Update: {
           answer_boolean?: boolean | null
           answer_choice?: string | null
+          answer_choices?: string[] | null
+          answer_json?: Json | null
           answer_number?: number | null
           answer_scale?: number | null
           answer_text?: string | null
@@ -15462,6 +15468,9 @@ export type Database = {
         | "multiple_choice"
         | "scale"
         | "yes_no"
+        | "checkbox"
+        | "ordered_list"
+        | "percentage_distribution"
       survey_status_enum:
         | "draft"
         | "pending_approval"
@@ -16000,6 +16009,9 @@ export const Constants = {
         "multiple_choice",
         "scale",
         "yes_no",
+        "checkbox",
+        "ordered_list",
+        "percentage_distribution",
       ],
       survey_status_enum: [
         "draft",

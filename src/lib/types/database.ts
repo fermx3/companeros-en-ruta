@@ -422,7 +422,10 @@ export type SurveyQuestionTypeEnum =
   | 'number'
   | 'multiple_choice'
   | 'scale'
-  | 'yes_no';
+  | 'yes_no'
+  | 'checkbox'
+  | 'ordered_list'
+  | 'percentage_distribution';
 
 /**
  * Survey target role enum values
@@ -521,6 +524,8 @@ export interface SurveyAnswer {
   answer_choice?: string;
   answer_scale?: number;
   answer_boolean?: boolean;
+  answer_choices?: string[];
+  answer_json?: Record<string, unknown>;
   created_at: string;
 }
 
