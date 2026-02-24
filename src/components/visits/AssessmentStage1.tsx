@@ -288,6 +288,7 @@ export function AssessmentStage1({
                                   assessment.product_variant_id,
                                   { current_price: parseFloat(e.target.value) || null }
                                 )}
+                                onFocus={(e) => e.target.select()}
                                 className={cn(
                                   'w-full pl-6 pr-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500',
                                   showValidation && assessment.current_price === null
@@ -317,6 +318,7 @@ export function AssessmentStage1({
                                   assessment.product_variant_id,
                                   { suggested_price: parseFloat(e.target.value) || null }
                                 )}
+                                onFocus={(e) => e.target.select()}
                                 className="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 placeholder="0.00"
                               />

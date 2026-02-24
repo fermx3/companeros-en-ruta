@@ -227,6 +227,7 @@ export function CompetitorProductsForm({
                                   type="number"
                                   value={assessment.size_grams || ''}
                                   onChange={(e) => updateAssessment(assessment.index, { size_grams: parseInt(e.target.value) || null })}
+                                  onFocus={(e) => e.target.select()}
                                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                                   placeholder="Ej: 500"
                                 />
@@ -245,6 +246,7 @@ export function CompetitorProductsForm({
                                   step="0.01"
                                   value={assessment.observed_price || ''}
                                   onChange={(e) => updateAssessment(assessment.index, { observed_price: parseFloat(e.target.value) || null })}
+                                  onFocus={(e) => e.target.select()}
                                   className="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                                   placeholder="0.00"
                                 />

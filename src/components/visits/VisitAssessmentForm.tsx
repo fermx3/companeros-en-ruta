@@ -149,6 +149,7 @@ export function VisitAssessmentForm({ visit, onSave }: VisitAssessmentFormProps)
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
               <input
                 type="number"
+                onFocus={(e) => e.target.select()}
                 step="0.01"
                 value={formData.observed_price}
                 onChange={(e) => updateField('observed_price', parseFloat(e.target.value) || 0)}
@@ -166,6 +167,7 @@ export function VisitAssessmentForm({ visit, onSave }: VisitAssessmentFormProps)
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
               <input
                 type="number"
+                onFocus={(e) => e.target.select()}
                 step="0.01"
                 value={formData.suggested_price}
                 onChange={(e) => updateField('suggested_price', parseFloat(e.target.value) || 0)}
