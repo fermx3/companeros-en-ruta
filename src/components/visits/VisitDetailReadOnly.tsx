@@ -21,6 +21,19 @@ function EmptySection({ message }: { message: string }) {
   return <p className="text-sm text-gray-500 italic py-4 text-center">{message}</p>
 }
 
+const evidenceTypeLabels: Record<string, string> = {
+  shelf_photo: 'Foto de anaquel',
+  price_tag: 'Etiqueta de precio',
+  competitor_display: 'Display competencia',
+  purchase_order: 'Orden de compra',
+  inventory_count: 'Conteo de inventario',
+  promotion_display: 'Display de promoción',
+  pop_material: 'Material POP',
+  exhibition: 'Exhibición',
+  activity: 'Actividad',
+  general: 'General',
+}
+
 function EvidenceGrid({ evidence, stage }: { evidence: Array<Record<string, unknown>>; stage: string }) {
   const filtered = evidence.filter(e => e.evidence_stage === stage)
   if (filtered.length === 0) return null
@@ -36,6 +49,11 @@ function EvidenceGrid({ evidence, stage }: { evidence: Array<Record<string, unkn
               alt={e.caption as string || 'Evidencia'}
               className="w-full h-32 object-cover rounded-lg border border-gray-200"
             />
+            {typeof e.evidence_type === 'string' && e.evidence_type && (
+              <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-medium bg-black/60 text-white rounded">
+                {evidenceTypeLabels[e.evidence_type] || e.evidence_type}
+              </span>
+            )}
             {typeof e.caption === 'string' && e.caption && (
               <p className="text-xs text-gray-600 mt-1 truncate">{e.caption}</p>
             )}
