@@ -21,6 +21,13 @@ function EmptySection({ message }: { message: string }) {
   return <p className="text-sm text-gray-500 italic py-4 text-center">{message}</p>
 }
 
+const stockLevelLabels: Record<string, { label: string; style: string }> = {
+  out_of_stock: { label: 'Sin stock', style: 'text-red-600' },
+  low: { label: 'Bajo', style: 'text-yellow-600' },
+  medium: { label: 'Medio', style: 'text-blue-600' },
+  high: { label: 'Alto', style: 'text-green-600' },
+}
+
 const evidenceTypeLabels: Record<string, string> = {
   shelf_photo: 'Foto de anaquel',
   price_tag: 'Etiqueta de precio',
@@ -228,7 +235,13 @@ export function VisitDetailReadOnly({ data }: VisitDetailReadOnlyProps) {
                         </td>
                         <td className="px-4 py-2 text-right">{bpa.current_price != null ? formatCurrency(bpa.current_price as number) : '—'}</td>
                         <td className="px-4 py-2 text-right">{bpa.suggested_price != null ? formatCurrency(bpa.suggested_price as number) : '—'}</td>
-                        <td className="px-4 py-2 text-center">{(bpa.stock_level as string) || '—'}</td>
+                        <td className="px-4 py-2 text-center">
+                          {bpa.stock_level ? (
+                            <span className={stockLevelLabels[bpa.stock_level as string]?.style}>
+                              {stockLevelLabels[bpa.stock_level as string]?.label || (bpa.stock_level as string)}
+                            </span>
+                          ) : '—'}
+                        </td>
                         <td className="px-4 py-2 text-center">
                           {bpa.has_active_promotion ? (
                             <span className="text-green-600" title={bpa.promotion_description as string || ''}>Sí</span>
