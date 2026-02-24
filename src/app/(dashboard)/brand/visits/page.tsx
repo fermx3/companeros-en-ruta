@@ -302,50 +302,53 @@ export default function BrandVisitsPage() {
         ) : (
           <div className="space-y-4">
             {visits.map((visit) => (
-              <Card key={visit.id}>
-                <div className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <span className="text-sm font-medium text-gray-500">{visit.public_id}</span>
-                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusColor(visit.visit_status)}`}>
-                          {getStatusLabel(visit.visit_status)}
-                        </span>
-                        {visit.rating != null && (
-                          <span className="inline-flex items-center text-sm text-yellow-600">
-                            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            {visit.rating}
+              <Link key={visit.id} href={`/brand/visits/${visit.id}`} className="block">
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <div className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <span className="text-sm font-medium text-gray-500">{visit.public_id}</span>
+                          <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusColor(visit.visit_status)}`}>
+                            {getStatusLabel(visit.visit_status)}
                           </span>
-                        )}
+                          {visit.rating != null && (
+                            <span className="inline-flex items-center text-sm text-yellow-600">
+                              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                              {visit.rating}
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-500">Fecha:</span>
+                            <span className="ml-1 text-gray-900">{formatDate(visit.visit_date)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Cliente:</span>
+                            <span className="ml-1 text-blue-600">{visit.client_name}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Promotor:</span>
+                            <span className="ml-1 text-gray-900">{visit.promotor_name}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Duración:</span>
+                            <span className="ml-1 text-gray-900">
+                              {visit.duration ? `${visit.duration} min` : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-500">Fecha:</span>
-                          <span className="ml-1 text-gray-900">{formatDate(visit.visit_date)}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Cliente:</span>
-                          <Link href={`/brand/clients/${visit.client_id}`} className="ml-1 text-blue-600 hover:text-blue-800">
-                            {visit.client_name}
-                          </Link>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Promotor:</span>
-                          <span className="ml-1 text-gray-900">{visit.promotor_name}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Duración:</span>
-                          <span className="ml-1 text-gray-900">
-                            {visit.duration ? `${visit.duration} min` : 'N/A'}
-                          </span>
-                        </div>
-                      </div>
+                      <svg className="w-5 h-5 text-gray-400 ml-4 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </Link>
             ))}
 
             {/* Pagination */}

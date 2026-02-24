@@ -239,7 +239,7 @@ export default function SupervisorVisitsPage() {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {visits.map((visit) => (
-                          <tr key={visit.id} className="hover:bg-gray-50">
+                          <tr key={visit.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => window.location.href = `/brand/visits/${visit.id}`}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {visit.visit_date
                                 ? new Date(visit.visit_date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })

@@ -164,6 +164,7 @@ export const adminNavConfig: RoleNavConfig = buildConfig(
     { id: 'users', label: 'Usuarios', icon: Users, href: '/admin/users' },
     { id: 'clients', label: 'Clientes', icon: UsersRound, href: '/admin/clients' },
     { id: 'zones', label: 'Zonas', icon: MapPin, href: '/admin/zones' },
+    { id: 'visits', label: 'Visitas', icon: Eye, href: '/admin/visits' },
     { id: 'orders', label: 'Ordenes', icon: ShoppingCart, href: '/admin/orders' },
     { id: 'promotions', label: 'Promociones', icon: Tag, href: '/admin/promotions' },
     { id: 'kpi-definitions', label: 'Definiciones KPI', icon: BarChart3, href: '/admin/kpi-definitions' },
