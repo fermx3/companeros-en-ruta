@@ -175,6 +175,81 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   }
 }
 
+// PATCH: Update evidence caption and/or type
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const { id: visitId } = await params
+  const supabase = await createClient()
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Get user profile
+  const { data: userProfile } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!userProfile) {
+    return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
+  }
+
+  // Verify visit belongs to the promotor and is in progress
+  const { data: visit } = await supabase
+    .from('visits')
+    .select('id, visit_status')
+    .eq(resolveIdColumn(visitId), visitId)
+    .eq('promotor_id', userProfile.id)
+    .is('deleted_at', null)
+    .single()
+
+  if (!visit) {
+    return NextResponse.json({ error: 'Visit not found' }, { status: 404 })
+  }
+
+  if (visit.visit_status !== 'in_progress') {
+    return NextResponse.json({ error: 'Visit must be in progress to update evidence' }, { status: 400 })
+  }
+
+  try {
+    const body = await request.json()
+    const { evidence_id, caption, evidence_type } = body
+
+    if (!evidence_id) {
+      return NextResponse.json({ error: 'Evidence ID is required' }, { status: 400 })
+    }
+
+    const updateData: Record<string, unknown> = {}
+    if (caption !== undefined) updateData.caption = caption
+    if (evidence_type !== undefined) updateData.evidence_type = evidence_type
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+    }
+
+    const { data: evidence, error: updateError } = await supabase
+      .from('visit_evidence')
+      .update(updateData)
+      .eq('id', evidence_id)
+      .eq('visit_id', visit.id)
+      .is('deleted_at', null)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('Error updating evidence:', updateError)
+      return NextResponse.json({ error: 'Error updating evidence', details: updateError.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ evidence })
+  } catch (error) {
+    console.error('Error processing evidence update:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 // DELETE: Remove evidence photo (soft delete)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { id: visitId } = await params

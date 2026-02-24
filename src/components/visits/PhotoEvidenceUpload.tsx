@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Camera, X, Upload, MapPin, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -151,10 +151,52 @@ export function PhotoEvidenceUpload({
     onPhotosChange(photos.filter(p => p.id !== photoId))
   }
 
+  // Debounced PATCH for persisting caption/type changes on already-uploaded photos
+  const patchTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      patchTimers.current.forEach(timer => clearTimeout(timer))
+    }
+  }, [])
+
+  const patchEvidence = useCallback((photo: EvidencePhoto, updates: Partial<EvidencePhoto>) => {
+    if (!visitId || !photo.fileUrl) return
+
+    // Clear existing timer for this photo
+    const existing = patchTimers.current.get(photo.id)
+    if (existing) clearTimeout(existing)
+
+    const timer = setTimeout(async () => {
+      patchTimers.current.delete(photo.id)
+      try {
+        const body: Record<string, unknown> = { evidence_id: photo.id }
+        if (updates.caption !== undefined) body.caption = updates.caption
+        if (updates.evidenceType !== undefined) body.evidence_type = updates.evidenceType
+
+        await fetch(`/api/promotor/visits/${visitId}/evidence`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        })
+      } catch (error) {
+        console.error('Error updating evidence:', error)
+      }
+    }, 500)
+
+    patchTimers.current.set(photo.id, timer)
+  }, [visitId])
+
   const handleUpdatePhoto = (photoId: string, updates: Partial<EvidencePhoto>) => {
+    const photo = photos.find(p => p.id === photoId)
     onPhotosChange(
       photos.map(p => (p.id === photoId ? { ...p, ...updates } : p))
     )
+    // Persist to server if photo is already uploaded
+    if (photo?.fileUrl) {
+      patchEvidence(photo, updates)
+    }
   }
 
   const hasMinPhotos = photos.length >= minPhotos
