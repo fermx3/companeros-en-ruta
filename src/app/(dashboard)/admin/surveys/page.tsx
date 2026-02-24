@@ -145,7 +145,6 @@ export default function AdminSurveysPage() {
               <option value="pending_approval">Pendientes</option>
               <option value="active">Activas</option>
               <option value="approved">Aprobadas</option>
-              <option value="draft">Borrador</option>
               <option value="closed">Cerradas</option>
             </select>
           </div>
