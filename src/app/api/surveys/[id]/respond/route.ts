@@ -76,7 +76,8 @@ export async function POST(
         survey_questions(
           id,
           question_type,
-          is_required
+          is_required,
+          section_id
         )
       `)
       .eq(resolveIdColumn(id), id)

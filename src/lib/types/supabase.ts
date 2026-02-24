@@ -5938,15 +5938,96 @@ export type Database = {
           },
         ]
       }
+      survey_sections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          sort_order: number
+          survey_id: string
+          tenant_id: string
+          title: string
+          updated_at: string
+          visibility_condition: Json | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          sort_order?: number
+          survey_id: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+          visibility_condition?: Json | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          sort_order?: number
+          survey_id?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          visibility_condition?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_sections_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_sections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_sections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "active_tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_sections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "client_type_tenant_summary"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "survey_sections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "market_tenant_summary"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "survey_sections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "product_category_stats"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       survey_questions: {
         Row: {
           created_at: string
           id: string
+          input_attributes: Json | null
           is_required: boolean
           options: Json | null
           public_id: string
           question_text: string
           question_type: Database["public"]["Enums"]["survey_question_type_enum"]
+          section_id: string | null
           sort_order: number
           survey_id: string
           tenant_id: string
@@ -5955,11 +6036,13 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          input_attributes?: Json | null
           is_required?: boolean
           options?: Json | null
           public_id?: string
           question_text: string
           question_type: Database["public"]["Enums"]["survey_question_type_enum"]
+          section_id?: string | null
           sort_order?: number
           survey_id: string
           tenant_id: string
@@ -5968,17 +6051,26 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          input_attributes?: Json | null
           is_required?: boolean
           options?: Json | null
           public_id?: string
           question_text?: string
           question_type?: Database["public"]["Enums"]["survey_question_type_enum"]
+          section_id?: string | null
           sort_order?: number
           survey_id?: string
           tenant_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "survey_questions_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "survey_sections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "survey_questions_survey_id_fkey"
             columns: ["survey_id"]

@@ -454,6 +454,29 @@ export interface ScaleOptions {
 }
 
 /**
+ * Visibility condition for survey sections (stored in JSONB)
+ * Determines whether a section is shown based on a previous question's answer
+ */
+export interface VisibilityCondition {
+  question_id: string;
+  operator: 'equals' | 'not_equals' | 'in' | 'not_in';
+  values: string[];
+}
+
+/**
+ * Input attributes for survey questions (stored in JSONB)
+ * Metadata controlling HTML input rendering
+ */
+export interface InputAttributes {
+  placeholder?: string;
+  maxLength?: number;
+  max?: number;
+  count?: number;
+  prefix?: string;
+  suffix?: string;
+}
+
+/**
  * surveys table
  */
 export interface Survey {
@@ -481,6 +504,21 @@ export interface Survey {
 }
 
 /**
+ * survey_sections table
+ */
+export interface SurveySection {
+  id: string;
+  survey_id: string;
+  tenant_id: string;
+  title: string;
+  description?: string | null;
+  sort_order: number;
+  visibility_condition?: VisibilityCondition | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+/**
  * survey_questions table
  */
 export interface SurveyQuestion {
@@ -493,6 +531,8 @@ export interface SurveyQuestion {
   is_required: boolean;
   sort_order: number;
   options?: MultipleChoiceOption[] | ScaleOptions | null;
+  section_id?: string | null;
+  input_attributes?: InputAttributes | null;
   created_at: string;
   updated_at?: string;
 }

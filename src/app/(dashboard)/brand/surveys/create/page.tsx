@@ -6,7 +6,7 @@ import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/feedback'
-import { SurveyQuestionBuilder, type QuestionData } from '@/components/surveys/SurveyQuestionBuilder'
+import { SurveyQuestionBuilder, type QuestionData, type SectionData } from '@/components/surveys/SurveyQuestionBuilder'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
@@ -55,6 +55,7 @@ export default function CreateSurveyPage() {
   const [targetClientCategories, setTargetClientCategories] = useState<string[]>([])
   const [maxResponses, setMaxResponses] = useState(1)
   const [questions, setQuestions] = useState<QuestionData[]>([])
+  const [surveySections, setSurveySections] = useState<SectionData[]>([])
 
   const toggleRole = (role: SurveyTargetRoleEnum) => {
     setTargetRoles(prev =>
@@ -95,12 +96,20 @@ export default function CreateSurveyPage() {
           target_roles: targetRoles,
           target_client_type_categories: targetClientCategories.length > 0 ? targetClientCategories : null,
           max_responses_per_user: maxResponses,
+          sections: surveySections.map((s, i) => ({
+            title: s.title,
+            description: s.description,
+            sort_order: i,
+            visibility_condition: s.visibility_condition
+          })),
           questions: questions.map((q, i) => ({
             question_text: q.question_text,
             question_type: q.question_type,
             is_required: q.is_required,
             sort_order: i,
-            options: q.options
+            options: q.options,
+            section_sort_order: q.section_id ? surveySections.findIndex(s => (s.id || String(s.sort_order)) === q.section_id) : undefined,
+            input_attributes: q.input_attributes
           }))
         })
       })
@@ -211,6 +220,8 @@ export default function CreateSurveyPage() {
             <SurveyQuestionBuilder
               questions={questions}
               onChange={setQuestions}
+              sections={surveySections}
+              onSectionsChange={setSurveySections}
             />
           )}
 
@@ -301,6 +312,19 @@ export default function CreateSurveyPage() {
                     <p className="text-sm">{targetRoles.map(r => ROLE_OPTIONS.find(o => o.value === r)?.label).join(', ')}</p>
                   </div>
                 </div>
+                {surveySections.length > 0 && (
+                  <div>
+                    <span className="text-xs text-gray-500">Secciones ({surveySections.length})</span>
+                    <ul className="text-sm mt-1 space-y-1">
+                      {surveySections.map((s, i) => (
+                        <li key={i} className="text-gray-700">
+                          {s.title}
+                          {s.visibility_condition && <span className="text-xs text-blue-500 ml-2">(condicional)</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div>
                   <span className="text-xs text-gray-500">Preguntas ({questions.length})</span>
                   <ol className="list-decimal list-inside text-sm mt-1 space-y-1">

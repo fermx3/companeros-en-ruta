@@ -20,6 +20,13 @@ export async function GET(
       .select(`
         *,
         brands(name),
+        survey_sections(
+          id,
+          title,
+          description,
+          sort_order,
+          visibility_condition
+        ),
         survey_questions(
           id,
           public_id,
@@ -27,7 +34,9 @@ export async function GET(
           question_type,
           is_required,
           sort_order,
-          options
+          options,
+          section_id,
+          input_attributes
         )
       `)
       .eq(resolveIdColumn(id), id)
@@ -48,9 +57,12 @@ export async function GET(
       .select('*', { count: 'exact', head: true })
       .eq('survey_id', survey.id)
 
-    // Sort questions by sort_order
+    // Sort questions and sections by sort_order
     if (survey.survey_questions) {
       survey.survey_questions.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
+    }
+    if (survey.survey_sections) {
+      survey.survey_sections.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
     }
 
     return NextResponse.json({
@@ -115,7 +127,8 @@ export async function PUT(
       start_date,
       end_date,
       max_responses_per_user,
-      questions
+      questions,
+      sections
     } = body
 
     // Update survey
@@ -145,6 +158,40 @@ export async function PUT(
       updatedSurvey = data
     }
 
+    // Update sections if provided (must be done BEFORE questions for FK references)
+    let sectionIdMap: Record<string, string> = {}
+    if (sections !== undefined) {
+      // Delete existing sections (CASCADE will null out question section_id references)
+      await supabase.from('survey_sections').delete().eq('survey_id', currentSurvey.id)
+
+      if (sections.length > 0) {
+        const sectionRows = sections.map((s: { title: string; description?: string; sort_order: number; visibility_condition?: unknown }, idx: number) => ({
+          survey_id: currentSurvey.id,
+          tenant_id: tenantId,
+          title: s.title,
+          description: s.description || null,
+          sort_order: s.sort_order ?? idx,
+          visibility_condition: s.visibility_condition || null
+        }))
+
+        const { data: insertedSections, error: sectionsError } = await supabase
+          .from('survey_sections')
+          .insert(sectionRows)
+          .select('id, sort_order')
+
+        if (sectionsError) {
+          throw new Error(`Error al actualizar secciones: ${sectionsError.message}`)
+        }
+
+        // Build map from sort_order to new section ID for question FK assignment
+        if (insertedSections) {
+          for (const sec of insertedSections) {
+            sectionIdMap[String(sec.sort_order)] = sec.id
+          }
+        }
+      }
+    }
+
     // Update questions if provided
     if (questions !== undefined) {
       // Delete existing questions
@@ -152,14 +199,16 @@ export async function PUT(
 
       // Insert new questions
       if (questions.length > 0) {
-        const questionRows = questions.map((q: { question_text: string; question_type: string; is_required?: boolean; sort_order: number; options?: unknown }, idx: number) => ({
+        const questionRows = questions.map((q: { question_text: string; question_type: string; is_required?: boolean; sort_order: number; options?: unknown; section_sort_order?: number; section_id?: string; input_attributes?: unknown }, idx: number) => ({
           survey_id: currentSurvey.id,
           tenant_id: tenantId,
           question_text: q.question_text,
           question_type: q.question_type,
           is_required: q.is_required ?? true,
           sort_order: q.sort_order ?? idx,
-          options: q.options || null
+          options: q.options || null,
+          section_id: q.section_id || (q.section_sort_order !== undefined ? sectionIdMap[String(q.section_sort_order)] : null) || null,
+          input_attributes: q.input_attributes || null
         }))
 
         const { error: questionsError } = await supabase

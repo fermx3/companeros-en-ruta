@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
-import { SurveyQuestionBuilder, type QuestionData } from '@/components/surveys/SurveyQuestionBuilder'
+import { SurveyQuestionBuilder, type QuestionData, type SectionData } from '@/components/surveys/SurveyQuestionBuilder'
 import { ArrowLeft, Send, Edit, BarChart3, AlertCircle } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
@@ -33,6 +33,7 @@ interface SurveyDetail {
   response_count: number
   created_at: string
   brands?: { name: string }
+  survey_sections: SectionData[]
   survey_questions: QuestionData[]
 }
 
@@ -50,6 +51,7 @@ export default function BrandSurveyDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editQuestions, setEditQuestions] = useState<QuestionData[]>([])
+  const [editSections, setEditSections] = useState<SectionData[]>([])
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
@@ -65,6 +67,7 @@ export default function BrandSurveyDetailPage() {
         const data = await res.json()
         setSurvey(data.survey)
         setEditQuestions(data.survey.survey_questions || [])
+        setEditSections(data.survey.survey_sections || [])
       } catch (err) {
         if (controller.signal.aborted) return
         setError(err instanceof Error ? err.message : 'Error')
@@ -102,12 +105,20 @@ export default function BrandSurveyDetailPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          sections: editSections.map((s, i) => ({
+            title: s.title,
+            description: s.description,
+            sort_order: i,
+            visibility_condition: s.visibility_condition
+          })),
           questions: editQuestions.map((q, i) => ({
             question_text: q.question_text,
             question_type: q.question_type,
             is_required: q.is_required,
             sort_order: i,
-            options: q.options
+            options: q.options,
+            section_sort_order: q.section_id ? editSections.findIndex(s => s.id === q.section_id) : undefined,
+            input_attributes: q.input_attributes
           }))
         })
       })
@@ -244,12 +255,14 @@ export default function BrandSurveyDetailPage() {
           <SurveyQuestionBuilder
             questions={editing ? editQuestions : survey.survey_questions}
             onChange={setEditQuestions}
+            sections={editing ? editSections : survey.survey_sections}
+            onSectionsChange={editing ? setEditSections : undefined}
             readonly={!editing}
           />
 
           {editing && (
             <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t">
-              <Button variant="outline" onClick={() => { setEditing(false); setEditQuestions(survey.survey_questions) }}>
+              <Button variant="outline" onClick={() => { setEditing(false); setEditQuestions(survey.survey_questions); setEditSections(survey.survey_sections) }}>
                 Cancelar
               </Button>
               <Button onClick={handleSaveEdit} disabled={actionLoading}>

@@ -1,9 +1,9 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
-import type { SurveyQuestionTypeEnum, MultipleChoiceOption } from '@/lib/types/database'
+import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Layers, Settings2 } from 'lucide-react'
+import type { SurveyQuestionTypeEnum, MultipleChoiceOption, VisibilityCondition, InputAttributes } from '@/lib/types/database'
 import { normalizeMultipleChoiceOptions, normalizeScaleOptions } from './normalize-options'
 
 const QUESTION_TYPE_LABELS: Record<SurveyQuestionTypeEnum, string> = {
@@ -24,15 +24,39 @@ export interface QuestionData {
   is_required: boolean
   sort_order: number
   options?: MultipleChoiceOption[] | { min: number; max: number; min_label?: string; max_label?: string } | null
+  section_id?: string | null
+  input_attributes?: InputAttributes | null
+}
+
+export interface SectionData {
+  id?: string
+  title: string
+  description?: string | null
+  sort_order: number
+  visibility_condition?: VisibilityCondition | null
+}
+
+const OPERATOR_LABELS: Record<string, string> = {
+  equals: 'Es igual a',
+  not_equals: 'No es igual a',
+  in: 'Está en',
+  not_in: 'No está en'
 }
 
 interface SurveyQuestionBuilderProps {
   questions: QuestionData[]
   onChange: (questions: QuestionData[]) => void
+  sections?: SectionData[]
+  onSectionsChange?: (sections: SectionData[]) => void
   readonly?: boolean
 }
 
-export function SurveyQuestionBuilder({ questions, onChange, readonly = false }: SurveyQuestionBuilderProps) {
+export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSectionsChange, readonly = false }: SurveyQuestionBuilderProps) {
+  const [showSectionEditor, setShowSectionEditor] = useState(false)
+  const [editingConditionIdx, setEditingConditionIdx] = useState<number | null>(null)
+  const [editingAttrsIdx, setEditingAttrsIdx] = useState<number | null>(null)
+
+  // --- Question management ---
   const addQuestion = () => {
     onChange([
       ...questions,
@@ -41,7 +65,9 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
         question_type: 'text',
         is_required: true,
         sort_order: questions.length,
-        options: null
+        options: null,
+        section_id: null,
+        input_attributes: null
       }
     ])
   }
@@ -113,8 +139,337 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
     updateQuestion(questionIndex, { options: currentOptions })
   }
 
+  // --- Section management ---
+  const addSection = () => {
+    if (!onSectionsChange) return
+    onSectionsChange([
+      ...sections,
+      {
+        title: `Sección ${sections.length + 1}`,
+        sort_order: sections.length,
+        visibility_condition: null
+      }
+    ])
+  }
+
+  const removeSection = (index: number) => {
+    if (!onSectionsChange) return
+    const removedSection = sections[index]
+    // Unassign questions from this section
+    const updatedQuestions = questions.map(q =>
+      q.section_id === removedSection.id ? { ...q, section_id: null } : q
+    )
+    onChange(updatedQuestions)
+    onSectionsChange(
+      sections.filter((_, i) => i !== index).map((s, i) => ({ ...s, sort_order: i }))
+    )
+  }
+
+  const updateSection = (index: number, updates: Partial<SectionData>) => {
+    if (!onSectionsChange) return
+    const updated = [...sections]
+    updated[index] = { ...updated[index], ...updates }
+    onSectionsChange(updated)
+  }
+
+  const moveSection = (index: number, direction: 'up' | 'down') => {
+    if (!onSectionsChange) return
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+    if (newIndex < 0 || newIndex >= sections.length) return
+    const updated = [...sections]
+    const temp = updated[index]
+    updated[index] = updated[newIndex]
+    updated[newIndex] = temp
+    onSectionsChange(updated.map((s, i) => ({ ...s, sort_order: i })))
+  }
+
+  // Get questions that can be used as condition sources (only multiple_choice/yes_no that are NOT in a section)
+  const conditionSourceQuestions = questions.filter(q =>
+    ['multiple_choice', 'yes_no', 'checkbox'].includes(q.question_type)
+  )
+
+  // --- Section editor panel ---
+  const renderSectionEditor = () => {
+    if (!onSectionsChange) return null
+
+    return (
+      <div className="mb-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <Layers className="w-4 h-4" /> Secciones ({sections.length})
+          </h3>
+          {!readonly && (
+            <Button type="button" variant="outline" size="sm" onClick={addSection}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> Agregar sección
+            </Button>
+          )}
+        </div>
+
+        {sections.length === 0 && (
+          <p className="text-xs text-gray-500">Sin secciones. Las preguntas se mostrarán como lista plana.</p>
+        )}
+
+        {sections.map((section, sIdx) => (
+          <div key={sIdx} className="border border-blue-200 bg-blue-50/50 rounded-lg p-3 space-y-2">
+            <div className="flex items-start gap-2">
+              {!readonly && (
+                <div className="flex flex-col items-center gap-0.5 pt-1">
+                  <button type="button" onClick={() => moveSection(sIdx, 'up')} disabled={sIdx === 0} className="text-gray-400 hover:text-gray-600 disabled:opacity-30">
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" onClick={() => moveSection(sIdx, 'down')} disabled={sIdx === sections.length - 1} className="text-gray-400 hover:text-gray-600 disabled:opacity-30">
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+              <div className="flex-1 space-y-2">
+                <input
+                  type="text"
+                  value={section.title}
+                  onChange={(e) => updateSection(sIdx, { title: e.target.value })}
+                  disabled={readonly}
+                  placeholder="Título de la sección"
+                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
+                />
+                <input
+                  type="text"
+                  value={section.description || ''}
+                  onChange={(e) => updateSection(sIdx, { description: e.target.value || null })}
+                  disabled={readonly}
+                  placeholder="Descripción (opcional)"
+                  className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
+                />
+
+                {/* Visibility condition */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingConditionIdx(editingConditionIdx === sIdx ? null : sIdx)}
+                    disabled={readonly}
+                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <Settings2 className="w-3 h-3" />
+                    {section.visibility_condition ? 'Condicional' : 'Agregar condición'}
+                  </button>
+                  {section.visibility_condition && !readonly && (
+                    <button
+                      type="button"
+                      onClick={() => updateSection(sIdx, { visibility_condition: null })}
+                      className="text-xs text-red-500 hover:text-red-600"
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
+
+                {editingConditionIdx === sIdx && !readonly && (
+                  <div className="bg-white border border-gray-200 rounded p-2 space-y-2">
+                    <div>
+                      <label className="text-xs text-gray-500">Mostrar sección cuando la respuesta a:</label>
+                      <select
+                        value={section.visibility_condition?.question_id || ''}
+                        onChange={(e) => {
+                          const qId = e.target.value
+                          if (!qId) {
+                            updateSection(sIdx, { visibility_condition: null })
+                            return
+                          }
+                          updateSection(sIdx, {
+                            visibility_condition: {
+                              question_id: qId,
+                              operator: section.visibility_condition?.operator || 'equals',
+                              values: section.visibility_condition?.values || []
+                            }
+                          })
+                        }}
+                        className="w-full border border-gray-200 rounded px-2 py-1 text-xs mt-1"
+                      >
+                        <option value="">Seleccionar pregunta...</option>
+                        {conditionSourceQuestions.map((q, qi) => (
+                          <option key={q.id || qi} value={q.id || ''}>
+                            {q.question_text || `Pregunta ${qi + 1}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {section.visibility_condition?.question_id && (
+                      <>
+                        <select
+                          value={section.visibility_condition.operator}
+                          onChange={(e) => updateSection(sIdx, {
+                            visibility_condition: { ...section.visibility_condition!, operator: e.target.value as VisibilityCondition['operator'] }
+                          })}
+                          className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                        >
+                          {Object.entries(OPERATOR_LABELS).map(([val, label]) => (
+                            <option key={val} value={val}>{label}</option>
+                          ))}
+                        </select>
+                        <div>
+                          <label className="text-xs text-gray-500">Valores (separados por coma):</label>
+                          <input
+                            type="text"
+                            value={section.visibility_condition.values.join(', ')}
+                            onChange={(e) => updateSection(sIdx, {
+                              visibility_condition: {
+                                ...section.visibility_condition!,
+                                values: e.target.value.split(',').map(v => v.trim()).filter(Boolean)
+                              }
+                            })}
+                            placeholder="valor1, valor2"
+                            className="w-full border border-gray-200 rounded px-2 py-1 text-xs mt-1"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Show assigned question count */}
+                {section.id && (
+                  <p className="text-xs text-gray-400">
+                    {questions.filter(q => q.section_id === section.id).length} preguntas asignadas
+                  </p>
+                )}
+              </div>
+
+              {!readonly && (
+                <button type="button" onClick={() => removeSection(sIdx)} className="text-gray-400 hover:text-red-500 p-1">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // --- Input attributes editor ---
+  const renderInputAttrsEditor = (questionIndex: number) => {
+    const question = questions[questionIndex]
+    const attrs = question.input_attributes || {}
+    const hasTextLike = ['text', 'number'].includes(question.question_type)
+    const hasCount = question.question_type === 'ordered_list'
+
+    if (!hasTextLike && !hasCount) return null
+
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded p-2 space-y-2 mt-2">
+        <p className="text-xs font-medium text-gray-500">Atributos de input</p>
+        {hasTextLike && (
+          <>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="text-xs text-gray-400">Placeholder</label>
+                <input
+                  type="text"
+                  value={attrs.placeholder || ''}
+                  onChange={(e) => updateQuestion(questionIndex, {
+                    input_attributes: { ...attrs, placeholder: e.target.value || undefined }
+                  })}
+                  placeholder="Texto de ayuda..."
+                  className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <div className="w-20">
+                <label className="text-xs text-gray-400">Prefijo</label>
+                <input
+                  type="text"
+                  value={attrs.prefix || ''}
+                  onChange={(e) => updateQuestion(questionIndex, {
+                    input_attributes: { ...attrs, prefix: e.target.value || undefined }
+                  })}
+                  placeholder="$"
+                  className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                />
+              </div>
+              <div className="w-20">
+                <label className="text-xs text-gray-400">Sufijo</label>
+                <input
+                  type="text"
+                  value={attrs.suffix || ''}
+                  onChange={(e) => updateQuestion(questionIndex, {
+                    input_attributes: { ...attrs, suffix: e.target.value || undefined }
+                  })}
+                  placeholder="kg"
+                  className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                />
+              </div>
+              {question.question_type === 'text' && (
+                <div className="w-24">
+                  <label className="text-xs text-gray-400">MaxLength</label>
+                  <input
+                    type="number"
+                    value={attrs.maxLength ?? ''}
+                    onChange={(e) => updateQuestion(questionIndex, {
+                      input_attributes: { ...attrs, maxLength: e.target.value ? Number(e.target.value) : undefined }
+                    })}
+                    placeholder="500"
+                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                  />
+                </div>
+              )}
+              {question.question_type === 'number' && (
+                <div className="w-24">
+                  <label className="text-xs text-gray-400">Max</label>
+                  <input
+                    type="number"
+                    value={attrs.max ?? ''}
+                    onChange={(e) => updateQuestion(questionIndex, {
+                      input_attributes: { ...attrs, max: e.target.value ? Number(e.target.value) : undefined }
+                    })}
+                    placeholder="100"
+                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                  />
+                </div>
+              )}
+            </div>
+          </>
+        )}
+        {hasCount && (
+          <div className="w-24">
+            <label className="text-xs text-gray-400">Items a ordenar</label>
+            <input
+              type="number"
+              value={attrs.count ?? ''}
+              onChange={(e) => updateQuestion(questionIndex, {
+                input_attributes: { ...attrs, count: e.target.value ? Number(e.target.value) : undefined }
+              })}
+              placeholder="3"
+              min={1}
+              className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+            />
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
+      {/* Section management toggle */}
+      {!readonly && onSectionsChange && (
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            onClick={() => setShowSectionEditor(!showSectionEditor)}
+            className={`text-xs flex items-center gap-1 px-2 py-1 rounded transition-colors ${
+              showSectionEditor ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            {showSectionEditor ? 'Ocultar secciones' : 'Gestionar secciones'}
+          </button>
+        </div>
+      )}
+
+      {/* Sections editor */}
+      {(showSectionEditor || (readonly && sections.length > 0)) && renderSectionEditor()}
+
+      {/* Questions */}
       {questions.map((question, index) => (
         <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
@@ -153,7 +508,7 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
                 />
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <select
                   value={question.question_type}
                   onChange={(e) => updateQuestion(index, { question_type: e.target.value as SurveyQuestionTypeEnum })}
@@ -175,7 +530,40 @@ export function SurveyQuestionBuilder({ questions, onChange, readonly = false }:
                   />
                   Obligatoria
                 </label>
+
+                {/* Section assignment */}
+                {sections.length > 0 && (
+                  <select
+                    value={question.section_id || ''}
+                    onChange={(e) => updateQuestion(index, { section_id: e.target.value || null })}
+                    disabled={readonly}
+                    className="border border-gray-200 rounded px-2 py-1 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
+                  >
+                    <option value="">Sin sección</option>
+                    {sections.map((s, sIdx) => (
+                      <option key={s.id || sIdx} value={s.id || ''}>{s.title}</option>
+                    ))}
+                  </select>
+                )}
+
+                {/* Input attributes toggle */}
+                {!readonly && ['text', 'number', 'ordered_list'].includes(question.question_type) && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingAttrsIdx(editingAttrsIdx === index ? null : index)}
+                    className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
+                      editingAttrsIdx === index || question.input_attributes
+                        ? 'bg-gray-200 text-gray-700'
+                        : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                  >
+                    <Settings2 className="w-3 h-3" /> Attrs
+                  </button>
+                )}
               </div>
+
+              {/* Input attributes editor */}
+              {editingAttrsIdx === index && !readonly && renderInputAttrsEditor(index)}
 
               {/* Options editor for types that use MultipleChoiceOption[] */}
               {['multiple_choice', 'checkbox', 'ordered_list', 'percentage_distribution'].includes(question.question_type) && (

@@ -56,6 +56,13 @@ export async function GET(
         end_date,
         max_responses_per_user,
         brands(name, logo_url),
+        survey_sections(
+          id,
+          title,
+          description,
+          sort_order,
+          visibility_condition
+        ),
         survey_questions(
           id,
           public_id,
@@ -63,7 +70,9 @@ export async function GET(
           question_type,
           is_required,
           sort_order,
-          options
+          options,
+          section_id,
+          input_attributes
         )
       `)
       .eq(resolveIdColumn(id), id)
@@ -76,9 +85,12 @@ export async function GET(
       return NextResponse.json({ error: 'Encuesta no encontrada' }, { status: 404 })
     }
 
-    // Sort questions
+    // Sort questions and sections
     if (survey.survey_questions) {
       survey.survey_questions.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
+    }
+    if (survey.survey_sections) {
+      survey.survey_sections.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
     }
 
     // Check if already responded

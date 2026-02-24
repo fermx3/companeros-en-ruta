@@ -153,7 +153,8 @@ export async function POST(request: NextRequest) {
       start_date,
       end_date,
       max_responses_per_user = 1,
-      questions = []
+      questions = [],
+      sections = []
     } = body
 
     // Validate
@@ -210,16 +211,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Create sections (before questions, for FK references)
+    let sectionIdMap: Record<string, string> = {}
+    if (sections.length > 0) {
+      const sectionRows = sections.map((s: { title: string; description?: string; sort_order: number; visibility_condition?: unknown }, idx: number) => ({
+        survey_id: newSurvey.id,
+        tenant_id: tenantId,
+        title: s.title,
+        description: s.description || null,
+        sort_order: s.sort_order ?? idx,
+        visibility_condition: s.visibility_condition || null
+      }))
+
+      const { data: insertedSections, error: sectionsError } = await supabase
+        .from('survey_sections')
+        .insert(sectionRows)
+        .select('id, sort_order')
+
+      if (sectionsError) {
+        console.error('Error creating survey sections:', sectionsError)
+        await supabase.from('surveys').delete().eq('id', newSurvey.id)
+        return NextResponse.json(
+          { error: 'Error al crear las secciones', details: sectionsError.message },
+          { status: 500 }
+        )
+      }
+
+      if (insertedSections) {
+        for (const sec of insertedSections) {
+          sectionIdMap[String(sec.sort_order)] = sec.id
+        }
+      }
+    }
+
     // Create questions
     if (questions.length > 0) {
-      const questionRows = questions.map((q: { question_text: string; question_type: string; is_required?: boolean; sort_order: number; options?: unknown }, idx: number) => ({
+      const questionRows = questions.map((q: { question_text: string; question_type: string; is_required?: boolean; sort_order: number; options?: unknown; section_sort_order?: number; section_id?: string; input_attributes?: unknown }, idx: number) => ({
         survey_id: newSurvey.id,
         tenant_id: tenantId,
         question_text: q.question_text,
         question_type: q.question_type,
         is_required: q.is_required ?? true,
         sort_order: q.sort_order ?? idx,
-        options: q.options || null
+        options: q.options || null,
+        section_id: q.section_id || (q.section_sort_order !== undefined ? sectionIdMap[String(q.section_sort_order)] : null) || null,
+        input_attributes: q.input_attributes || null
       }))
 
       const { error: questionsError } = await supabase

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyForm } from './SurveyForm'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
-import type { SurveyQuestionTypeEnum, MultipleChoiceOption } from '@/lib/types/database'
+import type { SurveyQuestionTypeEnum, MultipleChoiceOption, VisibilityCondition, InputAttributes } from '@/lib/types/database'
 
 interface Question {
   id: string
@@ -15,6 +15,16 @@ interface Question {
   is_required: boolean
   sort_order: number
   options?: MultipleChoiceOption[] | { min: number; max: number; min_label?: string; max_label?: string } | null
+  section_id?: string | null
+  input_attributes?: InputAttributes | null
+}
+
+interface Section {
+  id: string
+  title: string
+  description?: string | null
+  sort_order: number
+  visibility_condition?: VisibilityCondition | null
 }
 
 interface SurveyData {
@@ -22,6 +32,7 @@ interface SurveyData {
   title: string
   description?: string
   brands?: { name: string; logo_url?: string }
+  survey_sections?: Section[]
   survey_questions: Question[]
 }
 
@@ -137,6 +148,7 @@ export function SurveyRespondPage({ surveyId, backPath }: SurveyRespondPageProps
 
       <SurveyForm
         questions={survey.survey_questions}
+        sections={survey.survey_sections}
         onSubmit={handleSubmit}
         loading={submitting}
       />

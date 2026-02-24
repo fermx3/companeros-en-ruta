@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
-import { SurveyQuestionBuilder, type QuestionData } from '@/components/surveys/SurveyQuestionBuilder'
+import { SurveyQuestionBuilder, type QuestionData, type SectionData } from '@/components/surveys/SurveyQuestionBuilder'
 import { ArrowLeft, CheckCircle, XCircle, Users, Edit, BarChart3 } from 'lucide-react'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -43,6 +43,7 @@ interface AdminSurveyDetail {
   brands?: { name: string; logo_url?: string }
   creator?: { first_name: string; last_name: string; email: string }
   approver?: { first_name: string; last_name: string }
+  survey_sections: SectionData[]
   survey_questions: QuestionData[]
 }
 
@@ -70,6 +71,7 @@ export default function AdminSurveyReviewPage() {
   const [editTargetRoles, setEditTargetRoles] = useState<SurveyTargetRoleEnum[]>([])
   const [editMaxResponses, setEditMaxResponses] = useState(1)
   const [editQuestions, setEditQuestions] = useState<QuestionData[]>([])
+  const [editSections, setEditSections] = useState<SectionData[]>([])
 
   const fetchSurvey = useCallback(async () => {
     try {
@@ -97,6 +99,7 @@ export default function AdminSurveyReviewPage() {
     setEditTargetRoles([...survey.target_roles])
     setEditMaxResponses(survey.max_responses_per_user)
     setEditQuestions(survey.survey_questions)
+    setEditSections(survey.survey_sections || [])
     setEditing(true)
   }
 
@@ -132,12 +135,20 @@ export default function AdminSurveyReviewPage() {
           end_date: editEndDate,
           target_roles: editTargetRoles,
           max_responses_per_user: editMaxResponses,
+          sections: editSections.map((s, i) => ({
+            title: s.title,
+            description: s.description,
+            sort_order: i,
+            visibility_condition: s.visibility_condition
+          })),
           questions: editQuestions.map((q, i) => ({
             question_text: q.question_text,
             question_type: q.question_type,
             is_required: q.is_required,
             sort_order: i,
-            options: q.options
+            options: q.options,
+            section_sort_order: q.section_id ? editSections.findIndex(s => s.id === q.section_id) : undefined,
+            input_attributes: q.input_attributes
           }))
         })
       })
@@ -367,6 +378,8 @@ export default function AdminSurveyReviewPage() {
           <SurveyQuestionBuilder
             questions={editing ? editQuestions : survey.survey_questions}
             onChange={setEditQuestions}
+            sections={editing ? editSections : (survey.survey_sections || [])}
+            onSectionsChange={editing ? setEditSections : undefined}
             readonly={!editing}
           />
 
