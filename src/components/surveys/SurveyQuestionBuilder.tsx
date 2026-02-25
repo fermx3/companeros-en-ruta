@@ -60,15 +60,27 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
     return section.id || `__temp_${index}`
   }
 
+  // --- Helper: next top-level sort_order (shared namespace for unsectioned questions + sections) ---
+  const nextTopLevelOrder = (): number => {
+    const maxUnsectioned = questions
+      .filter(q => !q.section_id)
+      .reduce((max, q) => Math.max(max, q.sort_order), -1)
+    const maxSection = sections.reduce((max, s) => Math.max(max, s.sort_order), -1)
+    return Math.max(maxUnsectioned, maxSection) + 1
+  }
+
   // --- Question management ---
   const addQuestion = (sectionId: string | null = null) => {
+    const sort_order = sectionId === null
+      ? nextTopLevelOrder()
+      : questions.filter(q => q.section_id === sectionId).length
     onChange([
       ...questions,
       {
         question_text: '',
         question_type: 'text',
         is_required: true,
-        sort_order: questions.length,
+        sort_order,
         options: null,
         section_id: sectionId,
         input_attributes: null
@@ -78,7 +90,6 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
 
   const removeQuestion = (index: number) => {
     const updated = questions.filter((_, i) => i !== index)
-      .map((q, i) => ({ ...q, sort_order: i }))
     onChange(updated)
   }
 
@@ -103,22 +114,52 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
 
   const moveQuestion = (index: number, direction: 'up' | 'down') => {
     const question = questions[index]
-    // Find questions in the same group (same section_id)
-    const groupIndices = questions
-      .map((q, i) => ({ q, i }))
-      .filter(({ q }) => (q.section_id || null) === (question.section_id || null))
-      .map(({ i }) => i)
 
-    const posInGroup = groupIndices.indexOf(index)
-    const newPosInGroup = direction === 'up' ? posInGroup - 1 : posInGroup + 1
-    if (newPosInGroup < 0 || newPosInGroup >= groupIndices.length) return
+    // Sectioned questions: swap within section by sort_order
+    if (question.section_id) {
+      const groupIndices = questions
+        .map((q, i) => ({ q, i }))
+        .filter(({ q }) => q.section_id === question.section_id)
+        .map(({ i }) => i)
 
-    const swapIndex = groupIndices[newPosInGroup]
-    const updated = [...questions]
-    const temp = updated[index]
-    updated[index] = updated[swapIndex]
-    updated[swapIndex] = temp
-    onChange(updated.map((q, i) => ({ ...q, sort_order: i })))
+      const posInGroup = groupIndices.indexOf(index)
+      const newPosInGroup = direction === 'up' ? posInGroup - 1 : posInGroup + 1
+      if (newPosInGroup < 0 || newPosInGroup >= groupIndices.length) return
+
+      const swapIndex = groupIndices[newPosInGroup]
+      const updated = [...questions]
+      const tempOrder = updated[index].sort_order
+      updated[index] = { ...updated[index], sort_order: updated[swapIndex].sort_order }
+      updated[swapIndex] = { ...updated[swapIndex], sort_order: tempOrder }
+      onChange(updated)
+      return
+    }
+
+    // Unsectioned questions: swap sort_order with adjacent top-level item
+    const topLevel = buildTopLevelItems()
+    const tlIdx = topLevel.findIndex(item => item.type === 'question' && item.globalIndex === index)
+    if (tlIdx === -1) return
+    const newTlIdx = direction === 'up' ? tlIdx - 1 : tlIdx + 1
+    if (newTlIdx < 0 || newTlIdx >= topLevel.length) return
+
+    const neighbor = topLevel[newTlIdx]
+    const mySortOrder = question.sort_order
+    if (neighbor.type === 'question') {
+      const updated = [...questions]
+      updated[index] = { ...updated[index], sort_order: questions[neighbor.globalIndex].sort_order }
+      updated[neighbor.globalIndex] = { ...updated[neighbor.globalIndex], sort_order: mySortOrder }
+      onChange(updated)
+    } else {
+      // Swap with a section
+      const updated = [...questions]
+      updated[index] = { ...updated[index], sort_order: neighbor.sortOrder }
+      onChange(updated)
+      if (onSectionsChange) {
+        const updatedSections = [...sections]
+        updatedSections[neighbor.sectionIndex!] = { ...updatedSections[neighbor.sectionIndex!], sort_order: mySortOrder }
+        onSectionsChange(updatedSections)
+      }
+    }
   }
 
   const addOption = (questionIndex: number) => {
@@ -159,7 +200,7 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
       ...sections,
       {
         title: `Sección ${sections.length + 1}`,
-        sort_order: sections.length,
+        sort_order: nextTopLevelOrder(),
         visibility_condition: null
       }
     ])
@@ -174,9 +215,7 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
       q.section_id === removedKey ? { ...q, section_id: null } : q
     )
     onChange(updatedQuestions)
-    onSectionsChange(
-      sections.filter((_, i) => i !== index).map((s, i) => ({ ...s, sort_order: i }))
-    )
+    onSectionsChange(sections.filter((_, i) => i !== index))
   }
 
   const updateSection = (index: number, updates: Partial<SectionData>) => {
@@ -188,33 +227,33 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
 
   const moveSection = (index: number, direction: 'up' | 'down') => {
     if (!onSectionsChange) return
-    const newIndex = direction === 'up' ? index - 1 : index + 1
-    if (newIndex < 0 || newIndex >= sections.length) return
 
-    // Also update question section_ids if they reference temp keys that will change
-    const oldKey = getSectionKey(sections[index], index)
-    const swapKey = getSectionKey(sections[newIndex], newIndex)
+    const topLevel = buildTopLevelItems()
+    const tlIdx = topLevel.findIndex(item => item.type === 'section' && item.sectionIndex === index)
+    if (tlIdx === -1) return
+    const newTlIdx = direction === 'up' ? tlIdx - 1 : tlIdx + 1
+    if (newTlIdx < 0 || newTlIdx >= topLevel.length) return
 
-    const updated = [...sections]
-    const temp = updated[index]
-    updated[index] = updated[newIndex]
-    updated[newIndex] = temp
+    const neighbor = topLevel[newTlIdx]
+    const mySortOrder = sections[index].sort_order
 
-    const newSections = updated.map((s, i) => ({ ...s, sort_order: i }))
+    if (neighbor.type === 'section') {
+      const neighborSIdx = neighbor.sectionIndex!
+      // Swap sort_order between two sections
+      const updatedSections = [...sections]
+      updatedSections[index] = { ...updatedSections[index], sort_order: sections[neighborSIdx].sort_order }
+      updatedSections[neighborSIdx] = { ...updatedSections[neighborSIdx], sort_order: mySortOrder }
+      onSectionsChange(updatedSections)
+    } else {
+      // Swap with an unsectioned question
+      const updatedSections = [...sections]
+      updatedSections[index] = { ...updatedSections[index], sort_order: neighbor.sortOrder }
+      onSectionsChange(updatedSections)
 
-    // If either section uses temp keys, remap question section_ids
-    if (!sections[index].id || !sections[newIndex].id) {
-      const newKeyForOld = getSectionKey(newSections[newIndex], newIndex) // original section moved to newIndex
-      const newKeyForSwap = getSectionKey(newSections[index], index) // swapped section moved to index
-      const updatedQuestions = questions.map(q => {
-        if (q.section_id === oldKey) return { ...q, section_id: newKeyForOld }
-        if (q.section_id === swapKey) return { ...q, section_id: newKeyForSwap }
-        return q
-      })
-      onChange(updatedQuestions)
+      const updated = [...questions]
+      updated[neighbor.globalIndex!] = { ...updated[neighbor.globalIndex!], sort_order: mySortOrder }
+      onChange(updated)
     }
-
-    onSectionsChange(newSections)
   }
 
   // Get questions that can be used as condition sources (with stable identifiers)
@@ -233,14 +272,37 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
     const sectionQuestions = questions
       .map((q, i) => ({ question: q, globalIndex: i }))
       .filter(({ question }) => question.section_id === key)
+      .sort((a, b) => a.question.sort_order - b.question.sort_order)
     return { section, sIdx, key, questions: sectionQuestions }
   })
 
-  // Build global numbering: unsectioned first, then by section order
-  const orderedEntries: { globalIndex: number }[] = [
-    ...unsectionedQuestions,
-    ...sectionGroups.flatMap(g => g.questions)
-  ]
+  // --- Build unified top-level items list (unsectioned questions + sections) sorted by sort_order ---
+  type TopLevelItem =
+    | { type: 'question'; globalIndex: number; sortOrder: number; sectionIndex?: undefined }
+    | { type: 'section'; sectionIndex: number; sortOrder: number; globalIndex?: undefined }
+
+  const buildTopLevelItems = (): TopLevelItem[] => {
+    const items: TopLevelItem[] = [
+      ...unsectionedQuestions.map(e => ({ type: 'question' as const, globalIndex: e.globalIndex, sortOrder: e.question.sort_order })),
+      ...sectionGroups.map(g => ({ type: 'section' as const, sectionIndex: g.sIdx, sortOrder: g.section.sort_order }))
+    ]
+    return items.sort((a, b) => a.sortOrder - b.sortOrder)
+  }
+
+  const topLevelItems = buildTopLevelItems()
+
+  // Build global numbering following unified top-level order
+  const orderedEntries: { globalIndex: number }[] = []
+  for (const item of topLevelItems) {
+    if (item.type === 'question') {
+      orderedEntries.push({ globalIndex: item.globalIndex })
+    } else {
+      const group = sectionGroups[item.sectionIndex]
+      for (const sq of group.questions) {
+        orderedEntries.push({ globalIndex: sq.globalIndex })
+      }
+    }
+  }
   const globalNumberMap = new Map<number, number>()
   orderedEntries.forEach((entry, displayIdx) => {
     globalNumberMap.set(entry.globalIndex, displayIdx + 1)
@@ -356,9 +418,12 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
   }
 
   // --- Render a single question card ---
-  const renderQuestionCard = (globalIndex: number, groupIndices: number[]) => {
+  const renderQuestionCard = (globalIndex: number, groupIndices: number[], tlIdx?: number) => {
     const question = questions[globalIndex]
-    const posInGroup = groupIndices.indexOf(globalIndex)
+    const isUnsectioned = !question.section_id
+    // For unsectioned questions, use top-level index for bounds; for sectioned, use within-group position
+    const posInGroup = isUnsectioned ? (tlIdx ?? 0) : groupIndices.indexOf(globalIndex)
+    const groupLength = isUnsectioned ? topLevelItems.length : groupIndices.length
     const displayNumber = globalNumberMap.get(globalIndex) ?? globalIndex + 1
 
     return (
@@ -377,7 +442,7 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
               <button
                 type="button"
                 onClick={() => moveQuestion(globalIndex, 'down')}
-                disabled={posInGroup === groupIndices.length - 1}
+                disabled={posInGroup === groupLength - 1}
                 className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
               >
                 <ChevronDown className="w-4 h-4" />
@@ -688,115 +753,120 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
     )
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Unsectioned questions */}
-      {unsectionedQuestions.length > 0 && (
-        <div className="space-y-3">
-          {unsectionedQuestions.map(({ globalIndex }) =>
-            renderQuestionCard(globalIndex, unsectionedQuestions.map(e => e.globalIndex))
+  // --- Render a section block ---
+  const renderSectionBlock = ({ section, sIdx, key, questions: sectionQuestions }: typeof sectionGroups[number], tlIdx: number) => (
+    <div key={key} className="border border-blue-200 bg-blue-50/30 rounded-lg p-4 space-y-3">
+      {/* Section header */}
+      <div className="flex items-start gap-2">
+        {!readonly && (
+          <div className="flex flex-col items-center gap-0.5 pt-1">
+            <button type="button" onClick={() => moveSection(sIdx, 'up')} disabled={tlIdx === 0} className="text-gray-400 hover:text-gray-600 disabled:opacity-30">
+              <ChevronUp className="w-3.5 h-3.5" />
+            </button>
+            <button type="button" onClick={() => moveSection(sIdx, 'down')} disabled={tlIdx === topLevelItems.length - 1} className="text-gray-400 hover:text-gray-600 disabled:opacity-30">
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+        <div className="flex-1 space-y-2">
+          <input
+            type="text"
+            value={section.title}
+            onChange={(e) => updateSection(sIdx, { title: e.target.value })}
+            disabled={readonly}
+            placeholder="Título de la sección"
+            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:border-transparent disabled:font-semibold"
+          />
+          <input
+            type="text"
+            value={section.description || ''}
+            onChange={(e) => updateSection(sIdx, { description: e.target.value || null })}
+            disabled={readonly}
+            placeholder="Descripción (opcional)"
+            className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:border-transparent"
+          />
+
+          {/* Visibility condition */}
+          {!readonly && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setEditingConditionIdx(editingConditionIdx === sIdx ? null : sIdx)}
+                className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                <Settings2 className="w-3 h-3" />
+                {section.visibility_condition ? 'Condicional' : 'Agregar condición'}
+              </button>
+              {section.visibility_condition && (
+                <button
+                  type="button"
+                  onClick={() => updateSection(sIdx, { visibility_condition: null })}
+                  className="text-xs text-red-500 hover:text-red-600"
+                >
+                  Quitar
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Readonly: show condition badge */}
+          {readonly && section.visibility_condition && (
+            <span className="text-xs text-blue-600 flex items-center gap-1">
+              <Settings2 className="w-3 h-3" /> Condicional
+            </span>
+          )}
+
+          {renderConditionEditor(sIdx, section)}
+        </div>
+
+        {!readonly && (
+          <button type="button" onClick={() => removeSection(sIdx)} className="text-gray-400 hover:text-red-500 p-1">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      {/* Section questions */}
+      {sectionQuestions.length > 0 && (
+        <div className="space-y-3 pl-2">
+          {sectionQuestions.map(({ globalIndex }) =>
+            renderQuestionCard(globalIndex, sectionQuestions.map(e => e.globalIndex))
           )}
         </div>
       )}
 
-      {/* Sections with their questions */}
-      {sectionGroups.map(({ section, sIdx, key, questions: sectionQuestions }) => (
-        <div key={key} className="border border-blue-200 bg-blue-50/30 rounded-lg p-4 space-y-3">
-          {/* Section header */}
-          <div className="flex items-start gap-2">
-            {!readonly && (
-              <div className="flex flex-col items-center gap-0.5 pt-1">
-                <button type="button" onClick={() => moveSection(sIdx, 'up')} disabled={sIdx === 0} className="text-gray-400 hover:text-gray-600 disabled:opacity-30">
-                  <ChevronUp className="w-3.5 h-3.5" />
-                </button>
-                <button type="button" onClick={() => moveSection(sIdx, 'down')} disabled={sIdx === sections.length - 1} className="text-gray-400 hover:text-gray-600 disabled:opacity-30">
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-            <div className="flex-1 space-y-2">
-              <input
-                type="text"
-                value={section.title}
-                onChange={(e) => updateSection(sIdx, { title: e.target.value })}
-                disabled={readonly}
-                placeholder="Título de la sección"
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:border-transparent disabled:font-semibold"
-              />
-              <input
-                type="text"
-                value={section.description || ''}
-                onChange={(e) => updateSection(sIdx, { description: e.target.value || null })}
-                disabled={readonly}
-                placeholder="Descripción (opcional)"
-                className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:border-transparent"
-              />
+      {sectionQuestions.length === 0 && (
+        <p className="text-xs text-gray-400 pl-2">Sin preguntas en esta sección</p>
+      )}
 
-              {/* Visibility condition */}
-              {!readonly && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditingConditionIdx(editingConditionIdx === sIdx ? null : sIdx)}
-                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    <Settings2 className="w-3 h-3" />
-                    {section.visibility_condition ? 'Condicional' : 'Agregar condición'}
-                  </button>
-                  {section.visibility_condition && (
-                    <button
-                      type="button"
-                      onClick={() => updateSection(sIdx, { visibility_condition: null })}
-                      className="text-xs text-red-500 hover:text-red-600"
-                    >
-                      Quitar
-                    </button>
-                  )}
-                </div>
-              )}
+      {/* Add question to this section */}
+      {!readonly && (
+        <button
+          type="button"
+          onClick={() => addQuestion(key)}
+          className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 pl-2"
+        >
+          <Plus className="w-3.5 h-3.5" /> Agregar pregunta a esta sección
+        </button>
+      )}
+    </div>
+  )
 
-              {/* Readonly: show condition badge */}
-              {readonly && section.visibility_condition && (
-                <span className="text-xs text-blue-600 flex items-center gap-1">
-                  <Settings2 className="w-3 h-3" /> Condicional
-                </span>
-              )}
-
-              {renderConditionEditor(sIdx, section)}
+  return (
+    <div className="space-y-4">
+      {/* Unified top-level rendering: interleaved unsectioned questions and sections */}
+      {topLevelItems.map((item, tlIdx) => {
+        if (item.type === 'question') {
+          return (
+            <div key={`q-${item.globalIndex}`} className="space-y-3">
+              {renderQuestionCard(item.globalIndex, topLevelItems.filter(i => i.type === 'question').map(i => i.globalIndex!), tlIdx)}
             </div>
-
-            {!readonly && (
-              <button type="button" onClick={() => removeSection(sIdx)} className="text-gray-400 hover:text-red-500 p-1">
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Section questions */}
-          {sectionQuestions.length > 0 && (
-            <div className="space-y-3 pl-2">
-              {sectionQuestions.map(({ globalIndex }) =>
-                renderQuestionCard(globalIndex, sectionQuestions.map(e => e.globalIndex))
-              )}
-            </div>
-          )}
-
-          {sectionQuestions.length === 0 && (
-            <p className="text-xs text-gray-400 pl-2">Sin preguntas en esta sección</p>
-          )}
-
-          {/* Add question to this section */}
-          {!readonly && (
-            <button
-              type="button"
-              onClick={() => addQuestion(key)}
-              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 pl-2"
-            >
-              <Plus className="w-3.5 h-3.5" /> Agregar pregunta a esta sección
-            </button>
-          )}
-        </div>
-      ))}
+          )
+        } else {
+          const group = sectionGroups[item.sectionIndex]
+          return renderSectionBlock(group, tlIdx)
+        }
+      })}
 
       {/* Bottom action buttons */}
       {!readonly && (
