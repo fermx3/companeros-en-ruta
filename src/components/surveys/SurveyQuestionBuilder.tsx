@@ -618,7 +618,15 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
               : normalizeMultipleChoiceOptions(selectedQuestion.options)
             : []
 
+          const singleSelect = selectedQuestion?.question_type === 'yes_no' || selectedQuestion?.question_type === 'multiple_choice'
+
           const toggleValue = (val: string) => {
+            if (singleSelect) {
+              updateSection(sIdx, {
+                visibility_condition: { ...section.visibility_condition!, values: [val] }
+              })
+              return
+            }
             const current = section.visibility_condition?.values || []
             const newValues = current.includes(val)
               ? current.filter(v => v !== val)
@@ -648,7 +656,8 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
                     {predefinedOptions.map((opt) => (
                       <label key={opt.value} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
                         <input
-                          type="checkbox"
+                          type={singleSelect ? 'radio' : 'checkbox'}
+                          name={singleSelect ? `condition-${sIdx}` : undefined}
                           checked={section.visibility_condition?.values.includes(opt.value) || false}
                           onChange={() => toggleValue(opt.value)}
                           className="rounded border-gray-300"
