@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { SurveyQuestionBuilder, type QuestionData, type SectionData } from '@/components/surveys/SurveyQuestionBuilder'
-import { ArrowLeft, Send, Edit, BarChart3, AlertCircle } from 'lucide-react'
+import { SurveyPreviewDialog } from '@/components/surveys/SurveyPreviewDialog'
+import { ArrowLeft, Send, Edit, BarChart3, AlertCircle, Eye } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
@@ -53,6 +54,7 @@ export default function BrandSurveyDetailPage() {
   const [editQuestions, setEditQuestions] = useState<QuestionData[]>([])
   const [editSections, setEditSections] = useState<SectionData[]>([])
   const [refreshKey, setRefreshKey] = useState(0)
+  const [showPreview, setShowPreview] = useState(false)
 
   useEffect(() => {
     if (!currentBrandId) return
@@ -109,7 +111,16 @@ export default function BrandSurveyDetailPage() {
             title: s.title,
             description: s.description,
             sort_order: i,
-            visibility_condition: s.visibility_condition
+            visibility_condition: s.visibility_condition ? {
+              ...s.visibility_condition,
+              question_id: (() => {
+                const qIdx = editQuestions.findIndex(q =>
+                  (q.id && q.id === s.visibility_condition!.question_id) ||
+                  `__q_${editQuestions.indexOf(q)}` === s.visibility_condition!.question_id
+                )
+                return qIdx >= 0 ? `__q_${qIdx}` : s.visibility_condition!.question_id
+              })()
+            } : null
           })),
           questions: editQuestions.map((q, i) => ({
             question_text: q.question_text,
@@ -182,6 +193,11 @@ export default function BrandSurveyDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {!editing && (
+            <Button variant="outline" onClick={() => setShowPreview(true)}>
+              <Eye className="w-4 h-4 mr-2" /> Vista previa
+            </Button>
+          )}
           {(survey.survey_status === 'active' || survey.survey_status === 'closed') && (
             <Button variant="outline" onClick={() => router.push(`/brand/surveys/${surveyId}/results`)}>
               <BarChart3 className="w-4 h-4 mr-2" /> Resultados
@@ -281,6 +297,13 @@ export default function BrandSurveyDetailPage() {
           </Button>
         </div>
       )}
+
+      <SurveyPreviewDialog
+        open={showPreview}
+        onOpenChange={setShowPreview}
+        questions={survey.survey_questions}
+        sections={survey.survey_sections}
+      />
     </div>
   )
 }

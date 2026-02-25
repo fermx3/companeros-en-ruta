@@ -28,8 +28,9 @@ interface Section {
 interface SurveyFormProps {
   questions: Question[]
   sections?: Section[]
-  onSubmit: (answers: Array<{ question_id: string; value: unknown }>) => Promise<void>
+  onSubmit?: (answers: Array<{ question_id: string; value: unknown }>) => Promise<void>
   loading?: boolean
+  isPreview?: boolean
 }
 
 function isSectionVisible(section: Section, answers: Record<string, unknown>): boolean {
@@ -37,17 +38,29 @@ function isSectionVisible(section: Section, answers: Record<string, unknown>): b
   const { question_id, operator, values } = section.visibility_condition
   const answer = answers[question_id]
   if (answer === undefined || answer === null) return false
-  const answerStr = String(answer)
+
+  // Normalize: booleans → "yes"/"no", arrays → string[], else string
+  let answerValues: string[]
+  if (typeof answer === 'boolean') {
+    answerValues = [answer ? 'yes' : 'no']
+  } else if (Array.isArray(answer)) {
+    answerValues = answer.map(String)
+  } else {
+    answerValues = [String(answer)]
+  }
+
   switch (operator) {
-    case 'equals': return values.includes(answerStr)
-    case 'not_equals': return !values.includes(answerStr)
-    case 'in': return values.includes(answerStr)
-    case 'not_in': return !values.includes(answerStr)
+    case 'equals':
+    case 'in':
+      return answerValues.some(a => values.includes(a))
+    case 'not_equals':
+    case 'not_in':
+      return !answerValues.some(a => values.includes(a))
     default: return true
   }
 }
 
-export function SurveyForm({ questions, sections, onSubmit, loading = false }: SurveyFormProps) {
+export function SurveyForm({ questions, sections, onSubmit, loading = false, isPreview = false }: SurveyFormProps) {
   const [answers, setAnswers] = useState<Record<string, unknown>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -120,7 +133,7 @@ export function SurveyForm({ questions, sections, onSubmit, loading = false }: S
       .filter(([qId, value]) => visibleIds.has(qId) && value !== undefined && value !== null && value !== '')
       .map(([question_id, value]) => ({ question_id, value }))
 
-    await onSubmit(formattedAnswers)
+    await onSubmit!(formattedAnswers)
   }
 
   const renderQuestion = (question: Question) => {
@@ -471,6 +484,17 @@ export function SurveyForm({ questions, sections, onSubmit, loading = false }: S
       {questions.map((question, index) => renderQuestionCard(question, index + 1))}
     </>
   )
+
+  if (isPreview) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800 font-medium">
+          Vista previa — Las respuestas no se guardarán
+        </div>
+        {hasSections ? renderWithSections() : renderFlat()}
+      </div>
+    )
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

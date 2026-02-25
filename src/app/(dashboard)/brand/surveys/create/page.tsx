@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/feedback'
 import { SurveyQuestionBuilder, type QuestionData, type SectionData } from '@/components/surveys/SurveyQuestionBuilder'
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { SurveyPreviewDialog } from '@/components/surveys/SurveyPreviewDialog'
+import { ArrowLeft, ArrowRight, Check, Eye } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
@@ -56,6 +57,7 @@ export default function CreateSurveyPage() {
   const [maxResponses, setMaxResponses] = useState(1)
   const [questions, setQuestions] = useState<QuestionData[]>([])
   const [surveySections, setSurveySections] = useState<SectionData[]>([])
+  const [showPreview, setShowPreview] = useState(false)
 
   const toggleRole = (role: SurveyTargetRoleEnum) => {
     setTargetRoles(prev =>
@@ -100,7 +102,16 @@ export default function CreateSurveyPage() {
             title: s.title,
             description: s.description,
             sort_order: i,
-            visibility_condition: s.visibility_condition
+            visibility_condition: s.visibility_condition ? {
+              ...s.visibility_condition,
+              question_id: (() => {
+                const qIdx = questions.findIndex(q =>
+                  (q.id && q.id === s.visibility_condition!.question_id) ||
+                  `__q_${questions.indexOf(q)}` === s.visibility_condition!.question_id
+                )
+                return qIdx >= 0 ? `__q_${qIdx}` : s.visibility_condition!.question_id
+              })()
+            } : null
           })),
           questions: questions.map((q, i) => ({
             question_text: q.question_text,
@@ -338,6 +349,10 @@ export default function CreateSurveyPage() {
                 </div>
               </div>
 
+              <Button variant="outline" onClick={() => setShowPreview(true)}>
+                <Eye className="w-4 h-4 mr-2" /> Vista previa
+              </Button>
+
               <p className="text-xs text-gray-500">
                 La encuesta se guardará como borrador. Podrás editarla y enviarla para aprobación desde el detalle.
               </p>
@@ -369,6 +384,13 @@ export default function CreateSurveyPage() {
           </Button>
         )}
       </div>
+
+      <SurveyPreviewDialog
+        open={showPreview}
+        onOpenChange={setShowPreview}
+        questions={questions}
+        sections={surveySections}
+      />
     </div>
   )
 }

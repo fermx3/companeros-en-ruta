@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { SurveyQuestionBuilder, type QuestionData, type SectionData } from '@/components/surveys/SurveyQuestionBuilder'
-import { ArrowLeft, CheckCircle, XCircle, Users, Edit, BarChart3 } from 'lucide-react'
+import { SurveyPreviewDialog } from '@/components/surveys/SurveyPreviewDialog'
+import { ArrowLeft, CheckCircle, XCircle, Users, Edit, BarChart3, Eye } from 'lucide-react'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
@@ -72,6 +73,7 @@ export default function AdminSurveyReviewPage() {
   const [editMaxResponses, setEditMaxResponses] = useState(1)
   const [editQuestions, setEditQuestions] = useState<QuestionData[]>([])
   const [editSections, setEditSections] = useState<SectionData[]>([])
+  const [showPreview, setShowPreview] = useState(false)
 
   const fetchSurvey = useCallback(async () => {
     try {
@@ -246,6 +248,11 @@ export default function AdminSurveyReviewPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {!editing && (
+            <Button variant="outline" onClick={() => setShowPreview(true)}>
+              <Eye className="w-4 h-4 mr-2" /> Vista previa
+            </Button>
+          )}
           {survey.response_count > 0 && (
             <Button variant="outline" onClick={() => router.push(`/admin/surveys/${surveyId}/results`)}>
               <BarChart3 className="w-4 h-4 mr-2" /> Ver resultados
@@ -467,6 +474,13 @@ export default function AdminSurveyReviewPage() {
           </CardContent>
         </Card>
       )}
+
+      <SurveyPreviewDialog
+        open={showPreview}
+        onOpenChange={setShowPreview}
+        questions={survey.survey_questions}
+        sections={survey.survey_sections}
+      />
     </div>
   )
 }
