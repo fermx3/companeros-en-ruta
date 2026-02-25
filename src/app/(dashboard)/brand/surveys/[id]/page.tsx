@@ -117,7 +117,7 @@ export default function BrandSurveyDetailPage() {
             is_required: q.is_required,
             sort_order: i,
             options: q.options,
-            section_sort_order: q.section_id ? editSections.findIndex(s => s.id === q.section_id) : undefined,
+            section_sort_order: q.section_id ? editSections.findIndex((s, si) => (s.id || `__temp_${si}`) === q.section_id) : undefined,
             input_attributes: q.input_attributes
           }))
         })

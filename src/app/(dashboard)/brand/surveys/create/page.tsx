@@ -108,7 +108,7 @@ export default function CreateSurveyPage() {
             is_required: q.is_required,
             sort_order: i,
             options: q.options,
-            section_sort_order: q.section_id ? surveySections.findIndex(s => (s.id || String(s.sort_order)) === q.section_id) : undefined,
+            section_sort_order: q.section_id ? surveySections.findIndex((s, si) => (s.id || `__temp_${si}`) === q.section_id) : undefined,
             input_attributes: q.input_attributes
           }))
         })

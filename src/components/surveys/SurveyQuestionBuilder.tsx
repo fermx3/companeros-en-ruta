@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Layers, Settings2 } from 'lucide-react'
+import { Plus, Trash2, ChevronUp, ChevronDown, Settings2 } from 'lucide-react'
 import type { SurveyQuestionTypeEnum, MultipleChoiceOption, VisibilityCondition, InputAttributes } from '@/lib/types/database'
 import { normalizeMultipleChoiceOptions, normalizeScaleOptions } from './normalize-options'
 
@@ -52,12 +52,16 @@ interface SurveyQuestionBuilderProps {
 }
 
 export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSectionsChange, readonly = false }: SurveyQuestionBuilderProps) {
-  const [showSectionEditor, setShowSectionEditor] = useState(false)
   const [editingConditionIdx, setEditingConditionIdx] = useState<number | null>(null)
   const [editingAttrsIdx, setEditingAttrsIdx] = useState<number | null>(null)
 
+  // --- Helper: get section identifier (real id or temp index-based) ---
+  const getSectionKey = (section: SectionData, index: number): string => {
+    return section.id || `__temp_${index}`
+  }
+
   // --- Question management ---
-  const addQuestion = () => {
+  const addQuestion = (sectionId: string | null = null) => {
     onChange([
       ...questions,
       {
@@ -66,7 +70,7 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
         is_required: true,
         sort_order: questions.length,
         options: null,
-        section_id: null,
+        section_id: sectionId,
         input_attributes: null
       }
     ])
@@ -98,13 +102,22 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
   }
 
   const moveQuestion = (index: number, direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? index - 1 : index + 1
-    if (newIndex < 0 || newIndex >= questions.length) return
+    const question = questions[index]
+    // Find questions in the same group (same section_id)
+    const groupIndices = questions
+      .map((q, i) => ({ q, i }))
+      .filter(({ q }) => (q.section_id || null) === (question.section_id || null))
+      .map(({ i }) => i)
 
+    const posInGroup = groupIndices.indexOf(index)
+    const newPosInGroup = direction === 'up' ? posInGroup - 1 : posInGroup + 1
+    if (newPosInGroup < 0 || newPosInGroup >= groupIndices.length) return
+
+    const swapIndex = groupIndices[newPosInGroup]
     const updated = [...questions]
     const temp = updated[index]
-    updated[index] = updated[newIndex]
-    updated[newIndex] = temp
+    updated[index] = updated[swapIndex]
+    updated[swapIndex] = temp
     onChange(updated.map((q, i) => ({ ...q, sort_order: i })))
   }
 
@@ -155,9 +168,10 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
   const removeSection = (index: number) => {
     if (!onSectionsChange) return
     const removedSection = sections[index]
+    const removedKey = getSectionKey(removedSection, index)
     // Unassign questions from this section
     const updatedQuestions = questions.map(q =>
-      q.section_id === removedSection.id ? { ...q, section_id: null } : q
+      q.section_id === removedKey ? { ...q, section_id: null } : q
     )
     onChange(updatedQuestions)
     onSectionsChange(
@@ -176,174 +190,67 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
     if (!onSectionsChange) return
     const newIndex = direction === 'up' ? index - 1 : index + 1
     if (newIndex < 0 || newIndex >= sections.length) return
+
+    // Also update question section_ids if they reference temp keys that will change
+    const oldKey = getSectionKey(sections[index], index)
+    const swapKey = getSectionKey(sections[newIndex], newIndex)
+
     const updated = [...sections]
     const temp = updated[index]
     updated[index] = updated[newIndex]
     updated[newIndex] = temp
-    onSectionsChange(updated.map((s, i) => ({ ...s, sort_order: i })))
+
+    const newSections = updated.map((s, i) => ({ ...s, sort_order: i }))
+
+    // If either section uses temp keys, remap question section_ids
+    if (!sections[index].id || !sections[newIndex].id) {
+      const newKeyForOld = getSectionKey(newSections[newIndex], newIndex) // original section moved to newIndex
+      const newKeyForSwap = getSectionKey(newSections[index], index) // swapped section moved to index
+      const updatedQuestions = questions.map(q => {
+        if (q.section_id === oldKey) return { ...q, section_id: newKeyForOld }
+        if (q.section_id === swapKey) return { ...q, section_id: newKeyForSwap }
+        return q
+      })
+      onChange(updatedQuestions)
+    }
+
+    onSectionsChange(newSections)
   }
 
-  // Get questions that can be used as condition sources (only multiple_choice/yes_no that are NOT in a section)
-  const conditionSourceQuestions = questions.filter(q =>
-    ['multiple_choice', 'yes_no', 'checkbox'].includes(q.question_type)
+  // Get questions that can be used as condition sources (with stable identifiers)
+  const conditionSourceQuestions = questions
+    .map((q, i) => ({ ...q, _conditionKey: q.id || `__q_${i}` }))
+    .filter(q => ['multiple_choice', 'yes_no', 'checkbox'].includes(q.question_type)
   )
 
-  // --- Section editor panel ---
-  const renderSectionEditor = () => {
-    if (!onSectionsChange) return null
+  // --- Group questions by section ---
+  const unsectionedQuestions = questions
+    .map((q, i) => ({ question: q, globalIndex: i }))
+    .filter(({ question }) => !question.section_id)
 
-    return (
-      <div className="mb-6 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-            <Layers className="w-4 h-4" /> Secciones ({sections.length})
-          </h3>
-          {!readonly && (
-            <Button type="button" variant="outline" size="sm" onClick={addSection}>
-              <Plus className="w-3.5 h-3.5 mr-1" /> Agregar sección
-            </Button>
-          )}
-        </div>
+  const sectionGroups = sections.map((section, sIdx) => {
+    const key = getSectionKey(section, sIdx)
+    const sectionQuestions = questions
+      .map((q, i) => ({ question: q, globalIndex: i }))
+      .filter(({ question }) => question.section_id === key)
+    return { section, sIdx, key, questions: sectionQuestions }
+  })
 
-        {sections.length === 0 && (
-          <p className="text-xs text-gray-500">Sin secciones. Las preguntas se mostrarán como lista plana.</p>
-        )}
+  // Build global numbering: unsectioned first, then by section order
+  const orderedEntries: { globalIndex: number }[] = [
+    ...unsectionedQuestions,
+    ...sectionGroups.flatMap(g => g.questions)
+  ]
+  const globalNumberMap = new Map<number, number>()
+  orderedEntries.forEach((entry, displayIdx) => {
+    globalNumberMap.set(entry.globalIndex, displayIdx + 1)
+  })
 
-        {sections.map((section, sIdx) => (
-          <div key={sIdx} className="border border-blue-200 bg-blue-50/50 rounded-lg p-3 space-y-2">
-            <div className="flex items-start gap-2">
-              {!readonly && (
-                <div className="flex flex-col items-center gap-0.5 pt-1">
-                  <button type="button" onClick={() => moveSection(sIdx, 'up')} disabled={sIdx === 0} className="text-gray-400 hover:text-gray-600 disabled:opacity-30">
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button type="button" onClick={() => moveSection(sIdx, 'down')} disabled={sIdx === sections.length - 1} className="text-gray-400 hover:text-gray-600 disabled:opacity-30">
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-              <div className="flex-1 space-y-2">
-                <input
-                  type="text"
-                  value={section.title}
-                  onChange={(e) => updateSection(sIdx, { title: e.target.value })}
-                  disabled={readonly}
-                  placeholder="Título de la sección"
-                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
-                />
-                <input
-                  type="text"
-                  value={section.description || ''}
-                  onChange={(e) => updateSection(sIdx, { description: e.target.value || null })}
-                  disabled={readonly}
-                  placeholder="Descripción (opcional)"
-                  className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
-                />
-
-                {/* Visibility condition */}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditingConditionIdx(editingConditionIdx === sIdx ? null : sIdx)}
-                    disabled={readonly}
-                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 disabled:opacity-50"
-                  >
-                    <Settings2 className="w-3 h-3" />
-                    {section.visibility_condition ? 'Condicional' : 'Agregar condición'}
-                  </button>
-                  {section.visibility_condition && !readonly && (
-                    <button
-                      type="button"
-                      onClick={() => updateSection(sIdx, { visibility_condition: null })}
-                      className="text-xs text-red-500 hover:text-red-600"
-                    >
-                      Quitar
-                    </button>
-                  )}
-                </div>
-
-                {editingConditionIdx === sIdx && !readonly && (
-                  <div className="bg-white border border-gray-200 rounded p-2 space-y-2">
-                    <div>
-                      <label className="text-xs text-gray-500">Mostrar sección cuando la respuesta a:</label>
-                      <select
-                        value={section.visibility_condition?.question_id || ''}
-                        onChange={(e) => {
-                          const qId = e.target.value
-                          if (!qId) {
-                            updateSection(sIdx, { visibility_condition: null })
-                            return
-                          }
-                          updateSection(sIdx, {
-                            visibility_condition: {
-                              question_id: qId,
-                              operator: section.visibility_condition?.operator || 'equals',
-                              values: section.visibility_condition?.values || []
-                            }
-                          })
-                        }}
-                        className="w-full border border-gray-200 rounded px-2 py-1 text-xs mt-1"
-                      >
-                        <option value="">Seleccionar pregunta...</option>
-                        {conditionSourceQuestions.map((q, qi) => (
-                          <option key={q.id || qi} value={q.id || ''}>
-                            {q.question_text || `Pregunta ${qi + 1}`}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {section.visibility_condition?.question_id && (
-                      <>
-                        <select
-                          value={section.visibility_condition.operator}
-                          onChange={(e) => updateSection(sIdx, {
-                            visibility_condition: { ...section.visibility_condition!, operator: e.target.value as VisibilityCondition['operator'] }
-                          })}
-                          className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
-                        >
-                          {Object.entries(OPERATOR_LABELS).map(([val, label]) => (
-                            <option key={val} value={val}>{label}</option>
-                          ))}
-                        </select>
-                        <div>
-                          <label className="text-xs text-gray-500">Valores (separados por coma):</label>
-                          <input
-                            type="text"
-                            value={section.visibility_condition.values.join(', ')}
-                            onChange={(e) => updateSection(sIdx, {
-                              visibility_condition: {
-                                ...section.visibility_condition!,
-                                values: e.target.value.split(',').map(v => v.trim()).filter(Boolean)
-                              }
-                            })}
-                            placeholder="valor1, valor2"
-                            className="w-full border border-gray-200 rounded px-2 py-1 text-xs mt-1"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* Show assigned question count */}
-                {section.id && (
-                  <p className="text-xs text-gray-400">
-                    {questions.filter(q => q.section_id === section.id).length} preguntas asignadas
-                  </p>
-                )}
-              </div>
-
-              {!readonly && (
-                <button type="button" onClick={() => removeSection(sIdx)} className="text-gray-400 hover:text-red-500 p-1">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    )
-  }
+  // --- Section selector options for question dropdown ---
+  const sectionOptions = sections.map((s, i) => ({
+    key: getSectionKey(s, i),
+    title: s.title
+  }))
 
   // --- Input attributes editor ---
   const renderInputAttrsEditor = (questionIndex: number) => {
@@ -448,251 +355,455 @@ export function SurveyQuestionBuilder({ questions, onChange, sections = [], onSe
     )
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Section management toggle */}
-      {!readonly && onSectionsChange && (
-        <div className="flex items-center justify-end">
-          <button
-            type="button"
-            onClick={() => setShowSectionEditor(!showSectionEditor)}
-            className={`text-xs flex items-center gap-1 px-2 py-1 rounded transition-colors ${
-              showSectionEditor ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            {showSectionEditor ? 'Ocultar secciones' : 'Gestionar secciones'}
-          </button>
-        </div>
-      )}
+  // --- Render a single question card ---
+  const renderQuestionCard = (globalIndex: number, groupIndices: number[]) => {
+    const question = questions[globalIndex]
+    const posInGroup = groupIndices.indexOf(globalIndex)
+    const displayNumber = globalNumberMap.get(globalIndex) ?? globalIndex + 1
 
-      {/* Sections editor */}
-      {(showSectionEditor || (readonly && sections.length > 0)) && renderSectionEditor()}
+    return (
+      <div key={globalIndex} className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          {!readonly && (
+            <div className="flex flex-col items-center gap-0.5 pt-1">
+              <button
+                type="button"
+                onClick={() => moveQuestion(globalIndex, 'up')}
+                disabled={posInGroup === 0}
+                className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+              >
+                <ChevronUp className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => moveQuestion(globalIndex, 'down')}
+                disabled={posInGroup === groupIndices.length - 1}
+                className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
-      {/* Questions */}
-      {questions.map((question, index) => (
-        <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            {!readonly && (
-              <div className="flex flex-col items-center gap-1 pt-1">
-                <GripVertical className="w-4 h-4 text-gray-400" />
-                <button
-                  type="button"
-                  onClick={() => moveQuestion(index, 'up')}
-                  disabled={index === 0}
-                  className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveQuestion(index, 'down')}
-                  disabled={index === questions.length - 1}
-                  className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+          <div className="flex-1 space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-400 w-6">{displayNumber}.</span>
+              <input
+                type="text"
+                value={question.question_text}
+                onChange={(e) => updateQuestion(globalIndex, { question_text: e.target.value })}
+                placeholder="Escribe la pregunta..."
+                disabled={readonly}
+                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+              />
+            </div>
 
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-gray-400 w-6">{index + 1}.</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <select
+                value={question.question_type}
+                onChange={(e) => updateQuestion(globalIndex, { question_type: e.target.value as SurveyQuestionTypeEnum })}
+                disabled={readonly}
+                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+              >
+                {Object.entries(QUESTION_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+
+              <label className="flex items-center gap-1.5 text-sm text-gray-600">
                 <input
-                  type="text"
-                  value={question.question_text}
-                  onChange={(e) => updateQuestion(index, { question_text: e.target.value })}
-                  placeholder="Escribe la pregunta..."
+                  type="checkbox"
+                  checked={question.is_required}
+                  onChange={(e) => updateQuestion(globalIndex, { is_required: e.target.checked })}
                   disabled={readonly}
-                  className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  className="rounded border-gray-300"
                 />
-              </div>
+                Obligatoria
+              </label>
 
-              <div className="flex items-center gap-3 flex-wrap">
+              {/* Section assignment dropdown */}
+              {sectionOptions.length > 0 && !readonly && (
                 <select
-                  value={question.question_type}
-                  onChange={(e) => updateQuestion(index, { question_type: e.target.value as SurveyQuestionTypeEnum })}
-                  disabled={readonly}
-                  className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  value={question.section_id || ''}
+                  onChange={(e) => updateQuestion(globalIndex, { section_id: e.target.value || null })}
+                  className="border border-gray-200 rounded px-2 py-1 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  {Object.entries(QUESTION_TYPE_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                  <option value="">Sin sección</option>
+                  {sectionOptions.map((s) => (
+                    <option key={s.key} value={s.key}>{s.title}</option>
                   ))}
                 </select>
+              )}
 
-                <label className="flex items-center gap-1.5 text-sm text-gray-600">
-                  <input
-                    type="checkbox"
-                    checked={question.is_required}
-                    onChange={(e) => updateQuestion(index, { is_required: e.target.checked })}
-                    disabled={readonly}
-                    className="rounded border-gray-300"
-                  />
-                  Obligatoria
-                </label>
+              {/* Input attributes toggle */}
+              {!readonly && ['text', 'number', 'ordered_list'].includes(question.question_type) && (
+                <button
+                  type="button"
+                  onClick={() => setEditingAttrsIdx(editingAttrsIdx === globalIndex ? null : globalIndex)}
+                  className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
+                    editingAttrsIdx === globalIndex || question.input_attributes
+                      ? 'bg-gray-200 text-gray-700'
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <Settings2 className="w-3 h-3" /> Attrs
+                </button>
+              )}
+            </div>
 
-                {/* Section assignment */}
-                {sections.length > 0 && (
-                  <select
-                    value={question.section_id || ''}
-                    onChange={(e) => updateQuestion(index, { section_id: e.target.value || null })}
-                    disabled={readonly}
-                    className="border border-gray-200 rounded px-2 py-1 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
-                  >
-                    <option value="">Sin sección</option>
-                    {sections.map((s, sIdx) => (
-                      <option key={s.id || sIdx} value={s.id || ''}>{s.title}</option>
-                    ))}
-                  </select>
-                )}
+            {/* Input attributes editor */}
+            {editingAttrsIdx === globalIndex && !readonly && renderInputAttrsEditor(globalIndex)}
 
-                {/* Input attributes toggle */}
-                {!readonly && ['text', 'number', 'ordered_list'].includes(question.question_type) && (
+            {/* Options editor for types that use MultipleChoiceOption[] */}
+            {['multiple_choice', 'checkbox', 'ordered_list', 'percentage_distribution'].includes(question.question_type) && (
+              <div className="pl-6 space-y-2">
+                {normalizeMultipleChoiceOptions(question.options).map((option, optIdx) => (
+                  <div key={optIdx} className="flex items-center gap-2">
+                    {question.question_type === 'multiple_choice' && (
+                      <div className="w-3 h-3 rounded-full border-2 border-gray-300" />
+                    )}
+                    {question.question_type === 'checkbox' && (
+                      <div className="w-3 h-3 rounded border-2 border-gray-300" />
+                    )}
+                    {question.question_type === 'ordered_list' && (
+                      <span className="text-xs text-gray-400 w-4">{optIdx + 1}.</span>
+                    )}
+                    {question.question_type === 'percentage_distribution' && (
+                      <span className="text-xs text-gray-400 w-4">%</span>
+                    )}
+                    <input
+                      type="text"
+                      value={option.label}
+                      onChange={(e) => updateOption(globalIndex, optIdx, e.target.value)}
+                      disabled={readonly}
+                      placeholder={`Opción ${optIdx + 1}`}
+                      className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
+                    />
+                    {!readonly && (
+                      <button
+                        type="button"
+                        onClick={() => removeOption(globalIndex, optIdx)}
+                        className="text-gray-400 hover:text-red-500"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {!readonly && (
                   <button
                     type="button"
-                    onClick={() => setEditingAttrsIdx(editingAttrsIdx === index ? null : index)}
-                    className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
-                      editingAttrsIdx === index || question.input_attributes
-                        ? 'bg-gray-200 text-gray-700'
-                        : 'text-gray-400 hover:text-gray-600'
-                    }`}
+                    onClick={() => addOption(globalIndex)}
+                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
                   >
-                    <Settings2 className="w-3 h-3" /> Attrs
+                    <Plus className="w-3.5 h-3.5" /> Agregar opción
                   </button>
                 )}
               </div>
+            )}
 
-              {/* Input attributes editor */}
-              {editingAttrsIdx === index && !readonly && renderInputAttrsEditor(index)}
+            {/* Scale options */}
+            {question.question_type === 'scale' && (() => {
+              const scaleOpts = normalizeScaleOptions(question.options)
+              return (
+              <div className="pl-6 grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500">Mínimo</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      onFocus={(e) => e.target.select()}
+                      value={scaleOpts.min}
+                      onChange={(e) => updateQuestion(globalIndex, {
+                        options: { ...scaleOpts, min: Number(e.target.value) }
+                      })}
+                      disabled={readonly}
+                      className="w-16 border border-gray-200 rounded px-2 py-1 text-sm disabled:bg-gray-50"
+                    />
+                    <input
+                      type="text"
+                      value={scaleOpts.min_label ?? ''}
+                      onChange={(e) => updateQuestion(globalIndex, {
+                        options: { ...scaleOpts, min_label: e.target.value }
+                      })}
+                      disabled={readonly}
+                      placeholder="Etiqueta (ej: Muy malo)"
+                      className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm disabled:bg-gray-50"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Máximo</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      onFocus={(e) => e.target.select()}
+                      value={scaleOpts.max}
+                      onChange={(e) => updateQuestion(globalIndex, {
+                        options: { ...scaleOpts, max: Number(e.target.value) }
+                      })}
+                      disabled={readonly}
+                      className="w-16 border border-gray-200 rounded px-2 py-1 text-sm disabled:bg-gray-50"
+                    />
+                    <input
+                      type="text"
+                      value={scaleOpts.max_label ?? ''}
+                      onChange={(e) => updateQuestion(globalIndex, {
+                        options: { ...scaleOpts, max_label: e.target.value }
+                      })}
+                      disabled={readonly}
+                      placeholder="Etiqueta (ej: Excelente)"
+                      className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm disabled:bg-gray-50"
+                    />
+                  </div>
+                </div>
+              </div>
+              )
+            })()}
+          </div>
 
-              {/* Options editor for types that use MultipleChoiceOption[] */}
-              {['multiple_choice', 'checkbox', 'ordered_list', 'percentage_distribution'].includes(question.question_type) && (
-                <div className="pl-6 space-y-2">
-                  {normalizeMultipleChoiceOptions(question.options).map((option, optIdx) => (
-                    <div key={optIdx} className="flex items-center gap-2">
-                      {question.question_type === 'multiple_choice' && (
-                        <div className="w-3 h-3 rounded-full border-2 border-gray-300" />
-                      )}
-                      {question.question_type === 'checkbox' && (
-                        <div className="w-3 h-3 rounded border-2 border-gray-300" />
-                      )}
-                      {question.question_type === 'ordered_list' && (
-                        <span className="text-xs text-gray-400 w-4">{optIdx + 1}.</span>
-                      )}
-                      {question.question_type === 'percentage_distribution' && (
-                        <span className="text-xs text-gray-400 w-4">%</span>
-                      )}
-                      <input
-                        type="text"
-                        value={option.label}
-                        onChange={(e) => updateOption(index, optIdx, e.target.value)}
-                        disabled={readonly}
-                        placeholder={`Opción ${optIdx + 1}`}
-                        className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
-                      />
-                      {!readonly && (
-                        <button
-                          type="button"
-                          onClick={() => removeOption(index, optIdx)}
-                          className="text-gray-400 hover:text-red-500"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  {!readonly && (
+          {!readonly && (
+            <button
+              type="button"
+              onClick={() => removeQuestion(globalIndex)}
+              className="text-gray-400 hover:text-red-500 p-1"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // --- Render visibility condition editor for a section ---
+  const renderConditionEditor = (sIdx: number, section: SectionData) => {
+    if (editingConditionIdx !== sIdx || readonly) return null
+
+    return (
+      <div className="bg-white border border-gray-200 rounded p-2 space-y-2">
+        <div>
+          <label className="text-xs text-gray-500">Mostrar sección cuando la respuesta a:</label>
+          <select
+            value={section.visibility_condition?.question_id || ''}
+            onChange={(e) => {
+              const qId = e.target.value
+              if (!qId) {
+                updateSection(sIdx, { visibility_condition: null })
+                return
+              }
+              updateSection(sIdx, {
+                visibility_condition: {
+                  question_id: qId,
+                  operator: section.visibility_condition?.operator || 'equals',
+                  values: section.visibility_condition?.values || []
+                }
+              })
+            }}
+            className="w-full border border-gray-200 rounded px-2 py-1 text-xs mt-1"
+          >
+            <option value="">Seleccionar pregunta...</option>
+            {conditionSourceQuestions.map((q) => (
+              <option key={q._conditionKey} value={q._conditionKey}>
+                {q.question_text || `Pregunta`}
+              </option>
+            ))}
+          </select>
+        </div>
+        {section.visibility_condition?.question_id && (() => {
+          const selectedQuestion = conditionSourceQuestions.find(q => q._conditionKey === section.visibility_condition?.question_id)
+          const predefinedOptions = selectedQuestion
+            ? selectedQuestion.question_type === 'yes_no'
+              ? [{ value: 'yes', label: 'Sí' }, { value: 'no', label: 'No' }]
+              : normalizeMultipleChoiceOptions(selectedQuestion.options)
+            : []
+
+          const toggleValue = (val: string) => {
+            const current = section.visibility_condition?.values || []
+            const newValues = current.includes(val)
+              ? current.filter(v => v !== val)
+              : [...current, val]
+            updateSection(sIdx, {
+              visibility_condition: { ...section.visibility_condition!, values: newValues }
+            })
+          }
+
+          return (
+            <>
+              <select
+                value={section.visibility_condition.operator}
+                onChange={(e) => updateSection(sIdx, {
+                  visibility_condition: { ...section.visibility_condition!, operator: e.target.value as VisibilityCondition['operator'] }
+                })}
+                className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+              >
+                {Object.entries(OPERATOR_LABELS).map(([val, label]) => (
+                  <option key={val} value={val}>{label}</option>
+                ))}
+              </select>
+              <div>
+                <label className="text-xs text-gray-500">Valores:</label>
+                {predefinedOptions.length > 0 ? (
+                  <div className="mt-1 space-y-1">
+                    {predefinedOptions.map((opt) => (
+                      <label key={opt.value} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={section.visibility_condition?.values.includes(opt.value) || false}
+                          onChange={() => toggleValue(opt.value)}
+                          className="rounded border-gray-300"
+                        />
+                        {opt.label}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    value={section.visibility_condition.values.join(', ')}
+                    onChange={(e) => updateSection(sIdx, {
+                      visibility_condition: {
+                        ...section.visibility_condition!,
+                        values: e.target.value.split(',').map(v => v.trim()).filter(Boolean)
+                      }
+                    })}
+                    placeholder="valor1, valor2"
+                    className="w-full border border-gray-200 rounded px-2 py-1 text-xs mt-1"
+                  />
+                )}
+              </div>
+            </>
+          )
+        })()}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Unsectioned questions */}
+      {unsectionedQuestions.length > 0 && (
+        <div className="space-y-3">
+          {unsectionedQuestions.map(({ globalIndex }) =>
+            renderQuestionCard(globalIndex, unsectionedQuestions.map(e => e.globalIndex))
+          )}
+        </div>
+      )}
+
+      {/* Sections with their questions */}
+      {sectionGroups.map(({ section, sIdx, key, questions: sectionQuestions }) => (
+        <div key={key} className="border border-blue-200 bg-blue-50/30 rounded-lg p-4 space-y-3">
+          {/* Section header */}
+          <div className="flex items-start gap-2">
+            {!readonly && (
+              <div className="flex flex-col items-center gap-0.5 pt-1">
+                <button type="button" onClick={() => moveSection(sIdx, 'up')} disabled={sIdx === 0} className="text-gray-400 hover:text-gray-600 disabled:opacity-30">
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </button>
+                <button type="button" onClick={() => moveSection(sIdx, 'down')} disabled={sIdx === sections.length - 1} className="text-gray-400 hover:text-gray-600 disabled:opacity-30">
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            <div className="flex-1 space-y-2">
+              <input
+                type="text"
+                value={section.title}
+                onChange={(e) => updateSection(sIdx, { title: e.target.value })}
+                disabled={readonly}
+                placeholder="Título de la sección"
+                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:border-transparent disabled:font-semibold"
+              />
+              <input
+                type="text"
+                value={section.description || ''}
+                onChange={(e) => updateSection(sIdx, { description: e.target.value || null })}
+                disabled={readonly}
+                placeholder="Descripción (opcional)"
+                className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:border-transparent"
+              />
+
+              {/* Visibility condition */}
+              {!readonly && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingConditionIdx(editingConditionIdx === sIdx ? null : sIdx)}
+                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  >
+                    <Settings2 className="w-3 h-3" />
+                    {section.visibility_condition ? 'Condicional' : 'Agregar condición'}
+                  </button>
+                  {section.visibility_condition && (
                     <button
                       type="button"
-                      onClick={() => addOption(index)}
-                      className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      onClick={() => updateSection(sIdx, { visibility_condition: null })}
+                      className="text-xs text-red-500 hover:text-red-600"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Agregar opción
+                      Quitar
                     </button>
                   )}
                 </div>
               )}
 
-              {/* Scale options */}
-              {question.question_type === 'scale' && (() => {
-                const scaleOpts = normalizeScaleOptions(question.options)
-                return (
-                <div className="pl-6 grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-gray-500">Mínimo</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        onFocus={(e) => e.target.select()}
-                        value={scaleOpts.min}
-                        onChange={(e) => updateQuestion(index, {
-                          options: { ...scaleOpts, min: Number(e.target.value) }
-                        })}
-                        disabled={readonly}
-                        className="w-16 border border-gray-200 rounded px-2 py-1 text-sm disabled:bg-gray-50"
-                      />
-                      <input
-                        type="text"
-                        value={scaleOpts.min_label ?? ''}
-                        onChange={(e) => updateQuestion(index, {
-                          options: { ...scaleOpts, min_label: e.target.value }
-                        })}
-                        disabled={readonly}
-                        placeholder="Etiqueta (ej: Muy malo)"
-                        className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm disabled:bg-gray-50"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500">Máximo</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        onFocus={(e) => e.target.select()}
-                        value={scaleOpts.max}
-                        onChange={(e) => updateQuestion(index, {
-                          options: { ...scaleOpts, max: Number(e.target.value) }
-                        })}
-                        disabled={readonly}
-                        className="w-16 border border-gray-200 rounded px-2 py-1 text-sm disabled:bg-gray-50"
-                      />
-                      <input
-                        type="text"
-                        value={scaleOpts.max_label ?? ''}
-                        onChange={(e) => updateQuestion(index, {
-                          options: { ...scaleOpts, max_label: e.target.value }
-                        })}
-                        disabled={readonly}
-                        placeholder="Etiqueta (ej: Excelente)"
-                        className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm disabled:bg-gray-50"
-                      />
-                    </div>
-                  </div>
-                </div>
-                )
-              })()}
+              {/* Readonly: show condition badge */}
+              {readonly && section.visibility_condition && (
+                <span className="text-xs text-blue-600 flex items-center gap-1">
+                  <Settings2 className="w-3 h-3" /> Condicional
+                </span>
+              )}
+
+              {renderConditionEditor(sIdx, section)}
             </div>
 
             {!readonly && (
-              <button
-                type="button"
-                onClick={() => removeQuestion(index)}
-                className="text-gray-400 hover:text-red-500 p-1"
-              >
-                <Trash2 className="w-4 h-4" />
+              <button type="button" onClick={() => removeSection(sIdx)} className="text-gray-400 hover:text-red-500 p-1">
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
+
+          {/* Section questions */}
+          {sectionQuestions.length > 0 && (
+            <div className="space-y-3 pl-2">
+              {sectionQuestions.map(({ globalIndex }) =>
+                renderQuestionCard(globalIndex, sectionQuestions.map(e => e.globalIndex))
+              )}
+            </div>
+          )}
+
+          {sectionQuestions.length === 0 && (
+            <p className="text-xs text-gray-400 pl-2">Sin preguntas en esta sección</p>
+          )}
+
+          {/* Add question to this section */}
+          {!readonly && (
+            <button
+              type="button"
+              onClick={() => addQuestion(key)}
+              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 pl-2"
+            >
+              <Plus className="w-3.5 h-3.5" /> Agregar pregunta a esta sección
+            </button>
+          )}
         </div>
       ))}
 
+      {/* Bottom action buttons */}
       {!readonly && (
-        <Button type="button" variant="outline" onClick={addQuestion} className="w-full">
-          <Plus className="w-4 h-4 mr-2" /> Agregar pregunta
-        </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={() => addQuestion(null)} className="flex-1">
+            <Plus className="w-4 h-4 mr-2" /> Agregar pregunta
+          </Button>
+          {onSectionsChange && (
+            <Button type="button" variant="outline" onClick={addSection}>
+              <Plus className="w-4 h-4 mr-2" /> Agregar sección
+            </Button>
+          )}
+        </div>
       )}
 
-      {questions.length === 0 && readonly && (
+      {questions.length === 0 && sections.length === 0 && readonly && (
         <p className="text-sm text-gray-500 text-center py-4">No hay preguntas</p>
       )}
     </div>

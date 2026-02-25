@@ -193,6 +193,7 @@ export async function PUT(
     }
 
     // Update questions if provided
+    let questionIdMap: Record<string, string> = {}
     if (questions !== undefined) {
       // Delete existing questions
       await supabase.from('survey_questions').delete().eq('survey_id', currentSurvey.id)
@@ -211,13 +212,50 @@ export async function PUT(
           input_attributes: q.input_attributes || null
         }))
 
-        const { error: questionsError } = await supabase
+        const { data: insertedQuestions, error: questionsError } = await supabase
           .from('survey_questions')
           .insert(questionRows)
+          .select('id, sort_order')
 
         if (questionsError) {
           throw new Error(`Error al actualizar preguntas: ${questionsError.message}`)
         }
+
+        if (insertedQuestions) {
+          for (const q of insertedQuestions) {
+            questionIdMap[String(q.sort_order)] = q.id
+          }
+        }
+      }
+    }
+
+    // Resolve temporary question_id references in section visibility_conditions
+    if (sections !== undefined && sections.length > 0 && Object.keys(questionIdMap).length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sectionsToUpdate: { id: string; visibility_condition: any }[] = []
+      for (const [sortOrder, sectionId] of Object.entries(sectionIdMap)) {
+        const sectionDef = sections[Number(sortOrder)] as { visibility_condition?: { question_id?: string; operator?: string; values?: string[] } | null }
+        const vc = sectionDef?.visibility_condition
+        if (!vc?.question_id) continue
+
+        const tempMatch = vc.question_id.match(/^__q(?:sort)?_(\d+)$/)
+        if (tempMatch) {
+          const qSortOrder = tempMatch[1]
+          const realQuestionId = questionIdMap[qSortOrder]
+          if (realQuestionId) {
+            sectionsToUpdate.push({
+              id: sectionId,
+              visibility_condition: { ...vc, question_id: realQuestionId }
+            })
+          }
+        }
+      }
+
+      for (const update of sectionsToUpdate) {
+        await supabase
+          .from('survey_sections')
+          .update({ visibility_condition: update.visibility_condition })
+          .eq('id', update.id)
       }
     }
 
