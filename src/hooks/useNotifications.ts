@@ -90,79 +90,74 @@ export function useNotifications(): UseNotificationsReturn {
   const markAsRead = useCallback(async (ids: string[]) => {
     if (ids.length === 0) return;
 
-    try {
-      const res = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notification_ids: ids }),
-      });
-      if (!res.ok) return;
+    // Optimistic update — immediate UI feedback
+    setNotifications((prev) =>
+      prev.map((n) =>
+        ids.includes(n.id) ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
+      )
+    );
+    setUnreadCount((prev) => Math.max(0, prev - ids.length));
 
-      // Optimistic update
-      setNotifications((prev) =>
-        prev.map((n) =>
-          ids.includes(n.id) ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
-        )
-      );
-      setUnreadCount((prev) => Math.max(0, prev - ids.length));
-    } catch (err) {
+    // Fire-and-forget API call
+    fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notification_ids: ids }),
+    }).catch((err) => {
       console.error('[useNotifications] markAsRead error:', err);
-    }
+    });
   }, []);
 
   const markAllAsRead = useCallback(async () => {
-    try {
-      const res = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mark_all_read: true }),
-      });
-      if (!res.ok) return;
+    // Optimistic update — immediate UI feedback
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, is_read: true, read_at: n.read_at ?? new Date().toISOString() }))
+    );
+    setUnreadCount(0);
 
-      // Optimistic update
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, is_read: true, read_at: n.read_at ?? new Date().toISOString() }))
-      );
-      setUnreadCount(0);
-    } catch (err) {
+    // Fire-and-forget API call
+    fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mark_all_read: true }),
+    }).catch((err) => {
       console.error('[useNotifications] markAllAsRead error:', err);
-    }
+    });
   }, []);
 
   const deleteNotification = useCallback(async (id: string) => {
-    try {
-      const res = await fetch('/api/notifications', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notification_ids: [id] }),
-      });
-      if (!res.ok) return;
-
-      // Optimistic update
-      const removed = notifications.find((n) => n.id === id);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    // Optimistic update — immediate UI feedback
+    // Use functional updater to check is_read without depending on `notifications`
+    setNotifications((prev) => {
+      const removed = prev.find((n) => n.id === id);
       if (removed && !removed.is_read) {
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+        setUnreadCount((c) => Math.max(0, c - 1));
       }
-    } catch (err) {
+      return prev.filter((n) => n.id !== id);
+    });
+
+    // Fire-and-forget API call
+    fetch('/api/notifications', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notification_ids: [id] }),
+    }).catch((err) => {
       console.error('[useNotifications] deleteNotification error:', err);
-    }
-  }, [notifications]);
+    });
+  }, []);
 
   const deleteAllRead = useCallback(async () => {
-    try {
-      const res = await fetch('/api/notifications', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ delete_all_read: true }),
-      });
-      if (!res.ok) return;
+    // Optimistic update — immediate UI feedback
+    setNotifications((prev) => prev.filter((n) => !n.is_read));
 
-      // Optimistic update: remove all read notifications
-      setNotifications((prev) => prev.filter((n) => !n.is_read));
-    } catch (err) {
+    // Fire-and-forget API call
+    fetch('/api/notifications', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delete_all_read: true }),
+    }).catch((err) => {
       console.error('[useNotifications] deleteAllRead error:', err);
-    }
+    });
   }, []);
 
   return { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, deleteAllRead, refresh };
