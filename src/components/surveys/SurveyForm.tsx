@@ -51,10 +51,24 @@ function isSectionVisible(section: Section, answers: Record<string, unknown>): b
 
   switch (operator) {
     case 'equals':
+      if (Array.isArray(answer)) {
+        // Checkbox: exact set match (same values, same count)
+        return answerValues.length === values.length &&
+               answerValues.every(a => values.includes(a))
+      }
+      return answerValues.some(a => values.includes(a))
     case 'in':
+      // "Contains at least one of" — works the same for single and multi
       return answerValues.some(a => values.includes(a))
     case 'not_equals':
+      if (Array.isArray(answer)) {
+        // Checkbox: NOT exact set match
+        return answerValues.length !== values.length ||
+               !answerValues.every(a => values.includes(a))
+      }
+      return !answerValues.some(a => values.includes(a))
     case 'not_in':
+      // "Contains none of"
       return !answerValues.some(a => values.includes(a))
     default: return true
   }
