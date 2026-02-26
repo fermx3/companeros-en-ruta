@@ -78,6 +78,10 @@ export async function POST(
           question_type,
           is_required,
           section_id
+        ),
+        survey_sections(
+          id,
+          visibility_condition
         )
       `)
       .eq(resolveIdColumn(id), id)
@@ -137,10 +141,63 @@ export async function POST(
       return NextResponse.json({ error: 'Las respuestas son requeridas' }, { status: 400 })
     }
 
-    // Validate required questions are answered
+    // Determine which sections are hidden based on submitted answers
+    const answerMap = new Map<string, unknown>(
+      answers.map((a: { question_id: string; value: unknown }) => [a.question_id, a.value])
+    )
+
+    const hiddenSectionIds = new Set<string>()
+    for (const section of (survey.survey_sections || [])) {
+      if (!section.visibility_condition) continue
+      const vc = section.visibility_condition as { question_id: string; operator: string; values: string[] }
+      const answer = answerMap.get(vc.question_id)
+
+      let visible = false
+      if (answer !== undefined && answer !== null) {
+        let answerValues: string[]
+        if (typeof answer === 'boolean') {
+          answerValues = [answer ? 'yes' : 'no']
+        } else if (Array.isArray(answer)) {
+          answerValues = answer.map(String)
+        } else {
+          answerValues = [String(answer)]
+        }
+
+        switch (vc.operator) {
+          case 'equals':
+            if (Array.isArray(answer)) {
+              visible = answerValues.length === vc.values.length &&
+                        answerValues.every(a => vc.values.includes(a))
+            } else {
+              visible = answerValues.some(a => vc.values.includes(a))
+            }
+            break
+          case 'in':
+            visible = answerValues.some(a => vc.values.includes(a))
+            break
+          case 'not_equals':
+            if (Array.isArray(answer)) {
+              visible = answerValues.length !== vc.values.length ||
+                        !answerValues.every(a => vc.values.includes(a))
+            } else {
+              visible = !answerValues.some(a => vc.values.includes(a))
+            }
+            break
+          case 'not_in':
+            visible = !answerValues.some(a => vc.values.includes(a))
+            break
+          default:
+            visible = true
+        }
+      }
+
+      if (!visible) hiddenSectionIds.add(section.id)
+    }
+
+    // Validate required questions are answered (skip questions in hidden sections)
     const requiredQuestionIds = new Set(
       (survey.survey_questions || [])
-        .filter(q => q.is_required)
+        .filter(q => q.is_required && (!q.section_id || !hiddenSectionIds.has(q.section_id)))
         .map(q => q.id)
     )
 
