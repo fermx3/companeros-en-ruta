@@ -141,7 +141,16 @@ export default function AdminSurveyReviewPage() {
             title: s.title,
             description: s.description,
             sort_order: i,
-            visibility_condition: s.visibility_condition
+            visibility_condition: s.visibility_condition ? {
+              ...s.visibility_condition,
+              question_id: (() => {
+                const qIdx = editQuestions.findIndex(q =>
+                  (q.id && q.id === s.visibility_condition!.question_id) ||
+                  `__q_${editQuestions.indexOf(q)}` === s.visibility_condition!.question_id
+                )
+                return qIdx >= 0 ? `__q_${qIdx}` : s.visibility_condition!.question_id
+              })()
+            } : null
           })),
           questions: editQuestions.map((q, i) => ({
             question_text: q.question_text,
@@ -149,7 +158,7 @@ export default function AdminSurveyReviewPage() {
             is_required: q.is_required,
             sort_order: i,
             options: q.options,
-            section_sort_order: q.section_id ? editSections.findIndex(s => s.id === q.section_id) : undefined,
+            section_sort_order: q.section_id ? editSections.findIndex((s, si) => (s.id || `__temp_${si}`) === q.section_id) : undefined,
             input_attributes: q.input_attributes
           }))
         })

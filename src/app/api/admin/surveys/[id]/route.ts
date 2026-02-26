@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveIdColumn } from '@/lib/utils/public-id'
+import { resolveVisibilityConditions } from '@/lib/surveys/resolve-visibility-conditions'
 
 export async function GET(
   request: NextRequest,
@@ -236,6 +237,7 @@ export async function PUT(
     }
 
     // Update questions if provided
+    let questionIdMap: Record<string, string> = {}
     if (questions !== undefined) {
       // Delete existing questions
       await supabase.from('survey_questions').delete().eq('survey_id', currentSurvey.id)
@@ -254,14 +256,26 @@ export async function PUT(
           input_attributes: q.input_attributes || null
         }))
 
-        const { error: questionsError } = await supabase
+        const { data: insertedQuestions, error: questionsError } = await supabase
           .from('survey_questions')
           .insert(questionRows)
+          .select('id, sort_order')
 
         if (questionsError) {
           throw new Error(`Error al actualizar preguntas: ${questionsError.message}`)
         }
+
+        if (insertedQuestions) {
+          for (const q of insertedQuestions) {
+            questionIdMap[String(q.sort_order)] = q.id
+          }
+        }
       }
+    }
+
+    // Resolve temporary __q_N references in section visibility_conditions to real UUIDs
+    if (sections !== undefined) {
+      await resolveVisibilityConditions(supabase, sections, sectionIdMap, questionIdMap)
     }
 
     return NextResponse.json({

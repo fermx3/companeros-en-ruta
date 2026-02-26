@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import { resolveVisibilityConditions } from '@/lib/surveys/resolve-visibility-conditions'
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador',
@@ -281,36 +282,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Resolve temporary question_id references in section visibility_conditions
-    if (sections.length > 0 && Object.keys(questionIdMap).length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sectionsToUpdate: { id: string; visibility_condition: any }[] = []
-      for (const [sortOrder, sectionId] of Object.entries(sectionIdMap)) {
-        const sectionDef = sections[Number(sortOrder)] as { visibility_condition?: { question_id?: string; operator?: string; values?: string[] } | null }
-        const vc = sectionDef?.visibility_condition
-        if (!vc?.question_id) continue
-
-        // Resolve temp keys: __q_N or __qsort_N where N is the question's sort_order
-        const tempMatch = vc.question_id.match(/^__q(?:sort)?_(\d+)$/)
-        if (tempMatch) {
-          const qSortOrder = tempMatch[1]
-          const realQuestionId = questionIdMap[qSortOrder]
-          if (realQuestionId) {
-            sectionsToUpdate.push({
-              id: sectionId,
-              visibility_condition: { ...vc, question_id: realQuestionId }
-            })
-          }
-        }
-      }
-
-      for (const update of sectionsToUpdate) {
-        await supabase
-          .from('survey_sections')
-          .update({ visibility_condition: update.visibility_condition })
-          .eq('id', update.id)
-      }
-    }
+    // Resolve temporary __q_N references in section visibility_conditions to real UUIDs
+    await resolveVisibilityConditions(supabase, sections, sectionIdMap, questionIdMap)
 
     return NextResponse.json({
       survey: newSurvey,
