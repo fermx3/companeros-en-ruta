@@ -1596,3 +1596,21 @@ Tabla `audit_logs` (creada manualmente, no en migraciones) tenía policy "Admins
 - [x] Guardar persiste los cambios y actualiza la vista
 - [x] Cancelar revierte los inputs al valor original
 - [x] "Mi Perfil" aparece en sidebar (no en bottom nav)
+
+---
+
+## Known Issues: Database Functions with Non-Existent Table References
+
+> **Added:** 2026-03-03
+> **Context:** Discovered during search_path hardening audit. These functions were broken **before** the `search_path = ''` change — they reference tables that do not exist in the current schema.
+
+| Function | Non-Existent Reference | Probable Correct Reference |
+|----------|----------------------|---------------------------|
+| `get_applicable_promotions(uuid, uuid, numeric)` | `promotion_segments` table | Possibly `promotion_rules` |
+| `create_purchase_with_promotions(...)` | `visit_purchases` table | Possibly `visit_orders` |
+| `update_visit_assessment(uuid, jsonb)` | `users` table (in public schema) | Should be `auth.users` or `public.user_profiles` |
+
+**Additional stale references in the same functions:**
+- `complete_visit()`, `create_purchase_with_promotions()`, and `update_visit_assessment()` reference `asesor_id` (renamed to `promotor_id`) and `status` (renamed to `visit_status`)
+
+These functions will fail at runtime regardless of search_path. They need a separate migration to fix the table/column references once the correct mappings are confirmed.
