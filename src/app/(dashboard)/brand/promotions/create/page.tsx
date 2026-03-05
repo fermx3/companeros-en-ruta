@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/form-legacy'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
-import { Gift, ArrowLeft, ArrowRight, Check, Calendar, Target, FileText } from 'lucide-react'
+import { Gift, ArrowLeft, ArrowRight, Calendar, Target, FileText } from 'lucide-react'
+import { WizardStepper } from '@/components/ui/wizard-stepper'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 type PromotionType =
@@ -78,10 +79,10 @@ const DAYS_OF_WEEK = [
 ]
 
 const STEPS = [
-  { id: 1, name: 'Información Básica', icon: Gift },
-  { id: 2, name: 'Vigencia', icon: Calendar },
-  { id: 3, name: 'Opciones', icon: Target },
-  { id: 4, name: 'Revisión', icon: FileText }
+  { id: 'basic-info', label: 'Información Básica', icon: <Gift className="w-4 h-4" /> },
+  { id: 'duration', label: 'Vigencia', icon: <Calendar className="w-4 h-4" /> },
+  { id: 'options', label: 'Opciones', icon: <Target className="w-4 h-4" /> },
+  { id: 'review', label: 'Revisión', icon: <FileText className="w-4 h-4" /> },
 ]
 
 export default function CreatePromotionPage() {
@@ -750,47 +751,12 @@ export default function CreatePromotionPage() {
         )}
 
         {/* Progress Steps */}
-        <div className="mb-8">
-          <nav aria-label="Progress">
-            <ol className="flex">
-              {STEPS.map((step, stepIdx) => (
-                <li key={step.id} className="flex-1 relative flex flex-col items-center">
-                  {stepIdx !== STEPS.length - 1 && (
-                    <div
-                      className={`absolute top-5 h-0.5 ${
-                        currentStep > step.id ? 'bg-blue-600' : 'bg-gray-200'
-                      }`}
-                      style={{ left: 'calc(50% + 20px)', right: 'calc(-50% + 20px)' }}
-                    />
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => currentStep > step.id && setCurrentStep(step.id)}
-                    disabled={currentStep < step.id}
-                    className={`relative z-10 w-10 h-10 flex items-center justify-center rounded-full ${
-                      currentStep > step.id
-                        ? 'bg-blue-600 text-white'
-                        : currentStep === step.id
-                        ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                        : 'bg-gray-200 text-gray-500'
-                    }`}
-                  >
-                    {currentStep > step.id ? (
-                      <Check className="w-5 h-5" />
-                    ) : (
-                      <step.icon className="w-5 h-5" />
-                    )}
-                  </button>
-                  <span className={`mt-2 text-[10px] sm:text-xs font-medium text-center leading-tight ${
-                    currentStep >= step.id ? 'text-blue-600' : 'text-gray-500'
-                  }`}>
-                    {step.name}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </nav>
-        </div>
+        <WizardStepper
+          steps={STEPS}
+          currentStep={currentStep - 1}
+          onStepClick={(index) => currentStep > index + 1 && setCurrentStep(index + 1)}
+          className="mb-8"
+        />
 
         {/* Form Content */}
         <Card className="mt-12">

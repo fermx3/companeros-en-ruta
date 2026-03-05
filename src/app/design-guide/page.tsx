@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Package, Search, Bell } from 'lucide-react'
+import { Package, Search, Bell, Gift, Calendar, Target, FileText, Monitor, Smartphone } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { ActionButton } from '@/components/ui/action-button'
@@ -22,6 +22,7 @@ import {
   Alert,
 } from '@/components/ui/feedback'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { WizardStepper } from '@/components/ui/wizard-stepper'
 import { Avatar } from '@/components/ui/avatar'
 import {
   Dialog,
@@ -47,6 +48,7 @@ const sections = [
   { id: 'badges', label: 'Badges y Status' },
   { id: 'feedback', label: 'Feedback' },
   { id: 'overlays', label: 'Overlays' },
+  { id: 'wizards', label: 'Wizards' },
 ]
 
 function Section({
@@ -92,6 +94,47 @@ function SubSection({ title, children }: { title: string; children: React.ReactN
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">{title}</h3>
       {children}
+    </div>
+  )
+}
+
+function ViewportPreview({ children }: { children: (layout: 'desktop' | 'mobile') => React.ReactNode }) {
+  const [viewport, setViewport] = useState<'desktop' | 'mobile'>('desktop')
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-1 bg-muted rounded-lg p-1 w-fit">
+        <button
+          type="button"
+          onClick={() => setViewport('desktop')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            viewport === 'desktop'
+              ? 'bg-white text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Monitor className="w-3.5 h-3.5" />
+          Desktop
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewport('mobile')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            viewport === 'mobile'
+              ? 'bg-white text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Smartphone className="w-3.5 h-3.5" />
+          Mobile
+        </button>
+      </div>
+      <div
+        className={`border border-border rounded-lg overflow-hidden transition-all ${
+          viewport === 'mobile' ? 'max-w-[375px]' : 'w-full'
+        }`}
+      >
+        {children(viewport)}
+      </div>
     </div>
   )
 }
@@ -607,6 +650,67 @@ export default function DesignGuidePage() {
             componentes de dominio no se incluyen aquí porque requieren contexto de autenticación o
             handlers especializados.
           </div>
+        </Section>
+
+        {/* ----------------------------------------------------------------- */}
+        {/* Wizards                                                           */}
+        {/* ----------------------------------------------------------------- */}
+        <Section id="wizards" title="Wizards" description="Indicadores de progreso multi-paso para flujos tipo wizard. Usa el toggle para ver la versión desktop y mobile.">
+          <SubSection title="WizardStepper — Con números (default)">
+            <ViewportPreview>
+              {(layout) => (
+                <WizardStepper
+                  layout={layout}
+                  steps={[
+                    { id: 'step1', label: 'Precios y Categoría', shortLabel: 'Precios' },
+                    { id: 'step2', label: 'Compra e Inventario', shortLabel: 'Compra' },
+                    { id: 'step3', label: 'Comunicación y POP', shortLabel: 'POP' },
+                  ]}
+                  currentStep={1}
+                  completedSteps={new Set([0])}
+                  onStepClick={() => {}}
+                />
+              )}
+            </ViewportPreview>
+          </SubSection>
+
+          <SubSection title="WizardStepper — Con iconos custom">
+            <ViewportPreview>
+              {(layout) => (
+                <WizardStepper
+                  layout={layout}
+                  steps={[
+                    { id: 'basic', label: 'Información Básica', icon: <Gift className="w-4 h-4" /> },
+                    { id: 'duration', label: 'Vigencia', icon: <Calendar className="w-4 h-4" /> },
+                    { id: 'options', label: 'Opciones', icon: <Target className="w-4 h-4" /> },
+                    { id: 'review', label: 'Revisión', icon: <FileText className="w-4 h-4" /> },
+                  ]}
+                  currentStep={2}
+                  onStepClick={() => {}}
+                />
+              )}
+            </ViewportPreview>
+          </SubSection>
+
+          <SubSection title="WizardStepper — Con warning y saving">
+            <ViewportPreview>
+              {(layout) => (
+                <WizardStepper
+                  layout={layout}
+                  steps={[
+                    { id: 'step1', label: 'Precios y Categoría', shortLabel: 'Precios' },
+                    { id: 'step2', label: 'Compra e Inventario', shortLabel: 'Compra' },
+                    { id: 'step3', label: 'Comunicación y POP', shortLabel: 'POP' },
+                  ]}
+                  currentStep={2}
+                  completedSteps={new Set([0, 1])}
+                  warningSteps={new Set([0])}
+                  savingStep={2}
+                  onStepClick={() => {}}
+                />
+              )}
+            </ViewportPreview>
+          </SubSection>
         </Section>
       </main>
     </div>

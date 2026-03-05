@@ -21,6 +21,9 @@ export type { QRActionCardProps } from './qr-action-card'
 export { VisitEvaluationCard } from './visit-evaluation-card'
 export type { VisitEvaluationCardProps, EvaluationItem } from './visit-evaluation-card'
 
+export { WizardStepper } from './wizard-stepper'
+export type { WizardStepperProps, WizardStep } from './wizard-stepper'
+
 export { RequestCard } from './request-card'
 export type { RequestCardProps } from './request-card'
 

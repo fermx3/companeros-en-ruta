@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { WizardProgress, WizardStage } from './WizardProgress'
+import { WizardStepper } from '@/components/ui/wizard-stepper'
 import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/feedback'
 import { useToast } from '@/components/ui/toaster'
@@ -246,23 +246,20 @@ export function VisitAssessmentWizard({
     }
   }
 
-  // Build wizard stages with completion status
-  const wizardStages: WizardStage[] = STAGES.map((stage, index) => {
-    const stageData = data[`stage${index + 1}` as keyof WizardData]
-    const isCompleted = 'completedAt' in stageData && stageData.completedAt != null
+  // Build wizard step state
+  const completedSteps = new Set<number>()
+  const warningSteps = new Set<number>()
 
-    return {
-      id: stage.id,
-      label: stage.label,
-      shortLabel: stage.shortLabel,
-      isCompleted,
-      hasWarning: isCompleted && getStageWarning(index),
-      isActive: currentStage === index,
-      isSaving: savingStage === index
+  STAGES.forEach((_, index) => {
+    const stageData = data[`stage${index + 1}` as keyof WizardData]
+    const completed = 'completedAt' in stageData && stageData.completedAt != null
+    if (completed) {
+      completedSteps.add(index)
+      if (getStageWarning(index)) warningSteps.add(index)
     }
   })
 
-  const allStagesCompleted = wizardStages.every(s => s.isCompleted && !s.hasWarning)
+  const allStagesCompleted = STAGES.every((_, i) => completedSteps.has(i) && !warningSteps.has(i))
 
   const updateData = useCallback((updates: Partial<WizardData>) => {
     setData(prev => ({ ...prev, ...updates }))
@@ -335,8 +332,7 @@ export function VisitAssessmentWizard({
 
   const handleStageClick = (index: number) => {
     // Allow navigation to completed stages or current stage
-    const targetStage = wizardStages[index]
-    if (targetStage.isCompleted || index <= currentStage) {
+    if (completedSteps.has(index) || index <= currentStage) {
       setCurrentStage(index)
       setShowValidation(false)
     }
@@ -345,13 +341,13 @@ export function VisitAssessmentWizard({
   const handleComplete = async () => {
     // Build list of incomplete stages with friendly names
     const incompleteStages: string[] = []
-    if (!wizardStages[0].isCompleted) incompleteStages.push('Precios y Categoría')
-    if (!wizardStages[1].isCompleted) incompleteStages.push('Compra e Inventario')
-    if (!wizardStages[2].isCompleted) incompleteStages.push('Comunicación y POP')
+    if (!completedSteps.has(0)) incompleteStages.push('Precios y Categoría')
+    if (!completedSteps.has(1)) incompleteStages.push('Compra e Inventario')
+    if (!completedSteps.has(2)) incompleteStages.push('Comunicación y POP')
 
     if (incompleteStages.length > 0) {
       // Navigate to the first incomplete stage
-      const firstIncompleteIndex = wizardStages.findIndex(s => !s.isCompleted)
+      const firstIncompleteIndex = STAGES.findIndex((_, i) => !completedSteps.has(i))
       if (firstIncompleteIndex >= 0) {
         setCurrentStage(firstIncompleteIndex)
       }
@@ -429,10 +425,13 @@ export function VisitAssessmentWizard({
       )}
 
       {/* Progress indicator */}
-      <WizardProgress
-        stages={wizardStages}
-        currentStage={currentStage}
-        onStageClick={handleStageClick}
+      <WizardStepper
+        steps={STAGES}
+        currentStep={currentStage}
+        completedSteps={completedSteps}
+        warningSteps={warningSteps}
+        savingStep={savingStage}
+        onStepClick={handleStageClick}
         className="bg-white border-b"
       />
 

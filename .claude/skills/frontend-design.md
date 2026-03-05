@@ -70,6 +70,7 @@ Este proyecto es un **SaaS multi-tenant** llamado **Compañeros en Ruta** desarr
 | Spinner de carga | `LoadingSpinner` | `@/components/ui/feedback` | divs animados inline |
 | Carga página completa | `PageLoader` | `@/components/ui/feedback` | LoadingSpinner centrado manual |
 | Alerta/error | `Alert` | `@/components/ui/feedback` | divs rojos inline, Card con border-red |
+| Wizard / stepper multi-paso | `WizardStepper` | `@/components/ui/wizard-stepper` | Nav inline con circles, WizardProgress local |
 | Iconos | lucide-react | `lucide-react` | SVGs inline, heroicons |
 
 **StatusType soportados:** `active`, `inactive`, `suspended`, `pending`, `completed`, `cancelled`, `expired`
