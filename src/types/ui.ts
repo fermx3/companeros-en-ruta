@@ -12,11 +12,13 @@ export type UserRole =
   | 'market_analyst' 
   | 'client'
 
-export type StatusType = 
-  | 'active' 
-  | 'pending' 
-  | 'completed' 
-  | 'cancelled' 
+export type StatusType =
+  | 'active'
+  | 'inactive'
+  | 'suspended'
+  | 'pending'
+  | 'completed'
+  | 'cancelled'
   | 'expired'
 
 export type TrendType = 

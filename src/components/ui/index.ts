@@ -5,6 +5,10 @@ export type { MetricCardProps } from './metric-card'
 export { StatusBadge } from './status-badge'
 export type { StatusBadgeProps } from './status-badge'
 
+export { OrderStatusBadge } from './order-status-badge'
+
+export { VisitStatusBadge } from './visit-status-badge'
+
 export { ActionButton } from './action-button'
 export type { ActionButtonProps } from './action-button'
 

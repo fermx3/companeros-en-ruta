@@ -18,6 +18,8 @@ interface EmptyStateProps {
   actionText?: string
   /** Handler del botón de acción */
   onAction?: () => void
+  /** Acción personalizada (alternativa a actionText+onAction) */
+  action?: React.ReactNode
   /** Clases adicionales */
   className?: string
   /** Tamaño del componente */
@@ -46,6 +48,7 @@ export function EmptyState({
   description,
   actionText,
   onAction,
+  action,
   className,
   size = 'md',
 }: EmptyStateProps) {
@@ -103,7 +106,11 @@ export function EmptyState({
   return (
     <div className={cn('text-center', getSizeClasses(), className)}>
       {/* Icon */}
-      {icon || defaultIcon}
+      {icon ? (
+        <div className="flex justify-center mb-4 text-gray-400">
+          {icon}
+        </div>
+      ) : defaultIcon}
 
       {/* Title */}
       <h3 className={cn(
@@ -131,6 +138,13 @@ export function EmptyState({
         >
           {actionText}
         </Button>
+      )}
+
+      {/* Custom Action */}
+      {action && !actionText && (
+        <div className="flex justify-center">
+          {action}
+        </div>
       )}
     </div>
   )
