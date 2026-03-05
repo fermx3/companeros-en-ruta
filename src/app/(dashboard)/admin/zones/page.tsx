@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Zone, PaginatedResponse } from '@/lib/types/admin';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { MapPin, Plus } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 type ZoneWithParent = Zone & { parent_zone_name?: string | null };
@@ -140,9 +142,7 @@ export default function AdminZonesPage() {
             </div>
             <Link href="/admin/zones/create">
               <Button className="bg-blue-600 hover:bg-blue-700">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus className="w-4 h-4 mr-2" />
                 Nueva Zona
               </Button>
             </Link>
@@ -279,15 +279,12 @@ export default function AdminZonesPage() {
                   </tr>
                 ) : zones?.data.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center">
-                      <div className="text-gray-500">
-                        <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <p className="text-lg font-medium">No hay zonas</p>
-                        <p className="text-sm">Comienza creando tu primera zona</p>
-                      </div>
+                    <td colSpan={6} className="px-6 py-8">
+                      <EmptyState
+                        icon={<MapPin className="w-12 h-12" />}
+                        title="No hay zonas"
+                        description="Comienza creando tu primera zona"
+                      />
                     </td>
                   </tr>
                 ) : (

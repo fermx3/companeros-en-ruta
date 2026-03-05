@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/feedback'
 import { ChevronLeft, ChevronRight, MapPin, Clock, User, Calendar } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 type Visit = {
@@ -355,20 +356,14 @@ export default function SchedulePage() {
             {error}
           </div>
         ) : filteredVisits.length === 0 ? (
-          <Card className="p-8 text-center">
-            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No hay visitas programadas
-            </h3>
-            <p className="text-gray-600 mb-4">
-              No tienes visitas para este periodo
-            </p>
-            <Button
-              onClick={() => router.push('/promotor/visitas/nueva')}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Crear Nueva Visita
-            </Button>
+          <Card className="p-8">
+            <EmptyState
+              icon={<Calendar className="w-12 h-12" />}
+              title="No hay visitas programadas"
+              description="No tienes visitas para este periodo"
+              actionText="Crear Nueva Visita"
+              onAction={() => router.push('/promotor/visitas/nueva')}
+            />
           </Card>
         ) : (
           <div className="space-y-6">

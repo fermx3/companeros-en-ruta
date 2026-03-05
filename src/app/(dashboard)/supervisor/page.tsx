@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
+import { MetricCard } from '@/components/ui/metric-card'
 import { Button } from "@/components/ui/button"
 import { Users, MapPin, CheckCircle, Clock, Star, TrendingUp, ShoppingCart, ArrowRight } from "lucide-react"
+import { EmptyState } from '@/components/ui/EmptyState'
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -138,96 +140,43 @@ export default function SupervisorDashboard() {
 
           {/* Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Promotores en Equipo</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics?.team_size || 0}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <Users className="h-5 w-5 text-blue-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Clientes del Equipo</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics?.total_clients || 0}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Visitas Completadas</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics?.completed_visits || 0}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-emerald-50 rounded-lg flex items-center justify-center">
-                    <CheckCircle className="h-5 w-5 text-emerald-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Visitas Pendientes</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics?.pending_visits || 0}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-yellow-50 rounded-lg flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-yellow-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MetricCard
+              title="Promotores en Equipo"
+              value={metrics?.team_size || 0}
+              icon={<Users className="h-6 w-6" />}
+            />
+            <MetricCard
+              title="Clientes del Equipo"
+              value={metrics?.total_clients || 0}
+              icon={<MapPin className="h-6 w-6" />}
+            />
+            <MetricCard
+              title="Visitas Completadas"
+              value={metrics?.completed_visits || 0}
+              icon={<CheckCircle className="h-6 w-6" />}
+            />
+            <MetricCard
+              title="Visitas Pendientes"
+              value={metrics?.pending_visits || 0}
+              icon={<Clock className="h-6 w-6" />}
+              variant="warning"
+            />
           </div>
 
           {/* Secondary Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Visitas Este Mes</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics?.visits_this_month || 0}</p>
-                    <p className="text-xs text-gray-500 mt-1">Total del equipo</p>
-                  </div>
-                  <div className="h-10 w-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-purple-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Rating Promedio</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {(metrics?.avg_team_rating || 0).toFixed(1)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Calificación del equipo</p>
-                  </div>
-                  <div className="h-10 w-10 bg-yellow-50 rounded-lg flex items-center justify-center">
-                    <Star className="h-5 w-5 text-yellow-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MetricCard
+              title="Visitas Este Mes"
+              value={metrics?.visits_this_month || 0}
+              change="Total del equipo"
+              icon={<TrendingUp className="h-6 w-6" />}
+            />
+            <MetricCard
+              title="Rating Promedio"
+              value={(metrics?.avg_team_rating || 0).toFixed(1)}
+              change="Calificación del equipo"
+              icon={<Star className="h-6 w-6" />}
+            />
           </div>
 
           {/* Team Members Table */}
@@ -323,13 +272,12 @@ export default function SupervisorDashboard() {
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <Users className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">Sin promotores asignados</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    No hay promotores en tu equipo actualmente.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={<Users className="w-12 h-12" />}
+                  title="Sin promotores asignados"
+                  description="No hay promotores en tu equipo actualmente."
+                  size="sm"
+                />
               )}
             </CardContent>
           </Card>

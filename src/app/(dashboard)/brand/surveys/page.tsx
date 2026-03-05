@@ -5,6 +5,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { MetricCard } from '@/components/ui/metric-card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
@@ -115,58 +116,10 @@ export default function BrandSurveysPage() {
       {/* Metrics */}
       {metrics && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <ClipboardList className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{metrics.total}</p>
-                  <p className="text-xs text-gray-500">Total</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <BarChart3 className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{metrics.active}</p>
-                  <p className="text-xs text-gray-500">Activas</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{metrics.pending}</p>
-                  <p className="text-xs text-gray-500">Pendientes</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Users className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{metrics.totalResponses}</p>
-                  <p className="text-xs text-gray-500">Respuestas</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <MetricCard title="Total" value={metrics.total} icon={<ClipboardList className="h-6 w-6" />} />
+          <MetricCard title="Activas" value={metrics.active} icon={<BarChart3 className="h-6 w-6" />} variant="success" />
+          <MetricCard title="Pendientes" value={metrics.pending} icon={<Clock className="h-6 w-6" />} variant="warning" />
+          <MetricCard title="Respuestas" value={metrics.totalResponses} icon={<Users className="h-6 w-6" />} />
         </div>
       )}
 

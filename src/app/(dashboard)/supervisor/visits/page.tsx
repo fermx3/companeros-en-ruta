@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, MapPin, Star } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 import Link from 'next/link'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
@@ -304,15 +305,13 @@ export default function SupervisorVisitsPage() {
           ) : (
             <Card>
               <CardContent className="p-12">
-                <div className="text-center">
-                  <MapPin className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">Sin visitas</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {statusFilter || promotorFilter || dateFrom || dateTo
-                      ? 'No se encontraron visitas con esos filtros.'
-                      : 'No hay visitas registradas del equipo.'}
-                  </p>
-                </div>
+                <EmptyState
+                  icon={<MapPin className="w-12 h-12" />}
+                  title="Sin visitas"
+                  description={statusFilter || promotorFilter || dateFrom || dateTo
+                    ? 'No se encontraron visitas con esos filtros.'
+                    : 'No hay visitas registradas del equipo.'}
+                />
               </CardContent>
             </Card>
           )}

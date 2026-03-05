@@ -8,6 +8,7 @@ import { useAssignedClients } from '@/hooks/useVisits'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Search, MapPin, Phone, Mail, Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { displayPhone } from '@/lib/utils/phone'
 import { fullOwnerName } from '@/lib/utils/client'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -148,22 +149,18 @@ export default function PromotorClientsPage() {
 
         {/* Empty State */}
         {!loading && !error && filteredClients.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm ? 'No se encontraron clientes' : 'No tienes clientes asignados'}
-            </h3>
-            <p className="text-gray-500 mb-4">
-              {searchTerm
-                ? 'Intenta con otros términos de búsqueda'
-                : 'Cuando te asignen clientes, aparecerán aquí'}
-            </p>
-            {searchTerm && (
+          <EmptyState
+            icon={<Users className="w-12 h-12" />}
+            title={searchTerm ? 'No se encontraron clientes' : 'No tienes clientes asignados'}
+            description={searchTerm
+              ? 'Intenta con otros términos de búsqueda'
+              : 'Cuando te asignen clientes, aparecerán aquí'}
+            action={searchTerm ? (
               <Button onClick={() => setSearchTerm('')} variant="outline">
                 Limpiar búsqueda
               </Button>
-            )}
-          </div>
+            ) : undefined}
+          />
         )}
 
         {/* Client List */}

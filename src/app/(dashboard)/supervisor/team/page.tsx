@@ -5,6 +5,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Users, Star, Search, ArrowLeft } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 import Link from 'next/link'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
@@ -180,13 +181,11 @@ export default function SupervisorTeamPage() {
           ) : (
             <Card>
               <CardContent className="p-12">
-                <div className="text-center">
-                  <Users className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">Sin promotores</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {search ? 'No se encontraron promotores con ese criterio.' : 'No hay promotores en tu equipo actualmente.'}
-                  </p>
-                </div>
+                <EmptyState
+                  icon={<Users className="w-12 h-12" />}
+                  title="Sin promotores"
+                  description={search ? 'No se encontraron promotores con ese criterio.' : 'No hay promotores en tu equipo actualmente.'}
+                />
               </CardContent>
             </Card>
           )}
