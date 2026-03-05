@@ -5,8 +5,11 @@ import { useDebounce } from '@/hooks/useDebounce';
 import Link from 'next/link';
 import { useBrandFetch } from '@/hooks/useBrandFetch';
 import { Card } from '@/components/ui/Card';
+import { MetricCard } from '@/components/ui/metric-card';
 import { Button } from '@/components/ui/button';
-import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
+import { LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { displayPhone } from '@/lib/utils/phone';
 import { ExportButton } from '@/components/ui/export-button';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -201,30 +204,9 @@ export default function BrandTeamPage() {
 
         {/* Métricas del equipo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">
-                {filteredTeam.filter(m => m.role === 'supervisor').length}
-              </div>
-              <div className="text-sm text-gray-600">Supervisores</div>
-            </div>
-          </Card>
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-green-600 mb-2">
-                {filteredTeam.filter(m => m.role === 'promotor').length}
-              </div>
-              <div className="text-sm text-gray-600">Promotores</div>
-            </div>
-          </Card>
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-purple-600 mb-2">
-                {filteredTeam.filter(m => m.status === 'active').length}
-              </div>
-              <div className="text-sm text-gray-600">Miembros Activos</div>
-            </div>
-          </Card>
+          <MetricCard title="Supervisores" value={filteredTeam.filter(m => m.role === 'supervisor').length} variant="primary" />
+          <MetricCard title="Promotores" value={filteredTeam.filter(m => m.role === 'promotor').length} variant="success" />
+          <MetricCard title="Miembros Activos" value={filteredTeam.filter(m => m.status === 'active').length} />
         </div>
 
         {/* Top Performers */}

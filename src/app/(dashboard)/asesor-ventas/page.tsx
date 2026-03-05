@@ -3,10 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
+import { MetricCard } from '@/components/ui/metric-card';
 import { Button } from '@/components/ui/button';
-import { PageLoader, StatusBadge, Alert } from '@/components/ui/feedback';
+import { PageLoader, Alert } from '@/components/ui/feedback';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { displayPhone } from '@/lib/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { Users, ClipboardList, Clock, QrCode } from 'lucide-react';
 
 interface AsesorVentasProfile {
   id: string;
@@ -163,101 +166,27 @@ export default function AsesorVentasPage() {
         {/* Estadisticas principales */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Clientes Asignados
-                      </dt>
-                      <dd className="text-lg font-medium text-gray-900">
-                        {stats.total_clients}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Ordenes del Mes
-                      </dt>
-                      <dd className="text-lg font-medium text-gray-900">
-                        {stats.orders_this_month}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Ordenes Pendientes
-                      </dt>
-                      <dd className="text-lg font-medium text-gray-900">
-                        {stats.pending_orders}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        QRs Canjeados (Mes)
-                      </dt>
-                      <dd className="text-lg font-medium text-gray-900">
-                        {stats.qr_redeemed_this_month}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </Card>
+            <MetricCard
+              title="Clientes Asignados"
+              value={stats.total_clients}
+              icon={<Users className="h-6 w-6" />}
+            />
+            <MetricCard
+              title="Ordenes del Mes"
+              value={stats.orders_this_month}
+              icon={<ClipboardList className="h-6 w-6" />}
+            />
+            <MetricCard
+              title="Ordenes Pendientes"
+              value={stats.pending_orders}
+              icon={<Clock className="h-6 w-6" />}
+              variant="warning"
+            />
+            <MetricCard
+              title="QRs Canjeados (Mes)"
+              value={stats.qr_redeemed_this_month}
+              icon={<QrCode className="h-6 w-6" />}
+            />
           </div>
         )}
 

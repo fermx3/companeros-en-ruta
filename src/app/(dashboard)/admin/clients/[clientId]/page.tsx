@@ -9,6 +9,8 @@ import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Client } from '@/lib/types/admin';
 import { fullOwnerName } from '@/lib/utils/client';
 import { displayPhone, extractDigits } from '@/lib/utils/phone';
+import { StatusBadge } from '@/components/ui/status-badge';
+import type { StatusType } from '@/types/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   GENDER_LABELS,
@@ -70,26 +72,6 @@ export default function ClientDetailPage() {
     }
   }, [clientPublicId, loadClientDetail]);
 
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
-      suspended: 'bg-red-100 text-red-800'
-    };
-
-    const labels = {
-      active: 'Activo',
-      inactive: 'Inactivo',
-      suspended: 'Suspendido'
-    };
-
-    return (
-      <span className={`px-3 py-1 text-sm font-medium rounded-full ${styles[status as keyof typeof styles] || styles.inactive}`}>
-        {labels[status as keyof typeof labels] || status}
-      </span>
-    );
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -145,7 +127,7 @@ export default function ClientDetailPage() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              {getStatusBadge(client.status)}
+              <StatusBadge status={client.status as StatusType} />
               <Link href={`/admin/clients/${clientPublicId}/edit`}>
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

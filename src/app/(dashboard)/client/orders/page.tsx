@@ -4,14 +4,15 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
-import { LoadingSpinner, Alert, EmptyState } from '@/components/ui/feedback'
+import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { OrderStatusBadge } from '@/components/ui/order-status-badge'
 import {
   ShoppingBag,
   Package,
   Clock,
   CheckCircle,
-  XCircle,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
@@ -52,69 +53,6 @@ interface OrdersData {
     total: number
     totalPages: number
   }
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
-    draft: {
-      label: 'Borrador',
-      className: 'bg-gray-100 text-gray-800',
-      icon: <Clock className="h-3 w-3" />
-    },
-    submitted: {
-      label: 'Enviado',
-      className: 'bg-yellow-100 text-yellow-800',
-      icon: <Clock className="h-3 w-3" />
-    },
-    confirmed: {
-      label: 'Confirmado',
-      className: 'bg-blue-100 text-blue-800',
-      icon: <Package className="h-3 w-3" />
-    },
-    processing: {
-      label: 'En Proceso',
-      className: 'bg-indigo-100 text-indigo-800',
-      icon: <Package className="h-3 w-3" />
-    },
-    processed: {
-      label: 'Procesado',
-      className: 'bg-indigo-100 text-indigo-800',
-      icon: <Package className="h-3 w-3" />
-    },
-    shipped: {
-      label: 'Enviado',
-      className: 'bg-purple-100 text-purple-800',
-      icon: <Package className="h-3 w-3" />
-    },
-    delivered: {
-      label: 'Entregado',
-      className: 'bg-green-100 text-green-800',
-      icon: <CheckCircle className="h-3 w-3" />
-    },
-    completed: {
-      label: 'Completado',
-      className: 'bg-green-100 text-green-800',
-      icon: <CheckCircle className="h-3 w-3" />
-    },
-    cancelled: {
-      label: 'Cancelado',
-      className: 'bg-red-100 text-red-800',
-      icon: <XCircle className="h-3 w-3" />
-    }
-  }
-
-  const { label, className, icon } = config[status] || {
-    label: status,
-    className: 'bg-gray-100 text-gray-800',
-    icon: <Package className="h-3 w-3" />
-  }
-
-  return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${className}`}>
-      {icon}
-      {label}
-    </span>
-  )
 }
 
 function SourceBadge({ source }: { source: 'direct' | 'visit' }) {
@@ -340,7 +278,7 @@ export default function ClientOrdersPage() {
                         <span className="font-semibold text-gray-900">
                           #{order.order_number}
                         </span>
-                        <StatusBadge status={order.order_status} />
+                        <OrderStatusBadge status={order.order_status} />
                         <SourceBadge source={order.source} />
                       </div>
 

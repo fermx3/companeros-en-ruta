@@ -4,9 +4,12 @@ import React, { useState, useEffect } from 'react'
 import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card } from '@/components/ui/Card'
+import { MetricCard } from '@/components/ui/metric-card'
 import { Button } from '@/components/ui/button'
-import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
+import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { Gift, Plus, Search, Calendar, DollarSign, Users, TrendingUp, Pause, Play, Eye, Edit } from 'lucide-react'
 import { ExportButton } from '@/components/ui/export-button'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -271,66 +274,15 @@ export default function BrandPromotionsPage() {
         {/* Metrics Cards */}
         {metrics && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Promociones</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics.total}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <Gift className="h-5 w-5 text-blue-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Activas</p>
-                    <p className="text-2xl font-bold text-green-600">{metrics.active}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Pendientes</p>
-                    <p className="text-2xl font-bold text-yellow-600">{metrics.pending}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-yellow-50 rounded-lg flex items-center justify-center">
-                    <Calendar className="h-5 w-5 text-yellow-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Presupuesto Usado</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      ${(metrics.spentBudget || 0).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      de ${(metrics.totalBudget || 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="h-10 w-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-purple-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MetricCard title="Total Promociones" value={metrics.total} icon={<Gift className="h-6 w-6" />} />
+            <MetricCard title="Activas" value={metrics.active} icon={<TrendingUp className="h-6 w-6" />} variant="success" />
+            <MetricCard title="Pendientes" value={metrics.pending} icon={<Calendar className="h-6 w-6" />} variant="warning" />
+            <MetricCard
+              title="Presupuesto Usado"
+              value={`$${(metrics.spentBudget || 0).toLocaleString()}`}
+              change={`de $${(metrics.totalBudget || 0).toLocaleString()}`}
+              icon={<DollarSign className="h-6 w-6" />}
+            />
           </div>
         )}
 

@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import { Settings } from 'lucide-react';
+import { StatusBadge } from '@/components/ui/status-badge';
+import type { StatusType } from '@/types/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import type { Tenant } from '@/lib/types/admin';
 
@@ -150,24 +152,10 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      active: 'bg-green-100 text-green-800',
-      trial: 'bg-blue-100 text-blue-800',
-      suspended: 'bg-red-100 text-red-800',
-      inactive: 'bg-gray-100 text-gray-800',
-    };
-    const labels: Record<string, string> = {
-      active: 'Activo',
-      trial: 'Prueba',
-      suspended: 'Suspendido',
-      inactive: 'Inactivo',
-    };
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status] || styles.inactive}`}>
-        {labels[status] || status}
-      </span>
-    );
+  /** Map tenant status to StatusType. 'trial' maps to 'pending'. */
+  const mapTenantStatus = (status: string): StatusType => {
+    if (status === 'trial') return 'pending';
+    return status as StatusType;
   };
 
   const getPlanLabel = (plan: string) => {
@@ -240,7 +228,7 @@ export default function AdminSettingsPage() {
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Estado</dt>
-                    <dd className="mt-1">{getStatusBadge(tenant.status)}</dd>
+                    <dd className="mt-1"><StatusBadge status={mapTenantStatus(tenant.status)} size="sm" /></dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Plan de Suscripción</dt>

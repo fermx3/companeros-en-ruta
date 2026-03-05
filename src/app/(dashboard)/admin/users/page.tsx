@@ -5,11 +5,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
-import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
+import { LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { adminService } from '@/lib/services/adminService';
 import { displayPhone } from '@/lib/utils/phone';
 import type { UserProfile, UserRoleRecord } from '@/lib/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ChevronRight, Plus, UserPlus, Users, Eye, ShieldCheck, Ban, CheckCircle } from 'lucide-react';
 
 interface UserWithRoles extends UserProfile {
   user_roles?: UserRoleRecord[];
@@ -116,9 +119,7 @@ export default function UsersListPage() {
                   </li>
                   <li>
                     <div className="flex items-center">
-                      <svg className="flex-shrink-0 h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
+                      <ChevronRight className="flex-shrink-0 h-5 w-5 text-gray-300" />
                       <span className="ml-4 text-gray-900 font-medium">Usuarios</span>
                     </div>
                   </li>
@@ -134,17 +135,13 @@ export default function UsersListPage() {
             <div className="flex space-x-3">
               <Link href="/admin/users/invite">
                 <Button className="bg-green-600 hover:bg-green-700">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
+                  <UserPlus className="w-4 h-4 mr-2" />
                   Invitar Usuario
                 </Button>
               </Link>
               <Link href="/admin/users/create">
                 <Button>
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
+                  <Plus className="w-4 h-4 mr-2" />
                   Crear Usuario
                 </Button>
               </Link>
@@ -189,9 +186,7 @@ export default function UsersListPage() {
                 action={
                   <Link href="/admin/users/create">
                     <Button className="bg-blue-600 hover:bg-blue-700">
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
+                      <Users className="w-4 h-4 mr-2" />
                       Crear Primer Usuario
                     </Button>
                   </Link>
@@ -366,19 +361,14 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
       <div className="flex space-x-2">
         <Link href={`/admin/users/${user.public_id}`} className="flex-1">
           <Button size="sm" variant="outline" className="w-full">
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
+            <Eye className="w-4 h-4 mr-1" />
             Ver Perfil
           </Button>
         </Link>
         {!user.is_client && (
         <Link href={`/admin/users/${user.public_id}/roles`} className="flex-1">
           <Button size="sm" variant="outline" className="w-full">
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
+            <ShieldCheck className="w-4 h-4 mr-1" />
             Roles
           </Button>
         </Link>
@@ -395,9 +385,7 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
               <LoadingSpinner size="sm" />
             ) : (
               <>
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
-                </svg>
+                <Ban className="w-4 h-4 mr-1" />
                 Desactivar
               </>
             )}
@@ -414,9 +402,7 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
               <LoadingSpinner size="sm" />
             ) : (
               <>
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <CheckCircle className="w-4 h-4 mr-1" />
                 Reactivar
               </>
             )}

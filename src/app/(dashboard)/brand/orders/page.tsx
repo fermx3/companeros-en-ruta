@@ -3,16 +3,17 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
+import { MetricCard } from '@/components/ui/metric-card'
 import { Button } from '@/components/ui/button'
-import { LoadingSpinner, Alert, EmptyState } from '@/components/ui/feedback'
+import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { OrderStatusBadge } from '@/components/ui/order-status-badge'
 import {
   ShoppingBag,
-  Package,
   Clock,
   CheckCircle,
-  XCircle,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
@@ -66,32 +67,6 @@ interface OrdersData {
     total: number
     totalPages: number
   }
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
-    draft: { label: 'Borrador', className: 'bg-gray-100 text-gray-800', icon: <Clock className="h-3 w-3" /> },
-    submitted: { label: 'Enviado', className: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-3 w-3" /> },
-    confirmed: { label: 'Confirmado', className: 'bg-blue-100 text-blue-800', icon: <Package className="h-3 w-3" /> },
-    processing: { label: 'En Proceso', className: 'bg-indigo-100 text-indigo-800', icon: <Package className="h-3 w-3" /> },
-    shipped: { label: 'Enviado', className: 'bg-purple-100 text-purple-800', icon: <Package className="h-3 w-3" /> },
-    delivered: { label: 'Entregado', className: 'bg-green-100 text-green-800', icon: <CheckCircle className="h-3 w-3" /> },
-    completed: { label: 'Completado', className: 'bg-green-100 text-green-800', icon: <CheckCircle className="h-3 w-3" /> },
-    cancelled: { label: 'Cancelado', className: 'bg-red-100 text-red-800', icon: <XCircle className="h-3 w-3" /> }
-  }
-
-  const { label, className, icon } = config[status] || {
-    label: status,
-    className: 'bg-gray-100 text-gray-800',
-    icon: <Package className="h-3 w-3" />
-  }
-
-  return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${className}`}>
-      {icon}
-      {label}
-    </span>
-  )
 }
 
 function OriginBadge({ source }: { source: 'direct' | 'visit' }) {
@@ -228,45 +203,10 @@ export default function BrandOrdersPage() {
         {/* Summary Cards */}
         {data?.summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <ShoppingBag className="h-6 w-6 text-indigo-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-gray-900">
-                  {data.summary.total_orders}
-                </div>
-                <div className="text-xs text-gray-600">Total Ordenes</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 text-center">
-                <TrendingUp className="h-6 w-6 text-green-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(data.summary.total_sales)}
-                </div>
-                <div className="text-xs text-gray-600">Total Ventas</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Clock className="h-6 w-6 text-yellow-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-gray-900">
-                  {data.summary.pending_orders}
-                </div>
-                <div className="text-xs text-gray-600">Pendientes</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 text-center">
-                <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-gray-900">
-                  {data.summary.completed_orders}
-                </div>
-                <div className="text-xs text-gray-600">Completados</div>
-              </CardContent>
-            </Card>
+            <MetricCard title="Total Ordenes" value={data.summary.total_orders} icon={<ShoppingBag className="h-6 w-6" />} />
+            <MetricCard title="Total Ventas" value={formatCurrency(data.summary.total_sales)} icon={<TrendingUp className="h-6 w-6" />} variant="success" />
+            <MetricCard title="Pendientes" value={data.summary.pending_orders} icon={<Clock className="h-6 w-6" />} variant="warning" />
+            <MetricCard title="Completados" value={data.summary.completed_orders} icon={<CheckCircle className="h-6 w-6" />} variant="success" />
           </div>
         )}
 
@@ -329,7 +269,7 @@ export default function BrandOrdersPage() {
                           <span className="font-semibold text-gray-900">
                             #{order.order_number}
                           </span>
-                          <StatusBadge status={order.order_status} />
+                          <OrderStatusBadge status={order.order_status} />
                           <OriginBadge source={order.source} />
                         </div>
 

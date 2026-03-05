@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Distributor } from '@/lib/types/admin';
+import { StatusBadge } from '@/components/ui/status-badge';
+import type { StatusType } from '@/types/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 type DistributorDetail = Distributor & { employee_count: number };
@@ -66,28 +68,6 @@ export default function DistributorDetailPage() {
   useEffect(() => {
     loadBrands();
   }, [loadBrands]);
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      active: 'Activo',
-      inactive: 'Inactivo',
-      suspended: 'Suspendido',
-    };
-    return labels[status] || status;
-  };
-
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
-      suspended: 'bg-red-100 text-red-800',
-    };
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status] || styles.inactive}`}>
-        {getStatusLabel(status)}
-      </span>
-    );
-  };
 
   if (loading) {
     return (
@@ -254,7 +234,7 @@ export default function DistributorDetailPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Estado</span>
-                    {getStatusBadge(distributor.status)}
+                    <StatusBadge status={distributor.status as StatusType} size="sm" />
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Empleados asignados</span>

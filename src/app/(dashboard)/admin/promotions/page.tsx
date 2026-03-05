@@ -6,7 +6,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
-import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
+import { MetricCard } from '@/components/ui/metric-card'
+import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { Gift, Search, Calendar, Clock, Check, X, Eye, Building2, AlertCircle } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
@@ -291,61 +294,29 @@ export default function AdminPromotionsPage() {
         {/* Metrics Cards */}
         {metrics && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className={selectedStatus === 'pending_approval' ? 'ring-2 ring-yellow-500' : ''}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Pendientes</p>
-                    <p className="text-2xl font-bold text-yellow-600">{metrics.pending_approval}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-yellow-50 rounded-lg flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-yellow-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Aprobadas</p>
-                    <p className="text-2xl font-bold text-blue-600">{metrics.approved}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <Check className="h-5 w-5 text-blue-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Activas</p>
-                    <p className="text-2xl font-bold text-green-600">{metrics.active}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center">
-                    <Gift className="h-5 w-5 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics.total}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <Gift className="h-5 w-5 text-gray-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MetricCard
+              title="Pendientes"
+              value={metrics.pending_approval}
+              icon={<Clock className="h-6 w-6" />}
+              variant="warning"
+              className={selectedStatus === 'pending_approval' ? 'ring-2 ring-yellow-500' : ''}
+            />
+            <MetricCard
+              title="Aprobadas"
+              value={metrics.approved}
+              icon={<Check className="h-6 w-6" />}
+            />
+            <MetricCard
+              title="Activas"
+              value={metrics.active}
+              icon={<Gift className="h-6 w-6" />}
+              variant="success"
+            />
+            <MetricCard
+              title="Total"
+              value={metrics.total}
+              icon={<Gift className="h-6 w-6" />}
+            />
           </div>
         )}
 

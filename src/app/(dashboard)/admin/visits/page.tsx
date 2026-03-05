@@ -5,7 +5,11 @@ import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
-import { LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback'
+import { MetricCard } from '@/components/ui/metric-card'
+import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { VisitStatusBadge } from '@/components/ui/visit-status-badge'
+import { MapPin, Clock, CheckCircle, Star } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 interface Visit {
@@ -88,28 +92,6 @@ export default function AdminVisitsPage() {
     })
   }
 
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      scheduled: 'Programada',
-      in_progress: 'En Progreso',
-      completed: 'Completada',
-      cancelled: 'Cancelada',
-      missed: 'No Realizada',
-    }
-    return labels[status] || status
-  }
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      scheduled: 'bg-blue-100 text-blue-800',
-      in_progress: 'bg-yellow-100 text-yellow-800',
-      completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800',
-      missed: 'bg-gray-100 text-gray-800',
-    }
-    return colors[status] || 'bg-gray-100 text-gray-800'
-  }
-
   const statusOptions = [
     { value: '', label: 'Todos los estados' },
     { value: 'scheduled', label: 'Programada' },
@@ -167,32 +149,28 @@ export default function AdminVisitsPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-gray-900 mb-2">{summary.total}</div>
-              <div className="text-sm text-gray-600">Total Visitas</div>
-            </div>
-          </Card>
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-yellow-600 mb-2">{summary.active}</div>
-              <div className="text-sm text-gray-600">En Progreso</div>
-            </div>
-          </Card>
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-green-600 mb-2">{summary.completed}</div>
-              <div className="text-sm text-gray-600">Completadas</div>
-            </div>
-          </Card>
-          <Card>
-            <div className="p-6 text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">
-                {summary.avg_rating > 0 ? summary.avg_rating.toFixed(1) : 'N/A'}
-              </div>
-              <div className="text-sm text-gray-600">Rating Promedio</div>
-            </div>
-          </Card>
+          <MetricCard
+            title="Total Visitas"
+            value={summary.total}
+            icon={<MapPin className="h-6 w-6" />}
+          />
+          <MetricCard
+            title="En Progreso"
+            value={summary.active}
+            icon={<Clock className="h-6 w-6" />}
+            variant="warning"
+          />
+          <MetricCard
+            title="Completadas"
+            value={summary.completed}
+            icon={<CheckCircle className="h-6 w-6" />}
+            variant="success"
+          />
+          <MetricCard
+            title="Rating Promedio"
+            value={summary.avg_rating > 0 ? summary.avg_rating.toFixed(1) : 'N/A'}
+            icon={<Star className="h-6 w-6" />}
+          />
         </div>
 
         {/* Filters */}
@@ -300,9 +278,7 @@ export default function AdminVisitsPage() {
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                           <span className="text-sm font-medium text-gray-500">{visit.public_id}</span>
-                          <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusColor(visit.visit_status)}`}>
-                            {getStatusLabel(visit.visit_status)}
-                          </span>
+                          <VisitStatusBadge status={visit.visit_status} />
                           {visit.rating != null && (
                             <span className="inline-flex items-center text-sm text-yellow-600">
                               <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">

@@ -6,7 +6,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
-import { StatusBadge, LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { LoadingSpinner, Alert } from '@/components/ui/feedback'
+import { StatusBadge } from '@/components/ui/status-badge'
 import {
   Gift, Calendar, DollarSign, Users, TrendingUp, Check, X,
   ArrowLeft, Building2, Clock, Target, FileText, Hash

@@ -7,6 +7,10 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import type { Distributor, PaginatedResponse } from '@/lib/types/admin';
+import { StatusBadge } from '@/components/ui/status-badge';
+import type { StatusType } from '@/types/ui';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ArrowLeftRight, Plus } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 type DistributorWithCount = Distributor & { employee_count: number };
@@ -78,24 +82,6 @@ export default function AdminDistributorsPage() {
     setCurrentPage(1);
   };
 
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
-      suspended: 'bg-red-100 text-red-800',
-    };
-    const labels: Record<string, string> = {
-      active: 'Activo',
-      inactive: 'Inactivo',
-      suspended: 'Suspendido',
-    };
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status] || styles.inactive}`}>
-        {labels[status] || status}
-      </span>
-    );
-  };
-
   if (loading && !distributors) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -120,9 +106,7 @@ export default function AdminDistributorsPage() {
             </div>
             <Link href="/admin/distributors/create">
               <Button className="bg-blue-600 hover:bg-blue-700">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus className="w-4 h-4 mr-2" />
                 Nuevo Distribuidor
               </Button>
             </Link>
@@ -244,14 +228,12 @@ export default function AdminDistributorsPage() {
                   </tr>
                 ) : distributors?.data.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center">
-                      <div className="text-gray-500">
-                        <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                        <p className="text-lg font-medium">No hay distribuidores</p>
-                        <p className="text-sm">Comienza creando tu primer distribuidor</p>
-                      </div>
+                    <td colSpan={7} className="px-6 py-8">
+                      <EmptyState
+                        icon={<ArrowLeftRight className="w-12 h-12" />}
+                        title="No hay distribuidores"
+                        description="Comienza creando tu primer distribuidor"
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -282,7 +264,7 @@ export default function AdminDistributorsPage() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        {getStatusBadge(dist.status)}
+                        <StatusBadge status={dist.status as StatusType} size="sm" />
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {dist.employee_count}

@@ -5,10 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
-import { StatusBadge, LoadingSpinner, EmptyState, Alert } from '@/components/ui/feedback';
+import { LoadingSpinner, Alert } from '@/components/ui/feedback';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { adminService } from '@/lib/services/adminService';
 import type { Brand } from '@/lib/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ChevronRight, Plus, Building2, Pencil, Trash2 } from 'lucide-react';
 
 /**
  * Lista de brands con funciones de gestión
@@ -129,9 +132,7 @@ export default function BrandsListPage() {
                   </li>
                   <li>
                     <div className="flex items-center">
-                      <svg className="flex-shrink-0 h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
+                      <ChevronRight className="flex-shrink-0 h-5 w-5 text-gray-300" />
                       <span className="ml-4 text-gray-900 font-medium">Brands</span>
                     </div>
                   </li>
@@ -151,9 +152,7 @@ export default function BrandsListPage() {
               </Button>
               <Link href="/admin/brands/create">
                 <Button>
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
+                  <Plus className="w-4 h-4 mr-2" />
                   Nueva Brand
                 </Button>
               </Link>
@@ -172,19 +171,13 @@ export default function BrandsListPage() {
         {/* Brands List */}
         {brands.length === 0 && !loading ? (
           <EmptyState
-            icon={
-              <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            }
+            icon={<Building2 className="w-16 h-16" />}
             title="No hay brands registradas"
             description="Comienza creando tu primera brand para empezar a gestionar tu negocio."
             action={
               <Link href="/admin/brands/create">
                 <Button>
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
+                  <Plus className="w-4 h-4 mr-2" />
                   Crear Primera Brand
                 </Button>
               </Link>
@@ -348,9 +341,7 @@ function BrandCard({ brand, onDelete, onToggleStatus, isDeleting }: BrandCardPro
           <div className="flex space-x-2">
             <Link href={`/admin/brands/${brand.public_id}/edit`}>
               <Button size="sm" variant="outline">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+                <Pencil className="w-4 h-4 mr-1" />
                 Editar
               </Button>
             </Link>
@@ -373,9 +364,7 @@ function BrandCard({ brand, onDelete, onToggleStatus, isDeleting }: BrandCardPro
               <LoadingSpinner size="sm" />
             ) : (
               <>
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+                <Trash2 className="w-4 h-4 mr-1" />
                 Eliminar
               </>
             )}
