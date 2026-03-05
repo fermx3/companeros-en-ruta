@@ -56,7 +56,34 @@ Este proyecto es un **SaaS multi-tenant** llamado **Compañeros en Ruta** desarr
    - **PREGUNTAR AL USUARIO** si encuentras componentes similares antes de duplicar funcionalidad
    - Documentar la decisión en comentarios JSDoc del código
 
-### 2. Estructura de Archivos
+### 2. Registro de Componentes Canónicos (OBLIGATORIO)
+
+**Antes de crear cualquier UI**, consulta esta tabla. Si existe un componente canónico, DEBES usarlo.
+
+| Necesidad | Componente canónico | Import | NUNCA hacer |
+|-----------|---------------------|--------|-------------|
+| Stat/métrica en dashboard | `MetricCard` | `@/components/ui/metric-card` | Card+div inline, dl/dt/dd, local MetricCard |
+| Badge de estado genérico | `StatusBadge` | `@/components/ui/status-badge` | getStatusBadge(), spans inline, Badge de feedback.tsx |
+| Badge de estado de orden | `OrderStatusBadge` | `@/components/ui/order-status-badge` | StatusBadge local en archivo |
+| Badge de estado de visita | `VisitStatusBadge` | `@/components/ui/visit-status-badge` | getStatusLabel()+getStatusColor() inline |
+| Estado vacío (sin datos) | `EmptyState` | `@/components/ui/EmptyState` | divs centrados inline, Card+CardContent vacío |
+| Spinner de carga | `LoadingSpinner` | `@/components/ui/feedback` | divs animados inline |
+| Carga página completa | `PageLoader` | `@/components/ui/feedback` | LoadingSpinner centrado manual |
+| Alerta/error | `Alert` | `@/components/ui/feedback` | divs rojos inline, Card con border-red |
+| Iconos | lucide-react | `lucide-react` | SVGs inline, heroicons |
+
+**StatusType soportados:** `active`, `inactive`, `suspended`, `pending`, `completed`, `cancelled`, `expired`
+
+#### Reglas anti-duplicación
+
+- **PROHIBIDO** definir componentes locales que repliquen funcionalidad de `src/components/ui/`
+- **PROHIBIDO** usar SVGs inline — SIEMPRE usar `lucide-react`
+- **PROHIBIDO** hardcodear colores en Button (`bg-blue-600`) — usar variant prop
+- Si un componente canónico no cubre tu caso, **EXTENDER el canónico con props**, no crear uno nuevo
+- `feedback.tsx` contiene SOLO: `LoadingSpinner`, `PageLoader`, `Alert` — nada más
+- Para estados de dominio específico (orders, visits, surveys), usar los componentes especializados (`OrderStatusBadge`, `VisitStatusBadge`, `SurveyStatusBadge`)
+
+### 3. Estructura de Archivos
 
 ```
 src/components/
@@ -141,14 +168,17 @@ export function MetricCard({
 ### 2. StatusBadge Component
 ```tsx
 interface StatusBadgeProps {
-  status: 'active' | 'pending' | 'completed' | 'cancelled' | 'expired'
+  status: 'active' | 'inactive' | 'suspended' | 'pending' | 'completed' | 'cancelled' | 'expired'
   size?: 'sm' | 'md' | 'lg'
   className?: string
+  children?: React.ReactNode
 }
 
 export function StatusBadge({ status, size = 'md', className }: StatusBadgeProps) {
   const variants = {
     active: 'bg-green-100 text-green-700 border-green-200',
+    inactive: 'bg-gray-100 text-gray-500 border-gray-200',
+    suspended: 'bg-red-100 text-red-700 border-red-200',
     pending: 'bg-amber-100 text-amber-700 border-amber-200',
     completed: 'bg-blue-100 text-blue-700 border-blue-200',
     cancelled: 'bg-red-100 text-red-700 border-red-200',
