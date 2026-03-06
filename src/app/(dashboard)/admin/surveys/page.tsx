@@ -11,6 +11,8 @@ import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { Search, ClipboardList, Clock, BarChart3, Lock } from 'lucide-react'
 import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { ClickableRow } from '@/components/ui/clickable-row'
+import { ListItemActions } from '@/components/ui/list-item-actions'
 
 interface AdminSurvey {
   id: string
@@ -166,7 +168,7 @@ export default function AdminSurveysPage() {
                 </thead>
                 <tbody className="divide-y">
                   {surveys.map((survey) => (
-                    <tr key={survey.id} className="hover:bg-gray-50">
+                    <ClickableRow key={survey.id} href={`/admin/surveys/${survey.public_id}`}>
                       <td className="py-3">
                         <p className="font-medium text-gray-900">{survey.title}</p>
                         <p className="text-xs text-gray-500">
@@ -187,22 +189,17 @@ export default function AdminSurveysPage() {
                       </td>
                       <td className="py-3 text-right font-medium">{survey.response_count}</td>
                       <td className="py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link href={`/admin/surveys/${survey.public_id}`}>
-                            <Button variant="outline" size="sm">
-                              {survey.survey_status === 'pending_approval' ? 'Revisar' : 'Ver'}
-                            </Button>
-                          </Link>
-                          {(survey.survey_status === 'active' || survey.survey_status === 'closed') && (
+                        {(survey.survey_status === 'active' || survey.survey_status === 'closed') && (
+                          <ListItemActions>
                             <Link href={`/admin/surveys/${survey.public_id}/results`}>
                               <Button variant="outline" size="sm">
                                 <BarChart3 className="w-3.5 h-3.5" />
                               </Button>
                             </Link>
-                          )}
-                        </div>
+                          </ListItemActions>
+                        )}
                       </td>
-                    </tr>
+                    </ClickableRow>
                   ))}
                 </tbody>
               </table>

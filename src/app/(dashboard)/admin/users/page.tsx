@@ -12,7 +12,9 @@ import { adminService } from '@/lib/services/adminService';
 import { displayPhone } from '@/lib/utils/phone';
 import type { UserProfile, UserRoleRecord } from '@/lib/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { ChevronRight, Plus, UserPlus, Users, Eye, ShieldCheck, Ban, CheckCircle } from 'lucide-react';
+import { ChevronRight, Plus, UserPlus, Users, ShieldCheck, Ban, CheckCircle } from 'lucide-react';
+import { ClickableCard } from '@/components/ui/clickable-card';
+import { ListItemActions } from '@/components/ui/list-item-actions';
 
 interface UserWithRoles extends UserProfile {
   user_roles?: UserRoleRecord[];
@@ -285,7 +287,7 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
   };
 
   return (
-    <div className="p-6 hover:bg-gray-50 transition-colors">
+    <Link href={`/admin/users/${user.public_id}`} className="block p-6 hover:bg-gray-50 transition-colors cursor-pointer">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center space-x-3">
           <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -358,13 +360,7 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
         )}
       </div>
 
-      <div className="flex space-x-2">
-        <Link href={`/admin/users/${user.public_id}`} className="flex-1">
-          <Button size="sm" variant="outline" className="w-full">
-            <Eye className="w-4 h-4 mr-1" />
-            Ver Perfil
-          </Button>
-        </Link>
+      <ListItemActions className="flex space-x-2">
         {!user.is_client && (
         <Link href={`/admin/users/${user.public_id}/roles`} className="flex-1">
           <Button size="sm" variant="outline" className="w-full">
@@ -408,7 +404,7 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
             )}
           </Button>
         )}
-      </div>
-    </div>
+      </ListItemActions>
+    </Link>
   );
 }

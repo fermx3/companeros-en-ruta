@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { VisitStatusBadge } from '@/components/ui/visit-status-badge'
 import { MapPin, Clock, CheckCircle, Star } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { ClickableCard } from '@/components/ui/clickable-card'
 
 interface Visit {
   id: string
@@ -271,8 +272,7 @@ export default function AdminVisitsPage() {
         ) : (
           <div className="space-y-4">
             {visits.map((visit) => (
-              <Link key={visit.id} href={`/admin/visits/${visit.id}`} className="block">
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <ClickableCard key={visit.id} href={`/admin/visits/${visit.id}`}>
                   <div className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -318,8 +318,7 @@ export default function AdminVisitsPage() {
                       </svg>
                     </div>
                   </div>
-                </Card>
-              </Link>
+              </ClickableCard>
             ))}
 
             {/* Pagination */}

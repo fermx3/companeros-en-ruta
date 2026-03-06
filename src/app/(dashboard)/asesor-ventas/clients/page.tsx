@@ -10,6 +10,8 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { displayPhone } from '@/lib/utils/phone'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { ClickableCard } from '@/components/ui/clickable-card'
+import { ListItemActions } from '@/components/ui/list-item-actions'
 import {
   Users,
   Building2,
@@ -173,12 +175,10 @@ export default function AsesorVentasClientsPage() {
         ) : (
           <div className="space-y-4">
             {filteredClients.map((client) => (
-              <Link
+              <ClickableCard
                 key={client.id}
                 href={`/asesor-ventas/clients/${client.public_id}`}
-                className="block"
               >
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -223,24 +223,23 @@ export default function AsesorVentasClientsPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          className="bg-emerald-600 hover:bg-emerald-700"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            router.push(`/asesor-ventas/orders/create?client_id=${client.id}`)
-                          }}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Orden
-                        </Button>
+                        <ListItemActions>
+                          <Button
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            onClick={() => {
+                              router.push(`/asesor-ventas/orders/create?client_id=${client.id}`)
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Orden
+                          </Button>
+                        </ListItemActions>
                         <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              </Link>
+              </ClickableCard>
             ))}
           </div>
         )}

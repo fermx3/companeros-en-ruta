@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { OrderStatusBadge } from '@/components/ui/order-status-badge'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { ClickableCard } from '@/components/ui/clickable-card'
 
 interface Order {
   id: string
@@ -321,12 +322,10 @@ export default function AdminOrdersPage() {
         ) : (
           <div className={`space-y-4 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
             {data?.orders.map(order => (
-              <Link
+              <ClickableCard
                 key={order.id}
                 href={`/admin/orders/${order.public_id}`}
-                className="block"
               >
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -384,8 +383,7 @@ export default function AdminOrdersPage() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              </Link>
+              </ClickableCard>
             ))}
 
             {/* Pagination */}

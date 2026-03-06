@@ -10,9 +10,11 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { Gift, Plus, Search, Calendar, DollarSign, Users, TrendingUp, Pause, Play, Eye, Edit } from 'lucide-react'
+import { Gift, Plus, Search, Calendar, DollarSign, Users, TrendingUp, Pause, Play, Edit } from 'lucide-react'
 import { ExportButton } from '@/components/ui/export-button'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { ClickableCard } from '@/components/ui/clickable-card'
+import { ListItemActions } from '@/components/ui/list-item-actions'
 
 interface Promotion {
   id: string
@@ -364,7 +366,7 @@ export default function BrandPromotionsPage() {
         ) : (
           <div className="space-y-4">
             {promotions.map((promo) => (
-              <Card key={promo.id} className="hover:shadow-md transition-shadow">
+              <ClickableCard key={promo.id} href={`/brand/promotions/${promo.public_id}`}>
                 <div className="p-4 sm:p-6">
                   <div className="flex items-start gap-3 sm:gap-4">
                     {/* Type Icon */}
@@ -393,7 +395,7 @@ export default function BrandPromotionsPage() {
                         </div>
 
                         {/* Desktop actions */}
-                        <div className="hidden sm:flex items-center gap-2 shrink-0">
+                        <ListItemActions className="hidden sm:flex items-center gap-2 shrink-0">
                           {promo.status === 'draft' && (
                             <Button
                               size="sm"
@@ -442,12 +444,6 @@ export default function BrandPromotionsPage() {
                               )}
                             </Button>
                           )}
-                          <Link href={`/brand/promotions/${promo.public_id}`}>
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-4 w-4 mr-1" />
-                              Ver
-                            </Button>
-                          </Link>
                           {['draft', 'approved'].includes(promo.status) && (
                             <Link href={`/brand/promotions/${promo.public_id}/edit`}>
                               <Button size="sm" variant="outline">
@@ -456,7 +452,7 @@ export default function BrandPromotionsPage() {
                               </Button>
                             </Link>
                           )}
-                        </div>
+                        </ListItemActions>
                       </div>
 
                       {promo.description && (
@@ -481,7 +477,7 @@ export default function BrandPromotionsPage() {
                       </div>
 
                       {/* Mobile actions */}
-                      <div className="flex sm:hidden flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+                      <ListItemActions className="flex sm:hidden flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
                         {promo.status === 'draft' && (
                           <Button
                             size="sm"
@@ -530,12 +526,6 @@ export default function BrandPromotionsPage() {
                             )}
                           </Button>
                         )}
-                        <Link href={`/brand/promotions/${promo.public_id}`}>
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver
-                          </Button>
-                        </Link>
                         {['draft', 'approved'].includes(promo.status) && (
                           <Link href={`/brand/promotions/${promo.public_id}/edit`}>
                             <Button size="sm" variant="outline">
@@ -544,11 +534,11 @@ export default function BrandPromotionsPage() {
                             </Button>
                           </Link>
                         )}
-                      </div>
+                      </ListItemActions>
                     </div>
                   </div>
                 </div>
-              </Card>
+              </ClickableCard>
             ))}
 
             {/* Pagination */}

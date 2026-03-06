@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
-import { Users, Search, Check, Award, ChevronLeft, ChevronRight, UserPlus, Coins, Eye, MapPin } from 'lucide-react'
+import { Users, Search, Check, Award, ChevronLeft, ChevronRight, UserPlus, Coins, MapPin } from 'lucide-react'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { ExportButton } from '@/components/ui/export-button'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -18,6 +18,8 @@ import {
   MembershipStatusBadge,
 } from '@/components/brand/membership-actions'
 import type { Membership, BrandTier, Pagination, PointsOperationData } from '@/components/brand/membership-actions'
+import { ClickableRow } from '@/components/ui/clickable-row'
+import { ListItemActions } from '@/components/ui/list-item-actions'
 
 export default function BrandClientsPage() {
   usePageTitle('Clientes')
@@ -392,7 +394,7 @@ export default function BrandClientsPage() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {memberships.map((membership) => (
-                      <tr key={membership.id} className="hover:bg-gray-50">
+                      <ClickableRow key={membership.id} href={membership.client_public_id ? `/brand/clients/${membership.client_public_id}` : '#'}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <p className="text-sm font-medium text-gray-900">{membership.client_name}</p>
@@ -432,58 +434,53 @@ export default function BrandClientsPage() {
                           }
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-1">
-                          {membership.membership_status === 'pending' && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleApprove(membership)}
-                              disabled={actionLoading === membership.id}
-                            >
-                              {actionLoading === membership.id ? (
-                                <LoadingSpinner size="sm" />
-                              ) : (
-                                <>
-                                  <Check className="h-3 w-3 mr-1" />
-                                  Aprobar
-                                </>
-                              )}
-                            </Button>
-                          )}
-                          {membership.membership_status === 'active' && (
-                            <>
+                          <ListItemActions className="inline-flex items-center gap-1">
+                            {membership.membership_status === 'pending' && (
                               <Button
                                 size="sm"
-                                variant="outline"
-                                onClick={() => setPointsModal({ open: true, membership })}
+                                onClick={() => handleApprove(membership)}
+                                disabled={actionLoading === membership.id}
                               >
-                                <Coins className="h-3 w-3 mr-1" />
-                                Puntos
+                                {actionLoading === membership.id ? (
+                                  <LoadingSpinner size="sm" />
+                                ) : (
+                                  <>
+                                    <Check className="h-3 w-3 mr-1" />
+                                    Aprobar
+                                  </>
+                                )}
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setAssignModal({ open: true, membership })}
-                              >
-                                <Award className="h-3 w-3 mr-1" />
-                                Nivel
-                              </Button>
-                            </>
-                          )}
-                          {membership.client_public_id && (
-                            <>
-                              <Link href={`/brand/clients/${membership.client_public_id}`}>
-                                <Button size="sm" variant="ghost" title="Ver detalle">
-                                  <Eye className="h-3 w-3" />
+                            )}
+                            {membership.membership_status === 'active' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setPointsModal({ open: true, membership })}
+                                >
+                                  <Coins className="h-3 w-3 mr-1" />
+                                  Puntos
                                 </Button>
-                              </Link>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setAssignModal({ open: true, membership })}
+                                >
+                                  <Award className="h-3 w-3 mr-1" />
+                                  Nivel
+                                </Button>
+                              </>
+                            )}
+                            {membership.client_public_id && (
                               <Link href={`/brand/clients/${membership.client_public_id}/visits`}>
                                 <Button size="sm" variant="ghost" title="Ver visitas">
                                   <MapPin className="h-3 w-3" />
                                 </Button>
                               </Link>
-                            </>
-                          )}
+                            )}
+                          </ListItemActions>
                         </td>
-                      </tr>
+                      </ClickableRow>
                     ))}
                   </tbody>
                 </table>

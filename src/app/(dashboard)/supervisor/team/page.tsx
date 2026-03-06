@@ -8,6 +8,7 @@ import { Users, Star, Search, ArrowLeft } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import Link from 'next/link'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { ClickableCard } from '@/components/ui/clickable-card'
 
 interface TeamMember {
   id: string
@@ -128,8 +129,7 @@ export default function SupervisorTeamPage() {
           {members.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {members.map((member) => (
-                <Link key={member.id} href={`/supervisor/team/${member.public_id}`}>
-                  <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer h-full">
+                <ClickableCard key={member.id} href={`/supervisor/team/${member.public_id}`} className="h-full">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -174,8 +174,7 @@ export default function SupervisorTeamPage() {
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
-                </Link>
+                </ClickableCard>
               ))}
             </div>
           ) : (

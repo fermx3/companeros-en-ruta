@@ -7,6 +7,7 @@ import { ArrowLeft, MapPin, Star } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import Link from 'next/link'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { ClickableRow } from '@/components/ui/clickable-row'
 
 interface Visit {
   id: string
@@ -240,7 +241,7 @@ export default function SupervisorVisitsPage() {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {visits.map((visit) => (
-                          <tr key={visit.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => window.location.href = `/brand/visits/${visit.id}`}>
+                          <ClickableRow key={visit.id} href={`/brand/visits/${visit.id}`}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {visit.visit_date
                                 ? new Date(visit.visit_date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -269,7 +270,7 @@ export default function SupervisorVisitsPage() {
                                 <span className="text-sm text-gray-400">—</span>
                               )}
                             </td>
-                          </tr>
+                          </ClickableRow>
                         ))}
                       </tbody>
                     </table>

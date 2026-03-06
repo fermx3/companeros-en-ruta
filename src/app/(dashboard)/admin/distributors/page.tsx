@@ -12,6 +12,8 @@ import type { StatusType } from '@/types/ui';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ArrowLeftRight, Plus } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ClickableRow } from '@/components/ui/clickable-row';
+import { ListItemActions } from '@/components/ui/list-item-actions';
 
 type DistributorWithCount = Distributor & { employee_count: number };
 
@@ -238,7 +240,7 @@ export default function AdminDistributorsPage() {
                   </tr>
                 ) : (
                   distributors?.data.map((dist) => (
-                    <tr key={dist.id} className="hover:bg-gray-50">
+                    <ClickableRow key={dist.id} href={`/admin/distributors/${dist.public_id}`}>
                       <td className="px-6 py-4">
                         <div>
                           <div className="text-sm font-medium text-gray-900">{dist.name}</div>
@@ -269,22 +271,17 @@ export default function AdminDistributorsPage() {
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {dist.employee_count}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium space-x-2">
-                        <Link
-                          href={`/admin/distributors/${dist.public_id}`}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Ver
-                        </Link>
-                        <span className="text-gray-300">|</span>
-                        <Link
-                          href={`/admin/distributors/${dist.public_id}/edit`}
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Editar
-                        </Link>
+                      <td className="px-6 py-4 text-sm font-medium">
+                        <ListItemActions className="space-x-2">
+                          <Link
+                            href={`/admin/distributors/${dist.public_id}/edit`}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Editar
+                          </Link>
+                        </ListItemActions>
                       </td>
-                    </tr>
+                    </ClickableRow>
                   ))
                 )}
               </tbody>

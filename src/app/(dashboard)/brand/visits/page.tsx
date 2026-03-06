@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { VisitStatusBadge } from '@/components/ui/visit-status-badge';
 import { ExportButton } from '@/components/ui/export-button';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ClickableCard } from '@/components/ui/clickable-card';
 import { ChevronRight, MapPin, Star } from 'lucide-react';
 
 interface Visit {
@@ -255,8 +256,7 @@ export default function BrandVisitsPage() {
         ) : (
           <div className="space-y-4">
             {visits.map((visit) => (
-              <Link key={visit.id} href={`/brand/visits/${visit.id}`} className="block">
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <ClickableCard key={visit.id} href={`/brand/visits/${visit.id}`}>
                   <div className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -294,8 +294,7 @@ export default function BrandVisitsPage() {
                       <ChevronRight className="w-5 h-5 text-gray-400 ml-4 flex-shrink-0 mt-1" />
                     </div>
                   </div>
-                </Card>
-              </Link>
+              </ClickableCard>
             ))}
 
             {/* Pagination */}

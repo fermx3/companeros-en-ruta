@@ -12,6 +12,8 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { Gift, Search, Calendar, Clock, Check, X, Eye, Building2, AlertCircle } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { ClickableCard } from '@/components/ui/clickable-card'
+import { ListItemActions } from '@/components/ui/list-item-actions'
 
 interface Brand {
   id: string
@@ -410,7 +412,7 @@ export default function AdminPromotionsPage() {
         ) : (
           <div className="space-y-4">
             {promotions.map((promo) => (
-              <Card key={promo.id} className="hover:shadow-md transition-shadow">
+              <ClickableCard key={promo.id} href={`/admin/promotions/${promo.public_id}`}>
                 <div className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4">
@@ -461,12 +463,23 @@ export default function AdminPromotionsPage() {
                           <span className="font-medium text-blue-600">
                             Valor: {getPromotionValue(promo)}
                           </span>
-                          {promo.status === 'pending_approval' && (
-                            <span className="flex items-center text-yellow-600">
-                              <Clock className="h-4 w-4 mr-1" />
-                              Enviada {formatRelativeTime(promo.created_at)}
-                            </span>
-                          )}
+                          {promo.status === 'pending_approval' && (() => {
+                            const hoursWaiting = Math.floor((Date.now() - new Date(promo.created_at).getTime()) / (1000 * 60 * 60))
+                            return (
+                              <>
+                                <span className="flex items-center text-yellow-600">
+                                  <Clock className="h-4 w-4 mr-1" />
+                                  Enviada {formatRelativeTime(promo.created_at)}
+                                </span>
+                                {hoursWaiting >= 48 && (
+                                  <span className="flex items-center text-red-600 font-medium">
+                                    <AlertCircle className="h-4 w-4 mr-1" />
+                                    Excede 48h
+                                  </span>
+                                )}
+                              </>
+                            )
+                          })()}
                         </div>
                         {promo.user_profiles && (
                           <p className="text-xs text-gray-500 mt-2">
@@ -477,16 +490,7 @@ export default function AdminPromotionsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-col items-end space-y-2 ml-4">
-                      <div className="flex items-center space-x-2">
-                        <Link href={`/admin/promotions/${promo.public_id}`}>
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver Detalles
-                          </Button>
-                        </Link>
-                      </div>
-
+                    <ListItemActions className="flex flex-col items-end space-y-2 ml-4">
                       {promo.status === 'pending_approval' && (
                         <div className="flex items-center space-x-2">
                           {rejectingId === promo.id ? (
@@ -553,10 +557,10 @@ export default function AdminPromotionsPage() {
                           )}
                         </div>
                       )}
-                    </div>
+                    </ListItemActions>
                   </div>
                 </div>
-              </Card>
+              </ClickableCard>
             ))}
 
             {/* Pagination */}

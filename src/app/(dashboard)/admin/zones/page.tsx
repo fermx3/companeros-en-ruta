@@ -10,6 +10,8 @@ import type { Zone, PaginatedResponse } from '@/lib/types/admin';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { MapPin, Plus } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ClickableRow } from '@/components/ui/clickable-row';
+import { ListItemActions } from '@/components/ui/list-item-actions';
 
 type ZoneWithParent = Zone & { parent_zone_name?: string | null };
 
@@ -289,7 +291,7 @@ export default function AdminZonesPage() {
                   </tr>
                 ) : (
                   zones?.data.map((zone) => (
-                    <tr key={zone.id} className="hover:bg-gray-50">
+                    <ClickableRow key={zone.id} href={`/admin/zones/${zone.public_id}`}>
                       <td className="px-6 py-4">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
@@ -320,22 +322,17 @@ export default function AdminZonesPage() {
                       <td className="px-6 py-4">
                         {getActiveBadge(zone.is_active)}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium space-x-2">
-                        <Link
-                          href={`/admin/zones/${zone.public_id}`}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Ver
-                        </Link>
-                        <span className="text-gray-300">|</span>
-                        <Link
-                          href={`/admin/zones/${zone.public_id}/edit`}
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Editar
-                        </Link>
+                      <td className="px-6 py-4 text-sm font-medium">
+                        <ListItemActions>
+                          <Link
+                            href={`/admin/zones/${zone.public_id}/edit`}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Editar
+                          </Link>
+                        </ListItemActions>
                       </td>
-                    </tr>
+                    </ClickableRow>
                   ))
                 )}
               </tbody>

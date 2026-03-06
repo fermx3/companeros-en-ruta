@@ -18,6 +18,8 @@ import type { StatusType } from '@/types/ui';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Users, Plus } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ClickableRow } from '@/components/ui/clickable-row';
+import { ListItemActions } from '@/components/ui/list-item-actions';
 
 /**
  * Vista de gestión de clientes para administradores
@@ -327,7 +329,10 @@ export default function AdminClientsPage() {
                   </tr>
                 ) : (
                   clients?.data.map((client) => (
-                    <tr key={client.id} className="hover:bg-gray-50">
+                    <ClickableRow
+                      key={client.id}
+                      href={`/admin/clients/${client.public_id}`}
+                    >
                       <td className="px-6 py-4">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
@@ -366,38 +371,33 @@ export default function AdminClientsPage() {
                           : 'Sin visitas'
                         }
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium space-x-2">
-                        <Link
-                          href={`/admin/clients/${client.public_id}`}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Ver
-                        </Link>
-                        <span className="text-gray-300">|</span>
-                        <Link
-                          href={`/admin/clients/${client.public_id}/edit`}
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Editar
-                        </Link>
-                        <span className="text-gray-300">|</span>
-                        <button
-                          onClick={() => handleStatusToggle(client.public_id, client.status)}
-                          disabled={togglingStatus === client.public_id}
-                          className={`${
-                            client.status === 'active'
-                              ? 'text-red-600 hover:text-red-900'
-                              : 'text-green-600 hover:text-green-900'
-                          } disabled:opacity-50`}
-                        >
-                          {togglingStatus === client.public_id
-                            ? 'Cambiando...'
-                            : client.status === 'active'
-                              ? 'Desactivar'
-                              : 'Activar'}
-                        </button>
+                      <td className="px-6 py-4 text-sm font-medium">
+                        <ListItemActions className="flex items-center gap-3">
+                          <Link
+                            href={`/admin/clients/${client.public_id}/edit`}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Editar
+                          </Link>
+                          <span className="text-gray-300">|</span>
+                          <button
+                            onClick={() => handleStatusToggle(client.public_id, client.status)}
+                            disabled={togglingStatus === client.public_id}
+                            className={`${
+                              client.status === 'active'
+                                ? 'text-red-600 hover:text-red-900'
+                                : 'text-green-600 hover:text-green-900'
+                            } disabled:opacity-50`}
+                          >
+                            {togglingStatus === client.public_id
+                              ? 'Cambiando...'
+                              : client.status === 'active'
+                                ? 'Desactivar'
+                                : 'Activar'}
+                          </button>
+                        </ListItemActions>
                       </td>
-                    </tr>
+                    </ClickableRow>
                   ))
                 )}
               </tbody>

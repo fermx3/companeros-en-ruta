@@ -9,6 +9,7 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { ClickableCard } from '@/components/ui/clickable-card'
 import { OrderStatusBadge } from '@/components/ui/order-status-badge'
 import {
   ShoppingBag,
@@ -256,12 +257,10 @@ export default function BrandOrdersPage() {
         ) : (
           <div className={`space-y-4 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
             {data?.orders.map(order => (
-              <Link
+              <ClickableCard
                 key={order.id}
                 href={`/brand/orders/${order.public_id}`}
-                className="block"
               >
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -312,8 +311,7 @@ export default function BrandOrdersPage() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              </Link>
+              </ClickableCard>
             ))}
 
             {/* Pagination */}
