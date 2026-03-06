@@ -104,9 +104,25 @@ function NotificationItem({
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
+
+  // Resume AudioContext on first user interaction so realtime events can play sound
+  useEffect(() => {
+    const ctx = new AudioContext();
+    audioCtxRef.current = ctx;
+
+    const resume = () => {
+      if (ctx.state === 'suspended') ctx.resume();
+    };
+    document.addEventListener('click', resume, { once: true });
+    return () => {
+      document.removeEventListener('click', resume);
+      ctx.close();
+    };
+  }, []);
 
   const handleNewNotification = useCallback((notification: Notification) => {
     const icon = NOTIFICATION_TYPE_ICONS[notification.notification_type] ?? '🔔';
@@ -115,9 +131,10 @@ export function NotificationBell() {
       description: notification.message,
     });
 
-    // Play a short notification tone using Web Audio API
+    // Play a short notification tone using the pre-initialized AudioContext
     try {
-      const ctx = new AudioContext();
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
       const oscillator = ctx.createOscillator();
       const gain = ctx.createGain();
       oscillator.connect(gain);
@@ -128,9 +145,8 @@ export function NotificationBell() {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
       oscillator.start(ctx.currentTime);
       oscillator.stop(ctx.currentTime + 0.3);
-      oscillator.onended = () => ctx.close();
     } catch {
-      // Audio not available (e.g. blocked by browser policy)
+      // Audio not available
     }
   }, [toast]);
 
