@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { createNotification, getClientUserProfileId } from '@/lib/notifications'
+import { createClient } from '@/lib/supabase/server'
+import { createNotification } from '@/lib/notifications'
 import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 
 interface AsesorOrder {
@@ -381,19 +381,15 @@ export async function POST(request: NextRequest) {
 
     // Notify the client about the new order
     try {
-      const serviceClient = createServiceClient()
-      const clientProfileId = await getClientUserProfileId(serviceClient, client_id)
-      if (clientProfileId) {
-        await createNotification({
-          tenant_id: tenantId,
-          user_profile_id: clientProfileId,
-          title: 'Nueva orden creada',
-          message: `Se ha creado la orden ${newOrder.order_number} para tu negocio`,
-          notification_type: 'order_created',
-          action_url: '/client/orders',
-          metadata: { order_id: newOrder.id },
-        })
-      }
+      await createNotification({
+        tenant_id: tenantId,
+        client_id: client_id,
+        title: 'Nueva orden creada',
+        message: `Se ha creado la orden ${newOrder.order_number} para tu negocio`,
+        notification_type: 'order_created',
+        action_url: '/client/orders',
+        metadata: { order_id: newOrder.id },
+      })
     } catch (notifError) {
       console.error('Error creating order notification:', notifError)
     }

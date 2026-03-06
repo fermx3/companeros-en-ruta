@@ -1,35 +1,12 @@
 import { createServiceClient } from '@/lib/supabase/server';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import type { NotificationType } from '@/lib/types/database';
-
-/**
- * Resolves a client_id to its corresponding user_profile_id.
- * Returns null if the client has no linked user account (user_id is null).
- */
-export async function getClientUserProfileId(
-  serviceClient: SupabaseClient,
-  clientId: string
-): Promise<string | null> {
-  const { data: client } = await serviceClient
-    .from('clients')
-    .select('user_id')
-    .eq('id', clientId)
-    .single();
-
-  if (!client?.user_id) return null;
-
-  const { data: profile } = await serviceClient
-    .from('user_profiles')
-    .select('id')
-    .eq('user_id', client.user_id)
-    .single();
-
-  return profile?.id ?? null;
-}
 
 interface CreateNotificationParams {
   tenant_id: string;
-  user_profile_id: string;
+  /** Required for staff users. Mutually exclusive with client_id — at least one must be set. */
+  user_profile_id?: string;
+  /** Required for client users. Mutually exclusive with user_profile_id — at least one must be set. */
+  client_id?: string;
   title: string;
   message: string;
   notification_type?: NotificationType;
@@ -42,13 +19,18 @@ interface CreateNotificationParams {
  * Call from API routes or server actions only.
  */
 export async function createNotification(params: CreateNotificationParams) {
+  if (!params.user_profile_id && !params.client_id) {
+    throw new Error('createNotification requires either user_profile_id or client_id');
+  }
+
   const supabase = createServiceClient();
 
   const { data, error } = await supabase
     .from('notifications')
     .insert({
       tenant_id: params.tenant_id,
-      user_profile_id: params.user_profile_id,
+      user_profile_id: params.user_profile_id ?? null,
+      client_id: params.client_id ?? null,
       title: params.title,
       message: params.message,
       notification_type: params.notification_type ?? 'system',
@@ -75,15 +57,21 @@ export async function createBulkNotifications(params: CreateNotificationParams[]
 
   const supabase = createServiceClient();
 
-  const rows = params.map((p) => ({
-    tenant_id: p.tenant_id,
-    user_profile_id: p.user_profile_id,
-    title: p.title,
-    message: p.message,
-    notification_type: p.notification_type ?? 'system',
-    action_url: p.action_url,
-    metadata: p.metadata ?? {},
-  }));
+  const rows = params.map((p) => {
+    if (!p.user_profile_id && !p.client_id) {
+      throw new Error('createBulkNotifications: each entry requires either user_profile_id or client_id');
+    }
+    return {
+      tenant_id: p.tenant_id,
+      user_profile_id: p.user_profile_id ?? null,
+      client_id: p.client_id ?? null,
+      title: p.title,
+      message: p.message,
+      notification_type: p.notification_type ?? 'system',
+      action_url: p.action_url,
+      metadata: p.metadata ?? {},
+    };
+  });
 
   const { data, error } = await supabase
     .from('notifications')

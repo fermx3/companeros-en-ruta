@@ -129,12 +129,24 @@ export interface Zone {
   updated_at: string;
 }
 
+/**
+ * Client type category enum values
+ * Column: client_types.category
+ */
+export type ClientTypeCategoryEnum =
+  | 'retail'
+  | 'wholesale'
+  | 'institutional'
+  | 'online'
+  | 'hybrid';
+
 export interface ClientType {
   id: string;
   tenant_id: string;
   code: string;
   name: string;
   description?: string;
+  category: ClientTypeCategoryEnum;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -385,7 +397,8 @@ export type NotificationType =
 export interface Notification {
   id: string;
   tenant_id: string;
-  user_profile_id: string;
+  user_profile_id: string | null;
+  client_id?: string | null;
   title: string;
   message: string;
   notification_type: NotificationType;
@@ -498,6 +511,7 @@ export interface Survey {
   approval_notes?: string;
   rejection_reason?: string;
   max_responses_per_user: number;
+  targeting_criteria?: TargetingCriteria | null;
   created_at: string;
   updated_at?: string;
   deleted_at?: string;
@@ -728,4 +742,151 @@ export interface KpiDashboardSummary {
     color: string;
   }>;
   period: string;
+}
+
+// =============================================================================
+// TARGETING / SEGMENTATION TYPES
+// =============================================================================
+
+/**
+ * Gender values (CHECK constraint, not enum)
+ * Column: clients.gender
+ */
+export type GenderValue = 'masculino' | 'femenino' | 'otro' | 'prefiero_no_decir';
+
+/**
+ * Promotor specialization enum values
+ * Column: promotor_assignments.specialization
+ */
+export type AdvisorSpecializationEnum =
+  | 'retail'
+  | 'wholesale'
+  | 'pharma'
+  | 'food_service'
+  | 'convenience'
+  | 'supermarket'
+  | 'general';
+
+/**
+ * Promotor experience level enum values
+ * Column: promotor_assignments.experience_level
+ */
+export type AdvisorExperienceLevelEnum =
+  | 'trainee'
+  | 'junior'
+  | 'senior'
+  | 'expert'
+  | 'team_lead';
+
+/**
+ * Unified targeting criteria stored as JSONB in
+ * promotions, surveys, and brand_communication_plans.
+ *
+ * Client criteria: used by promotions, surveys (when target_roles includes 'client'),
+ *   and communication plans.
+ * Staff criteria: used by surveys only (when target_roles includes 'promotor' or 'asesor_de_ventas').
+ */
+export interface TargetingCriteria {
+  // --- Client criteria ---
+  zone_ids?: string[];
+  market_ids?: string[];
+  client_type_categories?: ClientTypeCategoryEnum[];
+  client_type_ids?: string[];
+  commercial_structure_ids?: string[];
+  tier_ids?: string[];
+
+  // Equipment
+  has_meat_fridge?: boolean;
+  has_soda_fridge?: boolean;
+  accepts_card?: boolean;
+
+  // Demographics
+  gender?: GenderValue[];
+  min_age?: number;
+  max_age?: number;
+
+  // Communication preferences
+  email_opt_in?: boolean;
+  whatsapp_opt_in?: boolean;
+
+  // Business profile (from clients.metadata JSONB)
+  employees?: string[];
+  supply_sources?: string[];
+  digital_restock?: boolean;
+  offers_topups?: boolean;
+
+  // --- Staff criteria (surveys only) ---
+  staff_zone_ids?: string[];
+  staff_specializations?: AdvisorSpecializationEnum[];
+  staff_experience_levels?: AdvisorExperienceLevelEnum[];
+  staff_distributor_ids?: string[];
+}
+
+/**
+ * Promotion interface
+ * Table: promotions
+ * Note: promotions use `status` (NOT promotion_status)
+ */
+export interface Promotion {
+  id: string;
+  public_id: string;
+  tenant_id: string;
+  brand_id: string;
+  name: string;
+  description?: string | null;
+  promotion_type: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  days_of_week?: number[] | null;
+  discount_percentage?: number | null;
+  discount_amount?: number | null;
+  min_purchase_amount?: number | null;
+  max_discount_amount?: number | null;
+  buy_quantity?: number | null;
+  get_quantity?: number | null;
+  points_multiplier?: number | null;
+  usage_limit_per_client?: number | null;
+  usage_limit_total?: number | null;
+  usage_count_total?: number;
+  budget_allocated?: number | null;
+  budget_spent?: number;
+  priority?: number;
+  stackable?: boolean;
+  auto_apply?: boolean;
+  requires_code?: boolean;
+  promo_code?: string | null;
+  terms_and_conditions?: string | null;
+  internal_notes?: string | null;
+  creative_assets?: unknown | null;
+  targeting_criteria?: TargetingCriteria | null;
+  approved_at?: string | null;
+  approval_notes?: string | null;
+  created_by?: string;
+  created_at: string;
+  updated_at?: string;
+  deleted_at?: string | null;
+}
+
+/**
+ * Brand communication plan interface
+ * Table: brand_communication_plans
+ */
+export interface BrandCommunicationPlan {
+  id: string;
+  public_id: string;
+  tenant_id: string;
+  brand_id: string;
+  plan_name: string;
+  plan_period?: string | null;
+  target_locations?: string | null;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  targeting_criteria?: TargetingCriteria | null;
+  created_at: string;
+  updated_at?: string;
+  deleted_at?: string | null;
 }

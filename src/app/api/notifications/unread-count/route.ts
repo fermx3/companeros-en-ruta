@@ -13,13 +13,33 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { data: profile, error: profileError } = await supabase
+    // Resolve identity: staff (user_profiles) or client (clients)
+    let filterField: 'user_profile_id' | 'client_id' = 'user_profile_id';
+    let filterValue: string | null = null;
+
+    const { data: profile } = await supabase
       .from('user_profiles')
       .select('id')
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    if (profile) {
+      filterValue = profile.id;
+    } else {
+      const { data: client } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .single();
+
+      if (client) {
+        filterField = 'client_id';
+        filterValue = client.id;
+      }
+    }
+
+    if (!filterValue) {
       return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 });
     }
 
@@ -27,7 +47,7 @@ export async function GET() {
     const { count, error: countError } = await supabase
       .from('notifications')
       .select('id', { count: 'exact', head: true })
-      .eq('user_profile_id', profile.id)
+      .eq(filterField, filterValue)
       .eq('is_read', false)
       .is('deleted_at', null);
 

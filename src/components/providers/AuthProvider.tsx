@@ -17,6 +17,8 @@ interface AuthContextType {
   userRoles: UserRole[]
   /** Brand-specific roles with brand_id and is_primary info */
   userBrandRoles: UserBrandRole[]
+  /** The client record ID when the user is a client (null for staff users) */
+  clientId: string | null
   loading: boolean
   /** True after the initial profile/roles fetch has completed (even if it failed) */
   initialized: boolean
@@ -36,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<unknown>(null)
   const [userRoles, setUserRoles] = useState<UserRole[]>([])
   const [userBrandRoles, setUserBrandRoles] = useState<UserBrandRole[]>([])
+  const [clientId, setClientId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [initialized, setInitialized] = useState(false)
   const [profileError, setProfileError] = useState(false)
@@ -177,9 +180,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (clientRecord && clientRecord.status === 'active') {
+        setClientId(clientRecord.id)
         setUserRoles(['client'] as UserRole[])
         hasValidDataRef.current = true
       } else {
+        setClientId(null)
         setUserRoles([])
       }
     } catch (error) {
@@ -273,6 +278,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUserProfile(null)
             setUserRoles([])
             setUserBrandRoles([])
+            setClientId(null)
           }
 
           if (isMounted) {
@@ -301,6 +307,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserProfile(null)
     setUserRoles([])
     setUserBrandRoles([])
+    setClientId(null)
     setErrorMessage(null)
     setProfileError(false)
     hasValidDataRef.current = false
@@ -331,6 +338,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       userProfile,
       userRoles,
       userBrandRoles,
+      clientId,
       loading,
       initialized,
       profileError,

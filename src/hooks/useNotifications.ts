@@ -17,7 +17,7 @@ interface UseNotificationsReturn {
 }
 
 export function useNotifications(): UseNotificationsReturn {
-  const { userProfile } = useAuth();
+  const { userProfile, clientId } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -25,6 +25,9 @@ export function useNotifications(): UseNotificationsReturn {
 
   // Extract profile id safely — userProfile is typed as `unknown`
   const profileId = (userProfile as { id?: string } | null)?.id ?? null;
+
+  // Gate: at least one identity must be resolved before fetching
+  const hasIdentity = !!(profileId || clientId);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -54,25 +57,29 @@ export function useNotifications(): UseNotificationsReturn {
 
   // Initial fetch
   useEffect(() => {
-    if (!profileId) return;
+    if (!hasIdentity) return;
     setLoading(true);
     refresh().finally(() => setLoading(false));
-  }, [profileId, refresh]);
+  }, [hasIdentity, refresh]);
 
   // Realtime subscription for new notifications
   useEffect(() => {
-    if (!profileId) return;
+    if (!hasIdentity) return;
+
+    // Determine which column to subscribe to
+    const filterColumn = profileId ? 'user_profile_id' : 'client_id';
+    const filterValue = profileId ?? clientId;
 
     const supabase = supabaseRef.current;
     const channel = supabase
-      .channel(`notifications:${profileId}`)
+      .channel(`notifications:${filterValue}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `user_profile_id=eq.${profileId}`,
+          filter: `${filterColumn}=eq.${filterValue}`,
         },
         (payload) => {
           const newNotification = payload.new as Notification;
@@ -85,7 +92,7 @@ export function useNotifications(): UseNotificationsReturn {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profileId]);
+  }, [hasIdentity, profileId, clientId]);
 
   const markAsRead = useCallback(async (ids: string[]) => {
     if (ids.length === 0) return;

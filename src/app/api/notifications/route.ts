@@ -2,26 +2,51 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 /**
+ * Resolves the authenticated user's identity for notification queries.
+ * Staff users have a user_profile_id; client users have a client_id.
+ * Returns the appropriate filter field and value.
+ */
+async function resolveNotificationIdentity(supabase: ReturnType<typeof createClient>) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) return { error: 'No autorizado', status: 401 } as const;
+
+  // Try user_profiles first (staff users)
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('id, tenant_id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (profile) {
+    return { field: 'user_profile_id' as const, value: profile.id, tenantId: profile.tenant_id };
+  }
+
+  // Fall back to clients table (client users)
+  const { data: client } = await supabase
+    .from('clients')
+    .select('id, tenant_id')
+    .eq('user_id', user.id)
+    .is('deleted_at', null)
+    .single();
+
+  if (client) {
+    return { field: 'client_id' as const, value: client.id, tenantId: client.tenant_id };
+  }
+
+  return { error: 'Perfil no encontrado', status: 404 } as const;
+}
+
+/**
  * GET /api/notifications - Lista paginada de notificaciones del usuario autenticado
  * Query params: ?page=1&limit=20&unread_only=true
  */
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const identity = await resolveNotificationIdentity(supabase);
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id, tenant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 });
+    if ('error' in identity) {
+      return NextResponse.json({ error: identity.error }, { status: identity.status });
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -36,7 +61,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('notifications')
       .select('*', { count: 'exact' })
-      .eq('user_profile_id', profile.id)
+      .eq(identity.field, identity.value)
       .is('deleted_at', null);
 
     if (unreadOnly) {
@@ -75,20 +100,10 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const supabase = createClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const identity = await resolveNotificationIdentity(supabase);
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id, tenant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 });
+    if ('error' in identity) {
+      return NextResponse.json({ error: identity.error }, { status: identity.status });
     }
 
     const body = await request.json();
@@ -108,7 +123,7 @@ export async function PATCH(request: NextRequest) {
     let query = supabase
       .from('notifications')
       .update({ is_read: true, read_at: new Date().toISOString() })
-      .eq('user_profile_id', profile.id)
+      .eq(identity.field, identity.value)
       .eq('is_read', false);
 
     if (!mark_all_read && notification_ids) {
@@ -139,20 +154,10 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = createClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const identity = await resolveNotificationIdentity(supabase);
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id, tenant_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 });
+    if ('error' in identity) {
+      return NextResponse.json({ error: identity.error }, { status: identity.status });
     }
 
     const body = await request.json();
@@ -172,7 +177,7 @@ export async function DELETE(request: NextRequest) {
     let query = supabase
       .from('notifications')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('user_profile_id', profile.id)
+      .eq(identity.field, identity.value)
       .is('deleted_at', null);
 
     if (delete_all_read) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { resolveIdColumn } from '@/lib/utils/public-id';
-import { createNotification, getClientUserProfileId } from '@/lib/notifications';
+import { createNotification } from '@/lib/notifications';
 
 /**
  * API Route para obtener un cliente específico por su public_id
@@ -247,22 +247,19 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // Notify the client about the status change
     try {
-      const clientProfileId = await getClientUserProfileId(serviceSupabase, updatedClient.id)
-      if (clientProfileId) {
-        const statusLabels: Record<string, string> = {
-          active: 'Activo',
-          inactive: 'Inactivo',
-          suspended: 'Suspendido',
-        }
-        await createNotification({
-          tenant_id: profile.tenant_id,
-          user_profile_id: clientProfileId,
-          title: 'Estado actualizado',
-          message: `Tu estado ha sido cambiado a: ${statusLabels[updatedClient.status!] ?? updatedClient.status}`,
-          notification_type: 'client_status_changed',
-          action_url: '/client/profile',
-        })
+      const statusLabels: Record<string, string> = {
+        active: 'Activo',
+        inactive: 'Inactivo',
+        suspended: 'Suspendido',
       }
+      await createNotification({
+        tenant_id: profile.tenant_id,
+        client_id: updatedClient.id,
+        title: 'Estado actualizado',
+        message: `Tu estado ha sido cambiado a: ${statusLabels[updatedClient.status!] ?? updatedClient.status}`,
+        notification_type: 'client_status_changed',
+        action_url: '/client/profile',
+      })
     } catch (notifError) {
       console.error('[PATCH /api/admin/clients/[clientId]] Notification error:', notifError)
     }

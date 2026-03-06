@@ -188,6 +188,7 @@ export type Database = {
           public_id: string | null
           start_date: string
           target_locations: string | null
+          targeting_criteria: Record<string, unknown> | null
           tenant_id: string
           updated_at: string | null
         }
@@ -203,6 +204,7 @@ export type Database = {
           public_id?: string | null
           start_date: string
           target_locations?: string | null
+          targeting_criteria?: Record<string, unknown> | null
           tenant_id: string
           updated_at?: string | null
         }
@@ -218,6 +220,7 @@ export type Database = {
           public_id?: string | null
           start_date?: string
           target_locations?: string | null
+          targeting_criteria?: Record<string, unknown> | null
           tenant_id?: string
           updated_at?: string | null
         }
@@ -2911,6 +2914,7 @@ export type Database = {
       notifications: {
         Row: {
           action_url: string | null
+          client_id: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -2922,10 +2926,11 @@ export type Database = {
           tenant_id: string
           title: string
           updated_at: string
-          user_profile_id: string
+          user_profile_id: string | null
         }
         Insert: {
           action_url?: string | null
+          client_id?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -2937,10 +2942,11 @@ export type Database = {
           tenant_id: string
           title: string
           updated_at?: string
-          user_profile_id: string
+          user_profile_id?: string | null
         }
         Update: {
           action_url?: string | null
+          client_id?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -2952,7 +2958,7 @@ export type Database = {
           tenant_id?: string
           title?: string
           updated_at?: string
-          user_profile_id?: string
+          user_profile_id?: string | null
         }
         Relationships: [
           {
@@ -3002,6 +3008,13 @@ export type Database = {
             columns: ["user_profile_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -4741,6 +4754,7 @@ export type Database = {
           start_date: string
           start_time: string | null
           status: Database["public"]["Enums"]["promotion_status_enum"] | null
+          targeting_criteria: Record<string, unknown> | null
           tenant_id: string
           terms_and_conditions: string | null
           updated_at: string | null
@@ -4785,6 +4799,7 @@ export type Database = {
           start_date: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["promotion_status_enum"] | null
+          targeting_criteria?: Record<string, unknown> | null
           tenant_id: string
           terms_and_conditions?: string | null
           updated_at?: string | null
@@ -4829,6 +4844,7 @@ export type Database = {
           start_date?: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["promotion_status_enum"] | null
+          targeting_criteria?: Record<string, unknown> | null
           tenant_id?: string
           terms_and_conditions?: string | null
           updated_at?: string | null
@@ -6227,6 +6243,7 @@ export type Database = {
             | null
           target_roles: Database["public"]["Enums"]["survey_target_role_enum"][]
           target_zone_ids: string[] | null
+          targeting_criteria: Record<string, unknown> | null
           tenant_id: string
           title: string
           updated_at: string
@@ -6252,6 +6269,7 @@ export type Database = {
             | null
           target_roles?: Database["public"]["Enums"]["survey_target_role_enum"][]
           target_zone_ids?: string[] | null
+          targeting_criteria?: Record<string, unknown> | null
           tenant_id: string
           title: string
           updated_at?: string
@@ -6277,6 +6295,7 @@ export type Database = {
             | null
           target_roles?: Database["public"]["Enums"]["survey_target_role_enum"][]
           target_zone_ids?: string[] | null
+          targeting_criteria?: Record<string, unknown> | null
           tenant_id?: string
           title?: string
           updated_at?: string
