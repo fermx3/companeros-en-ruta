@@ -8,9 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/form-legacy'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
-import { Gift, ArrowLeft, ArrowRight, Calendar, Target, FileText } from 'lucide-react'
+import { Gift, ArrowLeft, ArrowRight, Calendar, Target, FileText, Users } from 'lucide-react'
 import { WizardStepper } from '@/components/ui/wizard-stepper'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { TargetingBuilder } from '@/components/targeting/TargetingBuilder'
+import { TargetingSummary } from '@/components/targeting/TargetingSummary'
+import type { TargetingCriteria } from '@/lib/types/database'
 
 type PromotionType =
   | 'discount_percentage'
@@ -52,7 +55,10 @@ interface FormData {
   requires_code: boolean
   promo_code: string
 
-  // Step 4 - Review
+  // Step 4 - Targeting
+  targeting_criteria: TargetingCriteria
+
+  // Step 5 - Review
   terms_and_conditions: string
   internal_notes: string
 }
@@ -82,13 +88,14 @@ const STEPS = [
   { id: 'basic-info', label: 'Información Básica', icon: <Gift className="w-4 h-4" /> },
   { id: 'duration', label: 'Vigencia', icon: <Calendar className="w-4 h-4" /> },
   { id: 'options', label: 'Opciones', icon: <Target className="w-4 h-4" /> },
+  { id: 'targeting', label: 'Segmentación', icon: <Users className="w-4 h-4" /> },
   { id: 'review', label: 'Revisión', icon: <FileText className="w-4 h-4" /> },
 ]
 
 export default function CreatePromotionPage() {
   usePageTitle('Crear Promoción')
   const router = useRouter()
-  const { brandFetch } = useBrandFetch()
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const [currentStep, setCurrentStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -119,6 +126,7 @@ export default function CreatePromotionPage() {
     auto_apply: false,
     requires_code: false,
     promo_code: '',
+    targeting_criteria: {},
     terms_and_conditions: '',
     internal_notes: ''
   })
@@ -208,7 +216,7 @@ export default function CreatePromotionPage() {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 4))
+      setCurrentStep(prev => Math.min(prev + 1, 5))
     }
   }
 
@@ -223,9 +231,16 @@ export default function CreatePromotionPage() {
     setError(null)
 
     try {
+      const hasTargeting = Object.values(formData.targeting_criteria).some(v => {
+        if (v === undefined || v === null) return false
+        if (Array.isArray(v)) return v.length > 0
+        return true
+      })
+
       const payload = {
         ...formData,
         days_of_week: formData.days_of_week.length === 7 ? null : formData.days_of_week,
+        targeting_criteria: hasTargeting ? formData.targeting_criteria : null,
         submit_for_approval: submitForApproval
       }
 
@@ -611,7 +626,24 @@ export default function CreatePromotionPage() {
     </div>
   )
 
-  const renderStep4 = () => {
+  const renderStep4 = () => (
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Segmentación de Clientes</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Define qué clientes podrán ver esta promoción. Si no seleccionas filtros, la promoción será visible para todos.
+        </p>
+        <TargetingBuilder
+          value={formData.targeting_criteria}
+          onChange={(criteria) => handleInputChange('targeting_criteria', criteria)}
+          brandId={currentBrandId || ''}
+          audience="client"
+        />
+      </div>
+    </div>
+  )
+
+  const renderStep5 = () => {
     const typeInfo = PROMOTION_TYPES.find(t => t.value === formData.promotion_type)
 
     return (
@@ -669,6 +701,11 @@ export default function CreatePromotionPage() {
                   </span>
                 )}
               </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-500 mb-2">Segmentación</p>
+              <TargetingSummary criteria={formData.targeting_criteria} />
             </div>
           </div>
         </div>
@@ -754,7 +791,7 @@ export default function CreatePromotionPage() {
         <WizardStepper
           steps={STEPS}
           currentStep={currentStep - 1}
-          onStepClick={(index) => currentStep > index + 1 && setCurrentStep(index + 1)}
+          onStepClick={(index) => { if (currentStep > index + 1) setCurrentStep(index + 1) }}
           className="mb-8"
         />
 
@@ -765,10 +802,11 @@ export default function CreatePromotionPage() {
             {currentStep === 2 && renderStep2()}
             {currentStep === 3 && renderStep3()}
             {currentStep === 4 && renderStep4()}
+            {currentStep === 5 && renderStep5()}
           </div>
 
           {/* Actions */}
-          {currentStep < 4 ? (
+          {currentStep < 5 ? (
             <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
               <div>
                 {currentStep > 1 && (

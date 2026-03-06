@@ -8,11 +8,14 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { Calendar, Plus, Edit2, Trash2, ChevronDown, ChevronRight, Layers, Megaphone } from 'lucide-react'
+import { Calendar, Plus, Edit2, Trash2, ChevronDown, ChevronRight, Layers, Megaphone, Users } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
+import { TargetingBuilder } from '@/components/targeting/TargetingBuilder'
+import { TargetingSummary } from '@/components/targeting/TargetingSummary'
+import type { TargetingCriteria } from '@/lib/types/database'
 
 interface PlanMaterial {
   id: string
@@ -39,6 +42,7 @@ interface CommunicationPlan {
   plan_name: string
   plan_period: string | null
   target_locations: string | null
+  targeting_criteria: TargetingCriteria | null
   start_date: string
   end_date: string
   is_active: boolean
@@ -57,6 +61,7 @@ interface POPMaterial {
 export default function BrandCommunicationPlansPage() {
   usePageTitle('Planes de Comunicación')
   const { brandFetch, currentBrandId } = useBrandFetch()
+  const [showTargeting, setShowTargeting] = useState(false)
   const { toast } = useToast()
   const [plans, setPlans] = useState<CommunicationPlan[]>([])
   const [materials, setMaterials] = useState<POPMaterial[]>([])
@@ -73,6 +78,7 @@ export default function BrandCommunicationPlansPage() {
     plan_name: '',
     plan_period: '',
     target_locations: '',
+    targeting_criteria: {} as TargetingCriteria,
     start_date: '',
     end_date: '',
     materials: [] as Array<{ pop_material_id: string; quantity_required: number; placement_notes: string }>,
@@ -129,10 +135,19 @@ export default function BrandCommunicationPlansPage() {
         ? `/api/brand/communication-plans/${editingPlan.id}`
         : '/api/brand/communication-plans'
 
+      const hasTargeting = Object.values(formData.targeting_criteria).some(v => {
+        if (v === undefined || v === null) return false
+        if (Array.isArray(v)) return v.length > 0
+        return true
+      })
+
       const response = await brandFetch(url, {
         method: editingPlan ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          targeting_criteria: hasTargeting ? formData.targeting_criteria : null,
+        })
       })
 
       if (!response.ok) {
@@ -179,6 +194,7 @@ export default function BrandCommunicationPlansPage() {
       plan_name: plan.plan_name,
       plan_period: plan.plan_period || '',
       target_locations: plan.target_locations || '',
+      targeting_criteria: plan.targeting_criteria || {},
       start_date: plan.start_date,
       end_date: plan.end_date,
       materials: plan.brand_communication_plan_materials.map(m => ({
@@ -199,10 +215,12 @@ export default function BrandCommunicationPlansPage() {
   const resetForm = () => {
     setShowForm(false)
     setEditingPlan(null)
+    setShowTargeting(false)
     setFormData({
       plan_name: '',
       plan_period: '',
       target_locations: '',
+      targeting_criteria: {},
       start_date: '',
       end_date: '',
       materials: [],
@@ -340,6 +358,27 @@ export default function BrandCommunicationPlansPage() {
                     rows={2}
                     placeholder="Ej: Zona de cajas y entrada principal"
                   />
+                </div>
+
+                {/* Client Targeting Section */}
+                <div className="border-t pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowTargeting(!showTargeting)}
+                    className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 mb-3"
+                  >
+                    {showTargeting ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    <Users className="w-4 h-4" />
+                    Segmentación de Clientes
+                  </button>
+                  {showTargeting && (
+                    <TargetingBuilder
+                      value={formData.targeting_criteria}
+                      onChange={(criteria) => setFormData(prev => ({ ...prev, targeting_criteria: criteria }))}
+                      brandId={currentBrandId || ''}
+                      audience="client"
+                    />
+                  )}
                 </div>
 
                 {/* Materials Section */}
@@ -538,6 +577,13 @@ export default function BrandCommunicationPlansPage() {
                         <div>
                           <p className="text-sm font-medium text-gray-700">Ubicaciones:</p>
                           <p className="text-sm text-gray-600">{plan.target_locations}</p>
+                        </div>
+                      )}
+
+                      {plan.targeting_criteria && Object.keys(plan.targeting_criteria).length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-1">Segmentación:</p>
+                          <TargetingSummary criteria={plan.targeting_criteria} />
                         </div>
                       )}
 

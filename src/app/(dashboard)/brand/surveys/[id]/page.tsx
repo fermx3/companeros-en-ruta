@@ -9,10 +9,11 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyStatusBadge } from '@/components/surveys/SurveyStatusBadge'
 import { SurveyQuestionBuilder, type QuestionData, type SectionData } from '@/components/surveys/SurveyQuestionBuilder'
 import { SurveyPreviewDialog } from '@/components/surveys/SurveyPreviewDialog'
+import { TargetingSummary } from '@/components/targeting'
 import { ArrowLeft, Send, Edit, BarChart3, AlertCircle, Eye } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
-import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
+import type { SurveyStatusEnum, SurveyTargetRoleEnum, TargetingCriteria } from '@/lib/types/database'
 
 const ROLE_LABELS: Record<string, string> = {
   promotor: 'Promotor',
@@ -30,6 +31,7 @@ interface SurveyDetail {
   start_date: string
   end_date: string
   max_responses_per_user: number
+  targeting_criteria?: TargetingCriteria | null
   rejection_reason?: string
   response_count: number
   created_at: string
@@ -55,6 +57,7 @@ export default function BrandSurveyDetailPage() {
   const [editSections, setEditSections] = useState<SectionData[]>([])
   const [refreshKey, setRefreshKey] = useState(0)
   const [showPreview, setShowPreview] = useState(false)
+  const [catalogs, setCatalogs] = useState<Record<string, { id: string; name: string }[]> | null>(null)
 
   useEffect(() => {
     if (!currentBrandId) return
@@ -81,6 +84,21 @@ export default function BrandSurveyDetailPage() {
     fetchSurvey()
     return () => controller.abort()
   }, [surveyId, brandFetch, currentBrandId, refreshKey])
+
+  // Load catalogs for targeting summary
+  useEffect(() => {
+    if (!currentBrandId || !survey?.targeting_criteria) return
+    const loadCatalogs = async () => {
+      try {
+        const res = await brandFetch('/api/brand/targeting/catalogs')
+        if (res.ok) {
+          const data = await res.json()
+          setCatalogs(data)
+        }
+      } catch { /* ignore */ }
+    }
+    loadCatalogs()
+  }, [currentBrandId, brandFetch, survey?.targeting_criteria])
 
   const handleSubmitForApproval = async () => {
     setActionLoading(true)
@@ -261,6 +279,21 @@ export default function BrandSurveyDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Targeting */}
+      {survey.targeting_criteria && Object.keys(survey.targeting_criteria).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Segmentación</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TargetingSummary
+              criteria={survey.targeting_criteria}
+              catalogs={catalogs || undefined}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Questions */}
       <Card>

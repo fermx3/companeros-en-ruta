@@ -12,7 +12,9 @@ import { ArrowLeft, ArrowRight, Check, Eye } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
-import type { SurveyTargetRoleEnum } from '@/lib/types/database'
+import { TargetingBuilder } from '@/components/targeting/TargetingBuilder'
+import { TargetingSummary } from '@/components/targeting/TargetingSummary'
+import type { SurveyTargetRoleEnum, TargetingCriteria } from '@/lib/types/database'
 
 const STEPS = [
   { id: 'info', label: 'Información' },
@@ -28,18 +30,11 @@ const ROLE_OPTIONS: Array<{ value: SurveyTargetRoleEnum; label: string }> = [
   { value: 'client', label: 'Clientes (M&P)' }
 ]
 
-const CLIENT_CATEGORIES = [
-  { value: 'retail', label: 'Retail' },
-  { value: 'wholesale', label: 'Mayorista' },
-  { value: 'institutional', label: 'Institucional' },
-  { value: 'online', label: 'Online' },
-  { value: 'hybrid', label: 'Híbrido' }
-]
 
 export default function CreateSurveyPage() {
   usePageTitle('Crear Encuesta')
   const router = useRouter()
-  const { brandFetch } = useBrandFetch()
+  const { brandFetch, currentBrandId } = useBrandFetch()
   const { toast } = useToast()
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -53,7 +48,7 @@ export default function CreateSurveyPage() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [targetRoles, setTargetRoles] = useState<SurveyTargetRoleEnum[]>([])
-  const [targetClientCategories, setTargetClientCategories] = useState<string[]>([])
+  const [targetingCriteria, setTargetingCriteria] = useState<TargetingCriteria>({})
   const [maxResponses, setMaxResponses] = useState(1)
   const [questions, setQuestions] = useState<QuestionData[]>([])
   const [surveySections, setSurveySections] = useState<SectionData[]>([])
@@ -62,12 +57,6 @@ export default function CreateSurveyPage() {
   const toggleRole = (role: SurveyTargetRoleEnum) => {
     setTargetRoles(prev =>
       prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
-    )
-  }
-
-  const toggleCategory = (cat: string) => {
-    setTargetClientCategories(prev =>
-      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
     )
   }
 
@@ -96,7 +85,14 @@ export default function CreateSurveyPage() {
           start_date: startDate,
           end_date: endDate,
           target_roles: targetRoles,
-          target_client_type_categories: targetClientCategories.length > 0 ? targetClientCategories : null,
+          target_client_type_categories: targetingCriteria.client_type_categories?.length
+            ? targetingCriteria.client_type_categories
+            : null,
+          targeting_criteria: Object.values(targetingCriteria).some(v => {
+            if (v === undefined || v === null) return false
+            if (Array.isArray(v)) return v.length > 0
+            return true
+          }) ? targetingCriteria : null,
           max_responses_per_user: maxResponses,
           sections: surveySections.map((s, i) => ({
             title: s.title,
@@ -257,27 +253,24 @@ export default function CreateSurveyPage() {
                 </div>
               </div>
 
-              {targetRoles.includes('client') && (
-                <div>
+              {targetRoles.length > 0 && (
+                <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Categorías de cliente (opcional, vacío = todos)
+                    Segmentación detallada (opcional)
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    {CLIENT_CATEGORIES.map(cat => (
-                      <button
-                        key={cat.value}
-                        type="button"
-                        onClick={() => toggleCategory(cat.value)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                          targetClientCategories.includes(cat.value)
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
-                  </div>
+                  <TargetingBuilder
+                    value={targetingCriteria}
+                    onChange={setTargetingCriteria}
+                    brandId={currentBrandId || ''}
+                    audience={
+                      targetRoles.includes('client') && targetRoles.some(r => r !== 'client')
+                        ? 'all'
+                        : targetRoles.includes('client')
+                          ? 'client'
+                          : 'staff'
+                    }
+                    staffRoles={targetRoles.filter((r): r is 'promotor' | 'asesor_de_ventas' => r !== 'client')}
+                  />
                 </div>
               )}
             </>
@@ -322,6 +315,10 @@ export default function CreateSurveyPage() {
                     <span className="text-xs text-gray-500">Dirigida a</span>
                     <p className="text-sm">{targetRoles.map(r => ROLE_OPTIONS.find(o => o.value === r)?.label).join(', ')}</p>
                   </div>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500">Segmentación</span>
+                  <TargetingSummary criteria={targetingCriteria} />
                 </div>
                 {surveySections.length > 0 && (
                   <div>
