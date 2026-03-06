@@ -71,6 +71,9 @@ Este proyecto es un **SaaS multi-tenant** llamado **Compañeros en Ruta** desarr
 | Carga página completa | `PageLoader` | `@/components/ui/feedback` | LoadingSpinner centrado manual |
 | Alerta/error | `Alert` | `@/components/ui/feedback` | divs rojos inline, Card con border-red |
 | Wizard / stepper multi-paso | `WizardStepper` | `@/components/ui/wizard-stepper` | Nav inline con circles, WizardProgress local |
+| Fila de tabla clickeable | `ClickableRow` | `@/components/ui/clickable-row` | `<tr onClick={() => router.push(...)}>` inline |
+| Card clickeable (navega) | `ClickableCard` | `@/components/ui/clickable-card` | `<Link><Card className="hover:...">` inline |
+| Acciones en fila/card | `ListItemActions` | `@/components/ui/list-item-actions` | `onClick={e => e.stopPropagation()}` inline |
 | Iconos | lucide-react | `lucide-react` | SVGs inline, heroicons |
 
 **StatusType soportados:** `active`, `inactive`, `suspended`, `pending`, `completed`, `cancelled`, `expired`
@@ -560,6 +563,78 @@ interface AvatarProps {
 // - No scrollbar (hidden via CSS)
 // - Min width per card: 80px
 // - Mobile-optimized with touch scrolling
+```
+
+### 11. ClickableRow Component (Tablas navegables)
+```tsx
+// Fila de tabla que navega al detalle al hacer click
+// Props: href, className, children (+ cualquier atributo de <tr>)
+import { ClickableRow } from '@/components/ui/clickable-row'
+import { ListItemActions } from '@/components/ui/list-item-actions'
+
+<table>
+  <tbody>
+    <ClickableRow href={`/admin/clients/${client.public_id}`}>
+      <td>{client.business_name}</td>
+      <td>{client.email}</td>
+      <td>
+        <ListItemActions className="flex items-center gap-3">
+          <Button size="sm">Editar</Button>
+          <Button size="sm" variant="outline">Desactivar</Button>
+        </ListItemActions>
+      </td>
+    </ClickableRow>
+  </tbody>
+</table>
+
+// Features:
+// - hover:bg-gray-50 cursor-pointer por defecto
+// - Usa useRouter internamente para navegación
+// - Acepta className override via cn()
+// - ListItemActions aplica stopPropagation automáticamente
+```
+
+### 12. ClickableCard Component (Cards navegables)
+```tsx
+// Card que navega al detalle al hacer click
+// Props: href, className, children
+import { ClickableCard } from '@/components/ui/clickable-card'
+import { ListItemActions } from '@/components/ui/list-item-actions'
+
+<ClickableCard href={`/admin/orders/${order.public_id}`}>
+  <CardContent className="p-4">
+    <div className="flex items-start justify-between">
+      <div>{order.order_number}</div>
+      <ListItemActions>
+        <Button size="sm">Aprobar</Button>
+      </ListItemActions>
+    </div>
+  </CardContent>
+</ClickableCard>
+
+// Features:
+// - Wraps children in <Link> + <Card>
+// - hover:shadow-md transition-shadow cursor-pointer
+// - No necesita 'use client' (usa <Link> de Next.js)
+// - ListItemActions aplica stopPropagation automáticamente
+```
+
+### 13. ListItemActions Component (Acciones sin navegar)
+```tsx
+// Wrapper que aplica stopPropagation para botones de acción
+// Evita que el click en botones dispare la navegación del ClickableRow/ClickableCard
+// Props: className, children
+import { ListItemActions } from '@/components/ui/list-item-actions'
+
+<ListItemActions className="flex items-center gap-3">
+  <Button size="sm">Editar</Button>
+  <Button size="sm" variant="destructive">Eliminar</Button>
+</ListItemActions>
+
+// Features:
+// - stopPropagation en onClick y onKeyDown (Enter/Space)
+// - Acepta className para layout (flex, gap, etc.)
+// - SIEMPRE usar dentro de ClickableRow o ClickableCard
 ```
 
 ## 📱 Layout y Navigation System
