@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useToast } from '@/components/ui/toaster';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -105,7 +106,37 @@ export function NotificationBell() {
   const panelRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, deleteAllRead } = useNotifications();
+  const { toast } = useToast();
+
+  const handleNewNotification = useCallback((notification: Notification) => {
+    const icon = NOTIFICATION_TYPE_ICONS[notification.notification_type] ?? '🔔';
+    toast({
+      title: `${icon} ${notification.title}`,
+      description: notification.message,
+    });
+
+    // Play a short notification tone using Web Audio API
+    try {
+      const ctx = new AudioContext();
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.3);
+      oscillator.onended = () => ctx.close();
+    } catch {
+      // Audio not available (e.g. blocked by browser policy)
+    }
+  }, [toast]);
+
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, deleteAllRead } = useNotifications({
+    onNewNotification: handleNewNotification,
+  });
 
   // Extract the dashboard prefix (e.g. "/promotor", "/client", "/brand") from the current path
   const dashboardPrefix = pathname.match(/^\/(promotor|asesor-ventas|client|admin|brand|supervisor)/)?.[0] ?? '';

@@ -5,6 +5,10 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
 import type { Notification } from '@/lib/types/database';
 
+interface UseNotificationsOptions {
+  onNewNotification?: (notification: Notification) => void;
+}
+
 interface UseNotificationsReturn {
   notifications: Notification[];
   unreadCount: number;
@@ -16,7 +20,7 @@ interface UseNotificationsReturn {
   refresh: () => Promise<void>;
 }
 
-export function useNotifications(): UseNotificationsReturn {
+export function useNotifications(options?: UseNotificationsOptions): UseNotificationsReturn {
   const { userProfile, clientId } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -85,6 +89,7 @@ export function useNotifications(): UseNotificationsReturn {
           const newNotification = payload.new as Notification;
           setNotifications((prev) => [newNotification, ...prev].slice(0, 20));
           setUnreadCount((prev) => prev + 1);
+          options?.onNewNotification?.(newNotification);
         }
       )
       .subscribe();
