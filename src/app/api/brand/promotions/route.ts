@@ -205,6 +205,7 @@ export async function POST(request: NextRequest) {
       terms_and_conditions,
       internal_notes,
       creative_assets,
+      targeting_criteria,
       submit_for_approval = false
     } = body
 
@@ -308,6 +309,7 @@ export async function POST(request: NextRequest) {
       terms_and_conditions: terms_and_conditions?.trim() || null,
       internal_notes: internal_notes?.trim() || null,
       creative_assets: creative_assets || null,
+      targeting_criteria: targeting_criteria || null,
       created_by: userProfileId
     }
 

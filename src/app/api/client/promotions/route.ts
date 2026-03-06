@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { clientMatchesTargeting } from '@/lib/utils/targeting'
+import type { TargetingCriteria } from '@/lib/types/database'
 
 /**
  * GET /api/client/promotions
@@ -20,10 +22,10 @@ export async function GET(request: NextRequest) {
             )
         }
 
-        // 2. Get client profile
+        // 2. Get client profile with targeting fields
         const { data: client, error: clientError } = await supabase
             .from('clients')
-            .select('id, tenant_id')
+            .select('id, tenant_id, zone_id, market_id, client_type_id, commercial_structure_id, has_meat_fridge, has_soda_fridge, accepts_card, email_opt_in, whatsapp_opt_in, gender, date_of_birth')
             .eq('user_id', user.id)
             .single()
 
@@ -34,10 +36,10 @@ export async function GET(request: NextRequest) {
             )
         }
 
-        // 3. Get active brand memberships
+        // 3. Get active brand memberships (with tier info for targeting)
         const { data: memberships, error: membershipsError } = await supabase
             .from('client_brand_memberships')
-            .select('brand_id')
+            .select('brand_id, current_tier_id')
             .eq('client_id', client.id)
             .eq('membership_status', 'active')
             .is('deleted_at', null)
@@ -81,6 +83,8 @@ export async function GET(request: NextRequest) {
         end_date,
         status,
         terms_and_conditions,
+        targeting_criteria,
+        brand_id,
         brand:brands(
           id,
           name,
@@ -109,9 +113,43 @@ export async function GET(request: NextRequest) {
             )
         }
 
+        // Build client targeting profile
+        const tierIds = (memberships || [])
+            .map(m => m.current_tier_id)
+            .filter((t): t is string => t != null)
+
+        const clientProfile = {
+            zone_id: client.zone_id,
+            market_id: client.market_id,
+            client_type_id: client.client_type_id,
+            commercial_structure_id: client.commercial_structure_id,
+            has_meat_fridge: client.has_meat_fridge,
+            has_soda_fridge: client.has_soda_fridge,
+            accepts_card: client.accepts_card,
+            email_opt_in: client.email_opt_in,
+            whatsapp_opt_in: client.whatsapp_opt_in,
+            gender: client.gender,
+            date_of_birth: client.date_of_birth,
+            tier_ids: tierIds,
+        }
+
+        // Filter promotions by targeting criteria
+        const filtered = (promotions || []).filter(promo => {
+            // For tier targeting, use the tier from the specific brand membership
+            const brandMembership = (memberships || []).find(m => m.brand_id === promo.brand_id)
+            const promoProfile = {
+                ...clientProfile,
+                tier_ids: brandMembership?.current_tier_id ? [brandMembership.current_tier_id] : [],
+            }
+            return clientMatchesTargeting(promo.targeting_criteria as TargetingCriteria | null, promoProfile)
+        })
+
+        // Strip targeting_criteria from response
+        const cleanPromotions = filtered.map(({ targeting_criteria, brand_id, ...rest }) => rest)
+
         return NextResponse.json({
-            promotions: promotions || [],
-            total: promotions?.length || 0
+            promotions: cleanPromotions,
+            total: cleanPromotions.length
         })
 
     } catch (error) {

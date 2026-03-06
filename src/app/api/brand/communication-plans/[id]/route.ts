@@ -22,6 +22,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         plan_name,
         plan_period,
         target_locations,
+        targeting_criteria,
         start_date,
         end_date,
         is_active,
@@ -98,6 +99,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       plan_name,
       plan_period,
       target_locations,
+      targeting_criteria,
       start_date,
       end_date,
       is_active,
@@ -110,6 +112,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (plan_name !== undefined) updates.plan_name = plan_name.trim()
     if (plan_period !== undefined) updates.plan_period = plan_period
     if (target_locations !== undefined) updates.target_locations = target_locations
+    if (targeting_criteria !== undefined) updates.targeting_criteria = targeting_criteria || null
     if (start_date !== undefined) updates.start_date = start_date
     if (end_date !== undefined) updates.end_date = end_date
     if (is_active !== undefined) updates.is_active = is_active
@@ -185,6 +188,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         plan_name,
         plan_period,
         target_locations,
+        targeting_criteria,
         start_date,
         end_date,
         is_active,

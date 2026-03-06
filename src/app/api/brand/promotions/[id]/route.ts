@@ -186,6 +186,7 @@ export async function PATCH(
       terms_and_conditions,
       internal_notes,
       creative_assets,
+      targeting_criteria,
       submit_for_approval,
       pause,
       resume
@@ -222,6 +223,7 @@ export async function PATCH(
     if (terms_and_conditions !== undefined) updateData.terms_and_conditions = terms_and_conditions?.trim() || null
     if (internal_notes !== undefined) updateData.internal_notes = internal_notes?.trim() || null
     if (creative_assets !== undefined) updateData.creative_assets = creative_assets
+    if (targeting_criteria !== undefined) updateData.targeting_criteria = targeting_criteria
 
     // Handle status changes
     if (submit_for_approval && currentPromotion.status === 'draft') {

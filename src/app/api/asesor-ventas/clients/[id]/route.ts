@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
+import { clientMatchesTargeting } from '@/lib/utils/targeting'
+import type { TargetingCriteria } from '@/lib/types/database'
 
 interface RouteParams {
   params: Promise<{
@@ -47,6 +49,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         accepts_card,
         onboarding_completed,
         metadata,
+        commercial_structure_id,
+        zone_id,
+        market_id,
+        client_type_id,
         zone:zones(id, name),
         market:markets(id, name),
         client_type:client_types(id, name)
@@ -129,6 +135,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         start_date,
         end_date,
         status,
+        targeting_criteria,
+        brand_id,
         brand:brands(id, name)
       `)
       .eq('status', 'active')
@@ -219,7 +227,35 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       created_at: m.created_at
     }))
 
-    const formattedPromotions = (promotions || []).map(p => ({
+    // Build client targeting profile for filtering
+    const clientTierIds = (memberships || [])
+      .map(m => {
+        const tier = Array.isArray(m.tier) ? m.tier[0] : m.tier
+        return tier?.id
+      })
+      .filter((t): t is string => t != null)
+
+    const clientProfile = {
+      zone_id: clientData.zone_id,
+      market_id: clientData.market_id,
+      client_type_id: clientData.client_type_id,
+      commercial_structure_id: clientData.commercial_structure_id,
+      has_meat_fridge: clientData.has_meat_fridge,
+      has_soda_fridge: clientData.has_soda_fridge,
+      accepts_card: clientData.accepts_card,
+      email_opt_in: clientData.email_opt_in,
+      whatsapp_opt_in: clientData.whatsapp_opt_in,
+      gender: clientData.gender,
+      date_of_birth: clientData.date_of_birth,
+      tier_ids: clientTierIds,
+    }
+
+    // Filter promotions by targeting criteria
+    const targetedPromotions = (promotions || []).filter(p =>
+      clientMatchesTargeting(p.targeting_criteria as TargetingCriteria | null, clientProfile)
+    )
+
+    const formattedPromotions = targetedPromotions.map(p => ({
       id: p.id,
       public_id: p.public_id,
       name: p.name,

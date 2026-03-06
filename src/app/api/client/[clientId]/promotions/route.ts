@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { clientMatchesTargeting } from '@/lib/utils/targeting'
+import type { TargetingCriteria } from '@/lib/types/database'
 
 interface RouteParams {
   params: Promise<{ clientId: string }>
@@ -18,10 +20,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { searchParams } = new URL(request.url)
   const brandId = searchParams.get('brand_id')
 
+  // Get client profile for targeting evaluation
+  const { data: clientData } = await supabase
+    .from('clients')
+    .select('zone_id, market_id, client_type_id, commercial_structure_id, has_meat_fridge, has_soda_fridge, accepts_card, email_opt_in, whatsapp_opt_in, gender, date_of_birth')
+    .eq('id', clientId)
+    .single()
+
   // Find client_brand_membership IDs for this client
   let membershipsQuery = supabase
     .from('client_brand_memberships')
-    .select('id')
+    .select('id, brand_id, current_tier_id')
     .eq('client_id', clientId)
     .is('deleted_at', null)
 
@@ -50,6 +59,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       usage_limit_per_client,
       usage_limit_total,
       usage_count_total,
+      targeting_criteria,
+      brand_id,
       promotion_redemptions (
         id,
         client_brand_membership_id
@@ -71,8 +82,28 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Error fetching promotions' }, { status: 500 })
   }
 
+  // Filter promotions by targeting criteria
+  const targetedPromotions = (promotions || []).filter(promo => {
+    if (!clientData) return true // no client data = skip filtering
+    const brandMembership = (memberships || []).find(m => m.brand_id === promo.brand_id)
+    return clientMatchesTargeting(promo.targeting_criteria as TargetingCriteria | null, {
+      zone_id: clientData.zone_id,
+      market_id: clientData.market_id,
+      client_type_id: clientData.client_type_id,
+      commercial_structure_id: clientData.commercial_structure_id,
+      has_meat_fridge: clientData.has_meat_fridge,
+      has_soda_fridge: clientData.has_soda_fridge,
+      accepts_card: clientData.accepts_card,
+      email_opt_in: clientData.email_opt_in,
+      whatsapp_opt_in: clientData.whatsapp_opt_in,
+      gender: clientData.gender,
+      date_of_birth: clientData.date_of_birth,
+      tier_ids: brandMembership?.current_tier_id ? [brandMembership.current_tier_id] : [],
+    })
+  })
+
   // Transform promotions to include usage info for this client
-  const clientPromotions = (promotions || []).map(promo => {
+  const clientPromotions = targetedPromotions.map(promo => {
     const redemptionsByClient = promo.promotion_redemptions?.filter(
       (r: { client_brand_membership_id: string }) =>
         membershipIds.includes(r.client_brand_membership_id)

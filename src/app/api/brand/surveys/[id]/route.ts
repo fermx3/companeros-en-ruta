@@ -125,6 +125,7 @@ export async function PUT(
       target_roles,
       target_zone_ids,
       target_client_type_categories,
+      targeting_criteria,
       start_date,
       end_date,
       max_responses_per_user,
@@ -139,6 +140,7 @@ export async function PUT(
     if (target_roles !== undefined) updateData.target_roles = target_roles
     if (target_zone_ids !== undefined) updateData.target_zone_ids = target_zone_ids?.length > 0 ? target_zone_ids : null
     if (target_client_type_categories !== undefined) updateData.target_client_type_categories = target_client_type_categories?.length > 0 ? target_client_type_categories : null
+    if (targeting_criteria !== undefined) updateData.targeting_criteria = targeting_criteria || null
     if (start_date !== undefined) updateData.start_date = start_date
     if (end_date !== undefined) updateData.end_date = end_date
     if (max_responses_per_user !== undefined) updateData.max_responses_per_user = max_responses_per_user
