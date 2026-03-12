@@ -1,6 +1,6 @@
 # MVP Status - Compañeros en Ruta
 
-**Last Updated:** 2026-02-22
+**Last Updated:** 2026-03-05
 **Target:** Implementación requerimientos PerfectApp según especificaciones cliente
 
 ---
@@ -27,21 +27,22 @@
 | Points System | Complete | Complete | None |
 | **Auth & Role Guards** | ✅ Complete | useRequireRole hook + all 6 layouts | None |
 | **Sistema QR** | ✅ Completo | Generación + Escaneo + Redención + Billing | None |
-| **Promociones UI** | ✅ Formulario + Workflow | Formulario + Banners + Aprobación Admin + Targeting | Targeting/segmentación (TASK-022, depende REQ-044) |
+| **Promociones UI** | ✅ Completo | Formulario + Banners + Aprobación Admin + Targeting | None |
 | **Carga Evidencia (Promotor)** | ✅ Complete | PhotoEvidenceUpload con GPS, integrado en wizard | None |
 | **Carga Evidencia (Cliente)** | ❌ No implementado | Cliente sube fotos para campañas/planes que requieren evidencia (CLI-006) | CLI-006 pendiente |
 | **Flujo Visita Assessment** | ✅ Wizard 3 secciones | 3 secciones assessment | None |
-| **Notificaciones** | ✅ Completo | In-app Bell + API + integrado en 8 flujos | None |
+| **Notificaciones** | ✅ Completo | In-app Bell + API + integrado en 8 flujos + soporte client_id | None |
 | **Encuestas** | ✅ Completo | Schema + Builder + Aprobación + Segmentación + Form + Resultados | None |
 
-**Overall MVP Progress:** ✅ 100% P0 features | ~89% total (incluyendo P1 y polish)
-**Audit Status:** 32 hallazgos documentados (0 P0 pendientes ✅, 14 P1, 7 P2) across 6 perfiles — 72/83 páginas funcionales, 86/86 APIs OK
+**Overall MVP Progress:** ✅ 100% P0 features | ~91% total (incluyendo P1 y polish)
+**Audit Status:** 32 hallazgos documentados (0 P0 pendientes ✅, 12 P1, 7 P2) across 6 perfiles — 72/83 páginas funcionales, 88/88 APIs OK
 **Cambios 2026-02-17:** SUPV-001/002/003 ✅, ADMIN-002 ✅, BRAND-001/002/003 ✅ (commits fd4b58b, c0fdfb5, 1f56248) · CLI-001 ✅ (client/profile page)
 **Cambios 2026-02-19:** CLI-006 documentado (Carga Evidencia Cliente — spec completa en CLI-P1, tabla `client_evidence`, archivos a crear/editar, criterios de verificación, REQ-047 marcado como parcial)
 **Cambios 2026-02-20:** OPT-004 ✅ (initplan fix 327 RLS policies), fix advisor_id→promotor_id en RLS, field_users products RLS, notifications delete, survey service client
 **Cambios 2026-02-21:** OPT-005 ✅ (RLS consolidation 364→135 policies, 63% reduction), OPT-006 ✅ (drop 46 unused GIN indexes), fix function_search_path (87 functions), fix audit_logs RLS+FK indexes, move pg_trgm→extensions schema
 **Cambios 2026-02-22:** BRAND-007 ✅ (Unificar brand/clients + memberships — read-only + inline membership actions, eliminar create/edit cliente por marca), CLI-004 ✅ (onboarding wizard 2 pasos + migración 10 cols + refactor owner_name 55 archivos), ADMIN-007 ✅ (estadísticas reales en detalle cliente), ADMIN-008 ✅ (fix edit form validation — status enum, UUID, numeric coercion, field-level errors), toast notifications + unsaved changes warning, debounce 300ms en search fields, collapsible sidebar groups brand nav, notifications expandidas a 6 API routes más, fix metric labels promotor visits, fix zones RLS policy advisor→promotor
 **Cambios 2026-02-25:** MIG-001 ✅ (schema gaps — tabla `centrales` + zone sync triggers), MIG-002/MIG-003 documentados (migration strategy docs)
+**Cambios 2026-03-05:** TASK-022 ✅ (Targeting/segmentación — columna `targeting_criteria` JSONB en promotions/surveys/communication_plans, TargetingBuilder UI, filtrado server-side `clientMatchesTargeting`, staff targeting, 2 APIs nuevas `/brand/targeting/catalogs` y `/reach`, integración en 5 páginas dashboard). Fix notificaciones clientes — `client_id` en `notifications` (migración + RLS + AuthProvider expone `clientId` + useNotifications soporta clientes + 5 callers actualizados). Commits: `a058eda`, `5c02e46`, `c8b3335`.
 
 ---
 
@@ -279,7 +280,7 @@ Cliente genera QR → Asesor de Ventas (del distribuidor) escanea y canjea
 |----|-------|------------|----------|--------------|
 | TASK-020 | Extender schema promotions | REQ-060 | 2 | - |
 | TASK-021 | ~~Crear formulario creación promoción~~ | REQ-011 | 5 | TASK-020 | **DONE** |
-| TASK-022 | Crear UI targeting promoción | REQ-012, REQ-062 | 3 | TASK-021 |
+| TASK-022 | ~~Crear UI targeting promoción~~ | REQ-012, REQ-062 | 3 | TASK-021 | **DONE** |
 | TASK-023 | ~~Crear workflow aprobación~~ | REQ-012 | 4 | TASK-020 | **DONE** |
 | TASK-024 | Crear API redención promoción | REQ-064 | 3 | TASK-020, TASK-014 |
 | TASK-025 | ~~Crear carrusel promociones semanales~~ | REQ-042 | 2 | TASK-020 | **DONE** (WeeklyPromotionsBanner component) |
@@ -549,9 +550,9 @@ Para validar la implementación:
 ## Auditoría: Panel de Administración — Cambios Pendientes
 
 **Descubierto:** 2026-02-16
-**Estado:** Documentado, pendiente de implementación
+**Estado:** Documentado — ADMIN-004/005 ✅ RESUELTOS (2026-03-12), ADMIN-006 P1 pendiente
 
-El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users, brands, clients, surveys, promotions), pero una auditoría contra los requerimientos revela gaps funcionales: items faltantes en la navegación, páginas placeholder y features no implementados.
+El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users, brands, clients, surveys, promotions), pero una auditoría contra los requerimientos revela gaps funcionales: items faltantes en la navegación y features no implementados.
 
 ### ADMIN-P0 — Bugs / Gaps funcionales (bloquean flujo existente)
 
@@ -565,8 +566,8 @@ El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| ADMIN-004 | **Settings: placeholder "Página en Construcción"** — Muestra icono amarillo y texto placeholder, sin funcionalidad real. | `src/app/(dashboard)/admin/settings/page.tsx` | Implementar formulario GET/PUT contra `/api/admin/settings` que lea/escriba `tenants` table (nombre, email, teléfono, zona horaria, país). |
-| ADMIN-005 | **Distribuidores sin CRUD** — `adminService.getDistributors()` existe y se usa en role assignment (asesor_de_ventas), pero no hay UI para crear/editar distribuidores. Si no existen distribuidores, no se puede asignar el rol asesor_de_ventas. | Crear: `admin/distributors/page.tsx`, `api/admin/distributors/route.ts`, `api/admin/distributors/[id]/route.ts` | Crear CRUD + agregar link en sidebar nav. |
+| ~~ADMIN-004~~ | ~~**Settings: placeholder "Página en Construcción"**~~ | `src/app/(dashboard)/admin/settings/page.tsx` | ✅ **DONE** (2026-03-12) — Formulario GET/PUT implementado contra `/api/admin/settings`, lee/escribe `tenants` table. |
+| ~~ADMIN-005~~ | ~~**Distribuidores sin CRUD**~~ | `admin/distributors/page.tsx`, `api/admin/distributors/route.ts`, `api/admin/distributors/[id]/route.ts` | ✅ **DONE** (2026-03-12) — CRUD completo (list + create + edit) + link en sidebar nav. |
 | ADMIN-006 | **Catálogos sin administración (Markets, Client Types, Commercial Structures)** — Se usan como filtros/asignación en clientes pero no son administrables por el admin. | Crear: `admin/catalogs/page.tsx` + API routes para markets, client_types, commercial_structures | Página con tabs por catálogo, CRUD por cada uno. O bien secciones dentro de Settings. |
 | ~~ADMIN-007~~ | ~~**Estadísticas de cliente: placeholders**~~ | `src/app/(dashboard)/admin/clients/[clientId]/page.tsx` | ✅ **DONE** (2026-02-22) — Queries reales contra `visits` y `orders` (total visitas, total órdenes, revenue, última orden). Commit: `12ecaa6`. |
 
@@ -575,9 +576,9 @@ El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
 | ~~ADMIN-008~~ | ~~**Editar perfil de usuario incompleto**~~ | `src/app/(dashboard)/admin/users/[id]/page.tsx` | ✅ **DONE** (2026-02-22) — Fix edit form validation (status enum, UUID, numeric coercion, field-level errors). Commit: `12ecaa6`. |
-| ADMIN-009 | **Soft delete de clientes sin botón** — La API soporta soft delete pero la UI no tiene botón de eliminar/archivar. | `src/app/(dashboard)/admin/clients/[clientId]/page.tsx` | Agregar botón con confirmación modal. |
-| ADMIN-010 | **Verificar preview de encuesta antes de aprobar** — La página carga `survey_questions` pero verificar que se rendericen como preview (read-only) antes de aprobar. | `src/app/(dashboard)/admin/surveys/[id]/page.tsx` | Verificar/implementar renderizado de preguntas como preview. |
-| ADMIN-011 | **Indicador de ventana 48h en promociones** — REQ-012 menciona validación en 48 horas. No hay indicador visual de cuánto tiempo lleva pendiente una promoción. | `src/app/(dashboard)/admin/promotions/page.tsx` | Calcular `hours_pending = now - created_at` y mostrar badge de urgencia si > 24h. |
+| ~~ADMIN-009~~ | ~~**Soft delete de clientes sin botón**~~ | `src/app/(dashboard)/admin/clients/[clientId]/page.tsx` | ✅ **DONE** (2026-03-05) — DELETE handler + botón con confirmación modal en detalle de cliente. |
+| ~~ADMIN-010~~ | ~~**Verificar preview de encuesta antes de aprobar**~~ | `src/app/(dashboard)/admin/surveys/[id]/page.tsx` | ✅ **DONE** (2026-03-05) — SurveyPreviewDialog ya implementado con estado, botón y diálogo. |
+| ~~ADMIN-011~~ | ~~**Indicador de ventana 48h en promociones**~~ | `src/app/(dashboard)/admin/promotions/page.tsx` | ✅ **DONE** (2026-03-05) — Badge urgencia en lista + barra progreso SLA en detalle. |
 
 ### Resumen de archivos a tocar
 
@@ -586,8 +587,8 @@ El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users
 | ADMIN-001 | Editar | `admin/layout.tsx` — agregar Promociones al nav |
 | ADMIN-002 | Crear | `admin/zones/page.tsx`, `api/admin/zones/route.ts`, `api/admin/zones/[id]/route.ts` |
 | ADMIN-003 | Crear | `admin/profile/page.tsx` (o redirect) |
-| ADMIN-004 | Reescribir | `admin/settings/page.tsx` + crear `api/admin/settings/route.ts` |
-| ADMIN-005 | Crear | `admin/distributors/page.tsx`, `api/admin/distributors/route.ts`, `[id]/route.ts` |
+| ~~ADMIN-004~~ | ~~Reescribir~~ | ~~`admin/settings/page.tsx` + `api/admin/settings/route.ts`~~ ✅ DONE |
+| ~~ADMIN-005~~ | ~~Crear~~ | ~~`admin/distributors/page.tsx`, `api/admin/distributors/route.ts`, `[id]/route.ts`~~ ✅ DONE |
 | ADMIN-006 | Crear | `admin/catalogs/page.tsx` + API routes para markets, client_types, commercial_structures |
 | ADMIN-007 | Editar | `admin/clients/[clientId]/page.tsx` — queries reales para stats |
 | ADMIN-008 | Editar | `admin/users/[id]/page.tsx` — modo edición completo |
@@ -608,7 +609,7 @@ El panel de admin (`/admin`) tiene las funcionalidades core implementadas (users
 ## Auditoría: Brand Manager — Cambios Pendientes
 
 **Descubierto:** 2026-02-16
-**Estado:** ✅ BRAND-001/002/003 RESUELTOS (2026-02-17, commit 1f56248) — BRAND-004/005 P1 pendientes
+**Estado:** ✅ BRAND-001/002/003/004/005 RESUELTOS (2026-02-17, commit 1f56248)
 **Cobertura:** 21/21 páginas funcionales, 31/31 APIs
 
 El perfil Brand Manager (`/brand`) tiene la mayoría de funcionalidades implementadas (dashboard, clients, reports, tiers, memberships, promotions, surveys, assessment config), pero presenta links rotos a páginas no creadas y datos mock que ocultan empty states.
@@ -625,8 +626,8 @@ El perfil Brand Manager (`/brand`) tiene la mayoría de funcionalidades implemen
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| BRAND-004 | **Dashboard KPIs incompletos** (REQ-010) — Solo muestra 4 de 9 KPIs: faltan Volumen, Reach, Mix, Market Share, Price positioning. | `src/app/(dashboard)/brand/page.tsx:176-233`, `src/app/api/brand/metrics/route.ts` | Expandir métricas |
-| BRAND-005 | **Team performance básico** (REQ-014) — Lista equipo pero sin rankings, métricas individuales, ni trends. | `src/app/(dashboard)/brand/team/page.tsx` | Agregar performance metrics |
+| BRAND-004 | **Dashboard KPIs parcialmente expandidos** (REQ-010) — Tiene 5 KPIs operativos (active_clients, monthly_visits, monthly_revenue, conversion_rate, revenue_per_client). Faltan KPIs estratégicos originales: Volumen, Reach, Mix, Market Share, Price positioning. | `src/app/(dashboard)/brand/page.tsx`, `src/app/api/brand/metrics/route.ts` | KPIs operativos ✅ DONE (commit 1f56248). KPIs estratégicos pendientes (requieren datos adicionales). |
+| ~~BRAND-005~~ | ~~**Team performance básico** (REQ-014) — Lista equipo pero sin rankings, métricas individuales, ni trends.~~ | `src/app/(dashboard)/brand/team/page.tsx` | ✅ **DONE** (commit 1f56248) — Rankings y métricas individuales implementados. |
 
 ### BRAND-P2 — Nice to have (polish, no bloquean MVP)
 
@@ -642,8 +643,8 @@ El perfil Brand Manager (`/brand`) tiene la mayoría de funcionalidades implemen
 | BRAND-001 | Crear | `brand/clients/[id]/page.tsx`, `brand/clients/[id]/visits/page.tsx`, `brand/clients/[id]/edit/page.tsx` |
 | BRAND-002 | Editar | `brand/clients/page.tsx` — remover mock data lines 69-111 |
 | BRAND-003 | Crear o Editar | `brand/visits/page.tsx` (crear) o `brand/page.tsx:266` (remover link) |
-| BRAND-004 | Editar | `brand/page.tsx`, `api/brand/metrics/route.ts` — expandir KPIs |
-| BRAND-005 | Editar | `brand/team/page.tsx` — agregar rankings y métricas individuales |
+| BRAND-004 | Editar | `brand/page.tsx`, `api/brand/metrics/route.ts` — KPIs operativos ✅ DONE, KPIs estratégicos pendientes |
+| ~~BRAND-005~~ | ~~Editar~~ | ~~`brand/team/page.tsx` — rankings y métricas individuales~~ ✅ DONE |
 | BRAND-006 | Crear | `brand/incentives/page.tsx`, `api/brand/incentives/route.ts` |
 | BRAND-007 | Refactor | `brand/clients/page.tsx` (reescrito), `brand/memberships/page.tsx` (redirect), `brand/clients/[id]/page.tsx` (read-only + acciones), eliminados `create/`, `[id]/edit/`, `POST /api/brand/clients`, `PUT /api/brand/clients/[id]` |
 
@@ -711,7 +712,7 @@ El perfil Promotor (`/promotor`) es el más completo — todas las páginas y AP
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| PROM-001 | **Campañas asignadas no implementado** (REQ-021, TASK-061) — No hay página ni link en sidebar para ver campañas asignadas al promotor. | — | Crear `promotor/campaigns/page.tsx` + API + sidebar link |
+| ~~PROM-001~~ | ~~**Campañas asignadas no implementado**~~ | `promotor/campanias/page.tsx` | ✅ **DONE** (2026-03-05) — Página, API route y nav entry creados. |
 | PROM-002 | **Reportes con stats hardcodeados** — "Desglose de Desempeño" muestra porcentajes estáticos (40%, 30%, 20%, 10%) en vez de datos calculados. | `src/app/(dashboard)/promotor/reports/page.tsx:390-405` | Implementar cálculo real |
 
 ### PROM-P2 — Nice to have (polish, no bloquean MVP)
@@ -749,7 +750,7 @@ El perfil Asesor de Ventas (`/asesor-ventas`) tiene todas las páginas y APIs fu
 
 | ID | Problema | Archivo(s) | Fix |
 |----|----------|------------|-----|
-| ADV-001 | **Link "Editar Perfil" causa 404** — Dashboard tiene link a `/asesor-ventas/profile/edit` que no existe. | `src/app/(dashboard)/asesor-ventas/page.tsx:155` | Crear página o remover link |
+| ~~ADV-001~~ | ~~**Link "Editar Perfil" causa 404**~~ | `src/app/(dashboard)/asesor-ventas/profile/edit/page.tsx` | ✅ **DONE** (2026-03-05) — Página de edición + PUT handler creados. |
 | ADV-002 | **Visitas/documentación no integrado** (TASK-070, REQ-034) — No tiene módulo de visitas paralelo al de Promotor. | — | Implementar flujo visitas para asesor |
 
 ### ADV-P2 — Nice to have (polish, no bloquean MVP)
@@ -843,15 +844,15 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 
 | Perfil | Páginas OK | APIs OK | P0 | P1 | P2 | Total |
 |--------|-----------|---------|----|----|----|----|
-| Admin | 18/20 | 22/22 | 0 ✅ | 3 | 3 | 6 |
-| Brand Manager | 21/21 | 31/31 | 0 ✅ | 2 | 1 | 3 |
+| Admin | 18/20 | 22/22 | 0 ✅ | 1 | 3 | 4 |
+| Brand Manager | 21/21 | 31/31 | 0 ✅ | 1 | 1 | 2 |
 | Supervisor | 6/6 ✅ | 5/5 ✅ | 0 ✅ | 2 | 0 | 2 |
 | Promotor | 8/8 ✅ | 10/10 ✅ | 0 | 2 | 1 | 3 |
 | Asesor de Ventas | 11/11 ✅ | 9/9 ✅ | 0 | 2 | 1 | 3 |
 | Cliente | 8/8 ✅ | 8/8 ✅ | 0 ✅ | 3 | 1 | 4 |
-| **TOTAL** | **72/83** | **86/86** | **0 ✅** | **14** | **7** | **21** |
+| **TOTAL** | **72/83** | **86/86** | **0 ✅** | **11** | **7** | **18** |
 
-> Actualizado 2026-02-22 — CLI-004 ✅ (onboarding), ADMIN-007 ✅ (stats), ADMIN-008 ✅ (edit form). Anterior: 2026-02-19 CLI-006 documentado, 2026-02-17 commits fd4b58b (Supervisor), c0fdfb5 (Admin Zones), 1f56248 (Brand client pages + security_invoker migration), CLI-001 (client/profile)
+> Actualizado 2026-03-12 — ADMIN-004 ✅ (settings form), ADMIN-005 ✅ (CRUD distribuidores), BRAND-005 ✅ (team performance), BRAND-004 parcial (KPIs operativos OK, estratégicos pendientes). Anterior: 2026-02-22 CLI-004 ✅, ADMIN-007 ✅, ADMIN-008 ✅. 2026-02-19 CLI-006 documentado. 2026-02-17 commits fd4b58b, c0fdfb5, 1f56248, CLI-001.
 
 ### Todos los P0 pendientes (por orden de impacto)
 
@@ -897,29 +898,29 @@ El perfil Cliente (`/client`) tiene todas las páginas y APIs funcionales. Los h
 20. ~~**CLI-001:** Crear `/client/profile` page.~~ ✅ DONE (2026-02-17 — página + PATCH `/api/client/profile` + nav item)
 
 ### Tier 4 — All Profiles Audit (P1 — Features faltantes) + Admin P1
-21. **ADMIN-004:** Settings — reemplazar placeholder con config tenant. Esfuerzo: 3.
-22. **ADMIN-005:** CRUD de Distribuidores. Esfuerzo: 3.
+21. ~~**ADMIN-004:** Settings — reemplazar placeholder con config tenant. Esfuerzo: 3.~~ ✅ DONE
+22. ~~**ADMIN-005:** CRUD de Distribuidores. Esfuerzo: 3.~~ ✅ DONE
 23. **ADMIN-006:** CRUD de Catálogos (Markets, Client Types, Commercial Structures). Esfuerzo: 3.
 24. ~~**ADMIN-007:** Estadísticas reales en detalle cliente. Esfuerzo: 2.~~ ✅ DONE
-25. **BRAND-004:** Dashboard KPIs completos (Volumen, Reach, Mix, Market Share, Precios). Esfuerzo: 3.
-26. **BRAND-005:** Team performance con rankings y métricas individuales. Esfuerzo: 3.
+25. **BRAND-004:** Dashboard KPIs — operativos ✅ DONE, estratégicos pendientes (Volumen, Reach, Mix, Market Share, Precios). Esfuerzo: 3.
+26. ~~**BRAND-005:** Team performance con rankings y métricas individuales. Esfuerzo: 3.~~ ✅ DONE
 27. ~~**SUPV-004:** Resolver inconsistencia "Asignaciones" (nav vs quick action). Esfuerzo: 1.~~ ✅ RESUELTO
 28. ~~**SUPV-005:** Verificar tabla `client_assignments` vs `promotor_client_assignments`. Esfuerzo: 1.~~ ✅ RESUELTO
-29. **PROM-001:** Campañas asignadas al promotor (REQ-021, TASK-061). Esfuerzo: 2.
+29. ~~**PROM-001:** Campañas asignadas al promotor (REQ-021, TASK-061). Esfuerzo: 2.~~ ✅ DONE
 30. **PROM-002:** Reportes con stats calculados (no hardcodeados). Esfuerzo: 2.
-31. **ADV-001:** Crear `/asesor-ventas/profile/edit` o remover link. Esfuerzo: 2.
+31. ~~**ADV-001:** Crear `/asesor-ventas/profile/edit` o remover link. Esfuerzo: 2.~~ ✅ DONE
 32. **ADV-002:** Integrar visitas/documentación en Asesor de Ventas (TASK-070). Esfuerzo: 3.
 33. **CLI-002:** SuggestedProductsGrid (TASK-033). Esfuerzo: 2.
 34. **CLI-003:** CouponsSection (TASK-036). Esfuerzo: 2.
 35. ~~**CLI-004:** Onboarding cliente completo — wizard 2 pasos + migración 10 columnas + refactor owner_name ~49 archivos (REQ-044). Esfuerzo: 5.~~ ✅ DONE
 36. **CLI-006:** Carga evidencia cliente — tabla nueva `client_evidence` + bucket storage + RLS + UI cliente (página + nav) + toggle `requires_client_evidence` en Brand Manager (campaigns/promotions/tiers) + vistas read-only promotor/asesor + adaptar PhotoEvidenceUpload (REQ-047 parte cliente). Depende parcialmente de CLI-004. Esfuerzo: 5.
-37. **Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.
+37. ~~**Ampliar targeting de promociones** (TASK-022) — Segmentación por zona, tipo de cliente, categoría. Depende de REQ-044. Esfuerzo: 3.~~ ✅ DONE
 
 ### Tier 5 — All Profiles Audit (P2 — Polish) + Optimization
 38. ~~**ADMIN-008:** Editar perfil usuario desde admin. Esfuerzo: 2.~~ ✅ DONE
-39. **ADMIN-009:** Soft delete clientes desde UI. Esfuerzo: 1.
-40. **ADMIN-010:** Verificar preview encuesta antes de aprobar. Esfuerzo: 1.
-41. **ADMIN-011:** Indicador ventana 48h en promociones. Esfuerzo: 1.
+39. ~~**ADMIN-009:** Soft delete clientes desde UI. Esfuerzo: 1.~~ ✅ DONE
+40. ~~**ADMIN-010:** Verificar preview encuesta antes de aprobar. Esfuerzo: 1.~~ ✅ DONE
+41. ~~**ADMIN-011:** Indicador ventana 48h en promociones. Esfuerzo: 1.~~ ✅ DONE
 42. **BRAND-006:** Incentivos RTM/M&P (REQ-013). Esfuerzo: 3.
 43. **BRAND-008:** Flujo de prospectos — Promotor y Asesor de Ventas pueden enviar solicitudes de creación de cliente (prospecto) al Admin. El prospecto incluye: datos del negocio sugeridos, nivel sugerido, marcas sugeridas para afiliación. Admin aprueba/edita/rechaza. Al aprobar, se crea el cliente y sus membresías. Esfuerzo: 5.
 44. ~~**PROM-003:** Fix `full_name` inconsistency en Promotor. Esfuerzo: 1.~~ ✅ RESUELTO
