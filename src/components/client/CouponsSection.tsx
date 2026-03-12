@@ -36,9 +36,9 @@ interface CouponsSectionProps {
 
 function getDiscountBadge(promo: CouponPromotion): string {
   switch (promo.promotion_type) {
-    case 'percentage_discount':
+    case 'discount_percentage':
       return `${promo.discount_percentage || 0}% OFF`
-    case 'fixed_discount':
+    case 'discount_amount':
       return `$${promo.discount_amount || 0} OFF`
     case 'buy_x_get_y':
       return `${promo.buy_quantity || 0}x${promo.get_quantity || 0}`
@@ -51,9 +51,9 @@ function getDiscountBadge(promo: CouponPromotion): string {
 
 function getBadgeColor(type: string): string {
   switch (type) {
-    case 'percentage_discount':
+    case 'discount_percentage':
       return 'bg-orange-100 text-orange-700'
-    case 'fixed_discount':
+    case 'discount_amount':
       return 'bg-green-100 text-green-700'
     case 'buy_x_get_y':
       return 'bg-purple-100 text-purple-700'
@@ -93,7 +93,7 @@ function CopyableCode({ code }: { code: string }) {
 }
 
 export function CouponsSection({ promotions }: CouponsSectionProps) {
-  const couponTypes = ['percentage_discount', 'fixed_discount', 'buy_x_get_y', 'points_multiplier']
+  const couponTypes = ['discount_percentage', 'discount_amount', 'buy_x_get_y', 'points_multiplier']
 
   const coupons = promotions.filter(
     (p) => (p.requires_code && p.promo_code) || couponTypes.includes(p.promotion_type)
