@@ -7,6 +7,8 @@ import { MetricCard } from "@/components/ui/metric-card"
 import { TierProgressCard } from "@/components/client/TierProgressCard"
 import { LoyaltyPlansSection } from "@/components/client/LoyaltyPlansSection"
 import { WeeklyPromotionsBanner } from "@/components/client/WeeklyPromotionsBanner"
+import { SuggestedProductsGrid } from "@/components/client/SuggestedProductsGrid"
+import { CouponsSection } from "@/components/client/CouponsSection"
 import { Store, ShoppingCart, Star, MapPin, Building2, QrCode, ClipboardList, ClipboardCheck, X } from "lucide-react"
 import { usePageTitle } from '@/hooks/usePageTitle'
 import Link from 'next/link'
@@ -84,7 +86,33 @@ interface Promotion {
   end_date: string
   status: string
   terms_and_conditions: string | null
+  requires_code?: boolean
+  promo_code?: string | null
+  points_multiplier?: number | null
+  buy_quantity?: number | null
+  get_quantity?: number | null
   brand: PromotionBrand
+}
+
+interface ProductBrand {
+  id: string
+  name: string
+  logo_url: string | null
+}
+
+interface ProductCategory {
+  id: string
+  name: string
+}
+
+interface Product {
+  id: string
+  public_id: string
+  name: string
+  base_price: number
+  product_image_url: string | null
+  brand: ProductBrand
+  category: ProductCategory | null
 }
 
 export default function ClientPortal() {
@@ -92,6 +120,7 @@ export default function ClientPortal() {
   const [profile, setProfile] = useState<ClientProfile | null>(null)
   const [memberships, setMemberships] = useState<ClientMembership[]>([])
   const [promotions, setPromotions] = useState<Promotion[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [bannerDismissed, setBannerDismissed] = useState(false)
@@ -101,10 +130,11 @@ export default function ClientPortal() {
       setLoading(true)
       setError(null)
 
-      const [profileRes, membershipsRes, promotionsRes] = await Promise.all([
+      const [profileRes, membershipsRes, promotionsRes, productsRes] = await Promise.all([
         fetch('/api/client/profile'),
         fetch('/api/client/memberships'),
         fetch('/api/client/promotions'),
+        fetch('/api/client/products'),
       ])
 
       if (!profileRes.ok) {
@@ -126,6 +156,11 @@ export default function ClientPortal() {
       if (promotionsRes.ok) {
         const promotionsData = await promotionsRes.json()
         setPromotions(promotionsData.promotions || [])
+      }
+
+      if (productsRes.ok) {
+        const productsData = await productsRes.json()
+        setProducts(productsData.products || [])
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -253,7 +288,13 @@ export default function ClientPortal() {
         {/* 4. WeeklyPromotionsBanner */}
         <WeeklyPromotionsBanner promotions={promotions} />
 
-        {/* 5. LoyaltyPlansSection */}
+        {/* 5. SuggestedProductsGrid */}
+        <SuggestedProductsGrid products={products} />
+
+        {/* 6. CouponsSection */}
+        <CouponsSection promotions={promotions} />
+
+        {/* 7. LoyaltyPlansSection */}
         <LoyaltyPlansSection memberships={memberships} />
 
         {/* 6. Quick Actions */}
