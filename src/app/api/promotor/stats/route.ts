@@ -118,18 +118,26 @@ export async function GET() {
       // client_assignments query failed, using defaults
     }
 
-    // 7. Calcular performance_score basado en métricas
+    // 7. Calcular performance_score basado en métricas con desglose
+    const scoreBreakdown = {
+      visits_completed: Math.round(visitStats.completed_visits * 0.4 * 10) / 10,
+      avg_rating: Math.round(visitStats.avg_visit_rating * 20 * 0.3 * 10) / 10,
+      client_portfolio: Math.round(clientStats.total_clients * 0.2 * 10) / 10,
+      monthly_activity: Math.round(visitStats.visits_this_month * 0.1 * 10) / 10,
+    }
+
     const performance_score = Math.min(100, Math.round(
-      (visitStats.completed_visits * 0.4) +
-      (visitStats.avg_visit_rating * 20 * 0.3) +
-      (clientStats.total_clients * 0.2) +
-      (visitStats.visits_this_month * 0.1)
+      scoreBreakdown.visits_completed +
+      scoreBreakdown.avg_rating +
+      scoreBreakdown.client_portfolio +
+      scoreBreakdown.monthly_activity
     ))
 
     const stats = {
       ...visitStats,
       ...clientStats,
-      performance_score
+      performance_score,
+      score_breakdown: scoreBreakdown,
     }
 
     return NextResponse.json({

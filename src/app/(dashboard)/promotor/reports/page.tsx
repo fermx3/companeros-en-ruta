@@ -19,6 +19,13 @@ import {
 
 type Period = 'week' | 'month' | 'quarter' | 'year'
 
+type ScoreBreakdown = {
+  visits_completed: number
+  avg_rating: number
+  client_portfolio: number
+  monthly_activity: number
+}
+
 type PromotorStats = {
   total_visits: number
   pending_visits: number
@@ -28,6 +35,7 @@ type PromotorStats = {
   total_clients: number
   new_clients_month: number
   performance_score: number
+  score_breakdown: ScoreBreakdown
 }
 
 const PERIOD_LABELS: Record<Period, string> = {
@@ -389,22 +397,25 @@ export default function PromotorReportsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Visitas completadas</span>
-                      <span className="text-sm font-medium">40%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Calificación promedio</span>
-                      <span className="text-sm font-medium">30%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Cartera de clientes</span>
-                      <span className="text-sm font-medium">20%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Actividad mensual</span>
-                      <span className="text-sm font-medium">10%</span>
-                    </div>
+                    {([
+                      { label: 'Visitas completadas', value: stats.score_breakdown.visits_completed, weight: '40%', color: 'bg-blue-500' },
+                      { label: 'Calificación promedio', value: stats.score_breakdown.avg_rating, weight: '30%', color: 'bg-green-500' },
+                      { label: 'Cartera de clientes', value: stats.score_breakdown.client_portfolio, weight: '20%', color: 'bg-purple-500' },
+                      { label: 'Actividad mensual', value: stats.score_breakdown.monthly_activity, weight: '10%', color: 'bg-amber-500' },
+                    ] as const).map((item) => (
+                      <div key={item.label}>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="text-gray-600">{item.label} <span className="text-gray-400">({item.weight})</span></span>
+                          <span className="font-medium">{item.value.toFixed(1)} pts</span>
+                        </div>
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${item.color} rounded-full`}
+                            style={{ width: `${Math.min(item.value, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                     <div className="pt-3 border-t">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-900">Score Total</span>
