@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
+import { extractDigits } from '@/lib/utils/phone'
 
 interface UserRole {
   id: string
@@ -149,6 +150,60 @@ export async function GET() {
 
   } catch (error) {
     console.error('Error en /api/asesor-ventas/profile:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+
+    return NextResponse.json(
+      { error: 'Error interno del servidor', details: errorMessage },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+
+    const authResult = await resolveAsesorAuth(supabase)
+    if (isAsesorAuthError(authResult)) return asesorAuthErrorResponse(authResult)
+    const { userProfileId } = authResult
+
+    const body = await request.json()
+    const { phone } = body
+
+    if (!phone) {
+      return NextResponse.json(
+        { error: 'El teléfono es requerido' },
+        { status: 400 }
+      )
+    }
+
+    const phoneDigits = extractDigits(phone)
+    if (phoneDigits.length !== 10) {
+      return NextResponse.json(
+        { error: 'El teléfono debe tener 10 dígitos' },
+        { status: 400 }
+      )
+    }
+
+    const { error: updateError } = await supabase
+      .from('user_profiles')
+      .update({
+        phone: phoneDigits,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userProfileId)
+
+    if (updateError) {
+      throw new Error(`Error al actualizar perfil: ${updateError.message}`)
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Perfil actualizado correctamente'
+    })
+
+  } catch (error) {
+    console.error('Error en PUT /api/asesor-ventas/profile:', error)
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
 
     return NextResponse.json(

@@ -10,7 +10,7 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { StatusBadge } from '@/components/ui/status-badge'
 import {
   Gift, Calendar, DollarSign, Users, TrendingUp, Check, X,
-  ArrowLeft, Building2, Clock, Target, FileText, Hash
+  ArrowLeft, Building2, Clock, Target, FileText, Hash, AlertCircle
 } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
@@ -362,6 +362,27 @@ export default function AdminPromotionDetailPage({ params }: { params: Promise<{
               <CardDescription className="text-yellow-700">
                 Revisa los detalles y decide si aprobar o rechazar esta promoción
               </CardDescription>
+              {(() => {
+                const hoursWaiting = Math.floor((Date.now() - new Date(promotion.created_at).getTime()) / (1000 * 60 * 60))
+                const percentage = Math.min((hoursWaiting / 48) * 100, 100)
+                return (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className={hoursWaiting >= 48 ? 'text-red-700 font-medium' : 'text-yellow-700'}>
+                        {hoursWaiting >= 48 && <AlertCircle className="h-4 w-4 inline mr-1" />}
+                        {hoursWaiting}h transcurridas
+                      </span>
+                      <span className="text-yellow-700">SLA 48h</span>
+                    </div>
+                    <div className="w-full bg-yellow-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${hoursWaiting >= 48 ? 'bg-red-500' : 'bg-yellow-500'}`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })()}
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

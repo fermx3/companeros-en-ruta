@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { displayPhone, extractDigits } from '@/lib/utils/phone';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { StatusType } from '@/types/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useToast } from '@/components/ui/toaster';
 import {
   GENDER_LABELS,
   EMPLOYEES_LABELS,
@@ -27,6 +28,8 @@ import {
 export default function ClientDetailPage() {
   usePageTitle('Detalle de Cliente');
   const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
   const [client, setClient] = useState<(Client & {
     zone_name?: string;
     market_name?: string;
@@ -41,6 +44,8 @@ export default function ClientDetailPage() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const clientPublicId = params.clientId as string;
 
@@ -71,6 +76,29 @@ export default function ClientDetailPage() {
       loadClientDetail();
     }
   }, [clientPublicId, loadClientDetail]);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/clients/${clientPublicId}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al eliminar el cliente');
+      }
+
+      toast({ variant: 'success', title: 'Cliente eliminado exitosamente' });
+      router.push('/admin/clients');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      toast({ variant: 'error', title: errorMessage });
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -430,9 +458,60 @@ export default function ClientDetailPage() {
                     </svg>
                     Programar Visita
                   </Button>
+
+                  <div className="pt-2 border-t border-gray-200">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-red-600 border-red-300 hover:bg-red-50"
+                      onClick={() => setShowDeleteConfirm(true)}
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Eliminar Cliente
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <Card className="w-full max-w-md mx-4">
+                  <div className="p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Eliminar Cliente</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      ¿Estás seguro de que deseas eliminar a <strong>{client.business_name}</strong>?
+                      Esta acción marcará al cliente como inactivo y no aparecerá en las listas.
+                    </p>
+                    <div className="flex justify-end space-x-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        disabled={deleting}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        {deleting ? (
+                          <>
+                            <LoadingSpinner size="sm" className="mr-2" />
+                            Eliminando...
+                          </>
+                        ) : (
+                          'Confirmar Eliminación'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
 
             {/* Estadísticas */}
             <Card>

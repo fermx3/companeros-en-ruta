@@ -286,9 +286,109 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE() {
-  return NextResponse.json(
-    { error: 'Método no permitido' },
-    { status: 405 }
-  );
+/**
+ * DELETE /api/admin/clients/[clientId] - Soft-delete cliente
+ */
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { clientId } = await params;
+
+    const supabase = createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id, tenant_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { error: 'Perfil de usuario no encontrado' },
+        { status: 400 }
+      );
+    }
+
+    const { data: userRoles, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role, status')
+      .eq('user_profile_id', profile.id)
+      .eq('tenant_id', profile.tenant_id)
+      .is('deleted_at', null);
+
+    const adminRole = userRoles?.find(r => r.role === 'admin' && r.status === 'active');
+
+    if (roleError || !adminRole) {
+      return NextResponse.json(
+        { error: 'Sin permisos para eliminar clientes' },
+        { status: 403 }
+      );
+    }
+
+    const serviceSupabase = createServiceClient();
+
+    // Verify client exists
+    const { data: existing, error: findError } = await serviceSupabase
+      .from('clients')
+      .select('id')
+      .eq(resolveIdColumn(clientId), clientId)
+      .eq('tenant_id', profile.tenant_id)
+      .is('deleted_at', null)
+      .single();
+
+    if (findError || !existing) {
+      return NextResponse.json(
+        { error: 'Cliente no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Check for visits in_progress
+    const { count: activeVisitCount } = await serviceSupabase
+      .from('visits')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', existing.id)
+      .eq('visit_status', 'in_progress')
+      .is('deleted_at', null);
+
+    if (activeVisitCount && activeVisitCount > 0) {
+      return NextResponse.json(
+        { error: `No se puede eliminar el cliente porque tiene ${activeVisitCount} visita(s) en progreso` },
+        { status: 400 }
+      );
+    }
+
+    // Soft-delete
+    const { error: deleteError } = await serviceSupabase
+      .from('clients')
+      .update({ deleted_at: new Date().toISOString(), status: 'inactive' })
+      .eq('id', existing.id);
+
+    if (deleteError) {
+      console.error('Error soft-deleting client:', deleteError);
+      return NextResponse.json(
+        { error: 'Error al eliminar el cliente' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: 'Cliente eliminado exitosamente' },
+      { status: 200 }
+    );
+
+  } catch (error) {
+    console.error('Error in DELETE /api/admin/clients/[clientId]:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
 }
