@@ -10,6 +10,7 @@ import { SuggestedProductsGrid } from "@/components/client/SuggestedProductsGrid
 import { CouponsSection } from "@/components/client/CouponsSection"
 import { ClipboardCheck, X } from "lucide-react"
 import { IconQR, IconPedidos, IconMarcas, IconMiNivel } from '@/components/icons'
+import { QuickActions } from '@/components/layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import Link from 'next/link'
 
@@ -72,6 +73,8 @@ interface PromotionBrand {
   id: string
   name: string
   logo_url: string | null
+  brand_color_primary?: string | null
+  brand_color_secondary?: string | null
 }
 
 interface Promotion {
@@ -176,7 +179,7 @@ export default function ClientPortal() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6 animate-pulse">
           <div className="h-20 bg-muted rounded-2xl" />
           <div className="h-48 bg-muted rounded-2xl" />
@@ -193,7 +196,7 @@ export default function ClientPortal() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <Card className="border-red-200 bg-red-50">
             <CardHeader>
@@ -214,7 +217,7 @@ export default function ClientPortal() {
   const primaryMembership = memberships[0] || null
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
         {/* 1. Welcome Header */}
@@ -272,50 +275,14 @@ export default function ClientPortal() {
         <CouponsSection promotions={promotions} />
 
         {/* 7. Quick Actions */}
-        <div>
-          <h2 className="text-lg font-bold text-navy mb-4">Acciones Rapidas</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <Link href="/client/qr">
-              <Button
-                variant="outline"
-                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30"
-              >
-                <IconQR className="h-7 w-7 text-primary" />
-                <span className="text-sm font-medium text-navy">Mi Codigo QR</span>
-              </Button>
-            </Link>
-
-            <Link href="/client/orders">
-              <Button
-                variant="outline"
-                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30"
-              >
-                <IconPedidos className="h-7 w-7 text-primary" />
-                <span className="text-sm font-medium text-navy">Mis Pedidos</span>
-              </Button>
-            </Link>
-
-            <Link href="/client/brands">
-              <Button
-                variant="outline"
-                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30"
-              >
-                <IconMarcas className="h-7 w-7 text-primary" />
-                <span className="text-sm font-medium text-navy">Marcas</span>
-              </Button>
-            </Link>
-
-            <Link href="/client/points">
-              <Button
-                variant="outline"
-                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30"
-              >
-                <IconMiNivel className="h-7 w-7 text-primary" />
-                <span className="text-sm font-medium text-navy">Mi Nivel</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
+        <QuickActions
+          actions={[
+            { href: '/client/qr', icon: IconQR, label: 'Mi código QR' },
+            { href: '/client/orders', icon: IconPedidos, label: 'Mis Pedidos' },
+            { href: '/client/brands', icon: IconMarcas, label: 'Marcas' },
+            { href: '/client/points', icon: IconMiNivel, label: 'Mi Nivel' },
+          ]}
+        />
       </div>
     </div>
   )

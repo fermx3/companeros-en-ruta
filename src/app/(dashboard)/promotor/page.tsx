@@ -11,6 +11,7 @@ import { displayPhone } from '@/lib/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Star } from 'lucide-react';
 import { IconClientes, IconCompletado, IconPendiente, IconVisitas, IconAgenda } from '@/components/icons';
+import { QuickActions } from '@/components/layout';
 
 interface PromotorProfile {
   id: string;
@@ -246,37 +247,14 @@ export default function PromotorProfilePage() {
 
           {/* Quick Actions */}
           <div>
-            <Card className="p-6">
-              <h3 className="text-lg font-bold text-navy mb-4">
-                Accesos Rápidos
-              </h3>
-              <div className="space-y-3">
-                <Link href="/promotor/visitas" className="block">
-                  <div className="p-3 border border-border rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
-                    <div className="flex items-center">
-                      <IconVisitas className="w-5 h-5 text-primary mr-3" />
-                      <span className="text-sm font-medium text-navy">Mis Visitas</span>
-                    </div>
-                  </div>
-                </Link>
-                <Link href="/promotor/clients" className="block">
-                  <div className="p-3 border border-border rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
-                    <div className="flex items-center">
-                      <IconClientes className="w-5 h-5 text-primary mr-3" />
-                      <span className="text-sm font-medium text-navy">Mis Clientes</span>
-                    </div>
-                  </div>
-                </Link>
-                <Link href="/promotor/schedule" className="block">
-                  <div className="p-3 border border-border rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
-                    <div className="flex items-center">
-                      <IconAgenda className="w-5 h-5 text-primary mr-3" />
-                      <span className="text-sm font-medium text-navy">Mi Agenda</span>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            </Card>
+            <QuickActions
+              title="Accesos Rápidos"
+              actions={[
+                { href: '/promotor/visitas', icon: IconVisitas, label: 'Mis Visitas' },
+                { href: '/promotor/clients', icon: IconClientes, label: 'Mis Clientes' },
+                { href: '/promotor/schedule', icon: IconAgenda, label: 'Mi Agenda' },
+              ]}
+            />
           </div>
         </div>
       </div>

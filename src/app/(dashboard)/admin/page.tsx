@@ -6,8 +6,9 @@ import { PageLoader, Alert } from '@/components/ui/feedback'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { MetricCard } from '@/components/ui/metric-card'
-import { Building2, Users, UserCheck, BarChart3, DollarSign } from 'lucide-react'
+import { Building2, Users, UserCheck, BarChart3, DollarSign, Plus, UserPlus, UserRound, Gift, Settings } from 'lucide-react'
 import type { AdminDashboardMetrics, RecentActivity } from '@/lib/types/admin'
+import { QuickActions } from '@/components/layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 // Componente AlertDescription simple
@@ -111,7 +112,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -183,69 +184,18 @@ export default function AdminDashboard() {
           />
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions + Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Main Actions */}
-          <Card>
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Acciones Rápidas
-              </h3>
-              <div className="space-y-3">
-                <QuickActionItem
-                  title="Crear nueva Brand"
-                  description="Agregar una marca al sistema"
-                  href="/admin/brands/create"
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  }
-                />
-                <QuickActionItem
-                  title="Invitar Usuario"
-                  description="Enviar invitación a un nuevo usuario"
-                  href="/admin/users/invite"
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                  }
-                />
-                <QuickActionItem
-                  title="Registrar Cliente"
-                  description="Agregar un nuevo cliente al sistema"
-                  href="/admin/clients/create"
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  }
-                />
-                <QuickActionItem
-                  title="Aprobar Promociones"
-                  description="Revisar promociones pendientes de aprobación"
-                  href="/admin/promotions"
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                    </svg>
-                  }
-                />
-                <QuickActionItem
-                  title="Configuración"
-                  description="Ajustar configuraciones del tenant"
-                  href="/admin/settings"
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  }
-                />
-              </div>
-            </div>
-          </Card>
+          <QuickActions
+            actions={[
+              { href: '/admin/brands/create', icon: Plus, label: 'Nueva Brand' },
+              { href: '/admin/users/invite', icon: UserPlus, label: 'Invitar Usuario' },
+              { href: '/admin/clients/create', icon: UserRound, label: 'Registrar Cliente' },
+              { href: '/admin/promotions', icon: Gift, label: 'Promociones' },
+              { href: '/admin/settings', icon: Settings, label: 'Configuración' },
+            ]}
+          />
 
           {/* Recent Activity */}
           <Card>
@@ -280,35 +230,6 @@ export default function AdminDashboard() {
         </div>
       </div>
     </div>
-  );
-}
-
-// Componente auxiliar para acciones rápidas
-interface QuickActionItemProps {
-  title: string;
-  description: string;
-  href: string;
-  icon: React.ReactNode;
-}
-
-function QuickActionItem({ title, description, href, icon }: QuickActionItemProps) {
-  return (
-    <Link href={href} className="block">
-      <div className="flex items-center p-3 -mx-3 rounded-lg hover:bg-gray-50 transition-colors">
-        <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center text-blue-600">
-          {icon}
-        </div>
-        <div className="ml-3 flex-1">
-          <p className="text-sm font-medium text-gray-900">{title}</p>
-          <p className="text-xs text-gray-500">{description}</p>
-        </div>
-        <div className="ml-3 flex-shrink-0">
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
-      </div>
-    </Link>
   );
 }
 

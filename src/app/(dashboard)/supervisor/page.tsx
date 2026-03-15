@@ -6,6 +6,7 @@ import { MetricCard } from '@/components/ui/metric-card'
 import { Button } from "@/components/ui/button"
 import { Users, MapPin, CheckCircle, Clock, Star, TrendingUp, ShoppingCart, ArrowRight } from "lucide-react"
 import { EmptyState } from '@/components/ui/EmptyState'
+import { QuickActions } from '@/components/layout'
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -71,7 +72,7 @@ export default function SupervisorDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
           <div className="h-8 bg-muted rounded-md w-64"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -90,7 +91,7 @@ export default function SupervisorDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <Card className="border-red-200 bg-red-50">
             <CardHeader>
@@ -109,7 +110,7 @@ export default function SupervisorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Header */}
@@ -283,38 +284,14 @@ export default function SupervisorDashboard() {
           </Card>
 
           {/* Quick Actions */}
-          <Card className="hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
-              <CardDescription className="text-gray-600">
-                Herramientas de supervisión
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Link href="/supervisor/visits">
-                  <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                    <MapPin className="h-6 w-6 text-green-600" />
-                    <span className="text-sm font-medium">Visitas del Equipo</span>
-                  </Button>
-                </Link>
-
-                <Link href="/supervisor/clients">
-                  <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                    <Users className="h-6 w-6 text-blue-600" />
-                    <span className="text-sm font-medium">Clientes</span>
-                  </Button>
-                </Link>
-
-                <Link href="/supervisor/reports">
-                  <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                    <TrendingUp className="h-6 w-6 text-orange-600" />
-                    <span className="text-sm font-medium">Reportes</span>
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+          <QuickActions
+            columns={3}
+            actions={[
+              { href: '/supervisor/visits', icon: MapPin, label: 'Visitas del Equipo' },
+              { href: '/supervisor/clients', icon: Users, label: 'Clientes' },
+              { href: '/supervisor/reports', icon: TrendingUp, label: 'Reportes' },
+            ]}
+          />
 
           {/* Other Modules (conditional on extra roles) */}
           {hasExtraRoles && (
