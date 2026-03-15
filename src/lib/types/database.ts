@@ -73,12 +73,21 @@ export interface Brand {
   tenant_id: string;
   name: string;
   slug: string;
-  subdomain: string;
+  public_id: string;
   logo_url?: string;
-  primary_color: string;
-  is_active: boolean;
+  brand_color_primary?: string | null;
+  brand_color_secondary?: string | null;
+  description?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  website?: string | null;
+  status?: string | null;
+  settings?: Record<string, unknown> | null;
+  dashboard_metrics?: Record<string, unknown> | null;
+  dashboard_metrics_updated_at?: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string | null;
+  deleted_at?: string | null;
 }
 
 export interface Client {

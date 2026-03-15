@@ -3,13 +3,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
-import { MetricCard } from "@/components/ui/metric-card"
 import { TierProgressCard } from "@/components/client/TierProgressCard"
 import { LoyaltyPlansSection } from "@/components/client/LoyaltyPlansSection"
 import { WeeklyPromotionsBanner } from "@/components/client/WeeklyPromotionsBanner"
 import { SuggestedProductsGrid } from "@/components/client/SuggestedProductsGrid"
 import { CouponsSection } from "@/components/client/CouponsSection"
-import { Store, ShoppingCart, Star, MapPin, Building2, QrCode, ClipboardList, ClipboardCheck, X } from "lucide-react"
+import { ClipboardCheck, X } from "lucide-react"
+import { IconQR, IconPedidos, IconMarcas, IconMiNivel } from '@/components/icons'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import Link from 'next/link'
 
@@ -217,43 +217,36 @@ export default function ClientPortal() {
     <div className="min-h-screen bg-gray-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        {/* 1. Welcome Header (compact) */}
-        <div className="bg-gradient-to-r from-[#2196F3] to-blue-700 rounded-2xl p-5 text-white">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Store className="h-6 w-6 text-white" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold truncate">
-                Hola, {profile?.business_name || 'Cliente'}
-              </h1>
-              <p className="text-blue-100 text-sm">
-                {profile?.public_id} · {profile?.client_type_name || 'Cliente'}
-              </p>
-            </div>
-          </div>
+        {/* 1. Welcome Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-navy">
+            Hola, {profile?.business_name || 'Cliente'}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {profile?.public_id} · {profile?.client_type_name || 'Cliente'}
+          </p>
         </div>
 
         {/* Onboarding CTA Banner */}
         {profile && !profile.onboarding_completed && !bannerDismissed && (
-          <div className="relative flex items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100">
-              <ClipboardCheck className="h-5 w-5 text-amber-600" />
+          <div className="relative flex items-center gap-4 rounded-2xl border border-primary/30 bg-primary-light/8 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-light/15">
+              <ClipboardCheck className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-amber-900">
+              <p className="text-sm font-medium text-navy">
                 Completa tu perfil para aprovechar todos los beneficios
               </p>
               <Link
                 href="/client/onboarding/form"
-                className="mt-1 inline-block text-sm font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-800"
+                className="mt-1 inline-block text-sm font-semibold text-primary underline underline-offset-2 hover:text-primary/80"
               >
                 Completar perfil
               </Link>
             </div>
             <button
               onClick={() => setBannerDismissed(true)}
-              className="shrink-0 rounded-lg p-1 text-amber-400 hover:bg-amber-100 hover:text-amber-600"
+              className="shrink-0 rounded-lg p-1 text-primary/40 hover:bg-primary/10 hover:text-primary"
               aria-label="Cerrar"
             >
               <X className="h-4 w-4" />
@@ -266,27 +259,11 @@ export default function ClientPortal() {
           <TierProgressCard membership={primaryMembership} />
         )}
 
-        {/* 3. Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <MetricCard
-            title="Puntos Acumulados"
-            value={(profile?.total_points || 0).toLocaleString()}
-            icon={<Star className="h-6 w-6" />}
-          />
-          <MetricCard
-            title="Total de Pedidos"
-            value={profile?.total_orders || 0}
-            icon={<ShoppingCart className="h-6 w-6" />}
-          />
-          <MetricCard
-            title="Zona"
-            value={profile?.zone_name || 'Sin asignar'}
-            icon={<MapPin className="h-6 w-6" />}
-          />
-        </div>
-
-        {/* 4. WeeklyPromotionsBanner */}
+        {/* 3. WeeklyPromotionsBanner */}
         <WeeklyPromotionsBanner promotions={promotions} />
+
+        {/* 4. LoyaltyPlansSection */}
+        <LoyaltyPlansSection memberships={memberships} />
 
         {/* 5. SuggestedProductsGrid */}
         <SuggestedProductsGrid products={products} />
@@ -294,70 +271,47 @@ export default function ClientPortal() {
         {/* 6. CouponsSection */}
         <CouponsSection promotions={promotions} />
 
-        {/* 7. LoyaltyPlansSection */}
-        <LoyaltyPlansSection memberships={memberships} />
-
-        {/* 6. Quick Actions */}
+        {/* 7. Quick Actions */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rapidas</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <h2 className="text-lg font-bold text-navy mb-4">Acciones Rapidas</h2>
+          <div className="grid grid-cols-2 gap-3">
             <Link href="/client/qr">
               <Button
                 variant="outline"
-                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-2xl hover:bg-purple-50 border-purple-200 bg-purple-50/50"
+                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30"
               >
-                <QrCode className="h-7 w-7 text-purple-600" />
-                <span className="text-sm font-medium">Mi Codigo QR</span>
+                <IconQR className="h-7 w-7 text-primary" />
+                <span className="text-sm font-medium text-navy">Mi Codigo QR</span>
               </Button>
             </Link>
 
             <Link href="/client/orders">
               <Button
                 variant="outline"
-                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-2xl hover:bg-blue-50"
+                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30"
               >
-                <ShoppingCart className="h-7 w-7 text-[#2196F3]" />
-                <span className="text-sm font-medium">Mis Pedidos</span>
+                <IconPedidos className="h-7 w-7 text-primary" />
+                <span className="text-sm font-medium text-navy">Mis Pedidos</span>
               </Button>
             </Link>
 
             <Link href="/client/brands">
               <Button
                 variant="outline"
-                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-2xl hover:bg-indigo-50"
+                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30"
               >
-                <Building2 className="h-7 w-7 text-indigo-600" />
-                <span className="text-sm font-medium">Mis Marcas</span>
+                <IconMarcas className="h-7 w-7 text-primary" />
+                <span className="text-sm font-medium text-navy">Marcas</span>
               </Button>
             </Link>
 
             <Link href="/client/points">
               <Button
                 variant="outline"
-                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-2xl hover:bg-yellow-50"
+                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30"
               >
-                <Star className="h-7 w-7 text-yellow-600" />
-                <span className="text-sm font-medium">Mis Puntos</span>
-              </Button>
-            </Link>
-
-            <Link href="/client/profile">
-              <Button
-                variant="outline"
-                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-2xl hover:bg-green-50"
-              >
-                <Store className="h-7 w-7 text-green-600" />
-                <span className="text-sm font-medium">Mi Perfil</span>
-              </Button>
-            </Link>
-
-            <Link href="/client/surveys">
-              <Button
-                variant="outline"
-                className="w-full h-20 flex flex-col items-center justify-center gap-2 rounded-2xl hover:bg-indigo-50"
-              >
-                <ClipboardList className="h-7 w-7 text-indigo-600" />
-                <span className="text-sm font-medium">Encuestas</span>
+                <IconMiNivel className="h-7 w-7 text-primary" />
+                <span className="text-sm font-medium text-navy">Mi Nivel</span>
               </Button>
             </Link>
           </div>

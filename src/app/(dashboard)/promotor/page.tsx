@@ -9,7 +9,8 @@ import { PageLoader, Alert } from '@/components/ui/feedback';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { displayPhone } from '@/lib/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Users, CheckCircle, Clock, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
+import { IconClientes, IconCompletado, IconPendiente, IconVisitas, IconAgenda } from '@/components/icons';
 
 interface PromotorProfile {
   id: string;
@@ -42,13 +43,8 @@ interface PromotorStats {
   performance_score: number;
 }
 
-/**
- * Página principal del perfil del promotor
- * Muestra información personal, estadísticas y accesos rápidos
- */
 export default function PromotorProfilePage() {
   usePageTitle('Dashboard Promotor');
-  // Role protection is handled by the layout (promotor/layout.tsx)
   const [profile, setProfile] = useState<PromotorProfile | null>(null);
   const [stats, setStats] = useState<PromotorStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +56,6 @@ export default function PromotorProfilePage() {
       setError(null);
 
       try {
-        // Cargar perfil del promotor
         const profileResponse = await fetch('/api/promotor/profile', {
           method: 'GET',
           headers: {
@@ -74,9 +69,8 @@ export default function PromotorProfilePage() {
         }
 
         const profileData = await profileResponse.json();
-        setProfile(profileData); // El API retorna el perfil directamente
+        setProfile(profileData);
 
-        // Cargar estadísticas del promotor
         const statsResponse = await fetch('/api/promotor/stats', {
           method: 'GET',
           headers: {
@@ -128,199 +122,159 @@ export default function PromotorProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-2xl font-bold text-blue-600">
-                    {profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Profile Card */}
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl font-bold text-white">
+                {profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-bold text-navy truncate">
+                {profile.full_name}
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Promotor · {profile.public_id}
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <StatusBadge status={profile.status as 'active' | 'inactive'} size="sm" />
+                {profile.specialization && (
+                  <span className="text-sm text-muted-foreground">· {profile.specialization}</span>
+                )}
+                {profile.performance_rating && (
+                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                    · <Star className="h-3.5 w-3.5 text-warning fill-warning" /> {profile.performance_rating.toFixed(1)}
                   </span>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {profile.full_name}
-                  </h1>
-                  <p className="text-gray-600">
-                    Promotor • {profile.public_id}
-                  </p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <StatusBadge status={profile.status as 'active' | 'inactive'} size="sm" />
-                    {profile.specialization && (
-                      <span className="text-sm text-gray-500">• {profile.specialization}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                <Link href="/promotor/profile/edit">
-                  <Button variant="outline" size="sm">
-                    Editar Perfil
-                  </Button>
-                </Link>
+                )}
               </div>
             </div>
+            <Link href="/promotor/profile/edit">
+              <Button variant="outline" size="sm" className="border-navy text-navy hover:bg-navy/5">
+                Editar Perfil
+              </Button>
+            </Link>
           </div>
-        </div>
-      </div>
+        </Card>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Estadísticas principales */}
+        {/* Stats Grid */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <MetricCard
-              title="Clientes Asignados"
-              value={stats.total_clients}
-              icon={<Users className="h-6 w-6" />}
-            />
-            <MetricCard
-              title="Visitas Completadas"
-              value={stats.completed_visits}
-              icon={<CheckCircle className="h-6 w-6" />}
-              variant="success"
-            />
-            <MetricCard
-              title="Visitas Pendientes"
-              value={stats.pending_visits}
-              icon={<Clock className="h-6 w-6" />}
-              variant="warning"
-            />
-            <MetricCard
-              title="Rating Promedio"
-              value={stats.avg_visit_rating ? stats.avg_visit_rating.toFixed(1) : '0.0'}
-              icon={<Star className="h-6 w-6" />}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="p-5 border border-border">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-navy">
+                  <IconClientes className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Clientes Asignados</p>
+                  <p className="text-2xl font-bold text-navy">{stats.total_clients}</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-primary-light text-white border-0">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <IconCompletado className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm text-white/80">Visitas Completadas</p>
+                  <p className="text-2xl font-bold">{stats.completed_visits}</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-primary-light text-white border-0">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <IconPendiente className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm text-white/80">Visitas Pendientes</p>
+                  <p className="text-2xl font-bold">{stats.pending_visits}</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-5 border border-border">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-navy">
+                  <Star className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Rating Promedio</p>
+                  <p className="text-2xl font-bold text-navy">{stats.avg_visit_rating ? stats.avg_visit_rating.toFixed(1) : '0.0'}</p>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Información Personal */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Personal Info */}
           <div className="lg:col-span-2">
-            <Card>
-              <div className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Información Personal
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="p-6">
+              <h3 className="text-lg font-bold text-navy mb-4">
+                Información Personal
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Email</label>
+                  <p className="mt-1 text-sm text-navy">{profile.email}</p>
+                </div>
+                {profile.phone && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Email</label>
-                    <p className="mt-1 text-sm text-gray-900">{profile.email}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Teléfono</label>
+                    <p className="mt-1 text-sm text-navy">{displayPhone(profile.phone)}</p>
                   </div>
-
-                  {profile.phone && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500">Teléfono</label>
-                      <p className="mt-1 text-sm text-gray-900">{displayPhone(profile.phone)}</p>
-                    </div>
-                  )}
-
-                  {profile.territory_assigned && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500">Territorio Asignado</label>
-                      <p className="mt-1 text-sm text-gray-900">{profile.territory_assigned}</p>
-                    </div>
-                  )}
-
+                )}
+                {profile.territory_assigned && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Nivel de Experiencia</label>
-                    <p className="mt-1 text-sm text-gray-900">{profile.experience_level}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Territorio Asignado</label>
+                    <p className="mt-1 text-sm text-navy">{profile.territory_assigned}</p>
                   </div>
-
-                  {profile.performance_rating && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500">Calificación de Desempeño</label>
-                      <div className="flex items-center mt-1">
-                        <div className="flex text-yellow-400">
-                          {[...Array(5)].map((_, i) => (
-                            <svg
-                              key={i}
-                              className={`w-4 h-4 ${i < Math.floor(profile.performance_rating!) ? 'text-yellow-400' : 'text-gray-300'
-                                }`}
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          ))}
-                        </div>
-                        <span className="ml-2 text-sm text-gray-600">{profile.performance_rating.toFixed(1)}</span>
-                      </div>
-                    </div>
-                  )}
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Nivel de Experiencia</label>
+                  <p className="mt-1 text-sm text-navy">{profile.experience_level}</p>
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* Accesos Rápidos */}
+          {/* Quick Actions */}
           <div>
-            <Card>
-              <div className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Accesos Rápidos
-                </h3>
-
-                <div className="space-y-3">
-                  <Link href="/promotor/visitas" className="block">
-                    <div className="p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-900">Mis Visitas</span>
-                      </div>
+            <Card className="p-6">
+              <h3 className="text-lg font-bold text-navy mb-4">
+                Accesos Rápidos
+              </h3>
+              <div className="space-y-3">
+                <Link href="/promotor/visitas" className="block">
+                  <div className="p-3 border border-border rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
+                    <div className="flex items-center">
+                      <IconVisitas className="w-5 h-5 text-primary mr-3" />
+                      <span className="text-sm font-medium text-navy">Mis Visitas</span>
                     </div>
-                  </Link>
-
-                  <Link href="/promotor/clients" className="block">
-                    <div className="p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-900">Mis Clientes</span>
-                      </div>
+                  </div>
+                </Link>
+                <Link href="/promotor/clients" className="block">
+                  <div className="p-3 border border-border rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
+                    <div className="flex items-center">
+                      <IconClientes className="w-5 h-5 text-primary mr-3" />
+                      <span className="text-sm font-medium text-navy">Mis Clientes</span>
                     </div>
-                  </Link>
-
-                  <Link href="/promotor/schedule" className="block">
-                    <div className="p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-900">Mi Agenda</span>
-                      </div>
+                  </div>
+                </Link>
+                <Link href="/promotor/schedule" className="block">
+                  <div className="p-3 border border-border rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
+                    <div className="flex items-center">
+                      <IconAgenda className="w-5 h-5 text-primary mr-3" />
+                      <span className="text-sm font-medium text-navy">Mi Agenda</span>
                     </div>
-                  </Link>
-
-                  <Link href="/promotor/reports" className="block">
-                    <div className="p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2 2z" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-900">Mis Reportes</span>
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link href="/promotor/surveys" className="block">
-                    <div className="p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-900">Encuestas</span>
-                      </div>
-                    </div>
-                  </Link>
-                </div>
+                  </div>
+                </Link>
               </div>
             </Card>
           </div>

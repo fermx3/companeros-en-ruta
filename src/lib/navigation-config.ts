@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react'
 import {
   Home,
   Users,
@@ -23,11 +24,23 @@ import {
   Megaphone,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import {
+  IconInicio,
+  IconVisitas,
+  IconClientes,
+  IconAgenda,
+  IconMas,
+  IconQR,
+  IconPedidos,
+  IconMarcas,
+} from '@/components/icons'
+
+export type NavIconComponent = LucideIcon | ComponentType<{ className?: string }>
 
 export interface NavItem {
   id: string
   label: string
-  icon: LucideIcon
+  icon: NavIconComponent
   href: string
 }
 
@@ -119,10 +132,11 @@ export const promotorNavConfig: RoleNavConfig = buildConfig(
   'promotor',
   'Promotor',
   [
-    { id: 'home', label: 'Inicio', icon: Home, href: '/promotor' },
-    { id: 'visits', label: 'Visitas', icon: MapPin, href: '/promotor/visitas' },
-    { id: 'clients', label: 'Clientes', icon: Users, href: '/promotor/clients' },
-    { id: 'schedule', label: 'Agenda', icon: Calendar, href: '/promotor/schedule' },
+    { id: 'home', label: 'Inicio', icon: IconInicio, href: '/promotor' },
+    { id: 'visits', label: 'Visitas', icon: IconVisitas, href: '/promotor/visitas' },
+    { id: 'clients', label: 'Clientes', icon: IconClientes, href: '/promotor/clients' },
+    { id: 'campaigns', label: 'Campañas', icon: Megaphone, href: '/promotor/campanias' },
+    { id: 'schedule', label: 'Agenda', icon: IconAgenda, href: '/promotor/schedule' },
     { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/promotor/surveys' },
     { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/promotor/reports' },
   ],
@@ -145,10 +159,10 @@ export const clientNavConfig: RoleNavConfig = buildConfig(
   'client',
   'Mi Portal',
   [
-    { id: 'home', label: 'Inicio', icon: Home, href: '/client' },
-    { id: 'qr', label: 'Mi QR', icon: QrCode, href: '/client/qr' },
-    { id: 'orders', label: 'Pedidos', icon: ShoppingCart, href: '/client/orders' },
-    { id: 'brands', label: 'Marcas', icon: Building2, href: '/client/brands' },
+    { id: 'home', label: 'Inicio', icon: IconInicio, href: '/client' },
+    { id: 'qr', label: 'Mi QR', icon: IconQR, href: '/client/qr' },
+    { id: 'orders', label: 'Pedidos', icon: IconPedidos, href: '/client/orders' },
+    { id: 'brands', label: 'Marcas', icon: IconMarcas, href: '/client/brands' },
     { id: 'points', label: 'Puntos', icon: Star, href: '/client/points' },
     { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/client/surveys' },
     { id: 'profile', label: 'Mi Perfil', icon: UserCircle, href: '/client/profile' },

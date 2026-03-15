@@ -10,11 +10,11 @@ export interface StatusBadgeProps {
 }
 
 const statusVariants: Record<StatusType, string> = {
-    active: 'bg-green-100 text-green-700 border-green-200',
+    active: 'bg-[#e3fee8] text-[#437b56] border-[#c6efd0]',
     inactive: 'bg-gray-100 text-gray-500 border-gray-200',
     suspended: 'bg-red-100 text-red-700 border-red-200',
     pending: 'bg-amber-100 text-amber-700 border-amber-200',
-    completed: 'bg-blue-100 text-blue-700 border-blue-200',
+    completed: 'bg-blue-100 text-[#4d71ed] border-blue-200',
     cancelled: 'bg-red-100 text-red-700 border-red-200',
     expired: 'bg-gray-100 text-gray-700 border-gray-200'
 }

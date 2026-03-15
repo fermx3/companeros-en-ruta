@@ -1,52 +1,65 @@
 @import "tailwindcss";
 
 @theme {
-  /* Compañeros en Ruta - Design System Colors */
+  /* Perfectapp Design System Colors */
 
-  --color-primary: oklch(0.64 0.24 25);
-  /* Naranja #FF5722 */
-  --color-primary-foreground: oklch(1 0 0);
+  --color-primary: #dd5025;
+  /* Naranja principal */
+  --color-primary-light: #ec6033;
+  /* Naranja claro - botones, CTAs */
+  --color-primary-foreground: #ffffff;
   /* Blanco */
 
-  --color-secondary: oklch(0.65 0.22 245);
-  /* Azul #2196F3 */
-  --color-secondary-foreground: oklch(1 0 0);
+  --color-secondary: #4d71ed;
+  /* Azul secundario */
+  --color-secondary-foreground: #ffffff;
   /* Blanco */
 
-  --color-accent: oklch(0.64 0.18 145);
-  /* Verde #4CAF50 */
-  --color-accent-foreground: oklch(1 0 0);
+  --color-navy: #202456;
+  /* Navy oscuro - texto, headers, iconos nav */
+
+  --color-accent: #437b56;
+  /* Verde - estados success */
+  --color-accent-foreground: #ffffff;
   /* Blanco */
 
-  --color-warning: oklch(0.78 0.18 80);
-  /* Amarillo/Oro #FFB300 */
+  --color-warning: #ffe159;
+  /* Gold - tier ORO */
 
-  --color-background: oklch(0.98 0 0);
+  --color-background: #ffffff;
   /* Fondo principal */
-  --color-foreground: oklch(0.2 0 0);
-  /* Texto principal */
+  --color-foreground: #202456;
+  /* Texto principal (navy) */
 
-  --color-card: oklch(1 0 0);
+  --color-card: #ffffff;
   /* Fondo de cards */
-  --color-card-foreground: oklch(0.2 0 0);
+  --color-card-foreground: #000000;
   /* Texto en cards */
 
-  --color-muted: oklch(0.96 0.01 250);
+  --color-muted: #f5f5f5;
   /* Fondos sutiles */
-  --color-muted-foreground: oklch(0.55 0 0);
-  /* Texto muted */
+  --color-muted-foreground: #999999;
+  /* Texto muted / gris */
 
-  --color-border: oklch(0.91 0.01 250);
+  --color-border: #cccccc;
   /* Bordes */
-  --color-input: oklch(0.91 0.01 250);
+  --color-input: #cccccc;
   /* Input borders */
-  --color-ring: oklch(0.64 0.24 25);
-  /* Focus ring (primary) */
+  --color-ring: #4d71ed;
+  /* Focus ring (secondary blue) */
 
-  --color-destructive: oklch(0.62 0.25 25);
+  --color-destructive: #dc2626;
   /* Rojo para destructive */
-  --color-destructive-foreground: oklch(1 0 0);
+  --color-destructive-foreground: #ffffff;
   /* Blanco */
+
+  --color-success-bg: #e3fee8;
+  /* Badge ACTIVO background */
+  --color-success-text: #437b56;
+  /* Badge ACTIVO text */
+
+  --color-login-gradient-end: #dae3fb;
+  /* Login bg bottom (azul suave) */
 
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
@@ -54,7 +67,8 @@
   --radius-xl: 1.5rem;
 
   /* Typography System */
-  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-nunito-sans), "Nunito Sans", system-ui, -apple-system,
+    sans-serif;
 
   /* Spacing System (4px base) */
   --spacing-1: 0.25rem;
@@ -79,9 +93,7 @@
 }
 
 body {
-  font-family: Inter, system-ui, -apple-system, sans-serif;
-  font-feature-settings: 'cv11', 'ss01';
-  font-variation-settings: 'opsz' 32;
+  font-family: var(--font-sans);
   background: var(--color-background);
   color: var(--color-foreground);
 }
@@ -114,6 +126,20 @@ html {
 .touch-target {
   min-height: 44px;
   min-width: 44px;
+}
+
+/* Login gradient background */
+.bg-login-gradient {
+  background: linear-gradient(to bottom, #ffffff, #dae3fb);
+}
+
+/* Hide scrollbar for carousel */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Animation utilities */

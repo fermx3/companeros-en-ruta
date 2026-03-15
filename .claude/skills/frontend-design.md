@@ -11,30 +11,42 @@ Este proyecto es un **SaaS multi-tenant** llamado **Compañeros en Ruta** desarr
 
 ## 🎨 Design System Específico - Compañeros en Ruta
 
-### Paleta de Colores Oficial
-```css
-:root {
-  /* Primarios */
-  --primary: 16 82% 54%;      /* Naranja #FF5722 */
-  --primary-foreground: 0 0% 100%;
+### Paleta de Colores Oficial (Perfectapp Design System)
 
-  /* Secundarios */
-  --secondary: 207 90% 54%;   /* Azul #2196F3 */
-  --accent: 122 39% 49%;      /* Verde #4CAF50 */
-  --warning: 45 93% 58%;      /* Amarillo/Oro #FFB300 */
+| Token | Hex | Uso |
+|-------|-----|-----|
+| `--color-primary` | `#dd5025` | Acento principal, avatar promotor |
+| `--color-primary-light` | `#ec6033` | Botones CTA, iconos activos |
+| `--color-secondary` | `#4d71ed` | Acento secundario, avatar cliente, links |
+| `--color-navy` | `#202456` | Texto oscuro, iconos nav, headers |
+| `--color-accent` | `#437b56` | Verde para estados success |
+| `--color-warning` | `#ffe159` | Gold para tier ORO |
+| `--color-foreground` | `#202456` | Texto principal (navy) |
+| `--color-muted-foreground` | `#999999` | Texto secundario gris |
+| `--color-border` | `#cccccc` | Bordes, placeholders |
+| `--color-success-bg` | `#e3fee8` | Badge "ACTIVO" background |
+| `--color-success-text` | `#437b56` | Badge "ACTIVO" text |
+| `--color-login-gradient-end` | `#dae3fb` | Login bg bottom |
 
-  /* Grises del sistema */
-  --background: 0 0% 98%;     /* Fondo principal */
-  --card: 0 0% 100%;          /* Fondo de cards */
-  --muted: 210 40% 96%;       /* Fondos sutiles */
-  --border: 214 32% 91%;      /* Bordes */
-}
-```
+### Tier Card Gradients
+Sistema: `tier_color` (del DB) → `#202456` (navy fijo). Solo se configura un color por tier.
+- **BRONCE:** `#ec6033` → `#202456`
+- **PLATA:** `#4d71ed` → `#202456`
+- **ORO:** `#ffe159` → `#202456`
 
 ### Typography System
-- **Font Family**: Inter, system-ui, sans-serif
-- **Weights**: 400 (Regular), 500 (Medium), 600 (Semi-bold), 700 (Bold)
+- **Font Family**: Nunito Sans (Google Fonts via `next/font/google`)
+- **CSS Variable**: `--font-nunito-sans`
+- **Weights**: 300 (Light), 400 (Regular), 500 (Medium), 700 (Bold), 900 (Black)
 - **Scales**: text-sm (14px), text-base (16px), text-lg (18px), text-xl (20px), text-2xl (24px), text-3xl (30px)
+
+### Custom Icons
+Located at `src/components/icons/index.tsx`. Custom SVG icons from the Perfectapp design:
+- `IconInicio`, `IconVisitas`, `IconClientes`, `IconAgenda`, `IconMas`
+- `IconMarcas`, `IconMiNivel`, `IconNotificaciones`, `IconPedidos`
+- `IconPuntos`, `IconQR`, `IconCompletado`, `IconPendiente`, `IconTache`
+
+All accept `className` and `size` props, use `currentColor` for fill.
 
 ## Reglas de Diseño Obligatorias
 

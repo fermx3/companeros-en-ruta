@@ -207,23 +207,27 @@ export function LoginForm() {
     }
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
+        <div className="min-h-screen bg-login-gradient flex flex-col relative overflow-hidden">
+            {/* Decorative circles */}
+            <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-navy opacity-90" />
+            <div className="absolute top-10 -right-10 w-48 h-48 rounded-full bg-secondary opacity-70" />
+
             {/* Header con branding */}
-            <div className="p-6">
+            <div className="p-6 relative z-10">
                 <div className="flex items-center gap-3 mb-8">
-                    <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
+                    <div className="h-12 w-12 rounded-xl bg-primary-light flex items-center justify-center">
                         <span className="text-lg font-bold text-white">CR</span>
                     </div>
                     <div>
-                        <h1 className="text-lg font-bold">Compañeros</h1>
+                        <h1 className="text-lg font-bold text-navy">Compañeros</h1>
                         <span className="text-sm font-medium text-primary">EN RUTA</span>
                     </div>
                 </div>
 
                 {/* Heading principal */}
                 <div className="space-y-3 mb-8">
-                    <h2 className="text-3xl font-bold leading-tight">
-                        Centraliza tu <span className="text-primary">información</span> comercial.
+                    <h2 className="text-3xl font-bold leading-tight text-navy">
+                        Centraliza tu <span className="text-primary-light">información</span> comercial.
                     </h2>
                     <p className="text-muted-foreground">
                         Gestiona marcas, ventas y puntos de venta en un solo ecosistema inteligente.
@@ -232,8 +236,8 @@ export function LoginForm() {
             </div>
 
             {/* Form */}
-            <div className="flex-1 bg-white rounded-t-3xl p-6 space-y-6">
-                <h3 className="text-xl font-semibold">Iniciar Sesión</h3>
+            <div className="flex-1 bg-white rounded-t-3xl p-6 space-y-6 relative z-10">
+                <h3 className="text-xl font-semibold text-navy">Iniciar Sesión</h3>
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
@@ -256,7 +260,7 @@ export function LoginForm() {
                                                 {...field}
                                                 type="email"
                                                 placeholder="nombre@empresa.com"
-                                                className="pl-10 h-12 rounded-xl"
+                                                className="pl-10 h-12 rounded-lg border-border"
                                                 disabled={loading}
                                             />
                                         </div>
@@ -279,7 +283,7 @@ export function LoginForm() {
                                                 {...field}
                                                 type={showPassword ? 'text' : 'password'}
                                                 placeholder="••••••••"
-                                                className="pl-10 pr-10 h-12 rounded-xl"
+                                                className="pl-10 pr-10 h-12 rounded-lg border-border"
                                                 disabled={loading}
                                             />
                                             <button
@@ -307,7 +311,7 @@ export function LoginForm() {
                             size="lg"
                             fullWidth
                             loading={loading}
-                            className="mt-6"
+                            className="mt-6 !rounded-full !bg-primary-light hover:!bg-primary"
                         >
                             Iniciar Sesión
                         </ActionButton>

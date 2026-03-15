@@ -36,13 +36,13 @@ interface WeeklyPromotionsBannerProps {
 function getPromotionGradient(type: string): string {
   switch (type) {
     case 'percentage_discount':
-      return 'from-[#FF5722] to-orange-400'
+      return 'from-[#ec6033] to-[#202456]'
     case 'points_multiplier':
-      return 'from-[#2196F3] to-blue-400'
+      return 'from-[#4d71ed] to-[#202456]'
     case 'free_product':
-      return 'from-emerald-500 to-green-400'
+      return 'from-emerald-500 to-[#202456]'
     default:
-      return 'from-[#FF5722] to-amber-500'
+      return 'from-[#ec6033] to-[#202456]'
   }
 }
 
@@ -177,7 +177,7 @@ export function WeeklyPromotionsBanner({ promotions, loading }: WeeklyPromotions
               key={i}
               aria-label={`Ir a promocion ${i + 1}`}
               className={`h-2 rounded-full transition-all duration-200 ${
-                i === activeIndex ? 'w-6 bg-[#FF5722]' : 'w-2 bg-gray-300'
+                i === activeIndex ? 'w-6 bg-primary' : 'w-2 bg-gray-300'
               }`}
               onClick={() => {
                 const el = scrollRef.current

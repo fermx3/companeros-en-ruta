@@ -32,6 +32,9 @@ interface TierProgressCardProps {
   membership: ClientMembership
 }
 
+const NAVY = '#202456'
+const DEFAULT_TIER_COLOR = '#ec6033'
+
 export function TierProgressCard({ membership }: TierProgressCardProps) {
   const tier = membership.current_tier
   const nextTier = membership.next_tier
@@ -41,8 +44,15 @@ export function TierProgressCard({ membership }: TierProgressCardProps) {
     ? Math.min(100, (membership.lifetime_points / nextTier.min_points_required) * 100)
     : 100
 
+  const tierColor = tier?.tier_color || DEFAULT_TIER_COLOR
+
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-amber-400 to-[#FF5722] p-6 text-white shadow-sm">
+    <div
+      className="rounded-2xl p-6 text-white shadow-sm"
+      style={{
+        background: `linear-gradient(to bottom right, ${tierColor}, ${NAVY})`,
+      }}
+    >
       {/* Row 1: NIVEL ACTUAL + ID badge */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold uppercase tracking-widest text-white/90">
@@ -50,7 +60,7 @@ export function TierProgressCard({ membership }: TierProgressCardProps) {
         </span>
         {membership.public_id && (
           <span className="text-xs font-medium bg-white/25 backdrop-blur-sm rounded-full px-3 py-1 text-white">
-            ID: {membership.public_id}
+            ID CRM: {membership.public_id}
           </span>
         )}
       </div>
@@ -58,7 +68,7 @@ export function TierProgressCard({ membership }: TierProgressCardProps) {
       {/* Row 2: Tier name + badge icon */}
       <h3 className="text-3xl font-bold mb-5 flex items-center gap-2">
         {tier?.name || 'Sin nivel'}
-        <BadgeCheck className="h-7 w-7 text-yellow-300" />
+        <BadgeCheck className="h-7 w-7 text-white/80" />
       </h3>
 
       {/* Row 3: Progress section */}
@@ -75,7 +85,7 @@ export function TierProgressCard({ membership }: TierProgressCardProps) {
               {membership.lifetime_points.toLocaleString()} / {nextTier.min_points_required.toLocaleString()} pts
             </span>
           </div>
-          <div className="w-full bg-white/30 rounded-full h-3">
+          <div className="w-full bg-white/25 rounded-full h-3">
             <div
               className="h-3 rounded-full bg-white transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
@@ -85,7 +95,7 @@ export function TierProgressCard({ membership }: TierProgressCardProps) {
       )}
 
       {/* Row 4: Points total (large) */}
-      <p className="text-4xl font-bold">
+      <p className="text-4xl font-black">
         {membership.points_balance.toLocaleString()}
         <span className="text-lg font-medium text-white/90 ml-2">puntos totales</span>
       </p>
