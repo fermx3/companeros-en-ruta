@@ -220,14 +220,14 @@ export default function ClientOnboardingFormPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 flex items-center justify-center">
+      <div className="min-h-screen p-4 flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen">
       <div className="max-w-lg mx-auto px-4 py-6">
         <ProgressBar step={step} />
 

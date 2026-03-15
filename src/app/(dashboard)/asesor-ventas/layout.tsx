@@ -50,7 +50,7 @@ export default function AsesorVentasLayout({ children }: AsesorVentasLayoutProps
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <SideNavigation entries={asesorVentasNavConfig.entries} title={asesorVentasNavConfig.title} profileHref="/asesor-ventas/profile" />
       <div className="lg:pl-64">
         <DashboardHeader title={asesorVentasNavConfig.title} profileHref="/asesor-ventas/profile" />

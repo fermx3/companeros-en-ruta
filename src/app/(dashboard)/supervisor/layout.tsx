@@ -68,7 +68,7 @@ export default function SupervisorLayout({ children }: SupervisorLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <SideNavigation entries={navEntries} title={supervisorNavConfig.title} profileHref="/supervisor/profile" />
       <div className="lg:pl-64">
         <DashboardHeader title={supervisorNavConfig.title} profileHref="/supervisor/profile" />

@@ -61,7 +61,7 @@ export default function SupervisorReportsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6 animate-pulse">
           <div className="h-8 bg-muted rounded-md w-48"></div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -77,7 +77,7 @@ export default function SupervisorReportsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-6">
@@ -98,7 +98,7 @@ export default function SupervisorReportsPage() {
     : 0
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           {/* Header */}

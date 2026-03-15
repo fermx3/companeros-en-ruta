@@ -144,7 +144,7 @@ export default function ClientProfilePage() {
   // --- Loading ---
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto space-y-4 animate-pulse">
           <div className="h-24 bg-muted rounded-2xl" />
           <div className="h-40 bg-muted rounded-2xl" />
@@ -158,7 +158,7 @@ export default function ClientProfilePage() {
   // --- Error ---
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto">
           <Card className="border-red-200 bg-red-50">
             <CardHeader>
@@ -177,7 +177,7 @@ export default function ClientProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
 
         {/* Header */}

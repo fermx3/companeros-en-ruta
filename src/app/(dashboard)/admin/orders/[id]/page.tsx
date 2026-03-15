@@ -261,7 +261,7 @@ export default function AdminOrderDetailPage({
 
   if (error && !order) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen p-8">
         <Alert variant="error" className="max-w-lg mx-auto">
           {error}
         </Alert>
@@ -282,7 +282,7 @@ export default function AdminOrderDetailPage({
   const transitions = allowedTransitions[order.order_status] || []
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
