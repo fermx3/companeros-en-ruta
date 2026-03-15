@@ -102,7 +102,7 @@ export function CouponsSection({ promotions }: CouponsSectionProps) {
   if (coupons.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Cupones y Descuentos</h2>
+        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Cupones y Descuentos</h2>
         <div className="rounded-2xl bg-gray-50 p-8 text-center shadow-sm">
           <Ticket className="mx-auto h-10 w-10 text-gray-400 mb-3" />
           <p className="text-sm font-medium text-gray-900">No hay cupones disponibles</p>
@@ -116,7 +116,7 @@ export function CouponsSection({ promotions }: CouponsSectionProps) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">Cupones y Descuentos</h2>
+      <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Cupones y Descuentos</h2>
 
       <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide lg:grid lg:grid-cols-3 lg:overflow-x-visible">
         {coupons.map((coupon) => (

@@ -96,7 +96,9 @@ export async function GET(request: NextRequest) {
         brand:brands(
           id,
           name,
-          logo_url
+          logo_url,
+          brand_color_primary,
+          brand_color_secondary
         )
       `)
             .eq('status', 'active')

@@ -4,13 +4,15 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Tag, Gift, QrCode } from 'lucide-react'
+import { Tag, QrCode } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 
 interface PromotionBrand {
   id: string
   name: string
   logo_url: string | null
+  brand_color_primary?: string | null
+  brand_color_secondary?: string | null
 }
 
 interface Promotion {
@@ -33,17 +35,10 @@ interface WeeklyPromotionsBannerProps {
   loading?: boolean
 }
 
-function getPromotionGradient(type: string): string {
-  switch (type) {
-    case 'percentage_discount':
-      return 'from-[#ec6033] to-[#202456]'
-    case 'points_multiplier':
-      return 'from-[#4d71ed] to-[#202456]'
-    case 'free_product':
-      return 'from-emerald-500 to-[#202456]'
-    default:
-      return 'from-[#ec6033] to-[#202456]'
-  }
+function getBrandGradient(brand: PromotionBrand): string {
+  const primary = brand.brand_color_primary || '#6b7a3d'
+  const secondary = brand.brand_color_secondary || '#202456'
+  return `linear-gradient(to right, ${primary}, ${secondary})`
 }
 
 function getDiscountLabel(promo: Promotion): string {
@@ -64,9 +59,9 @@ function getDiscountLabel(promo: Promotion): string {
 
 function PromotionsSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="h-6 bg-muted rounded w-56 animate-pulse" />
-      <div className="h-44 bg-muted rounded-2xl animate-pulse" />
+    <div className="space-y-3">
+      <div className="h-4 bg-muted rounded w-48 animate-pulse" />
+      <div className="h-36 bg-muted rounded-2xl animate-pulse" />
     </div>
   )
 }
@@ -104,12 +99,12 @@ export function WeeklyPromotionsBanner({ promotions, loading }: WeeklyPromotions
 
   if (total === 0) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Promociones de la Semana</h2>
-        <div className="rounded-2xl bg-gray-50 p-8 text-center shadow-sm">
-          <Tag className="mx-auto h-10 w-10 text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-900">No hay promociones activas</p>
-          <p className="text-sm text-gray-500 mt-1">
+      <div className="space-y-3">
+        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Promociones de la Semana</h2>
+        <div className="rounded-2xl bg-white/60 p-8 text-center shadow-sm">
+          <Tag className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+          <p className="text-sm font-medium text-navy">No hay promociones activas</p>
+          <p className="text-sm text-muted-foreground mt-1">
             Las promociones de tus marcas apareceran aqui.
           </p>
         </div>
@@ -118,8 +113,8 @@ export function WeeklyPromotionsBanner({ promotions, loading }: WeeklyPromotions
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">Promociones de la Semana</h2>
+    <div className="space-y-3">
+      <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Promociones de la Semana</h2>
 
       {/* Carousel */}
       <div
@@ -130,39 +125,37 @@ export function WeeklyPromotionsBanner({ promotions, loading }: WeeklyPromotions
         {displayPromotions.map((promo) => (
           <div
             key={promo.id}
-            className={`min-w-full snap-start rounded-2xl bg-gradient-to-br ${getPromotionGradient(promo.promotion_type)} p-6 text-white shadow-sm relative overflow-hidden`}
+            className="min-w-full snap-start rounded-2xl p-5 text-white shadow-sm relative overflow-hidden"
+            style={{ background: getBrandGradient(promo.brand) }}
           >
-            {/* Decorative circle */}
-            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
-
-            {/* Brand avatar + name */}
-            <div className="flex items-center gap-2 mb-3 relative">
+            {/* Brand logo — large circle on the right */}
+            <div className="absolute right-4 top-4 h-20 w-20 rounded-full bg-white/20 flex items-center justify-center">
               <Avatar
                 src={promo.brand?.logo_url}
                 alt={promo.brand?.name || ''}
-                size="sm"
-                className="border-2 border-white/30"
+                size="lg"
+                className="opacity-90"
               />
-              <span className="text-sm font-medium opacity-90">{promo.brand?.name}</span>
             </div>
 
-            {/* Promo name + discount */}
-            <div className="relative">
-              <p className="text-base font-bold mb-1">{promo.name}</p>
-              <p className="text-3xl font-extrabold mb-2">{getDiscountLabel(promo)}</p>
+            {/* Content — left side */}
+            <div className="pr-24">
+              <p className="text-base font-bold mb-1">{promo.brand?.name}</p>
+              <p className="text-2xl font-black">{getDiscountLabel(promo)}</p>
+              <p className="text-sm font-medium opacity-90">{promo.name}</p>
             </div>
 
-            {/* Footer: validity + CTA */}
-            <div className="flex items-center justify-between relative">
+            {/* Footer */}
+            <div className="flex items-center justify-between mt-3">
               <p className="text-xs opacity-70">
-                Valido hasta {format(new Date(promo.end_date), "dd 'de' MMM", { locale: es })}
+                Válido hasta {format(new Date(promo.end_date), "dd 'de' MMM", { locale: es })}
               </p>
               <Link
                 href="/client/qr"
-                className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors"
+                className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
               >
-                <QrCode className="h-4 w-4" />
                 Ver QR
+                <QrCode className="h-3.5 w-3.5" />
               </Link>
             </div>
           </div>
@@ -177,7 +170,7 @@ export function WeeklyPromotionsBanner({ promotions, loading }: WeeklyPromotions
               key={i}
               aria-label={`Ir a promocion ${i + 1}`}
               className={`h-2 rounded-full transition-all duration-200 ${
-                i === activeIndex ? 'w-6 bg-primary' : 'w-2 bg-gray-300'
+                i === activeIndex ? 'w-6 bg-primary' : 'w-2 bg-white/50'
               }`}
               onClick={() => {
                 const el = scrollRef.current

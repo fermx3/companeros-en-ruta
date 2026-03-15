@@ -60,7 +60,7 @@ export function LoyaltyPlansSection({ memberships, loading }: LoyaltyPlansSectio
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Mis Planes de Lealtad</h2>
+        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Mis Planes de Lealtad</h2>
         <Link
           href="/client/brands"
           className="text-sm text-[#FF5722] hover:text-[#E64A19] font-medium flex items-center gap-1"
