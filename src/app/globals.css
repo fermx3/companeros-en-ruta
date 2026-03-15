@@ -60,6 +60,8 @@
 
   --color-login-gradient-end: #dae3fb;
   /* Login bg bottom (azul suave) */
+  --color-app-bg: #dae3fb;
+  /* App background (azul suave) */
 
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
@@ -130,7 +132,7 @@ html {
 
 /* Login gradient background */
 .bg-login-gradient {
-  background: linear-gradient(to bottom, #ffffff, #dae3fb);
+  background: linear-gradient(to bottom, #ffffff 0%, #dae3fb 30%);
 }
 
 /* Hide scrollbar for carousel */

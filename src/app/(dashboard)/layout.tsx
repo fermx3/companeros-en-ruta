@@ -11,7 +11,7 @@ export default function DashboardLayout({
   return (
     <AuthProvider>
       <ToasterProvider>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-login-gradient">
           <main>
             {children}
           </main>

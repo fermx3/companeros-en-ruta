@@ -45,19 +45,19 @@ export function DashboardHeader({ title, displayName, headerExtra, profileHref }
   }, [menuOpen]);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
+    <header className="sticky top-0 z-50 bg-white/40 backdrop-blur-md supports-[backdrop-filter]:bg-white/30 lg:bg-white/80 lg:supports-[backdrop-filter]:bg-white/60 lg:border-b lg:border-gray-200">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg border-1 border-blue-600 flex items-center justify-center shadow-sm">
+          <div className="h-10 w-10 rounded-full border border-secondary flex items-center justify-center">
             <Image
               src="/perfect-logo-icon.png"
               alt="CR"
-              width={20}
-              height={20}
+              width={22}
+              height={22}
               className="object-contain"
             />
           </div>
-          <h1 className="text-lg font-bold text-gray-900">{title}</h1>
+          <h1 className="text-lg font-bold text-navy">{title}</h1>
           {headerExtra}
         </div>
         <div className="flex items-center gap-2">
@@ -66,9 +66,9 @@ export function DashboardHeader({ title, displayName, headerExtra, profileHref }
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center hover:bg-gray-400 transition-colors"
+              className="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-primary-light transition-colors"
             >
-              <span className="text-gray-600 font-medium text-xs">{initials}</span>
+              <span className="text-white font-bold text-sm">{initials}</span>
             </button>
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">

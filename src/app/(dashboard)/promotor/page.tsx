@@ -101,7 +101,7 @@ export default function PromotorProfilePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Alert variant="error" title="Error">{error}</Alert>
         </div>
@@ -111,7 +111,7 @@ export default function PromotorProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Alert variant="warning" title="Sin acceso">
             No tienes un perfil de promotor asignado.
@@ -122,7 +122,7 @@ export default function PromotorProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Profile Card */}
         <Card className="p-6">
