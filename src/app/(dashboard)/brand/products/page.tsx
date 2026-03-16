@@ -712,13 +712,13 @@ export default function BrandProductsPage() {
                 !product.is_active && "opacity-60"
               )}>
                 <div className="p-4">
-                  {/* Product Header */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start space-x-4 min-w-0">
+                  {/* Product Name - full width on top */}
+                  <div className="flex items-center justify-between gap-4 mb-3">
+                    <div className="flex items-center space-x-3 min-w-0">
                       <button
                         type="button"
                         onClick={() => toggleProductExpand(product.id)}
-                        className="mt-1 p-1 hover:bg-gray-100 rounded flex-shrink-0"
+                        className="p-1 hover:bg-gray-100 rounded flex-shrink-0"
                       >
                         {expandedProducts.has(product.id) ? (
                           <ChevronDown className="w-5 h-5 text-gray-400" />
@@ -726,62 +726,61 @@ export default function BrandProductsPage() {
                           <ChevronRight className="w-5 h-5 text-gray-400" />
                         )}
                       </button>
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Package className="w-6 h-6 text-blue-600" />
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Package className="w-5 h-5 text-blue-600" />
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="text-sm text-gray-500">{product.code}</span>
-                          {product.product_categories && (
-                            <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
-                              {product.product_categories.name}
-                            </span>
-                          )}
-                          <StatusBadge
-                            status={product.is_active ? 'active' : 'inactive'}
-                            size="sm"
-                          />
-                          {product.is_featured && (
-                            <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">
-                              Destacado
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      <h3 className="font-medium text-gray-900">{product.name}</h3>
                     </div>
+                    <div className="flex items-center space-x-1 flex-shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startEdit(product)}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(product.id)}
+                        disabled={deleting === product.id}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        {deleting === product.id ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
 
-                    <div className="flex items-center space-x-4 flex-shrink-0">
-                      <div className="text-right">
-                        <p className="text-lg font-semibold text-gray-900">
-                          {formatPrice(product.base_price)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {product.product_variants.length} presentacion{product.product_variants.length !== 1 ? 'es' : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => startEdit(product)}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(product.id)}
-                          disabled={deleting === product.id}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          {deleting === product.id ? (
-                            <LoadingSpinner size="sm" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
+                  {/* Product Details - below name */}
+                  <div className="flex items-center justify-between gap-4 ml-[4.25rem]">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm text-gray-500">{product.code}</span>
+                      {product.product_categories && (
+                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+                          {product.product_categories.name}
+                        </span>
+                      )}
+                      <StatusBadge
+                        status={product.is_active ? 'active' : 'inactive'}
+                        size="sm"
+                      />
+                      {product.is_featured && (
+                        <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">
+                          Destacado
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-lg font-semibold text-gray-900">
+                        {formatPrice(product.base_price)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {product.product_variants.length} presentacion{product.product_variants.length !== 1 ? 'es' : ''}
+                      </p>
                     </div>
                   </div>
 
