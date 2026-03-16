@@ -9,6 +9,7 @@ import {
   Gift, ChevronRight, ClipboardList, BarChart3, ShoppingCart,
 } from "lucide-react"
 import { displayPhone } from '@/lib/utils/phone'
+import { QuickActions } from '@/components/layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import Link from 'next/link'
 
@@ -95,7 +96,7 @@ export default function BrandDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
           <div className="h-8 bg-muted rounded-md w-64"></div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -109,7 +110,7 @@ export default function BrandDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <Card className="border-red-200 bg-red-50">
             <CardHeader>
@@ -128,7 +129,7 @@ export default function BrandDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Header with Logo and Brand Info */}
@@ -166,65 +167,16 @@ export default function BrandDashboard() {
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Quick Actions */}
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
-                <CardDescription className="text-gray-600">Herramientas principales para gestionar tu marca</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="grid grid-cols-2 gap-3">
-                  <Link href="/brand/kpis">
-                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                      <BarChart3 className="h-6 w-6 text-emerald-600" />
-                      <span className="text-sm font-medium">KPIs</span>
-                    </Button>
-                  </Link>
-                  <Link href="/brand/clients">
-                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                      <Users className="h-6 w-6 text-blue-600" />
-                      <span className="text-sm font-medium">Clientes</span>
-                    </Button>
-                  </Link>
-                  <Link href="/brand/orders">
-                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                      <ShoppingCart className="h-6 w-6 text-indigo-600" />
-                      <span className="text-sm font-medium">Órdenes</span>
-                    </Button>
-                  </Link>
-                  <Link href="/brand/visits">
-                    <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
-                      <MapPin className="h-6 w-6 text-green-600" />
-                      <span className="text-sm font-medium">Visitas</span>
-                    </Button>
-                  </Link>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-xs text-gray-500 mb-2">Más opciones</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Link href="/brand/tiers">
-                      <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                        <Layers className="h-4 w-4 mr-1" /> Niveles <ChevronRight className="h-3 w-3 ml-1" />
-                      </Button>
-                    </Link>
-                    <Link href="/brand/promotions">
-                      <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                        <Gift className="h-4 w-4 mr-1" /> Promociones <ChevronRight className="h-3 w-3 ml-1" />
-                      </Button>
-                    </Link>
-                    <Link href="/brand/reports">
-                      <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                        <TrendingUp className="h-4 w-4 mr-1" /> Reportes <ChevronRight className="h-3 w-3 ml-1" />
-                      </Button>
-                    </Link>
-                    <Link href="/brand/surveys">
-                      <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                        <ClipboardList className="h-4 w-4 mr-1" /> Encuestas <ChevronRight className="h-3 w-3 ml-1" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <QuickActions
+              actions={[
+                { href: '/brand/kpis', icon: BarChart3, label: 'KPIs' },
+                { href: '/brand/clients', icon: Users, label: 'Clientes' },
+                { href: '/brand/orders', icon: ShoppingCart, label: 'Órdenes' },
+                { href: '/brand/visits', icon: MapPin, label: 'Visitas' },
+                { href: '/brand/promotions', icon: Gift, label: 'Promociones' },
+                { href: '/brand/tiers', icon: Layers, label: 'Niveles' },
+              ]}
+            />
 
             {/* Brand Performance Summary */}
             <Card className="hover:shadow-lg transition-shadow duration-200">

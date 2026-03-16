@@ -27,11 +27,9 @@ describe('Type Definitions', () => {
       tenant_id: 'test-tenant',
       name: 'Test Brand',
       slug: 'test-brand',
-      subdomain: 'test',
-      primary_color: '#000000',
-      is_active: true,
+      public_id: 'BRD-001',
+      brand_color_primary: '#000000',
       created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
     }
 
     expect(mockBrand.name).toBe('Test Brand')

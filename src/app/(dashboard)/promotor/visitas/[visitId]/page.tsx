@@ -269,7 +269,7 @@ export default function VisitDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Header - Only show when not in wizard mode */}
       {!isInProgress && (
         <div className="bg-white shadow-sm border-b">

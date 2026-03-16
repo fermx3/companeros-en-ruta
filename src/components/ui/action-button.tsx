@@ -25,10 +25,10 @@ export function ActionButton({
     return (
         <Button
             className={cn(
-                'rounded-xl font-medium transition-all duration-200',
+                'rounded-xl font-bold transition-all duration-200',
                 {
-                    // Primary - Naranja del sistema
-                    'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl': variant === 'primary',
+                    // Primary - Naranja CTA
+                    'bg-primary-light hover:bg-primary text-primary-foreground shadow-lg hover:shadow-xl': variant === 'primary',
 
                     // Secondary - Azul del sistema
                     'bg-secondary hover:bg-secondary/90 text-white shadow-lg hover:shadow-xl': variant === 'secondary',

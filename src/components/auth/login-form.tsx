@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
@@ -16,7 +16,6 @@ import {
     FormMessage
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { ActionButton } from '@/components/ui/action-button'
 import { PageLoader } from '@/components/ui/feedback'
 
 // Validation schema
@@ -207,113 +206,116 @@ export function LoginForm() {
     }
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
-            {/* Header con branding */}
-            <div className="p-6">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
-                        <span className="text-lg font-bold text-white">CR</span>
-                    </div>
-                    <div>
-                        <h1 className="text-lg font-bold">Compañeros</h1>
-                        <span className="text-sm font-medium text-primary">EN RUTA</span>
-                    </div>
-                </div>
-
-                {/* Heading principal */}
-                <div className="space-y-3 mb-8">
-                    <h2 className="text-3xl font-bold leading-tight">
-                        Centraliza tu <span className="text-primary">información</span> comercial.
-                    </h2>
-                    <p className="text-muted-foreground">
-                        Gestiona marcas, ventas y puntos de venta en un solo ecosistema inteligente.
-                    </p>
-                </div>
+        <div className="min-h-screen bg-login-gradient relative overflow-hidden flex flex-col">
+            {/* Logo — right-aligned */}
+            <div className="pt-12 pb-16 flex justify-end px-8 relative z-10">
+                <img src="/perfect-logo-full.png" alt="Perfectapp" className="h-12" />
             </div>
 
-            {/* Form */}
-            <div className="flex-1 bg-white rounded-t-3xl p-6 space-y-6">
-                <h3 className="text-xl font-semibold">Iniciar Sesión</h3>
+            {/* Text section */}
+            <div className="px-8 mb-10 relative z-10">
+                <p className="text-sm text-navy mb-1">Compañeros en Ruta</p>
+                <h2 className="text-[2.5rem] font-black leading-[1.1] text-navy">
+                    Centraliza tu{' '}
+                    <span className="text-primary-light">información</span>{' '}
+                    comercial
+                </h2>
+                <p className="text-muted-foreground text-sm mt-4">
+                    Gestiona marcas, ventas y puntos de venta en un solo
+                    ecosistema inteligente
+                </p>
+            </div>
 
-                {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
-                        {error}
-                    </div>
-                )}
+            {/* Spacer to push card down */}
+            <div className="flex-1" />
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            {/* Form card — floating */}
+            <div className="mx-6 mb-36 relative z-10">
+                <div className="bg-white rounded-3xl shadow-lg p-7 space-y-5">
+                    <h3 className="text-2xl font-bold text-secondary">Iniciar Sesión</h3>
+
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+                            {error}
+                        </div>
+                    )}
+
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-sm font-semibold text-navy">Email</FormLabel>
+                                        <FormControl>
                                             <Input
                                                 {...field}
                                                 type="email"
-                                                placeholder="nombre@empresa.com"
-                                                className="pl-10 h-12 rounded-xl"
+                                                placeholder="correo@empresa.com"
+                                                className="h-12 rounded-full border-secondary px-5 placeholder:text-secondary/40"
                                                 disabled={loading}
                                             />
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Contraseña</FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                {...field}
-                                                type={showPassword ? 'text' : 'password'}
-                                                placeholder="••••••••"
-                                                className="pl-10 pr-10 h-12 rounded-xl"
-                                                disabled={loading}
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                                disabled={loading}
-                                            >
-                                                {showPassword ? (
-                                                    <EyeOff className="h-4 w-4" />
-                                                ) : (
-                                                    <Eye className="h-4 w-4" />
-                                                )}
-                                            </button>
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-sm font-semibold text-navy">Contraseña</FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Input
+                                                    {...field}
+                                                    type={showPassword ? 'text' : 'password'}
+                                                    placeholder="••••••••"
+                                                    className="h-12 rounded-full border-secondary px-5 pr-12 placeholder:text-secondary/40"
+                                                    disabled={loading}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                                    disabled={loading}
+                                                >
+                                                    {showPassword ? (
+                                                        <EyeOff className="h-4 w-4" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4" />
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
-                        <ActionButton
-                            type="submit"
-                            variant="primary"
-                            size="lg"
-                            fullWidth
-                            loading={loading}
-                            className="mt-6"
-                        >
-                            Iniciar Sesión
-                        </ActionButton>
-                    </form>
-                </Form>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full h-12 rounded-full bg-primary-light hover:bg-primary text-white font-bold mt-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                            >
+                                {loading ? (
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                ) : (
+                                    'Iniciar Sesión'
+                                )}
+                            </button>
+                        </form>
+                    </Form>
+                </div>
             </div>
+
+            {/* Decorative circles */}
+            <div className="absolute -bottom-28 -left-24 w-80 h-80 rounded-full bg-primary z-0" />
+            <div className="absolute bottom-6 left-[44%] w-8 h-8 rounded-full bg-navy z-0" />
+            <div className="absolute -bottom-8 -right-4 w-36 h-36 rounded-full bg-secondary z-0" />
         </div>
     )
 }

@@ -117,7 +117,7 @@ export default function EditPromotorProfilePage() {
 
   if (error && !profile) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen py-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <Alert variant="error" title="Error">{error}</Alert>
           <div className="mt-6 text-center">
@@ -131,7 +131,7 @@ export default function EditPromotorProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">

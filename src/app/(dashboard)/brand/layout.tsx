@@ -58,7 +58,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
 
   return (
     <TenantProvider>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         <SideNavigation entries={brandNavConfig.entries} title={brandNavConfig.title} profileHref="/brand/profile" />
         <div className="lg:pl-64">
           <DashboardHeader title={brandNavConfig.title} headerExtra={<BrandSwitcher />} profileHref="/brand/profile" />

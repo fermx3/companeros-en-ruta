@@ -179,7 +179,7 @@ export default function BrandKpisPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-6">
@@ -196,7 +196,7 @@ export default function BrandKpisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           {/* KPI Header with period selector */}

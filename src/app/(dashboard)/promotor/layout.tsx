@@ -12,18 +12,7 @@ interface PromotorLayoutProps {
   children: React.ReactNode;
 }
 
-/**
- * Layout específico para las rutas del promotor
- * Maneja la verificación de rol de forma centralizada
- *
- * Note: Role protection is handled by useRequireRole hook which redirects
- * unauthorized users to /unauthorized
- *
- * Admin users can also access promotor routes via allowMultipleRoles
- */
 export default function PromotorLayout({ children }: PromotorLayoutProps) {
-  // Note: allowMultipleRoles removed because /api/promotor/* endpoints
-  // require the actual 'promotor' role, not just admin access
   const { hasAccess, loading: roleLoading, error, retry } = useRequireRole('promotor');
 
   if (roleLoading) {
@@ -32,7 +21,7 @@ export default function PromotorLayout({ children }: PromotorLayoutProps) {
 
   if (error && !hasAccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-app-bg">
         <div className="text-center max-w-md p-6">
           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +32,7 @@ export default function PromotorLayout({ children }: PromotorLayoutProps) {
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={retry}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors"
           >
             Reintentar
           </button>
@@ -57,7 +46,7 @@ export default function PromotorLayout({ children }: PromotorLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-login-gradient">
       <SideNavigation entries={promotorNavConfig.entries} title={promotorNavConfig.title} profileHref="/promotor/profile" />
       <div className="lg:pl-64">
         <DashboardHeader title={promotorNavConfig.title} profileHref="/promotor/profile" />

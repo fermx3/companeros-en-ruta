@@ -11,7 +11,7 @@ export default function ClientOnboardingWelcomePage() {
   const router = useRouter()
 
   return (
-    <div className="min-h-screen bg-gray-50/50 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="max-w-md w-full rounded-2xl border-0 shadow-lg">
         <CardContent className="p-8 text-center space-y-6">
           <div className="mx-auto w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center">

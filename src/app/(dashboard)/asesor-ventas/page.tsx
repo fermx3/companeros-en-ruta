@@ -9,7 +9,8 @@ import { PageLoader, Alert } from '@/components/ui/feedback';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { displayPhone } from '@/lib/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Users, ClipboardList, Clock, QrCode } from 'lucide-react';
+import { QuickActions } from '@/components/layout';
+import { Users, ClipboardList, Clock, QrCode, Plus, History, FileText } from 'lucide-react';
 
 interface AsesorVentasProfile {
   id: string;
@@ -101,7 +102,7 @@ export default function AsesorVentasPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Alert variant="error" title="Error">{error}</Alert>
         </div>
@@ -111,7 +112,7 @@ export default function AsesorVentasPage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Alert variant="warning" title="Sin acceso">
             No tienes un perfil de Asesor de Ventas asignado.
@@ -122,7 +123,7 @@ export default function AsesorVentasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -255,81 +256,17 @@ export default function AsesorVentasPage() {
 
           {/* Accesos Rapidos */}
           <div>
-            <Card>
-              <div className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Accesos Rapidos
-                </h3>
-
-                <div className="space-y-3">
-                  <Link href="/asesor-ventas/clients" className="block">
-                    <div className="p-3 border border-gray-200 rounded-lg hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-900">Mis Clientes</span>
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link href="/asesor-ventas/orders" className="block">
-                    <div className="p-3 border border-gray-200 rounded-lg hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-900">Mis Ordenes</span>
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link href="/asesor-ventas/orders/create" className="block">
-                    <div className="p-3 border border-gray-200 rounded-lg hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-900">Nueva Orden</span>
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link href="/asesor-ventas/entregar-promocion" className="block">
-                    <div className="p-3 border border-emerald-200 bg-emerald-50 rounded-lg hover:border-emerald-400 hover:bg-emerald-100 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                        </svg>
-                        <span className="text-sm font-medium text-emerald-700">Entregar Promocion (QR)</span>
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link href="/asesor-ventas/historial-qr" className="block">
-                    <div className="p-3 border border-gray-200 rounded-lg hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-900">Historial QR</span>
-                      </div>
-                    </div>
-                  </Link>
-
-                  <Link href="/asesor-ventas/surveys" className="block">
-                    <div className="p-3 border border-gray-200 rounded-lg hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-900">Encuestas</span>
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            </Card>
+            <QuickActions
+              title="Accesos Rápidos"
+              actions={[
+                { href: '/asesor-ventas/clients', icon: Users, label: 'Mis Clientes' },
+                { href: '/asesor-ventas/orders', icon: ClipboardList, label: 'Mis Ordenes' },
+                { href: '/asesor-ventas/orders/create', icon: Plus, label: 'Nueva Orden' },
+                { href: '/asesor-ventas/entregar-promocion', icon: QrCode, label: 'Entregar Promoción (QR)' },
+                { href: '/asesor-ventas/historial-qr', icon: History, label: 'Historial QR' },
+                { href: '/asesor-ventas/surveys', icon: FileText, label: 'Encuestas' },
+              ]}
+            />
           </div>
         </div>
       </div>

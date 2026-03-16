@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { NavEntry } from '@/lib/navigation-config'
 import { flattenEntries, isNavGroup } from '@/lib/navigation-config'
+import { IconMas } from '@/components/icons'
 
 export interface BottomNavigationProps {
   entries: NavEntry[]
@@ -105,7 +105,7 @@ export function BottomNavigation({ entries }: BottomNavigationProps) {
                     "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
                     current
                       ? "text-primary bg-primary/5"
-                      : "text-muted-foreground hover:text-foreground hover:bg-gray-50"
+                      : "text-navy hover:text-foreground hover:bg-gray-50"
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -126,14 +126,19 @@ export function BottomNavigation({ entries }: BottomNavigationProps) {
               key={item.id}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center py-3 px-1 text-xs font-medium transition-colors",
+                "flex flex-col items-center justify-center py-2 px-1 text-xs font-medium transition-colors",
                 current
-                  ? "text-primary bg-primary/5"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-primary"
+                  : "text-navy hover:text-primary"
               )}
             >
-              <Icon className="h-5 w-5" />
-              <span className="mt-1 truncate max-w-full">{item.label}</span>
+              <div className={cn(
+                "flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
+                current && "bg-primary/10"
+              )}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <span className="mt-0.5 truncate max-w-full">{item.label}</span>
             </Link>
           )
         })}
@@ -142,14 +147,19 @@ export function BottomNavigation({ entries }: BottomNavigationProps) {
           <button
             onClick={() => setMoreOpen(prev => !prev)}
             className={cn(
-              "flex flex-col items-center justify-center py-3 px-1 text-xs font-medium transition-colors",
+              "flex flex-col items-center justify-center py-2 px-1 text-xs font-medium transition-colors",
               moreOpen || isOverflowActive
-                ? "text-primary bg-primary/5"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-primary"
+                : "text-navy hover:text-primary"
             )}
           >
-            <MoreHorizontal className="h-5 w-5" />
-            <span className="mt-1">Más</span>
+            <div className={cn(
+              "flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
+              (moreOpen || isOverflowActive) && "bg-primary/10"
+            )}>
+              <IconMas className="h-5 w-5" />
+            </div>
+            <span className="mt-0.5">Más</span>
           </button>
         )}
       </div>

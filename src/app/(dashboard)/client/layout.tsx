@@ -86,7 +86,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <SideNavigation entries={clientNavConfig.entries} title={clientNavConfig.title} displayName={ownerName ?? undefined} profileHref="/client/profile" />
       <div className="lg:pl-64">
         <DashboardHeader title={clientNavConfig.title} displayName={ownerName ?? undefined} profileHref="/client/profile" />

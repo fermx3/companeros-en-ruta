@@ -316,7 +316,7 @@ export default function EditClientPage() {
 
   if (initialLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner size="lg" className="mx-auto mb-4" />
           <p className="text-gray-600">Cargando datos del cliente...</p>
@@ -327,7 +327,7 @@ export default function EditClientPage() {
 
   if (error && !originalClient) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 mb-4">{error}</div>
           <Link href="/admin/clients">
@@ -339,7 +339,7 @@ export default function EditClientPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

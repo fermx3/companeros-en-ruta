@@ -89,7 +89,7 @@ describe('LoginForm', () => {
         const passwordInput = screen.getByPlaceholderText('••••••••') as HTMLInputElement
         const allButtons = screen.getAllByRole('button')
         // Find the toggle button (not the submit button)
-        const toggleButton = allButtons.find(btn => btn.type === 'button' && !btn.textContent?.includes('Iniciar'))
+        const toggleButton = allButtons.find(btn => (btn as HTMLButtonElement).type === 'button' && !btn.textContent?.includes('Iniciar'))
 
         expect(passwordInput.type).toBe('password')
 
