@@ -181,7 +181,7 @@ export default function ClientPointsPage() {
   if (selectedBrand && brandDetail) {
     return (
       <div className="min-h-screen">
-        <div className="bg-white shadow-sm border-b">
+        <div>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="py-6">
               <button
@@ -351,7 +351,7 @@ export default function ClientPointsPage() {
   // Summary View
   return (
     <div className="min-h-screen">
-      <div className="bg-white shadow-sm border-b">
+      <div>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <nav className="flex mb-4" aria-label="Breadcrumb">

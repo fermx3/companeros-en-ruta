@@ -34,7 +34,7 @@ export function BrandSwitcher() {
           <img
             src={currentBrand.logo_url}
             alt={currentBrand.name}
-            className="h-5 w-5 object-contain rounded"
+            className="h-5 w-5 rounded-full object-cover"
           />
         ) : (
           <Building2 className="h-4 w-4 text-gray-500" />
@@ -67,7 +67,7 @@ export function BrandSwitcher() {
                 <img
                   src={brand.logo_url}
                   alt={brand.name}
-                  className="h-5 w-5 object-contain rounded"
+                  className="h-5 w-5 rounded-full object-cover"
                 />
               ) : (
                 <Building2 className="h-4 w-4 text-gray-400" />

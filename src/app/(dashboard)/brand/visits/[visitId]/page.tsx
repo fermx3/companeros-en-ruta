@@ -76,7 +76,7 @@ export default function BrandVisitDetailPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="bg-white shadow-sm border-b">
+      <div>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center py-4">
             <nav className="flex" aria-label="Breadcrumb">

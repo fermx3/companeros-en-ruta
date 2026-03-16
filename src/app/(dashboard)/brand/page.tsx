@@ -137,9 +137,9 @@ export default function BrandDashboard() {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div className="flex items-center space-x-4">
                 {metrics.logo_url ? (
-                  <img src={metrics.logo_url} alt={`${metrics.brand_name} logo`} className="h-16 w-16 object-contain" />
+                  <img src={metrics.logo_url} alt={`${metrics.brand_name} logo`} className="h-16 w-16 rounded-full object-cover" />
                 ) : (
-                  <div className="h-16 w-16 rounded-lg flex items-center justify-center"
+                  <div className="h-16 w-16 rounded-full flex items-center justify-center"
                     style={{ backgroundColor: metrics.brand_color_primary || '#3B82F6' }}>
                     <Building2 className="h-8 w-8 text-white" />
                   </div>

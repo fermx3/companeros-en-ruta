@@ -132,7 +132,7 @@ export default function EditAsesorProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <nav className="flex" aria-label="Breadcrumb">

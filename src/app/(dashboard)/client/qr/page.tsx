@@ -237,7 +237,7 @@ export default function ClientQRPage() {
   return (
     <div className="min-h-screen pb-20">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+      <div className="sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-4">
             <div className="flex items-center gap-3">

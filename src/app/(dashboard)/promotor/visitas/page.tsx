@@ -44,7 +44,7 @@ export default function VisitasPage() {
   return (
     <>
       {/* Header con métricas del promotor */}
-      <div className="bg-white shadow-sm border-b">
+      <div>
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="mb-6 flex justify-between items-start">
             <div>

@@ -272,7 +272,7 @@ export default function VisitDetailPage() {
     <div className="min-h-screen flex flex-col">
       {/* Header - Only show when not in wizard mode */}
       {!isInProgress && (
-        <div className="bg-white shadow-sm border-b">
+        <div>
           <div className="max-w-4xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Button

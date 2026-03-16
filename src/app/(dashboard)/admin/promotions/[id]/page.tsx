@@ -267,7 +267,7 @@ export default function AdminPromotionDetailPage({ params }: { params: Promise<{
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <nav className="flex mb-4" aria-label="Breadcrumb">

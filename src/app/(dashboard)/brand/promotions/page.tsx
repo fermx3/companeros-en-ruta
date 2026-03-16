@@ -221,7 +221,7 @@ export default function BrandPromotionsPage() {
   return (
     <div className="min-h-screen overflow-x-hidden">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 py-6">
             <div className="min-w-0">
