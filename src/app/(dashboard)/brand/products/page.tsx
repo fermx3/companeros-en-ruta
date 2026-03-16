@@ -331,12 +331,12 @@ export default function BrandProductsPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       {/* Header */}
       <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 py-6">
+            <div className="min-w-0">
               <nav className="flex" aria-label="Breadcrumb">
                 <ol className="flex items-center space-x-4">
                   <li>
@@ -361,7 +361,7 @@ export default function BrandProductsPage() {
                 Administra los productos y presentaciones de tu marca
               </p>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-wrap items-center gap-3">
               {/* Brand Selector */}
               {availableBrands.length > 1 && (
                 <select
@@ -381,7 +381,7 @@ export default function BrandProductsPage() {
                   {availableBrands[0].name}
                 </span>
               )}
-              <label className="flex items-center text-sm text-gray-600">
+              <label className="flex items-center text-sm text-gray-600 whitespace-nowrap">
                 <input
                   type="checkbox"
                   checked={includeInactive}
@@ -713,12 +713,12 @@ export default function BrandProductsPage() {
               )}>
                 <div className="p-4">
                   {/* Product Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start space-x-4 min-w-0">
                       <button
                         type="button"
                         onClick={() => toggleProductExpand(product.id)}
-                        className="mt-1 p-1 hover:bg-gray-100 rounded"
+                        className="mt-1 p-1 hover:bg-gray-100 rounded flex-shrink-0"
                       >
                         {expandedProducts.has(product.id) ? (
                           <ChevronDown className="w-5 h-5 text-gray-400" />
@@ -726,12 +726,12 @@ export default function BrandProductsPage() {
                           <ChevronRight className="w-5 h-5 text-gray-400" />
                         )}
                       </button>
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Package className="w-6 h-6 text-blue-600" />
                       </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{product.name}</h3>
-                        <div className="flex items-center space-x-3 mt-1">
+                      <div className="min-w-0">
+                        <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
                           <span className="text-sm text-gray-500">{product.code}</span>
                           {product.product_categories && (
                             <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
@@ -751,7 +751,7 @@ export default function BrandProductsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4 flex-shrink-0">
                       <div className="text-right">
                         <p className="text-lg font-semibold text-gray-900">
                           {formatPrice(product.base_price)}
