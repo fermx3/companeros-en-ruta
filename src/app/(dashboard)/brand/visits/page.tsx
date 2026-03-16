@@ -121,7 +121,7 @@ export default function BrandVisitsPage() {
       {/* Header */}
       <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 py-6">
             <div>
               <nav className="flex" aria-label="Breadcrumb">
                 <ol className="flex items-center space-x-4">
@@ -156,7 +156,7 @@ export default function BrandVisitsPage() {
         )}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
           <MetricCard title="Total Visitas" value={summary.total} />
           <MetricCard title="En Progreso" value={summary.active} variant="warning" />
           <MetricCard title="Completadas" value={summary.completed} variant="success" />
@@ -166,7 +166,7 @@ export default function BrandVisitsPage() {
         {/* Filters */}
         <Card className="mb-6">
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
                   Buscar cliente
@@ -260,7 +260,7 @@ export default function BrandVisitsPage() {
                   <div className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                           <span className="text-sm font-medium text-gray-500">{visit.public_id}</span>
                           <VisitStatusBadge status={visit.visit_status} />
                           {visit.rating != null && (
@@ -270,7 +270,7 @@ export default function BrandVisitsPage() {
                             </span>
                           )}
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
                             <span className="text-gray-500">Fecha:</span>
                             <span className="ml-1 text-gray-900">{formatDate(visit.visit_date)}</span>

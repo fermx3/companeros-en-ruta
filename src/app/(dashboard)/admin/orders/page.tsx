@@ -213,7 +213,7 @@ export default function AdminOrdersPage() {
                 <li className="text-gray-900 font-medium">Ordenes</li>
               </ol>
             </nav>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                   <ShoppingBag className="h-6 w-6 text-blue-600" />
@@ -327,9 +327,9 @@ export default function AdminOrdersPage() {
                 href={`/admin/orders/${order.public_id}`}
               >
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                           <span className="font-semibold text-gray-900">
                             #{order.order_number}
                           </span>
@@ -338,7 +338,7 @@ export default function AdminOrdersPage() {
                           <SourceBadge source={order.source_channel} />
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-600 mb-2">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />
                             {formatDate(order.order_date || order.created_at)}
@@ -357,7 +357,7 @@ export default function AdminOrdersPage() {
                           )}
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500">
                           {order.distributor && (
                             <span className="flex items-center gap-1">
                               <Truck className="h-3.5 w-3.5" />

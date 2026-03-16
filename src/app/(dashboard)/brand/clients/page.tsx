@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
@@ -29,6 +30,7 @@ export default function BrandClientsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+  const router = useRouter()
 
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'active'>('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -253,7 +255,7 @@ export default function BrandClientsPage() {
       {/* Header */}
       <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 py-6">
             <div>
               <nav className="flex" aria-label="Breadcrumb">
                 <ol className="flex items-center space-x-4">
@@ -279,7 +281,7 @@ export default function BrandClientsPage() {
                 Administra los clientes y membresías de tu marca
               </p>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex flex-wrap gap-3">
               <ExportButton
                 endpoint="/api/brand/memberships/export"
                 filename="clientes"
@@ -368,7 +370,100 @@ export default function BrandClientsPage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              {/* Mobile card view */}
+              <div className="md:hidden divide-y divide-gray-200">
+                {memberships.map((membership) => (
+                  <Link
+                    key={membership.id}
+                    href={membership.client_public_id ? `/brand/clients/${membership.client_public_id}` : '#'}
+                    className="block p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-gray-900 truncate mr-2">{membership.client_name}</p>
+                      <MembershipStatusBadge status={membership.membership_status} />
+                    </div>
+                    {membership.client_email && (
+                      <p className="text-xs text-gray-500 mb-2">{membership.client_email}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                      <span className="flex items-center gap-1">
+                        {membership.current_tier ? (
+                          <>
+                            <div
+                              className="h-4 w-4 rounded-full flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: membership.current_tier.tier_color || '#6366F1' }}
+                            >
+                              <Award className="h-2.5 w-2.5 text-white" />
+                            </div>
+                            {membership.current_tier.name}
+                          </>
+                        ) : (
+                          <span className="text-gray-400">Sin nivel</span>
+                        )}
+                      </span>
+                      <span>{membership.points_balance.toLocaleString()} pts ({membership.lifetime_points.toLocaleString()} total)</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Desde: {membership.joined_date
+                        ? new Date(membership.joined_date).toLocaleDateString('es-MX')
+                        : new Date(membership.created_at).toLocaleDateString('es-MX')
+                      }
+                    </p>
+                    <ListItemActions className="flex flex-wrap gap-2">
+                      {membership.membership_status === 'pending' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(membership)}
+                          disabled={actionLoading === membership.id}
+                        >
+                          {actionLoading === membership.id ? (
+                            <LoadingSpinner size="sm" />
+                          ) : (
+                            <>
+                              <Check className="h-3 w-3 mr-1" />
+                              Aprobar
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      {membership.membership_status === 'active' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setPointsModal({ open: true, membership })}
+                          >
+                            <Coins className="h-3 w-3 mr-1" />
+                            Puntos
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setAssignModal({ open: true, membership })}
+                          >
+                            <Award className="h-3 w-3 mr-1" />
+                            Nivel
+                          </Button>
+                        </>
+                      )}
+                      {membership.client_public_id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => router.push(`/brand/clients/${membership.client_public_id}/visits`)}
+                        >
+                          <MapPin className="h-3 w-3 mr-1" />
+                          Visitas
+                        </Button>
+                      )}
+                    </ListItemActions>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Desktop table view */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -485,16 +580,20 @@ export default function BrandClientsPage() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
           </CardContent>
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
             <div className="px-6 py-4 border-t flex items-center justify-between">
-              <p className="text-sm text-gray-700">
+              <p className="hidden sm:block text-sm text-gray-700">
                 Mostrando {((pagination.page - 1) * pagination.limit) + 1} a{' '}
                 {Math.min(pagination.page * pagination.limit, pagination.total)} de{' '}
                 {pagination.total} resultados
+              </p>
+              <p className="sm:hidden text-sm text-gray-700">
+                {page} / {pagination.totalPages}
               </p>
               <div className="flex space-x-2">
                 <Button

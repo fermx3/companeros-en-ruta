@@ -110,7 +110,7 @@ export default function UsersListPage() {
       {/* Header */}
       <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 py-6">
             <div>
               <nav className="flex" aria-label="Breadcrumb">
                 <ol className="flex items-center space-x-4">
@@ -134,7 +134,7 @@ export default function UsersListPage() {
                 Administra usuarios, perfiles y asignación de roles
               </p>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Link href="/admin/users/invite">
                 <Button className="bg-green-600 hover:bg-green-700">
                   <UserPlus className="w-4 h-4 mr-2" />
@@ -288,7 +288,7 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
 
   return (
     <Link href={`/admin/users/${user.public_id}`} className="block p-6 hover:bg-gray-50 transition-colors cursor-pointer">
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
         <div className="flex items-center space-x-3">
           <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
             {user.avatar_url ? (
@@ -360,7 +360,7 @@ function UserCard({ user, onDeactivate, onReactivate, isProcessing }: UserCardPr
         )}
       </div>
 
-      <ListItemActions className="flex space-x-2">
+      <ListItemActions className="flex flex-wrap gap-2">
         {!user.is_client && (
         <Link href={`/admin/users/${user.public_id}/roles`} className="flex-1">
           <Button size="sm" variant="outline" className="w-full">

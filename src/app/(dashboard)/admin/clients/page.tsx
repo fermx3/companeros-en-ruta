@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
@@ -47,6 +48,7 @@ export default function AdminClientsPage() {
   const [zones, setZones] = useState<Zone[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
 
+  const router = useRouter();
   const [togglingStatus, setTogglingStatus] = useState<string | null>(null);
 
   // Paginación
@@ -168,7 +170,7 @@ export default function AdminClientsPage() {
       {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 py-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Gestión de Clientes</h1>
               <p className="text-sm text-gray-600 mt-1">
@@ -217,7 +219,7 @@ export default function AdminClientsPage() {
         <Card className="mb-6">
           <div className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Filtros</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Estado
@@ -285,124 +287,177 @@ export default function AdminClientsPage() {
 
         {/* Tabla de clientes */}
         <Card>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cliente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ubicación
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Segmentación
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Última Visita
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center">
-                      <LoadingSpinner size="sm" className="mx-auto mb-2" />
-                      <p className="text-gray-500">Cargando clientes...</p>
-                    </td>
-                  </tr>
-                ) : clients?.data.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8">
-                      <EmptyState
-                        icon={<Users className="w-12 h-12" />}
-                        title="No hay clientes"
-                        description="Comienza creando tu primer cliente"
-                      />
-                    </td>
-                  </tr>
-                ) : (
-                  clients?.data.map((client) => (
-                    <ClickableRow
-                      key={client.id}
-                      href={`/admin/clients/${client.public_id}`}
-                    >
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {client.business_name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {fullOwnerName(client.owner_name, client.owner_last_name)}
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {client.public_id}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {client.address_city}, {client.address_state}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {client.zone_name}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {client.market_name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {client.client_type_name}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={client.status as StatusType} size="sm" />
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {client.last_visit_date
+          {loading ? (
+            <div className="px-6 py-8 text-center">
+              <LoadingSpinner size="sm" className="mx-auto mb-2" />
+              <p className="text-gray-500">Cargando clientes...</p>
+            </div>
+          ) : clients?.data.length === 0 ? (
+            <div className="px-6 py-8">
+              <EmptyState
+                icon={<Users className="w-12 h-12" />}
+                title="No hay clientes"
+                description="Comienza creando tu primer cliente"
+              />
+            </div>
+          ) : (
+            <>
+              {/* Mobile card view */}
+              <div className="md:hidden divide-y divide-gray-200">
+                {clients?.data.map((client) => (
+                  <Link
+                    key={client.id}
+                    href={`/admin/clients/${client.public_id}`}
+                    className="block p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-medium text-gray-900 truncate mr-2">
+                        {client.business_name}
+                      </p>
+                      <StatusBadge status={client.status as StatusType} size="sm" />
+                    </div>
+                    <p className="text-sm text-gray-500 mb-2">
+                      {fullOwnerName(client.owner_name, client.owner_last_name)}
+                    </p>
+                    <div className="space-y-1 text-sm text-gray-600 mb-2">
+                      <p>{client.address_city}, {client.address_state} — {client.zone_name}</p>
+                      <p>{client.market_name} — {client.client_type_name}</p>
+                      <p className="text-gray-500">
+                        Última visita: {client.last_visit_date
                           ? new Date(client.last_visit_date).toLocaleDateString('es-ES')
                           : 'Sin visitas'
                         }
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium">
-                        <ListItemActions className="flex items-center gap-3">
-                          <Link
-                            href={`/admin/clients/${client.public_id}/edit`}
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            Editar
-                          </Link>
-                          <span className="text-gray-300">|</span>
-                          <button
-                            onClick={() => handleStatusToggle(client.public_id, client.status)}
-                            disabled={togglingStatus === client.public_id}
-                            className={`${
-                              client.status === 'active'
-                                ? 'text-red-600 hover:text-red-900'
-                                : 'text-green-600 hover:text-green-900'
-                            } disabled:opacity-50`}
-                          >
-                            {togglingStatus === client.public_id
-                              ? 'Cambiando...'
-                              : client.status === 'active'
-                                ? 'Desactivar'
-                                : 'Activar'}
-                          </button>
-                        </ListItemActions>
-                      </td>
-                    </ClickableRow>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                      </p>
+                    </div>
+                    <ListItemActions className="flex flex-wrap gap-3 text-sm font-medium">
+                      <button
+                        onClick={() => router.push(`/admin/clients/${client.public_id}/edit`)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleStatusToggle(client.public_id, client.status)}
+                        disabled={togglingStatus === client.public_id}
+                        className={`${
+                          client.status === 'active'
+                            ? 'text-red-600 hover:text-red-900'
+                            : 'text-green-600 hover:text-green-900'
+                        } disabled:opacity-50`}
+                      >
+                        {togglingStatus === client.public_id
+                          ? 'Cambiando...'
+                          : client.status === 'active'
+                            ? 'Desactivar'
+                            : 'Activar'}
+                      </button>
+                    </ListItemActions>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Desktop table view */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Cliente
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ubicación
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Segmentación
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Última Visita
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {clients?.data.map((client) => (
+                      <ClickableRow
+                        key={client.id}
+                        href={`/admin/clients/${client.public_id}`}
+                      >
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {client.business_name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {fullOwnerName(client.owner_name, client.owner_last_name)}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-1">
+                              {client.public_id}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {client.address_city}, {client.address_state}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {client.zone_name}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {client.market_name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {client.client_type_name}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <StatusBadge status={client.status as StatusType} size="sm" />
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {client.last_visit_date
+                            ? new Date(client.last_visit_date).toLocaleDateString('es-ES')
+                            : 'Sin visitas'
+                          }
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium">
+                          <ListItemActions className="flex items-center gap-3">
+                            <Link
+                              href={`/admin/clients/${client.public_id}/edit`}
+                              className="text-indigo-600 hover:text-indigo-900"
+                            >
+                              Editar
+                            </Link>
+                            <span className="text-gray-300">|</span>
+                            <button
+                              onClick={() => handleStatusToggle(client.public_id, client.status)}
+                              disabled={togglingStatus === client.public_id}
+                              className={`${
+                                client.status === 'active'
+                                  ? 'text-red-600 hover:text-red-900'
+                                  : 'text-green-600 hover:text-green-900'
+                              } disabled:opacity-50`}
+                            >
+                              {togglingStatus === client.public_id
+                                ? 'Cambiando...'
+                                : client.status === 'active'
+                                  ? 'Desactivar'
+                                  : 'Activar'}
+                            </button>
+                          </ListItemActions>
+                        </td>
+                      </ClickableRow>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
 
           {/* Paginación */}
           {clients && clients.totalPages > 1 && (

@@ -272,9 +272,9 @@ export default function ClientOrdersPage() {
             {data.orders.map(order => (
               <Card key={order.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span className="font-semibold text-gray-900">
                           #{order.order_number}
                         </span>
@@ -282,7 +282,7 @@ export default function ClientOrdersPage() {
                         <SourceBadge source={order.source} />
                       </div>
 
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-600 mb-2">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
                           {formatDate(order.order_date || order.created_at)}
