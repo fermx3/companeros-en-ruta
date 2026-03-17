@@ -5,7 +5,15 @@ import { WizardStepper } from '@/components/ui/wizard-stepper'
 import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/feedback'
 import { useToast } from '@/components/ui/toaster'
-import { ArrowLeft, ArrowRight, Save, CheckCircle2, MapPin, Store, Clock } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription
+} from '@/components/ui/dialog'
+import { ArrowLeft, ArrowRight, Save, CheckCircle2, MapPin, Store, Clock, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { fullOwnerName } from '@/lib/utils/client'
 
@@ -221,6 +229,7 @@ export function VisitAssessmentWizard({
   const [savingStage, setSavingStage] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showValidation, setShowValidation] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   // Validation: check if a stage has missing required fields
   const getStageWarning = (stageIndex: number): boolean => {
@@ -260,6 +269,8 @@ export function VisitAssessmentWizard({
   })
 
   const allStagesCompleted = STAGES.every((_, i) => completedSteps.has(i) && !warningSteps.has(i))
+  // Stages 1 & 2 completed without warnings — Stage 3 will auto-save on finalize
+  const canFinalize = completedSteps.has(0) && !warningSteps.has(0) && completedSteps.has(1) && !warningSteps.has(1)
 
   const updateData = useCallback((updates: Partial<WizardData>) => {
     setData(prev => ({ ...prev, ...updates }))
@@ -339,19 +350,16 @@ export function VisitAssessmentWizard({
   }
 
   const handleComplete = async () => {
-    // Build list of incomplete stages with friendly names
+    // Check stages 1 & 2 are completed
     const incompleteStages: string[] = []
     if (!completedSteps.has(0)) incompleteStages.push('Precios y Categoría')
     if (!completedSteps.has(1)) incompleteStages.push('Compra e Inventario')
-    if (!completedSteps.has(2)) incompleteStages.push('Comunicación y POP')
 
     if (incompleteStages.length > 0) {
-      // Navigate to the first incomplete stage
-      const firstIncompleteIndex = STAGES.findIndex((_, i) => !completedSteps.has(i))
-      if (firstIncompleteIndex >= 0) {
+      const firstIncompleteIndex = [0, 1].find(i => !completedSteps.has(i))
+      if (firstIncompleteIndex != null) {
         setCurrentStage(firstIncompleteIndex)
       }
-
       setError(`Completa las siguientes secciones: ${incompleteStages.join(', ')}`)
       return
     }
@@ -360,6 +368,16 @@ export function VisitAssessmentWizard({
     setError(null)
 
     try {
+      // Auto-save Stage 3 if not yet saved
+      if (!completedSteps.has(2)) {
+        const updatedData = {
+          ...data,
+          stage3: { ...data.stage3, completedAt: new Date() }
+        }
+        setData(updatedData)
+        await onSave(updatedData, 3)
+      }
+
       await onComplete()
     } catch (err) {
       console.error('Error completing wizard:', err)
@@ -489,8 +507,8 @@ export function VisitAssessmentWizard({
             ) : (
               <Button
                 type="button"
-                onClick={handleComplete}
-                disabled={saving || !allStagesCompleted}
+                onClick={() => setShowConfirmDialog(true)}
+                disabled={saving || !canFinalize}
                 className="bg-green-600 hover:bg-green-700"
               >
                 <CheckCircle2 className="w-4 h-4 mr-2" />
@@ -500,13 +518,47 @@ export function VisitAssessmentWizard({
           </div>
         </div>
 
-        {/* Completion status */}
-        {currentStage === STAGES.length - 1 && !allStagesCompleted && (
+        {/* Completion hint — only if stages 1 or 2 are incomplete */}
+        {currentStage === STAGES.length - 1 && !canFinalize && (
           <p className="text-center text-sm text-yellow-600 mt-3">
-            Completa todas las secciones para poder finalizar el assessment
+            Completa las secciones de Precios y Compra para poder finalizar
           </p>
         )}
       </div>
+
+      {/* Confirmation dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-500" />
+              ¿Finalizar visita?
+            </DialogTitle>
+            <DialogDescription>
+              Una vez finalizada, la visita no podrá ser editada. ¿Estás seguro de que deseas continuar?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                setShowConfirmDialog(false)
+                handleComplete()
+              }}
+            >
+              Finalizar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
