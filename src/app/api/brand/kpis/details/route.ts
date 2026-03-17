@@ -129,7 +129,34 @@ export async function GET(request: NextRequest) {
       details.share_of_shelf = processShareOfShelf(shareOfShelfData?.data || [], targetMap.get('share_of_shelf'))
     }
 
-    return cachedJsonResponse(details)
+    // Check if current month has any meaningful data
+    const hasData = Object.values(details).some(d => {
+      const obj = d as Record<string, unknown>
+      // Check common value keys for non-zero data
+      for (const key of ['monthly_total', 'reach_pct', 'avg_pct', 'share_pct', 'combined_pct', 'distinct_count']) {
+        if (key in obj && Number(obj[key]) > 0) return true
+      }
+      return false
+    })
+
+    let latestMonthWithData: string | null = null
+    if (!hasData) {
+      // Find the most recent month that has data in v_kpi_volume or v_kpi_reach
+      const { data: latestRow } = await serviceSupabase
+        .from('v_kpi_reach')
+        .select('period_month')
+        .eq('brand_id', brandId)
+        .order('period_month', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (latestRow?.period_month) {
+        // period_month is '2026-02-01', convert to '2026-02'
+        latestMonthWithData = String(latestRow.period_month).slice(0, 7)
+      }
+    }
+
+    return cachedJsonResponse({ ...details, _meta: { has_data: hasData, latest_month_with_data: latestMonthWithData } })
   } catch (error) {
     console.error('Error in GET /api/brand/kpis/details:', error)
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 })

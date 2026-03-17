@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import {
   TrendingUp, Target, Package, PieChart, LayoutGrid, Users, MapPin, Star,
   SlidersHorizontal, X, Clock, ChevronUp, ChevronDown, Plus,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Info,
 } from "lucide-react"
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
@@ -107,6 +107,8 @@ export default function BrandKpisPage() {
   const [error, setError] = useState<string | null>(null)
   const [showKpiSelector, setShowKpiSelector] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth)
+  const [latestMonthWithData, setLatestMonthWithData] = useState<string | null>(null)
+  const [hasDataInMonth, setHasDataInMonth] = useState(true)
 
   const kpiSummary = useMemo<KpiSummaryItem[]>(() => {
     if (!kpis.length || !kpiDetails) return []
@@ -151,7 +153,12 @@ export default function BrandKpisPage() {
 
         if (detailsRes.ok) {
           const detailsData = await detailsRes.json()
-          if (!controller.signal.aborted) setKpiDetails(detailsData)
+          if (!controller.signal.aborted) {
+            const { _meta, ...kpiData } = detailsData
+            setKpiDetails(kpiData)
+            setHasDataInMonth(_meta?.has_data ?? true)
+            setLatestMonthWithData(_meta?.latest_month_with_data ?? null)
+          }
         }
       } catch (err) {
         if (controller.signal.aborted) return
@@ -243,6 +250,26 @@ export default function BrandKpisPage() {
               <KpiSummaryRings kpis={kpiSummary} loading={loading} />
             </CardContent>
           </Card>
+
+          {/* Empty month banner */}
+          {!loading && !hasDataInMonth && kpis.length > 0 && (
+            <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+              <Info className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
+              <div className="text-sm text-blue-800">
+                <p>No hay actividad registrada en <span className="font-medium capitalize">{formatMonthLabel(selectedMonth)}</span>.</p>
+                {latestMonthWithData ? (
+                  <button
+                    onClick={() => setSelectedMonth(latestMonthWithData)}
+                    className="mt-1 text-blue-600 hover:text-blue-800 font-medium underline underline-offset-2"
+                  >
+                    Ver {formatMonthLabel(latestMonthWithData)}
+                  </button>
+                ) : (
+                  <p className="mt-1 text-blue-600">Usa el selector de periodo para navegar a un mes con datos.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* KPI Detail Sections */}
           {!loading && kpis.length > 0 && (
