@@ -380,10 +380,10 @@ export default function BrandPromotionsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate">
-                              {promo.name}
-                            </h3>
+                          <h3 className="text-base sm:text-lg font-medium text-gray-900 break-words">
+                            {promo.name}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-2 mt-1 mb-1">
                             <StatusBadge
                               status={STATUS_COLORS[promo.status] || 'inactive'}
                               size="sm"

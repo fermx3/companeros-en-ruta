@@ -131,21 +131,21 @@ export function ClientPromotionsPanel({
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-medium text-gray-900 truncate">
-                            {promo.name}
-                          </h4>
+                        <h4 className="font-medium text-gray-900 break-words">
+                          {promo.name}
+                        </h4>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
                           <span className={cn(
-                            'inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium',
+                            'inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0',
                             statusConfig.color
                           )}>
                             <StatusIcon className="w-3 h-3 mr-1" />
                             {statusConfig.label}
                           </span>
+                          <span className="text-xs text-gray-500">
+                            {PROMOTION_TYPE_LABELS[promo.promotion_type] || promo.promotion_type}
+                          </span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {PROMOTION_TYPE_LABELS[promo.promotion_type] || promo.promotion_type}
-                        </p>
                       </div>
                       <div className="ml-3 flex-shrink-0">
                         <span className="text-lg font-bold text-purple-600">
@@ -154,7 +154,7 @@ export function ClientPromotionsPanel({
                       </div>
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-1 text-xs text-gray-500">
                       <span>
                         Válida hasta: {formatDate(promo.valid_until)}
                       </span>
@@ -186,10 +186,10 @@ export function ClientPromotionsPanel({
                       key={promo.id}
                       className="border border-gray-100 rounded-lg p-2 bg-gray-50 opacity-60"
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">{promo.name}</span>
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-sm text-gray-600 break-words min-w-0">{promo.name}</span>
                         <span className={cn(
-                          'text-xs px-1.5 py-0.5 rounded',
+                          'text-xs px-1.5 py-0.5 rounded flex-shrink-0',
                           statusConfig.color
                         )}>
                           {statusConfig.label}
