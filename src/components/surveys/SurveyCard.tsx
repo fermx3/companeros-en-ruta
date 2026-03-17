@@ -39,19 +39,19 @@ export function SurveyCard({ survey, href, showBrand = false, showResponseCount 
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900 truncate">{survey.title}</h3>
+          <h3 className="text-sm font-semibold text-gray-900 break-words">{survey.title}</h3>
           {showBrand && survey.brands && (
             <p className="text-xs text-gray-500 mt-0.5">{survey.brands.name}</p>
           )}
         </div>
-        <SurveyStatusBadge status={survey.survey_status} />
+        <SurveyStatusBadge status={survey.survey_status} className="flex-shrink-0" />
       </div>
 
       {survey.description && (
         <p className="text-xs text-gray-600 line-clamp-2 mb-3">{survey.description}</p>
       )}
 
-      <div className="flex items-center gap-4 text-xs text-gray-500">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <Calendar className="w-3.5 h-3.5" />
           {new Date(survey.start_date).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })} - {new Date(survey.end_date).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })}

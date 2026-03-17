@@ -14,13 +14,14 @@ const STATUS_CONFIG: Record<SurveyStatusEnum, { label: string; className: string
 
 interface SurveyStatusBadgeProps {
   status: SurveyStatusEnum
+  className?: string
 }
 
-export function SurveyStatusBadge({ status }: SurveyStatusBadgeProps) {
+export function SurveyStatusBadge({ status, className }: SurveyStatusBadgeProps) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.draft
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.className} ${className || ''}`}>
       {config.label}
     </span>
   )
