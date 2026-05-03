@@ -32,7 +32,10 @@ export function usePromotionsForClient(clientId: string, brandId: string, purcha
         return;
       }
 
-      setPromotions((data || []) as any);
+      // The RPC's generated return type may differ from ApplicablePromotion;
+      // cast through unknown rather than any so the discriminated narrowing
+      // is explicit at the boundary.
+      setPromotions((data || []) as unknown as ApplicablePromotion[]);
       setLoading(false);
     }
 

@@ -1,5 +1,8 @@
 import { createServiceClient } from '@/lib/supabase/server';
+import type { Database } from '@companeros/shared/types/supabase';
 import type { NotificationType } from '@companeros/shared/types/database';
+
+type NotificationInsert = Database['public']['Tables']['notifications']['Insert'];
 
 interface CreateNotificationParams {
   tenant_id: string;
@@ -25,18 +28,22 @@ export async function createNotification(params: CreateNotificationParams) {
 
   const supabase = createServiceClient();
 
+  // metadata is Record<string, unknown> while the generated Supabase Insert
+  // type expects strict Json — cast bridges the runtime/compile gap.
+  const insert = {
+    tenant_id: params.tenant_id,
+    user_profile_id: params.user_profile_id ?? null,
+    client_id: params.client_id ?? null,
+    title: params.title,
+    message: params.message,
+    notification_type: params.notification_type ?? 'system',
+    action_url: params.action_url,
+    metadata: params.metadata ?? {},
+  } as unknown as NotificationInsert;
+
   const { data, error } = await supabase
     .from('notifications')
-    .insert({
-      tenant_id: params.tenant_id,
-      user_profile_id: params.user_profile_id ?? null,
-      client_id: params.client_id ?? null,
-      title: params.title,
-      message: params.message,
-      notification_type: params.notification_type ?? 'system',
-      action_url: params.action_url,
-      metadata: params.metadata ?? {},
-    } as any)
+    .insert(insert)
     .select('id')
     .single();
 
@@ -75,7 +82,7 @@ export async function createBulkNotifications(params: CreateNotificationParams[]
 
   const { data, error } = await supabase
     .from('notifications')
-    .insert(rows as any)
+    .insert(rows as unknown as NotificationInsert[])
     .select('id');
 
   if (error) {
