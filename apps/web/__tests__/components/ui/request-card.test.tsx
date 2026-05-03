@@ -94,7 +94,8 @@ describe('RequestCard', () => {
         render(<RequestCard {...defaultProps} />)
 
         const approveButton = screen.getByText('Aprobar').closest('button')
-        expect(approveButton).toHaveClass('bg-primary')
+        // Perfectapp primary button: light shade with hover into primary
+        expect(approveButton).toHaveClass('bg-primary-light')
     })
 
     it('reject button has ghost variant', () => {

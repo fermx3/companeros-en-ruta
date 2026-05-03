@@ -13,7 +13,8 @@ describe('ActionButton', () => {
         const { container } = render(<ActionButton>Primary</ActionButton>)
 
         const button = screen.getByText('Primary').closest('button')
-        expect(button).toHaveClass('bg-primary', 'hover:bg-primary/90')
+        // Perfectapp button: light shade by default, hovers into primary
+        expect(button).toHaveClass('bg-primary-light', 'hover:bg-primary')
     })
 
     it('renders secondary variant', () => {
