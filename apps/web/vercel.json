@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "$comment": "Vercel project Root Directory must be set to 'apps/web' in the dashboard. With that, Vercel auto-detects Next.js + pnpm and resolves the workspace from the repo root. The ignoreCommand below prevents redundant builds when only non-web files change.",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ../../apps/web ../../packages/shared ../../pnpm-lock.yaml ../../turbo.json"
+}
