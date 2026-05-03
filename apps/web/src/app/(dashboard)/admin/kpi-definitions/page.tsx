@@ -23,7 +23,8 @@ interface KpiDefinition {
   updated_at: string
 }
 
-const ICON_MAP: Record<string, any> = {
+// LucideIcon component type — each entry is one of the imported icon components.
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   TrendingUp, Target, Package, PieChart, LayoutGrid,
 }
 

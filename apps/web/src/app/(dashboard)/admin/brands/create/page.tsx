@@ -59,9 +59,10 @@ export default function CreateBrandPage() {
       brandCreateSchema.parse(formData);
       setValidationErrors({});
       return true;
-    } catch (err: any) {
+    } catch (err) {
       const errors: Record<string, string> = {};
-      err.errors?.forEach((error: any) => {
+      const zodLike = err as { errors?: Array<{ path: (string | number)[]; message: string }> };
+      zodLike.errors?.forEach((error) => {
         errors[error.path[0]] = error.message;
       });
       setValidationErrors(errors);
