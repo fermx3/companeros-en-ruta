@@ -79,6 +79,53 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
 
 > Append below. Newest at top.
 
+### 2026-05-03 — CI baseline: 3 known-failing checks (lint, unit tests, E2E)
+
+- **Context:** `.github/workflows/test.yml`. PR #11 (monorepo migration) surfaced these via the new pnpm/turbo pipeline. All three were failing on master too — the monorepo migration just made them visible because the workflow now runs cleanly up to those steps.
+- **Symptom:** GH Actions fails 3 steps unless `continue-on-error: true` is set. None of them are runtime bugs; all three are infrastructure / test-isolation issues.
+- **Root cause:** Three independent issues — see "Issues to fix" below.
+- **Fix / Rule:** Until each is resolved, the steps stay marked `continue-on-error` so the workflow doesn't gate merges on pre-existing baseline failures. Vercel preview build is the de-facto gate. Each fix is tracked as its own task.
+- **Tags:** #ci #lint #tests #e2e #infra #monorepo
+
+---
+
+### Issues to fix (post-monorepo)
+
+#### A. Lint — 21 `@typescript-eslint/no-explicit-any` in `apps/web/src/lib/services/*.ts`
+
+- **Files:** `adminService.ts` (5), `brandService.ts` (2), `qrService.ts` (3), `visitService.ts` (7) + 4 in `apps/web/src/app/api/admin/users/{create,invite}/route.ts`
+- **Cause:** Supabase JS query builder types are too restrictive for some dynamic queries (e.g., `.from('table' as any)`, `.insert(... as any)`).
+- **Fix approach:** Replace `as any` with proper Supabase generic types from `@/types/supabase`. Where the dynamic shape genuinely requires it, narrow with `as never` or build typed helpers in `packages/shared/utils/`.
+- **Effort:** Medium. ~30 spots across 7 files. Mechanical but needs care to avoid regressions.
+- **Severity:** Low. Lint warnings, no runtime impact.
+- **Tracked in:** unmark `continue-on-error: true` from `Lint` step in `.github/workflows/test.yml` once fixed.
+
+#### B. Unit tests — 20 failures in CI without `.env.local`
+
+- **Files:** mostly `__tests__/components/**`, `__tests__/integration/**`, `__tests__/lib/supabase/client.test.ts`
+- **Cause:** `apps/web/src/lib/env.web.ts` calls `parseSharedEnv(...)` at module evaluation. When jest imports any module that transitively pulls in `@/lib/env`, the Zod parse throws because CI has no `.env.local` and GH Secrets aren't injected for unit tests.
+- **Fix approach (pick one):**
+  1. **Best:** make `env.web.ts` lazy — export a getter `getEnv()` that parses on first call, not at import time. Tests can mock `getEnv` cleanly. Production behavior unchanged (first request still triggers parse, fails fast on missing secrets).
+  2. **Cheap:** add a `jest.setup.js` that sets dummy `process.env.NEXT_PUBLIC_*` values before any test imports run.
+  3. **Brittle:** add `SUPABASE_URL` etc. as GH Action env vars in the unit-test step (couples tests to real values).
+- **Effort:** Low (#2) to medium (#1). Recommend #1 for cleanliness; it also benefits mobile.
+- **Severity:** Medium. Tests aren't catching regressions in the affected modules.
+- **Tracked in:** unmark `continue-on-error: true` from `Unit + integration tests (apps/web)` step once fixed.
+
+#### C. E2E Playwright — `next dev` fails to boot in CI without Supabase secrets
+
+- **Cause:** `apps/web/playwright.config.ts` `webServer.command: 'next dev'` boots a real Next dev server, which validates env vars on boot. CI has no `SUPABASE_URL` / `SUPABASE_ANON_KEY` (the workflow references `secrets.SUPABASE_URL` / `secrets.SUPABASE_ANON_KEY` but those aren't set in the GitHub repo's Secrets).
+- **Fix approach (pick one):**
+  1. **Recommended:** add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to GitHub repo Secrets (Settings → Secrets and variables → Actions). Use a dedicated **test/staging** Supabase project — never production. Then E2E runs against that.
+  2. **Alternative:** spin up a local Supabase via `supabase start` in CI before Playwright runs (heavier but no shared secrets). Requires `supabase` CLI in the runner.
+  3. **Stopgap:** keep E2E `continue-on-error` and rely on Vercel preview manual smoke + local runs.
+- **Decision needed:** is it OK to expose a non-prod Supabase project's anon key + URL to GitHub Actions? Anon key is already public-facing, so this is normally fine, but tenant data should be a sanitized test set.
+- **Effort:** Low (#1, once a test project exists), High (#2).
+- **Severity:** Medium-high. No automated regression coverage for full user flows. Manual smoke + Vercel preview cover this for now.
+- **Tracked in:** unmark `continue-on-error: true` from `E2E tests` step once fixed.
+
+---
+
 <!-- ### 2026-05-03 — Example finding -->
 <!-- - **Context:** src/app/api/promotor/visits/route.ts -->
 <!-- - **Symptom:** Visit insert failed with "promotor_id role mismatch" despite role being 'asesor_de_ventas' -->
