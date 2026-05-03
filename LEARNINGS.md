@@ -91,14 +91,31 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
 
 ### Issues to fix (post-monorepo)
 
-#### A. Lint — 21 `@typescript-eslint/no-explicit-any` in `apps/web/src/lib/services/*.ts`
+#### A. Lint — split into A1 (fixed) + A2 (open)
 
-- **Files:** `adminService.ts` (5), `brandService.ts` (2), `qrService.ts` (3), `visitService.ts` (7) + 4 in `apps/web/src/app/api/admin/users/{create,invite}/route.ts`
-- **Cause:** Supabase JS query builder types are too restrictive for some dynamic queries (e.g., `.from('table' as any)`, `.insert(... as any)`).
-- **Fix approach:** Replace `as any` with proper Supabase generic types from `@/types/supabase`. Where the dynamic shape genuinely requires it, narrow with `as never` or build typed helpers in `packages/shared/utils/`.
-- **Effort:** Medium. ~30 spots across 7 files. Mechanical but needs care to avoid regressions.
-- **Severity:** Low. Lint warnings, no runtime impact.
-- **Tracked in:** unmark `continue-on-error: true` from `Lint` step in `.github/workflows/test.yml` once fixed.
+##### A1 — Services + admin user routes (FIXED 2026-05-03)
+
+- **Status:** ✅ Fixed in PR #15.
+- **What was fixed:**
+  - Deleted `apps/web/src/lib/services/{visit,brand,qr}Service.ts` — these were dead code (zero callers). They referenced an old schema (`visit_number`, `start_time`, `visit_assessments`, `visit_purchases`) that no longer exists. Removing them resolved 12 of the 21 errors.
+  - In `adminService.ts`: replaced 5 `as any` casts with `Tables['<X>']['Insert']` / `['Update']` types. Two of them (`user_profiles.preferences`, `tenants.settings`, `user_roles` insert with conditional `zone_id`) needed `as unknown as ...` to bridge a known supabase-js codegen quirk: generated `Json` types don't accept `Record<string, unknown>` at the type level even though they accept it at runtime.
+  - In `apps/web/src/app/api/admin/users/{create,invite}/route.ts`: dropped the `(user: any)` annotation from a `.find` callback (the inferred type from `auth.admin.listUsers` is sufficient), and changed `let userWasCreatedNew` to `const` (`prefer-const`).
+- **Result:** services + admin user routes scope is now lint-clean. 21 errors + 2 warnings → 0.
+
+##### A2 — Project-wide lint baseline (OPEN)
+
+- **Status:** ⏳ Open. ~241 errors + ~95 warnings remain across the rest of `apps/web/src/`.
+- **Where:** components/, app/(dashboard)/, hooks/, lib/notifications.ts, lib/navigation-config.ts. Most are `@typescript-eslint/no-explicit-any`, `prefer-const`, and `no-unused-vars`.
+- **Why this wasn't part of A1:** The original LEARNINGS scope listed 21 specific errors in services + routes. The full project lint debt is much larger and was never a single deliverable. Splitting it explicitly so future agents don't think A is "done" when it isn't.
+- **Fix approach:** tackle by directory in focused PRs:
+  1. `lib/notifications.ts` + `lib/navigation-config.ts` (2 errors + 2 warnings)
+  2. `app/api/**` route handlers (largest impact — server code)
+  3. `app/(dashboard)/**` page components
+  4. `components/**`
+  5. `hooks/**`
+- **Effort:** High when summed; each batch is 1–3h.
+- **Severity:** Low (no runtime impact) but the gate stays off lint until done — meaning new lint regressions slip through.
+- **Tracked in:** keep `continue-on-error: true` on the `Lint` step. Remove only when `pnpm --filter=@companeros/web exec eslint src/` returns 0 errors.
 
 #### B. Unit tests — split into B1 (fixed) + B2 (open)
 
@@ -109,7 +126,7 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
 - **Fix:** `apps/web/jest.setup.js` now sets schema-valid dummies for all 6 env keys with the `||=` pattern, so local `.env.local` values still win when present.
 - **Result:** CI baseline went from 21 fail / 103 pass / 123 total to 21 fail / 107 pass / 128 total — matches local exactly.
 
-##### B2 — 21 stale unit tests (OPEN)
+##### B2 — 21 stale unit tests (FIXED 2026-05-03 in PR #14)
 
 - **Files affected (exact):** `__tests__/components/auth/login-form.test.tsx` (8 tests), `__tests__/app/(auth)/login/page.test.tsx` (4), `__tests__/components/layout/bottom-navigation.test.tsx` (2), `__tests__/components/ui/{action-button,request-card,status-badge,qr-action-card}.test.tsx` (mixed), `__tests__/integration/auth-flow.test.tsx` (1).
 - **Cause:** Tests assert old Tailwind class names (e.g. `bg-green-100 text-green-700`). Components migrated to the **Perfectapp design system** (e.g. `bg-[#e3fee8] text-[#437b56]`) — see commit `3da420a` and the Perfectapp UI overhaul. Test assertions never updated.
