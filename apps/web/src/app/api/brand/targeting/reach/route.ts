@@ -115,7 +115,10 @@ export async function POST(request: NextRequest) {
           (criteria.staff_experience_levels?.length ?? 0) > 0
 
         if (hasPromotorFilters) {
-          // promotor_assignments table not in generated Supabase types yet
+          // promotor_assignments is missing from the generated Supabase types.
+          // Until typegen is regenerated, escape the typed-client narrowing
+          // for this single query path.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           let promotorQuery = (supabase as any)
             .from('promotor_assignments')
             .select('user_profile_id', { count: 'exact', head: true })

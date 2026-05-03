@@ -1,6 +1,10 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type SbClient = SupabaseClient<Database>
 
 interface ExportFilters {
   client_status?: string[]
@@ -68,7 +72,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function resolveFilteredClientIds(
-  supabase: any, brandId: string, tenantId: string, filters: ExportFilters
+  supabase: SbClient, brandId: string, tenantId: string, filters: ExportFilters
 ): Promise<string[] | null> {
   const hasFilters =
     filters.client_status?.length || filters.client_type_ids?.length ||
@@ -91,7 +95,7 @@ async function resolveFilteredClientIds(
     .eq('brand_id', brandId)
     .is('deleted_at', null)
 
-  if (filters.membership_status?.length) query = query.in('membership_status', filters.membership_status)
+  if (filters.membership_status?.length) query = query.in('membership_status', filters.membership_status as Database['public']['Enums']['membership_status_enum'][])
   if (filters.tier_ids?.length) query = query.in('current_tier_id', filters.tier_ids)
   if (filters.points_balance_min !== undefined) query = query.gte('points_balance', filters.points_balance_min)
   if (filters.points_balance_max !== undefined) query = query.lte('points_balance', filters.points_balance_max)
@@ -140,7 +144,7 @@ async function resolveFilteredClientIds(
     if (filters.promotor_ids?.length) q = q.in('user_profile_id', filters.promotor_ids)
     if (filters.assignment_types?.length) q = q.in('assignment_type', filters.assignment_types)
     const { data: assigns } = await q
-    const assignedSet = new Set((assigns || []).map((a: any) => a.client_id))
+    const assignedSet = new Set((assigns || []).map((a) => a.client_id))
     clientIds = clientIds.filter(id => assignedSet.has(id))
   }
 
@@ -148,7 +152,7 @@ async function resolveFilteredClientIds(
 }
 
 async function getDatasetCount(
-  supabase: any, brandId: string, tenantId: string,
+  supabase: SbClient, brandId: string, tenantId: string,
   dataset: DatasetKey, clientIds: string[] | null, filters: ExportFilters
 ): Promise<number> {
   switch (dataset) {
