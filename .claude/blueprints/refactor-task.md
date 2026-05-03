@@ -34,14 +34,25 @@ From the user (ask if missing):
 
 ## Steps
 
+### 0. Branch off master
+
+```bash
+git checkout master && git pull --ff-only
+git checkout -b refactor/<short-name>
+```
+
+NEVER work on `master` directly. Master is locked; pushes go through PRs only.
+
 ### 1. Acknowledge compliance
 
 ```
 ✓ Read CLAUDE.md and the rules in .claude/rules/
+✓ On feature branch: refactor/<name>  (NOT master)
 ✓ Loaded skills: <list, usually architecture.md + the affected domain skill>
 ✓ Refactor target: <description>
 ✓ Behavior contract: <one or two sentences>
 ✓ Justification: <which of the criteria apply>
+✓ Cross-platform impact: <web-only | shared (web + mobile) | mobile-only>
 ```
 
 ### 2. Inventory
@@ -121,12 +132,25 @@ Each slice must:
 ```
 [ ] All existing tests pass (no test was modified to make it pass)
 [ ] Characterization tests added in step 4 still pass
-[ ] Lint: npm run lint
-[ ] Types: npm run build
-[ ] If UI: manual smoke test of the refactored surface
+[ ] Lint: pnpm lint
+[ ] Types: pnpm --filter=@companeros/web build
+[ ] If UI: manual smoke on web of the refactored surface
+[ ] If apps/mobile exists and shared code refactored: same smoke on mobile
 [ ] If migration: applied locally; data reads/writes still correct for ≥2 roles
 [ ] Diff is reviewable — small, focused, no drive-by changes
 ```
+
+### 7.1 Open the PR
+
+```
+[ ] git push -u origin refactor/<short-name>
+[ ] gh pr create --base master --title "refactor: ..." --body "..."
+[ ] PR description states which platforms were validated
+[ ] Wait for CI green AND Vercel preview deploy verified
+[ ] gh pr merge <PR#> --squash --delete-branch
+```
+
+NEVER push directly to master.
 
 ### 8. Verify behavior parity
 
@@ -182,6 +206,7 @@ If you spot related cleanup that's out of scope, list it in the report under "Ou
 ## Validation Checklist
 
 ```
+[ ] On a feature branch (NOT master)
 [ ] Justification meets ≥2 of the criteria
 [ ] Plan was confirmed before code changes
 [ ] Characterization tests added if coverage was thin
@@ -192,6 +217,9 @@ If you spot related cleanup that's out of scope, list it in the report under "Ou
 [ ] Existing tests untouched, all green
 [ ] Diff is minimal and reviewable
 [ ] Out-of-scope cleanup noted, not silently absorbed
+[ ] Smoke on web confirmed behavior parity
+[ ] If apps/mobile exists and shared code refactored: smoke on mobile too
+[ ] PR opened against master; merged via squash after CI green + preview verified
 ```
 
 ---

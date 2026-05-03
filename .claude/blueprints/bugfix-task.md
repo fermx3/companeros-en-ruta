@@ -39,6 +39,15 @@ From the user (ask if missing):
 
 ## Steps
 
+### 0. Branch off master
+
+```bash
+git checkout master && git pull --ff-only
+git checkout -b fix/<short-name>
+```
+
+NEVER work on `master` directly. Master is locked; pushes go through PRs only.
+
 ### 1. Reproduce locally
 
 - If the bug is in an API route: craft the request (curl / Thunder Client) with the failing payload as the same role.
@@ -104,15 +113,28 @@ Run the test, confirm red. Then implement the fix.
 
 ```
 [ ] Regression test passes
-[ ] Existing tests still pass: npm run test
-[ ] Lint: npm run lint
-[ ] Types: npm run build (or tsc --noEmit)
-[ ] If UI: manual repro is now green
+[ ] Existing tests still pass: pnpm --filter=@companeros/web test
+[ ] Lint: pnpm lint
+[ ] Types: pnpm --filter=@companeros/web build (or tsc --noEmit)
+[ ] If UI: manual repro is now green on web
+[ ] If apps/mobile exists and the bug surface is shared / mobile-affecting: validated on mobile too
 [ ] If migration: applied locally + RLS validated for ≥2 roles
 [ ] No collateral changes — diff is minimal
 ```
 
-### 8. Append to LEARNINGS.md
+### 8. Open the PR
+
+```
+[ ] git push -u origin fix/<short-name>
+[ ] gh pr create --base master --title "fix: ..." --body "..."
+[ ] PR description states which platforms were re-tested
+[ ] Wait for CI green AND Vercel preview deploy verified
+[ ] gh pr merge <PR#> --squash --delete-branch
+```
+
+NEVER push directly to master.
+
+### 9. Append to LEARNINGS.md
 
 Bugs are the highest-signal source of learnings. Append unless the bug was a typo with no broader lesson. Include:
 
@@ -158,14 +180,18 @@ Bugs are the highest-signal source of learnings. Append unless the bug was a typ
 ## Validation Checklist
 
 ```
+[ ] On a feature branch (NOT master)
 [ ] Reproduced locally before any code change
 [ ] Root cause stated, not just the symptom
-[ ] Regression test added, fails on main, passes after fix
+[ ] Regression test added, fails on master, passes after fix
 [ ] Fix scope is minimal — no incidental refactors
 [ ] If auth/RLS-related, cross-tenant case verified
 [ ] If trigger/migration-related, related migrations and triggers checked
 [ ] All standard validations pass
+[ ] Re-tested on web (state which flow in the PR)
+[ ] If apps/mobile exists and the bug affected shared code: re-tested on mobile too
 [ ] LEARNINGS.md updated unless trivially typo
+[ ] PR opened against master; merged via squash after CI green + preview verified
 ```
 
 ---

@@ -65,6 +65,28 @@ Your role is to plan → verify → implement → validate. **Never guess.**
 
 - Never commit secrets, never log tokens, never hardcode keys. `apps/web/src/lib/env.ts` is the only env entry point — extend it via Zod schemas.
 
+### 1.8 Branching policy — `master` is locked
+
+- **NEVER** push, commit, or merge directly to `master`. The branch is protected.
+- **EVERY change** — feature, bugfix, refactor, doc, config — goes through a feature branch + Pull Request.
+- Branch naming:
+  - `feat/<short-name>` — new features
+  - `fix/<short-name>` — bug fixes
+  - `refactor/<short-name>` — refactors
+  - `chore/<short-name>` — config / tooling / docs
+- PR opens against `master`. Merge only after: CI green (or known-failing baselines documented), Vercel preview deploy verified, at least one human review.
+- **Never** force-push to `master`. Force-push to your own feature branch only when necessary, never on shared branches.
+
+### 1.9 Cross-platform validation — web AND mobile
+
+- This repo is a **monorepo** that hosts the production web app (`apps/web`) and will host the mobile app (`apps/mobile` — Expo, to be added).
+- For every feature or bugfix that touches **shared code** (`packages/shared/*`, schema/migrations, API routes consumed by both, public env schema):
+  - **MUST** validate the change works on `apps/web` (the existing app).
+  - **MUST** validate the change works on `apps/mobile` once it exists. Document in the PR which app(s) were tested.
+  - If `apps/mobile` doesn't exist yet at the time of the PR, the PR description MUST state explicitly: "Mobile validation: N/A (apps/mobile not yet present)".
+- For changes scoped to one app only (`apps/web/src/components/...`, `apps/mobile/src/screens/...`), validate that app and explicitly state the other was unaffected.
+- A change that breaks the contract for either platform is a regression — block the PR until both pass.
+
 ---
 
 ## 2. MANDATORY WORKFLOW (BEFORE WRITING CODE)
@@ -73,21 +95,30 @@ Run this checklist for EVERY non-trivial task:
 
 ```
 [ ] 1. Read CLAUDE.md (this file)
-[ ] 2. Identify task type → load matching blueprint:
+[ ] 2. Create or switch to a feature branch — NEVER work on master:
+       git checkout master && git pull && git checkout -b <type>/<short-name>
+[ ] 3. Identify task type → load matching blueprint:
        - new feature       → .claude/blueprints/feature-task.md
        - bugfix            → .claude/blueprints/bugfix-task.md
        - refactor          → .claude/blueprints/refactor-task.md
-[ ] 3. Identify domain skills required → load from .claude/skills/
+[ ] 4. Identify domain skills required → load from .claude/skills/
        (frontend, backend-apis, supabase-database, data-sql,
         testing-qa, security, mobile, architecture)
-[ ] 4. Verify schema for affected tables (types/database.ts → migrations → local DB)
-[ ] 5. Identify affected RLS policies + tenant isolation surfaces
-[ ] 6. Run scripts/agent-workflow.md decision tree
-[ ] 7. Plan: list files to change, migrations needed, tests required
-[ ] 8. Confirm plan with user if scope is ambiguous
-[ ] 9. Implement
-[ ] 10. Validate (lint, type-check, tests, build)
-[ ] 11. Append non-obvious findings to LEARNINGS.md
+[ ] 5. Verify schema for affected tables (types/database.ts → migrations → local DB)
+[ ] 6. Identify affected RLS policies + tenant isolation surfaces
+[ ] 7. Determine cross-platform impact:
+       - Touches packages/shared, supabase/, or shared API contract? → MUST validate on web AND mobile (or N/A if mobile not yet present)
+       - Web-only? → state explicitly mobile is unaffected
+[ ] 8. Run scripts/agent-workflow.md decision tree
+[ ] 9. Plan: list files to change, migrations needed, tests required
+[ ] 10. Confirm plan with user if scope is ambiguous
+[ ] 11. Implement on the feature branch
+[ ] 12. Validate (lint, type-check, tests, build) on web
+[ ] 13. Validate on mobile if applicable (when apps/mobile exists)
+[ ] 14. Push branch and open a PR against master
+[ ] 15. Wait for CI green + Vercel preview verified
+[ ] 16. Merge via PR (squash) — never push directly to master
+[ ] 17. Append non-obvious findings to LEARNINGS.md
 ```
 
 ---
@@ -181,7 +212,9 @@ You **MUST stop and ask the user** if:
 5. The user-supplied requirement contradicts an invariant (multi-tenancy, RLS, public_id, soft-delete).
 6. You'd need to use `service_role` outside `apps/web/src/lib/services/` admin paths.
 7. A test would require disabling RLS — never do that silently.
-8. Mobile work would break the web — see `.claude/skills/mobile.md`.
+8. Mobile work would break the web, or web work would break mobile — see `.claude/skills/mobile.md`. **Both platforms must keep working.**
+9. The current branch is `master` — STOP, create a feature branch, and re-attempt.
+10. The user requests a direct commit/push to `master` — refuse and propose a PR instead.
 
 **Never proceed with assumptions.** Stating an assumption explicitly is acceptable; acting on a silent one is not.
 
@@ -191,19 +224,26 @@ You **MUST stop and ask the user** if:
 
 A change is DONE only when ALL the following are true:
 
+- [ ] Work was done on a feature branch (NOT `master`)
 - [ ] Plan was written and (if scope > trivial) confirmed with user
 - [ ] All affected tables/columns/enums verified against `database.ts` / migrations
 - [ ] Every new/modified query filters by `tenant_id` where required
 - [ ] RLS implications evaluated; if RLS changed → migration written
 - [ ] Public-facing identifiers use `public_id`, not raw UUIDs
-- [ ] TypeScript strict passes (`npm run build` or `tsc --noEmit`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Unit/integration tests added or updated; `npm run test` passes
-- [ ] If UI: dev server tested in browser (golden path + 1 edge case)
+- [ ] TypeScript strict passes (`pnpm --filter=@companeros/web build` or `tsc --noEmit`)
+- [ ] Lint passes (`pnpm lint`)
+- [ ] Unit/integration tests added or updated; `pnpm test` passes
+- [ ] If UI: dev server tested in browser (golden path + 1 edge case) on **web**
+- [ ] If `apps/mobile` exists and the change touches shared code or contracts: validated on **mobile** too. The PR description states explicitly which platforms were tested.
+- [ ] If `apps/mobile` does not yet exist: PR description states "Mobile validation: N/A (apps/mobile not yet present)"
 - [ ] If migration: applied locally, validated, RLS tested for at least 2 roles
 - [ ] No `console.log` / debug statements left
 - [ ] No secrets / tokens introduced
 - [ ] LEARNINGS.md updated if anything non-obvious surfaced
+- [ ] Feature branch pushed and PR opened against `master`
+- [ ] CI green (or known-failing baselines documented in LEARNINGS.md)
+- [ ] Vercel preview deploy verified (manual smoke at minimum)
+- [ ] Merged via PR (squash). Branch deleted after merge.
 
 If any of the above is not true, the task is **NOT done**. Report what's missing.
 

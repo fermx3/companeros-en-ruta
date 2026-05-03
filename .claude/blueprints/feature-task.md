@@ -44,16 +44,27 @@ If any of these are unclear, **ask once** before writing code.
 
 ## Steps
 
+### 0. Branch off master
+
+```bash
+git checkout master && git pull --ff-only
+git checkout -b feat/<short-name>
+```
+
+NEVER work on `master` directly. Master is locked; pushes go through PRs only.
+
 ### 1. Acknowledge compliance
 
 State explicitly:
 
 ```
 ✓ Read CLAUDE.md and the rules in .claude/rules/
+✓ On feature branch: feat/<name>  (NOT master)
 ✓ Loaded skills: <list>
 ✓ This feature touches tables: <list>
 ✓ Audience: <roles>
 ✓ Tenant scope: <tenant-wide | brand-scoped | per-user>
+✓ Cross-platform impact: <web-only | shared (web + mobile) | mobile-only>
 ```
 
 ### 2. Verify schema
@@ -159,14 +170,31 @@ Order:
 ### 9. Validate
 
 ```
-[ ] npm run lint
-[ ] npm run build (or tsc --noEmit)
-[ ] npm run test (focused first; full suite before declaring done)
-[ ] If UI: dev server tested in browser, golden path + 1 edge case
+[ ] pnpm lint
+[ ] pnpm --filter=@companeros/web build (or tsc --noEmit)
+[ ] pnpm --filter=@companeros/web test (focused first; full suite before declaring done)
+[ ] pnpm test:db (if migration / RLS changed)
+[ ] If web UI: pnpm --filter=@companeros/web dev → browser, golden path + 1 edge case
+[ ] If apps/mobile exists and shared code changed: validated on mobile too
 [ ] If migration: applied locally + RLS tested for ≥2 roles
 ```
 
-### 10. Append to LEARNINGS.md
+### 10. Open the PR
+
+```
+[ ] git push -u origin feat/<short-name>
+[ ] gh pr create --base master --title "..." --body "..."
+[ ] PR description states which platforms were validated:
+     - "Validated on: web (admin + promotor + brand flows)"
+     - "Validated on: mobile (when apps/mobile exists)" or
+     - "Mobile validation: N/A (apps/mobile not yet present)"
+[ ] Wait for CI green AND Vercel preview deploy verified
+[ ] gh pr merge <PR#> --squash --delete-branch
+```
+
+NEVER push directly to master. NEVER force-push to master.
+
+### 11. Append to LEARNINGS.md
 
 If anything non-obvious surfaced, append. See `LEARNINGS.md` for format.
 
@@ -205,6 +233,7 @@ End-of-run report:
 ## Validation Checklist
 
 ```
+[ ] On a feature branch (NOT master)
 [ ] Plan acknowledged and (if non-trivial) confirmed with user
 [ ] Schema verified for every touched table
 [ ] Migration written, applied locally, types updated (if applicable)
@@ -216,7 +245,10 @@ End-of-run report:
 [ ] Cross-tenant negative test added
 [ ] UI uses canonical components; loading/empty/error states present
 [ ] All standard validations pass (lint, types, tests, manual UI)
+[ ] Validated on web (state which flows in the PR)
+[ ] If apps/mobile exists and shared code changed: validated on mobile too
 [ ] LEARNINGS.md updated if non-obvious findings
+[ ] PR opened against master; merged via squash after CI green + preview verified
 ```
 
 ---
