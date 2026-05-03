@@ -4,6 +4,10 @@ import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/li
 import { buildCsvString, csvResponse, formatCsvDate, formatCsvCurrency } from '@companeros/shared/utils/csv'
 import archiver from 'archiver'
 import { PassThrough } from 'stream'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type SbClient = SupabaseClient<Database>
 
 interface ExportFilters {
   client_status?: string[]
@@ -114,7 +118,7 @@ async function createZipBuffer(files: { name: string; content: string }[]): Prom
 }
 
 async function resolveFilteredClientIds(
-  supabase: any, brandId: string, tenantId: string, filters: ExportFilters
+  supabase: SbClient, brandId: string, tenantId: string, filters: ExportFilters
 ): Promise<string[] | null> {
   // null means "no filter" — include all clients
   const hasClientFilters =
@@ -152,7 +156,7 @@ async function resolveFilteredClientIds(
 
   // Membership filters
   if (filters.membership_status?.length) {
-    query = query.in('membership_status', filters.membership_status)
+    query = query.in('membership_status', filters.membership_status as Database['public']['Enums']['membership_status_enum'][])
   }
   if (filters.tier_ids?.length) {
     query = query.in('current_tier_id', filters.tier_ids)
@@ -291,7 +295,7 @@ async function resolveFilteredClientIds(
     }
 
     const { data: assignments } = await assignQuery
-    const assignedClientIds = new Set((assignments || []).map((a: any) => a.client_id))
+    const assignedClientIds = new Set((assignments || []).map((a) => a.client_id))
     clientIds = clientIds.filter(id => assignedClientIds.has(id))
   }
 
@@ -299,7 +303,7 @@ async function resolveFilteredClientIds(
 }
 
 async function generateDatasetCsv(
-  supabase: any, brandId: string, tenantId: string,
+  supabase: SbClient, brandId: string, tenantId: string,
   dataset: DatasetKey, filteredClientIds: string[] | null, filters: ExportFilters
 ): Promise<string | null> {
   switch (dataset) {
@@ -316,7 +320,7 @@ async function generateDatasetCsv(
   }
 }
 
-async function generateClientsCsv(supabase: any, brandId: string, clientIds: string[] | null): Promise<string> {
+async function generateClientsCsv(supabase: SbClient, brandId: string, clientIds: string[] | null): Promise<string> {
   let query = supabase
     .from('client_brand_memberships')
     .select(`
@@ -333,16 +337,24 @@ async function generateClientsCsv(supabase: any, brandId: string, clientIds: str
   const { data, error } = await query
   if (error) console.error('generateClientsCsv error:', error)
   const headers = ['ID', 'Nombre', 'Propietario', 'Email', 'Teléfono', 'Tipo', 'Estado', 'Ciudad', 'Estado/Prov', 'Membresía', 'Puntos', 'Lifetime', 'Última Compra']
-  const rows = (data || []).map((m: any) => {
-    const c = m.client as any
+  type ClientShape = {
+    public_id?: string | null; business_name?: string | null; legal_name?: string | null
+    owner_name?: string | null; owner_last_name?: string | null
+    email?: string | null; phone?: string | null
+    status?: string | null; address_city?: string | null; address_state?: string | null
+    client_type?: { name?: string | null } | null
+    commercial_structure?: { name?: string | null } | null
+  }
+  const rows = (data || []).map((m) => {
+    const c = m.client as ClientShape | null
     return [c?.public_id || '', c?.business_name || c?.legal_name || '', [c?.owner_name, c?.owner_last_name].filter(Boolean).join(' ') || '', c?.email || '', c?.phone || '',
-      (c?.client_type as any)?.name || '', c?.status || '', c?.address_city || '', c?.address_state || '',
+      (c?.client_type as { name?: string | null } | null)?.name || '', c?.status || '', c?.address_city || '', c?.address_state || '',
       m.membership_status || '', String(m.points_balance ?? 0), String(m.lifetime_points ?? 0), formatCsvDate(m.last_purchase_date)]
   })
   return buildCsvString(headers, rows)
 }
 
-async function generateVisitsCsv(supabase: any, brandId: string, clientIds: string[] | null, filters: ExportFilters): Promise<string> {
+async function generateVisitsCsv(supabase: SbClient, brandId: string, clientIds: string[] | null, filters: ExportFilters): Promise<string> {
   let query = supabase
     .from('visits')
     .select(`public_id, visit_status, visit_date, check_in_time, check_out_time, client_satisfaction_rating, promotor_notes,
@@ -358,9 +370,11 @@ async function generateVisitsCsv(supabase: any, brandId: string, clientIds: stri
   const { data, error } = await query
   if (error) console.error('generateVisitsCsv error:', error)
   const headers = ['ID', 'Fecha', 'Cliente', 'Promotor', 'Estado', 'Rating', 'Notas']
-  const rows = (data || []).map((v: any) => {
-    const client = v.client as any
-    const promotor = v.promotor as any
+  type Client = { business_name?: string | null }
+  type Promotor = { first_name?: string | null; last_name?: string | null }
+  const rows = (data || []).map((v) => {
+    const client = v.client as Client | null
+    const promotor = v.promotor as Promotor | null
     return [v.public_id || '', formatCsvDate(v.visit_date), client?.business_name || '',
       promotor ? `${promotor.first_name} ${promotor.last_name}` : '', v.visit_status || '',
       v.client_satisfaction_rating !== null ? String(v.client_satisfaction_rating) : '', v.promotor_notes || '']
@@ -368,7 +382,7 @@ async function generateVisitsCsv(supabase: any, brandId: string, clientIds: stri
   return buildCsvString(headers, rows)
 }
 
-async function generateMembershipsCsv(supabase: any, brandId: string, clientIds: string[] | null): Promise<string> {
+async function generateMembershipsCsv(supabase: SbClient, brandId: string, clientIds: string[] | null): Promise<string> {
   let query = supabase
     .from('client_brand_memberships')
     .select(`public_id, membership_status, joined_date, lifetime_points, points_balance, last_purchase_date,
@@ -381,22 +395,24 @@ async function generateMembershipsCsv(supabase: any, brandId: string, clientIds:
   const { data, error } = await query
   if (error) console.error('generateMembershipsCsv error:', error)
   const headers = ['ID', 'Cliente', 'Email', 'Estado', 'Tier', 'Puntos', 'Lifetime', 'Última Compra']
-  const rows = (data || []).map((m: any) => {
-    const c = m.client as any
-    const t = m.tier as any
+  type Client = { business_name?: string | null; email?: string | null }
+  type Tier = { name?: string | null }
+  const rows = (data || []).map((m) => {
+    const c = m.client as Client | null
+    const t = m.tier as Tier | null
     return [m.public_id || '', c?.business_name || '', c?.email || '', m.membership_status || '',
       t?.name || '', String(m.points_balance ?? 0), String(m.lifetime_points ?? 0), formatCsvDate(m.last_purchase_date)]
   })
   return buildCsvString(headers, rows)
 }
 
-async function generatePromotionsCsv(supabase: any, brandId: string): Promise<string> {
+async function generatePromotionsCsv(supabase: SbClient, brandId: string): Promise<string> {
   const { data, error } = await supabase.from('promotions')
     .select('public_id, name, promotion_type, status, start_date, end_date, discount_percentage, discount_amount, budget_allocated, usage_count_total')
     .eq('brand_id', brandId).is('deleted_at', null)
   if (error) console.error('generatePromotionsCsv error:', error)
   const headers = ['ID', 'Nombre', 'Tipo', 'Estado', 'Inicio', 'Fin', 'Valor', 'Presupuesto', 'Usos']
-  const rows = (data || []).map((p: any) => [
+  const rows = (data || []).map((p) => [
     p.public_id || '', p.name || '', p.promotion_type || '', p.status || '',
     formatCsvDate(p.start_date), formatCsvDate(p.end_date),
     p.discount_percentage ? `${p.discount_percentage}%` : formatCsvCurrency(p.discount_amount),
@@ -405,13 +421,13 @@ async function generatePromotionsCsv(supabase: any, brandId: string): Promise<st
   return buildCsvString(headers, rows)
 }
 
-async function generateSurveysCsv(supabase: any, brandId: string): Promise<string> {
+async function generateSurveysCsv(supabase: SbClient, brandId: string): Promise<string> {
   const { data, error } = await supabase.from('surveys')
     .select('public_id, title, survey_status, target_roles, start_date, end_date, created_at')
     .eq('brand_id', brandId).is('deleted_at', null)
   if (error) console.error('generateSurveysCsv error:', error)
   const headers = ['ID', 'Título', 'Estado', 'Roles', 'Inicio', 'Fin', 'Creada']
-  const rows = (data || []).map((s: any) => [
+  const rows = (data || []).map((s) => [
     s.public_id || '', s.title || '', s.survey_status || '',
     Array.isArray(s.target_roles) ? s.target_roles.join(', ') : '',
     formatCsvDate(s.start_date), formatCsvDate(s.end_date), formatCsvDate(s.created_at)
@@ -419,53 +435,54 @@ async function generateSurveysCsv(supabase: any, brandId: string): Promise<strin
   return buildCsvString(headers, rows)
 }
 
-async function generateProductsCsv(supabase: any, brandId: string): Promise<string> {
+async function generateProductsCsv(supabase: SbClient, brandId: string): Promise<string> {
   const { data, error } = await supabase.from('products')
     .select('public_id, name, sku, base_price, is_active, include_in_assessment, category:product_categories(name)')
     .eq('brand_id', brandId).is('deleted_at', null)
   if (error) console.error('generateProductsCsv error:', error)
   const headers = ['ID', 'Nombre', 'SKU', 'Precio', 'Activo', 'En Assessment', 'Categoría']
-  const rows = (data || []).map((p: any) => [
+  const rows = (data || []).map((p) => [
     p.public_id || '', p.name || '', p.sku || '', formatCsvCurrency(p.base_price),
-    p.is_active ? 'Sí' : 'No', p.include_in_assessment ? 'Sí' : 'No', (p.category as any)?.name || ''
+    p.is_active ? 'Sí' : 'No', p.include_in_assessment ? 'Sí' : 'No', (p.category as { name?: string | null } | null)?.name || ''
   ])
   return buildCsvString(headers, rows)
 }
 
-async function generateTeamCsv(supabase: any, brandId: string, tenantId: string): Promise<string> {
+async function generateTeamCsv(supabase: SbClient, brandId: string, tenantId: string): Promise<string> {
   const { data, error } = await supabase.from('user_roles')
     .select('role, status, user_profile:user_profiles!user_roles_user_profile_id_fkey(public_id, first_name, last_name, email, phone, status)')
     .eq('brand_id', brandId).eq('tenant_id', tenantId).is('deleted_at', null)
     .in('role', ['brand_manager', 'promotor', 'supervisor', 'asesor_de_ventas'])
   if (error) console.error('generateTeamCsv error:', error)
   const headers = ['ID', 'Nombre', 'Email', 'Teléfono', 'Rol', 'Estado']
-  const rows = (data || []).map((r: any) => {
-    const p = r.user_profile as any
+  type Profile = { public_id?: string | null; first_name?: string | null; last_name?: string | null; email?: string | null; phone?: string | null; status?: string | null }
+  const rows = (data || []).map((r) => {
+    const p = r.user_profile as Profile | null
     return [p?.public_id || '', p ? `${p.first_name} ${p.last_name}` : '', p?.email || '', p?.phone || '', r.role || '', p?.status || '']
   })
   return buildCsvString(headers, rows)
 }
 
-async function generateCompetitorsCsv(supabase: any, brandId: string): Promise<string> {
+async function generateCompetitorsCsv(supabase: SbClient, brandId: string): Promise<string> {
   const { data, error } = await supabase.from('brand_competitors')
     .select('public_id, competitor_name, is_active, products:brand_competitor_products(id)')
     .eq('brand_id', brandId).is('deleted_at', null)
   if (error) console.error('generateCompetitorsCsv error:', error)
   const headers = ['ID', 'Nombre', 'Activo', 'Productos']
-  const rows = (data || []).map((c: any) => [
+  const rows = (data || []).map((c) => [
     c.public_id || '', c.competitor_name || '', c.is_active ? 'Sí' : 'No',
     String(Array.isArray(c.products) ? c.products.length : 0)
   ])
   return buildCsvString(headers, rows)
 }
 
-async function generatePopMaterialsCsv(supabase: any, brandId: string): Promise<string> {
+async function generatePopMaterialsCsv(supabase: SbClient, brandId: string): Promise<string> {
   const { data, error } = await supabase.from('brand_pop_materials')
     .select('public_id, material_name, material_category, is_active, is_system_template')
     .or(`brand_id.eq.${brandId},is_system_template.eq.true`).is('deleted_at', null)
   if (error) console.error('generatePopMaterialsCsv error:', error)
   const headers = ['ID', 'Nombre', 'Categoría', 'Activo', 'Tipo']
-  const rows = (data || []).map((m: any) => [
+  const rows = (data || []).map((m) => [
     m.public_id || '', m.material_name || '', m.material_category || '',
     m.is_active ? 'Sí' : 'No', m.is_system_template ? 'Sistema' : 'Marca'
   ])

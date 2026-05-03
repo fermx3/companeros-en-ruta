@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { createNotification } from '@/lib/notifications'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type TransactionType = Database['public']['Enums']['points_transaction_type_enum']
+type PointsTransactionInsert = Database['public']['Tables']['points_transactions']['Insert']
 
 interface PointsTransactionRequest {
   membership_id: string
@@ -176,7 +180,7 @@ export async function POST(request: NextRequest) {
 
     const { data: transaction, error: transactionError } = await supabase
       .from('points_transactions')
-      .insert(insertData as any)
+      .insert(insertData as unknown as PointsTransactionInsert)
       .select()
       .single()
 
@@ -285,7 +289,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (transactionType) {
-      query = query.eq('transaction_type', transactionType as any)
+      query = query.eq('transaction_type', transactionType as TransactionType)
     }
 
     // 6. Get total count
@@ -295,7 +299,7 @@ export async function GET(request: NextRequest) {
       .eq('client_brand_membership_id', membershipId)
 
     if (transactionType) {
-      countQuery = countQuery.eq('transaction_type', transactionType as any)
+      countQuery = countQuery.eq('transaction_type', transactionType as TransactionType)
     }
 
     const { count } = await countQuery

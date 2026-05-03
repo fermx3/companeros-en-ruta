@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     const rows = (competitors || []).map(c => {
       const products = Array.isArray(c.products) ? c.products : []
-      const activeProducts = products.filter((p: any) => p.is_active !== false)
+      const activeProducts = products.filter((p: { is_active?: boolean | null }) => p.is_active !== false)
 
       return [
         c.public_id || '',
