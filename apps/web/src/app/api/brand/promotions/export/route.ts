@@ -61,7 +61,14 @@ export async function GET(request: NextRequest) {
       'Usos Totales', 'Límite Usos', 'Creada',
     ]
 
-    function getPromotionValue(p: any): string {
+    type PromotionShape = {
+      discount_percentage?: number | null
+      discount_amount?: number | null
+      buy_quantity?: number | null
+      get_quantity?: number | null
+      points_multiplier?: number | null
+    }
+    function getPromotionValue(p: PromotionShape): string {
       if (p.discount_percentage) return `${p.discount_percentage}%`
       if (p.discount_amount) return formatCsvCurrency(p.discount_amount)
       if (p.buy_quantity && p.get_quantity) return `${p.buy_quantity}x${p.get_quantity}`

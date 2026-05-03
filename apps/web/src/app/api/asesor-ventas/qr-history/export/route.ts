@@ -126,8 +126,20 @@ export async function GET(request: NextRequest) {
             'points': 'Puntos'
         }
 
+        type Client = {
+            address_street?: string | null; address_city?: string | null
+            address_state?: string | null; address_postal_code?: string | null
+            business_name?: string | null
+            [key: string]: unknown
+        }
+        type QrShape = {
+            client?: Client | null
+            promotion?: { discount_type?: string | null; discount_value?: number | null; [key: string]: unknown } | null
+            brand?: { name?: string | null } | null
+            [key: string]: unknown
+        }
         const rows = (redemptions || []).map(r => {
-            const qr = r.qr_code as any
+            const qr = r.qr_code as QrShape | null
             const client = qr?.client
             const promotion = qr?.promotion
             const brand = qr?.brand

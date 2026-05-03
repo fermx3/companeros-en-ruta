@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
 
 // Helper to get promotor profile from auth
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
 
     // Apply status filter
     if (status !== 'all') {
-      query = query.eq('visit_status', status as any)
+      query = query.eq('visit_status', status as Database['public']['Enums']['visit_status_enum'])
     }
 
     // Apply date range filter
@@ -131,7 +132,7 @@ export async function GET(request: NextRequest) {
       const { data: brands } = await supabase
         .from('brands')
         .select('id, name, logo_url')
-        .in('id', brandIds as any)
+        .in('id', brandIds as string[])
 
       brands?.forEach(brand => {
         brandsMap[brand.id] = brand
@@ -281,7 +282,7 @@ export async function POST(request: NextRequest) {
 
     const { data: newVisit, error: insertError } = await supabase
       .from('visits')
-      .insert(visitData as any)
+      .insert(visitData as unknown as Database['public']['Tables']['visits']['Insert'])
       .select(`
         *,
         client:clients(id, public_id, business_name, owner_name, owner_last_name, address_street, address_neighborhood, phone)

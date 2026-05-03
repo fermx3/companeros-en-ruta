@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
 import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type OrderStatus = Database['public']['Enums']['order_status_enum']
+type OrderItemInsert = Database['public']['Tables']['order_items']['Insert']
 
 interface AsesorOrder {
   id: string
@@ -85,7 +89,7 @@ export async function GET(request: NextRequest) {
 
     // Aplicar filtros
     if (status && status !== 'all') {
-      ordersQuery = ordersQuery.eq('order_status', status as any)
+      ordersQuery = ordersQuery.eq('order_status', status as OrderStatus)
     }
 
     if (clientId) {
@@ -367,7 +371,7 @@ export async function POST(request: NextRequest) {
 
     const { error: itemsError } = await supabase
       .from('order_items')
-      .insert(orderItems as any)
+      .insert(orderItems as unknown as OrderItemInsert[])
 
     if (itemsError) {
       console.error('Error creating order items:', itemsError)

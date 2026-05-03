@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
     const activeVisitsCount = activeVisitsResult.count || 0
     const monthlyVisits = monthlyVisitsResult.count || 0
 
-    const visitRatings = visitRatingsResult.data?.map((v: any) => v.client_satisfaction_rating as number) || []
+    const visitRatings = visitRatingsResult.data?.map((v: { client_satisfaction_rating?: number | null }) => v.client_satisfaction_rating as number) || []
     const avgVisitRating = visitRatings.length > 0
       ? Math.round((visitRatings.reduce((sum: number, r: number) => sum + r, 0) / visitRatings.length) * 10) / 10
       : 0
@@ -123,8 +123,8 @@ export async function GET(request: NextRequest) {
     // Order metrics (from COUNT + amount-only queries)
     const totalOrders = totalOrdersResult.count || 0
     const monthlyOrders = monthlyOrdersResult.count || 0
-    const totalRevenue = totalRevenueResult.data?.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || 0), 0) || 0
-    const monthlyRevenue = monthlyRevenueResult.data?.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || 0), 0) || 0
+    const totalRevenue = totalRevenueResult.data?.reduce((sum: number, o: { total_amount?: number | string | null }) => sum + (Number(o.total_amount) || 0), 0) || 0
+    const monthlyRevenue = monthlyRevenueResult.data?.reduce((sum: number, o: { total_amount?: number | string | null }) => sum + (Number(o.total_amount) || 0), 0) || 0
     const lastOrderDate = lastOrderResult.data?.[0]?.order_date || null
 
     // Promotion metrics (from COUNT queries)

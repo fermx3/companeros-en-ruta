@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
 import { resolvePromotorAuth, isPromotorAuthError, promotorAuthErrorResponse } from '@/lib/api/promotor-auth'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     .is('deleted_at', null)
 
   if (status) {
-    query = query.eq('order_status', status as any)
+    query = query.eq('order_status', status as Database['public']['Enums']['visit_order_status_enum'])
   } else {
     // By default exclude cancelled orders
     query = query.neq('order_status', 'cancelled')
@@ -202,27 +203,28 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const totalAmount = subtotal // No discount/tax for now
 
     // Insert visit_order
+    const visitOrderInsert = {
+      tenant_id: tenantId,
+      visit_id: visit.id,
+      client_id: visit.client_id,
+      promotor_id: userProfileId,
+      distributor_id,
+      order_date: new Date().toISOString().split('T')[0],
+      order_status: 'draft',
+      order_type: 'immediate',
+      payment_method: payment_method || 'cash',
+      delivery_date: delivery_date || null,
+      delivery_instructions: delivery_instructions || null,
+      order_notes: order_notes || null,
+      subtotal: subtotal.toFixed(2),
+      discount_amount: '0.00',
+      tax_amount: '0.00',
+      total_amount: totalAmount.toFixed(2),
+      currency: 'MXN',
+    } as unknown as Database['public']['Tables']['visit_orders']['Insert']
     const { data: newOrder, error: orderError } = await supabase
       .from('visit_orders')
-      .insert({
-        tenant_id: tenantId,
-        visit_id: visit.id,
-        client_id: visit.client_id,
-        promotor_id: userProfileId,
-        distributor_id,
-        order_date: new Date().toISOString().split('T')[0],
-        order_status: 'draft',
-        order_type: 'immediate',
-        payment_method: payment_method || 'cash',
-        delivery_date: delivery_date || null,
-        delivery_instructions: delivery_instructions || null,
-        order_notes: order_notes || null,
-        subtotal: subtotal.toFixed(2),
-        discount_amount: '0.00',
-        tax_amount: '0.00',
-        total_amount: totalAmount.toFixed(2),
-        currency: 'MXN',
-      } as any)
+      .insert(visitOrderInsert)
       .select('id')
       .single()
 
@@ -256,7 +258,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const { error: itemsError } = await supabase
       .from('visit_order_items')
-      .insert(orderItems as any)
+      .insert(orderItems as unknown as Database['public']['Tables']['visit_order_items']['Insert'][])
 
     if (itemsError) {
       console.error('Error creating visit_order_items:', itemsError)

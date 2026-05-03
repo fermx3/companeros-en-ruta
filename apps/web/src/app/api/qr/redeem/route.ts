@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     // Notify brand managers about the QR redemption
     try {
       const serviceClient = createServiceClient()
-      const brandId = (result.qr_data as any)?.brand_id as string | undefined
+      const brandId = (result.qr_data as { brand_id?: string | null } | null)?.brand_id ?? undefined
 
       // Find brand_manager(s) for the tenant (optionally filtered by brand_id)
       let bmQuery = serviceClient

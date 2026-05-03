@@ -167,6 +167,7 @@ function achievement(value: number, target: number | undefined): number | null {
   return target && target > 0 ? Math.round(value / target * 1000) / 10 : null
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function processVolume(rows: any[], target: number | undefined) {
   // Weekly aggregation
   const weeklyMap = new Map<string, { revenue: number; weight_tons: number }>()
@@ -205,6 +206,7 @@ function processVolume(rows: any[], target: number | undefined) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function processReach(rows: any[], target: number | undefined) {
   const zoneMap = new Map<string, {
     zone_id: string | null; zone_name: string | null;
@@ -249,6 +251,7 @@ function processReach(rows: any[], target: number | undefined) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function processMix(mixSummary: any | null, channelRows: any[], target: number | undefined) {
   const marketMap = new Map<string, { market_id: string; market_name: string; clients: Set<string> }>()
   for (const row of channelRows) {
@@ -279,6 +282,7 @@ function processMix(mixSummary: any | null, channelRows: any[], target: number |
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function processAssortment(rows: any[], target: number | undefined) {
   const by_zone = rows.map(row => ({
     zone_id: row.zone_id,
@@ -300,6 +304,7 @@ function processAssortment(rows: any[], target: number | undefined) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function processMarketShare(rows: any[], target: number | undefined) {
   const by_zone = rows.map(row => ({
     zone_id: row.zone_id,
@@ -332,6 +337,7 @@ function processMarketShare(rows: any[], target: number | undefined) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function processShareOfShelf(rows: any[], target: number | undefined) {
   const by_zone = rows.map(row => ({
     zone_id: row.zone_id,

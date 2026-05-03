@@ -81,7 +81,7 @@ export async function PATCH(request: NextRequest) {
       .eq('is_active', true)
       .in('slug', kpiSlugs)
 
-    const validSlugs = new Set((validDefs || []).map((d: any) => d.slug))
+    const validSlugs = new Set((validDefs || []).map((d: { slug: string }) => d.slug))
     const invalidSlugs = kpiSlugs.filter(s => !validSlugs.has(s))
 
     if (invalidSlugs.length > 0) {

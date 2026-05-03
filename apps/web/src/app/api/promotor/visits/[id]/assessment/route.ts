@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
+import type { Database } from '@companeros/shared/types/supabase'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -199,7 +200,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Upsert stage assessment
     const { error: upsertError } = await supabase
       .from('visit_stage_assessments')
-      .upsert(stageAssessmentData as any, {
+      .upsert(stageAssessmentData as unknown as Database['public']['Tables']['visit_stage_assessments']['Insert'], {
         onConflict: 'visit_id'
       })
 
