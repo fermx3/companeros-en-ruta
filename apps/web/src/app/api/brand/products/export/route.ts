@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     ]
 
     const rows = (products || []).map(p => {
-      const category = p.category as any
+      const category = p.category as { name?: string | null } | null
 
       return [
         p.public_id || '',

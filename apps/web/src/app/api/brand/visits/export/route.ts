@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { buildCsvString, csvResponse, formatCsvDate } from '@companeros/shared/utils/csv'
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('date_to')
 
     if (status && status !== 'all') {
-      query = query.eq('visit_status', status as any)
+      query = query.eq('visit_status', status as Database['public']['Enums']['visit_status_enum'])
     }
     if (dateFrom) query = query.gte('visit_date', dateFrom)
     if (dateTo) query = query.lte('visit_date', dateTo)
@@ -47,8 +48,8 @@ export async function GET(request: NextRequest) {
     ]
 
     let rows = (visits || []).map(v => {
-      const client = v.client as any
-      const promotor = v.promotor as any
+      const client = v.client as { business_name?: string | null; public_id?: string | null } | null
+      const promotor = v.promotor as { first_name?: string | null; last_name?: string | null } | null
 
       let duration = ''
       if (v.check_in_time && v.check_out_time) {

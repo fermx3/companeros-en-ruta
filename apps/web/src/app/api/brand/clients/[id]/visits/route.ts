@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
@@ -77,7 +78,7 @@ export async function GET(
       .order('visit_date', { ascending: false })
 
     if (status) {
-      query = query.eq('visit_status', status as any)
+      query = query.eq('visit_status', status as Database['public']['Enums']['visit_status_enum'])
     }
 
     const { data: visits, error: visitsError, count } = await query

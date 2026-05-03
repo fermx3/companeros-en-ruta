@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { fullOwnerName } from '@companeros/shared/utils/client'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type MembershipStatus = Database['public']['Enums']['membership_status_enum']
+type MembershipRow = Database['public']['Tables']['client_brand_memberships']['Row']
+type MembershipInsert = Database['public']['Tables']['client_brand_memberships']['Insert']
+type TierAssignmentInsert = Database['public']['Tables']['client_tier_assignments']['Insert']
 
 interface MembershipResponse {
   id: string
@@ -80,7 +86,7 @@ export async function GET(request: NextRequest) {
 
     // Apply status filter
     if (status && ['pending', 'active', 'suspended', 'cancelled'].includes(status)) {
-      query = query.eq('membership_status', status as any)
+      query = query.eq('membership_status', status as MembershipStatus)
     }
 
     // Apply tier filter
@@ -96,7 +102,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && ['pending', 'active', 'suspended', 'cancelled'].includes(status)) {
-      countQuery = countQuery.eq('membership_status', status as any)
+      countQuery = countQuery.eq('membership_status', status as MembershipStatus)
     }
     if (tierId) {
       countQuery = countQuery.eq('current_tier_id', tierId)
@@ -117,7 +123,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 7. Transform and filter by search
-    let transformedMemberships: MembershipResponse[] = ((memberships || []) as any[]).map((m) => {
+    let transformedMemberships: MembershipResponse[] = ((memberships || []) as unknown as (MembershipRow & { clients: unknown; tiers: unknown })[]).map((m) => {
       const client = m.clients as unknown as { id: string; public_id: string; business_name: string; owner_name: string | null; owner_last_name: string | null; email: string | null; phone: string | null } | null
       const tier = m.tiers as unknown as { id: string; name: string; tier_level: number; tier_color: string | null } | null
 
@@ -129,7 +135,7 @@ export async function GET(request: NextRequest) {
         client_name: client?.business_name || fullOwnerName(client?.owner_name, client?.owner_last_name) || `Cliente ${m.public_id}`,
         client_email: client?.email || null,
         client_phone: client?.phone || null,
-        membership_status: m.membership_status,
+        membership_status: m.membership_status ?? '',
         joined_date: m.joined_date,
         approved_date: m.approved_date,
         points_balance: m.points_balance || 0,
@@ -140,7 +146,7 @@ export async function GET(request: NextRequest) {
           tier_level: tier.tier_level,
           tier_color: tier.tier_color
         } : null,
-        created_at: m.created_at
+        created_at: m.created_at ?? '',
       }
     })
 
@@ -289,7 +295,7 @@ export async function POST(request: NextRequest) {
 
     const { data: createdMemberships, error: createError } = await supabase
       .from('client_brand_memberships')
-      .insert(membershipsToCreate as any)
+      .insert(membershipsToCreate as unknown as MembershipInsert[])
       .select('id, client_id')
 
     if (createError) {
@@ -311,7 +317,7 @@ export async function POST(request: NextRequest) {
 
       await supabase
         .from('client_tier_assignments')
-        .insert(tierAssignments as any)
+        .insert(tierAssignments as unknown as TierAssignmentInsert[])
     }
 
     return NextResponse.json({

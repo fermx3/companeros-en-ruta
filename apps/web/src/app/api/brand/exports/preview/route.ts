@@ -103,23 +103,34 @@ async function resolveFilteredClientIds(
   const { data: memberships } = await query
   if (!memberships) return []
 
-  let clientIds = memberships.map((m: any) => m.client_id) as string[]
-  const clientMap = new Map<string, any>()
-  for (const m of memberships) {
-    const client = m.client as any
+  type ClientShape = {
+    status?: string | null; client_type_id?: string | null; market_id?: string | null
+    commercial_structure_id?: string | null; zone_id?: string | null
+    address_state?: string | null; address_city?: string | null
+    address_postal_code?: string | null
+    registration_date?: string | null; last_visit_date?: string | null
+    [key: string]: unknown
+  }
+  type MembershipShape = { client_id: string; client?: ClientShape | ClientShape[] | null }
+  const typedMemberships = memberships as MembershipShape[]
+  let clientIds = typedMemberships.map(m => m.client_id) as string[]
+  const clientMap = new Map<string, ClientShape>()
+  for (const m of typedMemberships) {
+    const c = m.client
+    const client = (Array.isArray(c) ? c[0] : c) ?? null
     if (client) clientMap.set(m.client_id, client)
   }
 
-  if (filters.client_status?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && filters.client_status!.includes(c.status) })
-  if (filters.client_type_ids?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && filters.client_type_ids!.includes(c.client_type_id) })
-  if (filters.market_ids?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && filters.market_ids!.includes(c.market_id) })
-  if (filters.commercial_structure_ids?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && filters.commercial_structure_ids!.includes(c.commercial_structure_id) })
-  if (filters.zone_ids?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && filters.zone_ids!.includes(c.zone_id) })
-  if (filters.states?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && filters.states!.includes(c.address_state) })
-  if (filters.cities?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && filters.cities!.includes(c.address_city) })
-  if (filters.postal_codes?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && filters.postal_codes!.includes(c.address_postal_code) })
-  if (filters.registration_date_from) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.registration_date >= filters.registration_date_from! })
-  if (filters.registration_date_to) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.registration_date <= filters.registration_date_to! })
+  if (filters.client_status?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.status != null && filters.client_status!.includes(c.status) })
+  if (filters.client_type_ids?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.client_type_id != null && filters.client_type_ids!.includes(c.client_type_id) })
+  if (filters.market_ids?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.market_id != null && filters.market_ids!.includes(c.market_id) })
+  if (filters.commercial_structure_ids?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.commercial_structure_id != null && filters.commercial_structure_ids!.includes(c.commercial_structure_id) })
+  if (filters.zone_ids?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.zone_id != null && filters.zone_ids!.includes(c.zone_id) })
+  if (filters.states?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.address_state != null && filters.states!.includes(c.address_state) })
+  if (filters.cities?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.address_city != null && filters.cities!.includes(c.address_city) })
+  if (filters.postal_codes?.length) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.address_postal_code != null && filters.postal_codes!.includes(c.address_postal_code) })
+  if (filters.registration_date_from) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.registration_date != null && c.registration_date >= filters.registration_date_from! })
+  if (filters.registration_date_to) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.registration_date != null && c.registration_date <= filters.registration_date_to! })
   if (filters.last_visit_from) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.last_visit_date && c.last_visit_date >= filters.last_visit_from! })
   if (filters.last_visit_to) clientIds = clientIds.filter(id => { const c = clientMap.get(id); return c && c.last_visit_date && c.last_visit_date <= filters.last_visit_to! })
 

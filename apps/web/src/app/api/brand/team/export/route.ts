@@ -46,7 +46,11 @@ export async function GET(request: NextRequest) {
     ]
 
     let rows = (roles || []).map(r => {
-      const profile = r.user_profile as any
+      const profile = r.user_profile as {
+        public_id?: string | null; first_name?: string | null; last_name?: string | null
+        email?: string | null; phone?: string | null; status?: string | null
+        created_at?: string | null
+      } | null
 
       return {
         role: r.role,

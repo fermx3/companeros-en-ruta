@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
         ordersQuery = ordersQuery.eq('brand_id', targetBrandId)
       }
 
-      if (status && status !== 'all') ordersQuery = ordersQuery.eq('order_status', status as any)
+      if (status && status !== 'all') ordersQuery = ordersQuery.eq('order_status', status as Database['public']['Enums']['order_status_enum'])
       if (clientId) ordersQuery = ordersQuery.eq('client_id', clientId)
       if (distributorId) ordersQuery = ordersQuery.eq('distributor_id', distributorId)
       if (dateFrom) ordersQuery = ordersQuery.gte('order_date', dateFrom)
@@ -168,7 +169,7 @@ export async function GET(request: NextRequest) {
         .eq('tenant_id', tenantId)
         .is('deleted_at', null)
 
-      if (status && status !== 'all') visitQuery = visitQuery.eq('order_status', status as any)
+      if (status && status !== 'all') visitQuery = visitQuery.eq('order_status', status as Database['public']['Enums']['visit_order_status_enum'])
       if (clientId) visitQuery = visitQuery.eq('client_id', clientId)
       if (dateFrom) visitQuery = visitQuery.gte('order_date', dateFrom)
       if (dateTo) visitQuery = visitQuery.lte('order_date', dateTo)
