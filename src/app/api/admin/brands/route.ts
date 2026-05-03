@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthenticatedServiceClient } from '@/lib/utils/tenant';
+import { getAuthenticatedServiceClient } from '@/lib/api/tenant';
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,4 +1,6 @@
-import { createClient } from '@/lib/supabase/client'
+import { createClient as createBrowserClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/supabase'
 
 interface BrandDashboardMetrics {
   brand_id: string
@@ -43,7 +45,11 @@ interface BrandDashboardMetrics {
 }
 
 export class BrandService {
-  private supabase = createClient()
+  private supabase: SupabaseClient<Database>
+
+  constructor(client?: SupabaseClient<Database>) {
+    this.supabase = client ?? createBrowserClient()
+  }
 
   /**
    * Obtener métricas del dashboard para una marca específica

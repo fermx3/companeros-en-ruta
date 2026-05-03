@@ -3,7 +3,9 @@
  * TASK-011: Service for QR code generation and management
  */
 
-import { createClient } from '@/lib/supabase/client'
+import { createClient as createBrowserClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/supabase'
 
 // Types
 export interface QRCode {
@@ -82,7 +84,11 @@ export interface RedeemQRResult {
 }
 
 export class QRService {
-  private supabase = createClient()
+  private supabase: SupabaseClient<Database>
+
+  constructor(client?: SupabaseClient<Database>) {
+    this.supabase = client ?? createBrowserClient()
+  }
 
   /**
    * Generate a new QR code for a client
