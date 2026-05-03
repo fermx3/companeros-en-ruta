@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveAdminAuth, isAdminAuthError, adminAuthErrorResponse } from '@/lib/api/admin-auth'
+import type { Database } from '@companeros/shared/types/supabase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
       .order('visit_date', { ascending: false })
 
     if (status) {
-      query = query.eq('visit_status', status as any)
+      query = query.eq('visit_status', status as Database['public']['Enums']['visit_status_enum'])
     }
     if (dateFrom) {
       query = query.gte('visit_date', dateFrom)

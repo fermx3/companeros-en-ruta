@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Get all client assignments for this promotor with client and brand details
-    let query = supabase
+    const query = supabase
       .from('client_assignments')
       .select(`
         id,
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
       return client?.id
     }).filter(Boolean) as string[] || []
 
-    let lastVisitDates: Record<string, string> = {}
+    const lastVisitDates: Record<string, string> = {}
     if (clientIds.length > 0) {
       const { data: lastVisits } = await supabase
         .from('visits')

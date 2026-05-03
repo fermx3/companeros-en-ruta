@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import type { Database } from '@companeros/shared/types/supabase';
+
+type Enums = Database['public']['Enums'];
 
 /**
  * GET /api/admin/clients - Obtener lista de clientes con filtros y paginación
@@ -66,7 +69,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null);
 
     // Aplicar filtros
-    if (status) query = query.eq('status', status as any);
+    if (status) query = query.eq('status', status as Enums['client_status_enum']);
     if (zone_id) query = query.eq('zone_id', zone_id);
     if (market_id) query = query.eq('market_id', market_id);
 

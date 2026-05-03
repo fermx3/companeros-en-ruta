@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import type { Database } from '@companeros/shared/types/supabase';
 
 /**
  * GET /api/admin/zones - Obtener lista de zonas con filtros y paginación
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
     if (search) {
       query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%,public_id.ilike.%${search}%`);
     }
-    if (zone_type) query = query.eq('zone_type', zone_type as any);
+    if (zone_type) query = query.eq('zone_type', zone_type as Database['public']['Enums']['zone_type_enum']);
     if (is_active !== null && is_active !== '') {
       query = query.eq('is_active', is_active === 'true');
     }

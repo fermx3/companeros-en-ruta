@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     // 5. Get assignments filtered by promotor if specified
     const targetIds = promotorId && teamIds.includes(promotorId) ? [promotorId] : teamIds
 
-    let query = supabase
+    const query = supabase
       .from('client_assignments')
       .select(`
         id,

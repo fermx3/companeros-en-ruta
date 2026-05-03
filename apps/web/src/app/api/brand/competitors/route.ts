@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const includeProducts = searchParams.get('include_products') === 'true'
 
     // Build query
-    let query = supabase
+    const query = supabase
       .from('brand_competitors')
       .select(includeProducts
         ? `
