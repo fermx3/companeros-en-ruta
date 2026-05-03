@@ -52,10 +52,22 @@ export async function GET(request: NextRequest) {
       'CP', 'Puntos Balance', 'Puntos Lifetime', 'Fecha Alta', 'Última Compra',
     ]
 
+    // Loose structural shapes for the join projections; the typed client returns
+    // a tagged union (object | array | null), and the export logic only needs
+    // string/number fields off the joined records.
+    type JoinedClient = {
+      public_id?: string | null; business_name?: string | null; legal_name?: string | null
+      owner_name?: string | null; owner_last_name?: string | null
+      email?: string | null; phone?: string | null; whatsapp?: string | null
+      status?: string | null; address_street?: string | null; address_city?: string | null
+      address_state?: string | null; address_postal_code?: string | null
+      client_type?: { name?: string | null } | null
+      commercial_structure?: { name?: string | null } | null
+    } | null
     let rows = (memberships || []).map(m => {
-      const client = m.client as any
-      const clientType = client?.client_type as any
-      const commercialStructure = client?.commercial_structure as any
+      const client = m.client as JoinedClient
+      const clientType = client?.client_type as { name?: string | null } | null
+      const commercialStructure = client?.commercial_structure as { name?: string | null } | null
       const name = client?.business_name || client?.legal_name || ''
 
       return [

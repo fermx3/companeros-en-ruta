@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
 
     // Apply status filter
     if (status && status !== 'all') {
-      query = query.eq('status', status as any)
+      query = query.eq('status', status as Database['public']['Enums']['promotion_status_enum'])
     }
 
     // Apply search filter
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      countQuery = countQuery.eq('status', status as any)
+      countQuery = countQuery.eq('status', status as Database['public']['Enums']['promotion_status_enum'])
     }
 
     if (search) {

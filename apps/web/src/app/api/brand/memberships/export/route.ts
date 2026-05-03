@@ -2,6 +2,15 @@ import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { buildCsvString, csvResponse, formatCsvDate } from '@companeros/shared/utils/csv'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type MembershipStatus = Database['public']['Enums']['membership_status_enum']
+
+// Loose shapes for Supabase join projections. The Supabase typed-client
+// produces a tagged union (object | array | null) per join; we narrow to
+// the fields actually consumed below.
+type JoinedClient = { business_name?: string | null; email?: string | null; phone?: string | null } | null
+type JoinedTier = { name?: string | null; tier_level?: number | null } | null
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,7 +37,7 @@ export async function GET(request: NextRequest) {
     const tierId = searchParams.get('tier_id')
 
     if (status && status !== 'all') {
-      query = query.eq('membership_status', status as any)
+      query = query.eq('membership_status', status as MembershipStatus)
     }
     if (tierId) query = query.eq('current_tier_id', tierId)
 
@@ -45,8 +54,8 @@ export async function GET(request: NextRequest) {
     ]
 
     let rows = (memberships || []).map(m => {
-      const client = m.client as any
-      const tier = m.tier as any
+      const client = m.client as JoinedClient
+      const tier = m.tier as JoinedTier
 
       return [
         m.public_id || '',

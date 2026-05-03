@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { buildCsvString, csvResponse, formatCsvDate } from '@companeros/shared/utils/csv'
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     const status = searchParams.get('status')
     if (status && status !== 'all') {
-      query = query.eq('survey_status', status as any)
+      query = query.eq('survey_status', status as Database['public']['Enums']['survey_status_enum'])
     }
 
     const { data: surveys, error } = await query
@@ -74,9 +75,10 @@ export async function GET(request: NextRequest) {
       'Aprobada Por', 'Fecha Aprobación', 'Creada',
     ]
 
+    type JoinedProfile = { first_name?: string | null; last_name?: string | null } | null
     let rows = (surveys || []).map(s => {
-      const createdBy = s.created_by_profile as any
-      const approvedBy = s.approved_by_profile as any
+      const createdBy = s.created_by_profile as JoinedProfile
+      const approvedBy = s.approved_by_profile as JoinedProfile
       const roles = Array.isArray(s.target_roles)
         ? s.target_roles.map((r: string) => roleLabels[r] || r).join(', ')
         : ''

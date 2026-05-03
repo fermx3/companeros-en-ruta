@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { resolveVisibilityConditions } from '@companeros/shared/surveys/resolve-visibility-conditions'
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (status && status !== 'all') {
-      query = query.eq('survey_status', status as any)
+      query = query.eq('survey_status', status as Database['public']['Enums']['survey_status_enum'])
     }
 
     if (search) {
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      countQuery = countQuery.eq('survey_status', status as any)
+      countQuery = countQuery.eq('survey_status', status as Database['public']['Enums']['survey_status_enum'])
     }
 
     if (search) {

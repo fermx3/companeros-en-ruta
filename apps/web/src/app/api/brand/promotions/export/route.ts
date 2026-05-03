@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { buildCsvString, csvResponse, formatCsvDate, formatCsvCurrency } from '@companeros/shared/utils/csv'
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     const status = searchParams.get('status')
     if (status && status !== 'all') {
-      query = query.eq('status', status as any)
+      query = query.eq('status', status as Database['public']['Enums']['promotion_status_enum'])
     }
 
     const { data: promotions, error } = await query
