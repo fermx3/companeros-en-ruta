@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch variants for these products
     const productIds = (products || []).map(p => p.id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let variants: any[] = []
 
     if (productIds.length > 0) {
@@ -228,6 +229,7 @@ export async function POST(request: NextRequest) {
 
     // Create variants if provided
     if (variants && variants.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const variantRecords = variants.map((v: any, index: number) => ({
         tenant_id: tenantId,
         product_id: product.id,

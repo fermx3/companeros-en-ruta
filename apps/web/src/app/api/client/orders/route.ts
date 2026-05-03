@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
 
 interface UnifiedOrder {
@@ -76,7 +77,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      directOrdersQuery = directOrdersQuery.eq('order_status', status as any)
+      directOrdersQuery = directOrdersQuery.eq('order_status', status as Database['public']['Enums']['order_status_enum'])
     }
 
     // 5. Query visit orders (from visit_orders table)
@@ -108,7 +109,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      visitOrdersQuery = visitOrdersQuery.eq('order_status', status as any)
+      visitOrdersQuery = visitOrdersQuery.eq('order_status', status as Database['public']['Enums']['visit_order_status_enum'])
     }
 
     // 6. Execute queries based on source filter

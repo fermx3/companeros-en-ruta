@@ -65,6 +65,7 @@ export async function GET() {
     }
 
     // Get clients from direct assignments
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const assignedClients: ClientWithSource[] = ((assignments || []) as any[])
       .filter(a => a.client)
       .map(a => {
@@ -119,6 +120,7 @@ export async function GET() {
         console.error('Error fetching brand memberships:', membershipsError)
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       brandClients = ((memberships || []) as any[])
         .filter(m => m.client)
         .map(m => {

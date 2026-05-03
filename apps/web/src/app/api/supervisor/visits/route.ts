@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status) {
-      query = query.eq('visit_status', status as any)
+      query = query.eq('visit_status', status as Database['public']['Enums']['visit_status_enum'])
     }
     if (dateFrom) {
       query = query.gte('visit_date', dateFrom)

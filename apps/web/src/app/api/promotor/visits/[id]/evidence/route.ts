@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
+import type { Database } from '@companeros/shared/types/supabase'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -142,22 +143,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .getPublicUrl(uploadData.path)
 
     // Save metadata to database
+    const evidenceInsert = {
+      visit_id: visit.id,
+      tenant_id: userProfile.tenant_id,
+      evidence_stage: evidenceStage,
+      evidence_type: evidenceType || null,
+      file_url: urlData.publicUrl,
+      file_name: file.name,
+      file_size_bytes: file.size,
+      mime_type: file.type,
+      caption: caption || null,
+      capture_latitude: captureLatitude ? parseFloat(captureLatitude) : null,
+      capture_longitude: captureLongitude ? parseFloat(captureLongitude) : null,
+      captured_at: new Date().toISOString()
+    } as unknown as Database['public']['Tables']['visit_evidence']['Insert']
     const { data: evidence, error: insertError } = await supabase
       .from('visit_evidence')
-      .insert({
-        visit_id: visit.id,
-        tenant_id: userProfile.tenant_id,
-        evidence_stage: evidenceStage,
-        evidence_type: evidenceType || null,
-        file_url: urlData.publicUrl,
-        file_name: file.name,
-        file_size_bytes: file.size,
-        mime_type: file.type,
-        caption: caption || null,
-        capture_latitude: captureLatitude ? parseFloat(captureLatitude) : null,
-        capture_longitude: captureLongitude ? parseFloat(captureLongitude) : null,
-        captured_at: new Date().toISOString()
-      } as any)
+      .insert(evidenceInsert)
       .select()
       .single()
 

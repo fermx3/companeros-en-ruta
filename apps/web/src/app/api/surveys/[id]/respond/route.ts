@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
+import type { Database } from '@companeros/shared/types/supabase'
 import type { SurveyTargetRoleEnum } from '@companeros/shared/types/database'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
@@ -279,7 +280,7 @@ export async function POST(
     if (answerRows.length > 0) {
       const { error: answersError } = await supabase
         .from('survey_answers')
-        .insert(answerRows as any)
+        .insert(answerRows as unknown as Database['public']['Tables']['survey_answers']['Insert'][])
 
       if (answersError) {
         // Clean up response if answers fail

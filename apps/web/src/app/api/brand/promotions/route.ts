@@ -316,7 +316,7 @@ export async function POST(request: NextRequest) {
 
     const { data: newPromotion, error: insertError } = await supabase
       .from('promotions')
-      .insert(promotionData as any)
+      .insert(promotionData as unknown as Database['public']['Tables']['promotions']['Insert'])
       .select()
       .single()
 

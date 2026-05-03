@@ -130,8 +130,10 @@ export async function GET() {
     })
 
     if (hasStaffTargeting && profileId) {
-      // Fetch promotor assignment
-      // promotor_assignments table not in generated Supabase types yet
+      // Fetch promotor assignment.
+      // promotor_assignments table not in generated Supabase types yet —
+      // escape the typed-client narrowing for this single query path.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: assignment } = await (supabase as any)
         .from('promotor_assignments')
         .select('zone_id, specialization, experience_level')
@@ -226,14 +228,14 @@ export async function GET() {
 
       // Staff specialization filter
       if (tc.staff_specializations?.length && staffSpecialization) {
-        if (!tc.staff_specializations.includes(staffSpecialization as any)) return false
+        if (!tc.staff_specializations.includes(staffSpecialization as never)) return false
       } else if (tc.staff_specializations?.length && !staffSpecialization) {
         if (userTargetRoles.includes('promotor') && !userTargetRoles.includes('client')) return false
       }
 
       // Staff experience level filter
       if (tc.staff_experience_levels?.length && staffExperienceLevel) {
-        if (!tc.staff_experience_levels.includes(staffExperienceLevel as any)) return false
+        if (!tc.staff_experience_levels.includes(staffExperienceLevel as never)) return false
       } else if (tc.staff_experience_levels?.length && !staffExperienceLevel) {
         if (userTargetRoles.includes('promotor') && !userTargetRoles.includes('client')) return false
       }

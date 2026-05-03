@@ -2,6 +2,10 @@ import { NextRequest } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { cachedJsonResponse } from '@/lib/api/cache-headers'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type SbClient = SupabaseClient<Database>
 
 interface KpiResult {
   slug: string
@@ -105,7 +109,7 @@ function getKpiUnit(computationType: string): string {
 }
 
 async function computeKpi(
-  supabase: any, brandId: string, computationType: string,
+  supabase: SbClient, brandId: string, computationType: string,
   monthStart: string, monthEnd: string
 ): Promise<number> {
   switch (computationType) {
@@ -127,7 +131,7 @@ async function computeKpi(
 /**
  * Volume: Sum of total_amount from orders in the period
  */
-async function computeVolume(supabase: any, brandId: string, start: string, end: string): Promise<number> {
+async function computeVolume(supabase: SbClient, brandId: string, start: string, end: string): Promise<number> {
   const { data } = await supabase
     .from('orders')
     .select('total_amount')
@@ -138,13 +142,13 @@ async function computeVolume(supabase: any, brandId: string, start: string, end:
     .not('order_status', 'in', '("cancelled","returned")')
 
   if (!data || data.length === 0) return 0
-  return data.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || 0), 0)
+  return data.reduce((sum: number, o: { total_amount?: number | string | null }) => sum + (Number(o.total_amount) || 0), 0)
 }
 
 /**
  * Reach & Mix: (unique clients visited / total clients) * 100
  */
-async function computeReachMix(supabase: any, brandId: string, start: string, end: string): Promise<number> {
+async function computeReachMix(supabase: SbClient, brandId: string, start: string, end: string): Promise<number> {
   // Total clients and visited clients are independent — fetch in parallel
   const [{ count: totalClients }, { data: visits }] = await Promise.all([
     supabase
@@ -165,14 +169,14 @@ async function computeReachMix(supabase: any, brandId: string, start: string, en
   if (!totalClients || totalClients === 0) return 0
   if (!visits || visits.length === 0) return 0
 
-  const uniqueClients = new Set(visits.map((v: any) => v.client_id))
+  const uniqueClients = new Set(visits.map((v: { client_id: string }) => v.client_id))
   return Math.round((uniqueClients.size / totalClients) * 100 * 10) / 10
 }
 
 /**
  * Assortment: avg % of brand products present per visit
  */
-async function computeAssortment(supabase: any, brandId: string, start: string, end: string): Promise<number> {
+async function computeAssortment(supabase: SbClient, brandId: string, start: string, end: string): Promise<number> {
   // Products count and visits are independent — fetch in parallel
   const [{ count: totalProducts }, { data: visits }] = await Promise.all([
     supabase
@@ -194,7 +198,7 @@ async function computeAssortment(supabase: any, brandId: string, start: string, 
   if (!totalProducts || totalProducts === 0) return 0
   if (!visits || visits.length === 0) return 0
 
-  const visitIds = visits.map((v: any) => v.id)
+  const visitIds = visits.map((v: { id: string }) => v.id)
 
   // Product assessments
   const { data: assessments } = await supabase
@@ -220,7 +224,7 @@ async function computeAssortment(supabase: any, brandId: string, start: string, 
 /**
  * Market Share: brand products present / (brand + competitor products present) * 100
  */
-async function computeMarketShare(supabase: any, brandId: string, start: string, end: string): Promise<number> {
+async function computeMarketShare(supabase: SbClient, brandId: string, start: string, end: string): Promise<number> {
   const { data: visits } = await supabase
     .from('visits')
     .select('id')
@@ -230,7 +234,7 @@ async function computeMarketShare(supabase: any, brandId: string, start: string,
     .lte('visit_date', end)
 
   if (!visits || visits.length === 0) return 0
-  const visitIds = visits.map((v: any) => v.id)
+  const visitIds = visits.map((v: { id: string }) => v.id)
 
   // Brand and competitor counts are independent — fetch in parallel
   const [{ count: brandPresent }, { count: competitorPresent }] = await Promise.all([
@@ -254,7 +258,7 @@ async function computeMarketShare(supabase: any, brandId: string, start: string,
 /**
  * Share of Shelf: (POP present + exhibitions executed) / total checks * 100
  */
-async function computeShareOfShelf(supabase: any, brandId: string, start: string, end: string): Promise<number> {
+async function computeShareOfShelf(supabase: SbClient, brandId: string, start: string, end: string): Promise<number> {
   const { data: visits } = await supabase
     .from('visits')
     .select('id')
@@ -264,7 +268,7 @@ async function computeShareOfShelf(supabase: any, brandId: string, start: string
     .lte('visit_date', end)
 
   if (!visits || visits.length === 0) return 0
-  const visitIds = visits.map((v: any) => v.id)
+  const visitIds = visits.map((v: { id: string }) => v.id)
 
   // POP and exhibition checks are independent — fetch in parallel
   const [{ data: popChecks }, { data: exhibChecks }] = await Promise.all([
@@ -279,9 +283,9 @@ async function computeShareOfShelf(supabase: any, brandId: string, start: string
   ])
 
   const popTotal = popChecks?.length || 0
-  const popPresent = popChecks?.filter((c: any) => c.is_present).length || 0
+  const popPresent = popChecks?.filter((c: { is_present?: boolean | null }) => c.is_present).length || 0
   const exhibTotal = exhibChecks?.length || 0
-  const exhibExecuted = exhibChecks?.filter((c: any) => c.is_executed).length || 0
+  const exhibExecuted = exhibChecks?.filter((c: { is_executed?: boolean | null }) => c.is_executed).length || 0
 
   const total = popTotal + exhibTotal
   if (total === 0) return 0
