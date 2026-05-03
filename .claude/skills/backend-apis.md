@@ -2,7 +2,7 @@
 
 ## Scope
 
-Building Next.js Route Handlers under `src/app/api/`, server-side data access, validation, and integration with Supabase.
+Building Next.js Route Handlers under `apps/web/src/app/api/`, server-side data access, validation, and integration with Supabase.
 
 Domains (mirror role-scoped dashboards):
 ```
@@ -23,7 +23,7 @@ This skill assumes `.claude/rules/multi-tenant.md` and `.claude/rules/supabase-r
 
 ## When to Use
 
-- Creating, modifying, or refactoring any file under `src/app/api/.../route.ts`
+- Creating, modifying, or refactoring any file under `apps/web/src/app/api/.../route.ts`
 - Adding new server-side logic that the frontend will call via fetch
 - Wiring auth helpers, Zod validation, or service-layer calls into a route
 
@@ -35,7 +35,7 @@ Do not use for: server-side data needed by Server Components (call Supabase dire
 
 ### 1. Choose the role-scoped folder
 
-Place the route under the folder matching the audience role. Example: a route only promotores should hit lives at `src/app/api/promotor/...`.
+Place the route under the folder matching the audience role. Example: a route only promotores should hit lives at `apps/web/src/app/api/promotor/...`.
 
 If the route is shared across roles (e.g., `qr/redeem`), put it under a domain folder and resolve the role inside the handler using a generic auth approach.
 
@@ -65,10 +65,10 @@ Helpers available:
 
 | File | Helper |
 |------|--------|
-| `src/lib/api/admin-auth.ts` | `resolveAdminAuth` |
-| `src/lib/api/brand-auth.ts` | `resolveBrandAuth` |
-| `src/lib/api/promotor-auth.ts` | `resolvePromotorAuth` |
-| `src/lib/api/asesor-auth.ts` | `resolveAsesorAuth` |
+| `apps/web/src/lib/api/admin-auth.ts` | `resolveAdminAuth` |
+| `apps/web/src/lib/api/brand-auth.ts` | `resolveBrandAuth` |
+| `apps/web/src/lib/api/promotor-auth.ts` | `resolvePromotorAuth` |
+| `apps/web/src/lib/api/asesor-auth.ts` | `resolveAsesorAuth` |
 
 If an equivalent helper does not exist for `supervisor` or `client`, follow the same pattern and add a new helper file. Do not inline the resolution in the route.
 
@@ -202,7 +202,7 @@ Wrap the entire handler body in `try/catch` ONLY for the top-level catchall — 
 
 ### 9. Service layer for complex flows
 
-If the route orchestrates multiple writes or wraps a non-trivial business rule, push the logic into `src/lib/services/`:
+If the route orchestrates multiple writes or wraps a non-trivial business rule, push the logic into `apps/web/src/lib/services/`:
 
 - `adminService.ts` — admin entity management
 - `brandService.ts` — brand-side operations
@@ -246,26 +246,26 @@ The RPC must be `SECURITY INVOKER` or `SECURITY DEFINER` with explicit `search_p
 
 ### Auth helpers (canonical)
 
-`src/lib/api/admin-auth.ts:25` — embedded join `user_profiles + user_roles`.
-`src/lib/api/promotor-auth.ts:38` — same pattern, returns role row + brand_id.
-`src/lib/api/asesor-auth.ts` — same pattern for asesor_de_ventas.
-`src/lib/api/brand-auth.ts` — multi-brand resolution.
+`apps/web/src/lib/api/admin-auth.ts:25` — embedded join `user_profiles + user_roles`.
+`apps/web/src/lib/api/promotor-auth.ts:38` — same pattern, returns role row + brand_id.
+`apps/web/src/lib/api/asesor-auth.ts` — same pattern for asesor_de_ventas.
+`apps/web/src/lib/api/brand-auth.ts` — multi-brand resolution.
 
 ### Multi-step validation
 
-`src/app/api/promotor/visits/route.ts:208` — POST creates a visit but first checks `client_assignments`, then writes with `validate_visit_data()` enforcement at the DB layer.
+`apps/web/src/app/api/promotor/visits/route.ts:208` — POST creates a visit but first checks `client_assignments`, then writes with `validate_visit_data()` enforcement at the DB layer.
 
 ### Approve/Reject flow
 
-`src/app/api/admin/promotions/[id]/approve/route.ts` — admin auth → state transition → response.
+`apps/web/src/app/api/admin/promotions/[id]/approve/route.ts` — admin auth → state transition → response.
 
 ### QR redeem
 
-`src/app/api/qr/redeem/route.ts` — uses `redeem_qr` RPC with `SECURITY DEFINER` (see migration `20260220110000_fix_redeem_qr_security_definer.sql`).
+`apps/web/src/app/api/qr/redeem/route.ts` — uses `redeem_qr` RPC with `SECURITY DEFINER` (see migration `20260220110000_fix_redeem_qr_security_definer.sql`).
 
 ### Realtime / notifications
 
-`src/app/api/notifications/route.ts` — list endpoint scoped to user, uses tenant filter.
+`apps/web/src/app/api/notifications/route.ts` — list endpoint scoped to user, uses tenant filter.
 
 ---
 

@@ -10,7 +10,7 @@
 
 - **MUST** use `strict: true` (already enforced in `tsconfig.json`).
 - **MUST** import shared types from `@/lib/types/database` and `@/lib/types/supabase`.
-- **MUST** type Supabase clients via `Database` generic: `createClient<Database>(...)` (already configured in `src/lib/supabase/{client,server}.ts`).
+- **MUST** type Supabase clients via `Database` generic: `createClient<Database>(...)` (already configured in `apps/web/src/lib/supabase/{client,server}.ts`).
 - **MUST** prefer `interface` for public domain shapes, `type` for unions/utility types.
 - **MUST** use the `@/` path alias — never deep relative paths (`../../../`).
 - **MUST** type API responses with explicit return shapes. Don't return `Response` without a known body.
@@ -20,30 +20,30 @@
 - Files: `kebab-case.tsx` for components, `kebab-case.ts` for utilities.
   - Exceptions already in repo (preserve): `Card.tsx`, `EmptyState.tsx`. Match what's there per folder; don't create new PascalCase files unless extending the existing pattern.
 - React components: `PascalCase` exports.
-- Hooks: `useXxx` in `src/hooks/`.
-- Services: `xxxService.ts` in `src/lib/services/` — class with named methods OR a default-exported object.
-- Auth helpers: `<role>-auth.ts` in `src/lib/api/` — `resolve<Role>Auth`, `is<Role>AuthError`, `<role>AuthErrorResponse`.
-- Tests: mirror the source path under `__tests__/`. E.g. `src/components/ui/metric-card.tsx` → `__tests__/components/ui/metric-card.test.tsx`.
+- Hooks: `useXxx` in `apps/web/src/hooks/`.
+- Services: `xxxService.ts` in `apps/web/src/lib/services/` — class with named methods OR a default-exported object.
+- Auth helpers: `<role>-auth.ts` in `apps/web/src/lib/api/` — `resolve<Role>Auth`, `is<Role>AuthError`, `<role>AuthErrorResponse`.
+- Tests: mirror the source path under `apps/web/__tests__/`. E.g. `apps/web/src/components/ui/metric-card.tsx` → `apps/web/__tests__/components/ui/metric-card.test.tsx`.
 
 ### Folder structure
 
-- App routes: `src/app/(auth|dashboard)/<role>/<feature>/...` — one folder per feature; `page.tsx` + `layout.tsx` + colocated child files.
-- API routes: `src/app/api/<role>/<feature>/route.ts`. Mirror the dashboard structure.
-- Reusable UI: `src/components/ui/` (shadcn-style primitives). Domain components go in `src/components/<domain>/`.
-- Utilities: `src/lib/utils/` (functions), `src/lib/types/` (types), `src/lib/services/` (orchestration).
+- App routes: `apps/web/src/app/(auth|dashboard)/<role>/<feature>/...` — one folder per feature; `page.tsx` + `layout.tsx` + colocated child files.
+- API routes: `apps/web/src/app/api/<role>/<feature>/route.ts`. Mirror the dashboard structure.
+- Reusable UI: `apps/web/src/components/ui/` (shadcn-style primitives). Domain components go in `apps/web/src/components/<domain>/`.
+- Utilities: `packages/shared/src/utils/` (functions), `packages/shared/src/types/` (types), `apps/web/src/lib/services/` (orchestration).
 
 ### Components
 
 - Default to **Server Components**. Add `"use client"` only when needed (state, effects, refs, browser-only APIs).
-- For client components fetching data: prefer custom hooks in `src/hooks/` (e.g., `useVisits`, `useNotifications`). Don't fetch in `useEffect` directly in feature files.
-- Use components from `src/components/ui/` (the canonical registry — see `.claude/skills/frontend.md`) instead of inlining div/span equivalents.
+- For client components fetching data: prefer custom hooks in `apps/web/src/hooks/` (e.g., `useVisits`, `useNotifications`). Don't fetch in `useEffect` directly in feature files.
+- Use components from `apps/web/src/components/ui/` (the canonical registry — see `.claude/skills/frontend.md`) instead of inlining div/span equivalents.
 - Forms: `react-hook-form` + `@hookform/resolvers/zod` + a Zod schema. No uncontrolled forms in new code.
 
 ### Styling
 
-- Tailwind 4. Tokens are defined in CSS variables (see `src/app/globals.css` if present).
+- Tailwind 4. Tokens are defined in CSS variables (see `apps/web/src/app/globals.css` if present).
 - Never hardcode hex colors in JSX. Use Tailwind classes that map to design tokens (`bg-primary`, `text-navy`, etc.).
-- `cn(...)` from `src/lib/utils.ts` (or `tailwind-merge` directly) for conditional classnames.
+- `cn(...)` from `packages/shared/src/utils/cn.ts` (or `tailwind-merge` directly) for conditional classnames.
 
 ### Server / API
 
@@ -82,7 +82,7 @@
 - **MUST NOT** create barrel `index.ts` files just to re-export — use them only when the module forms a coherent public API.
 - **MUST NOT** use `any` without an explanatory comment and a follow-up TODO. There are existing `as any` usages tied to Supabase generic limitations — match the existing style if you can't avoid it.
 - **MUST NOT** hardcode tenant IDs, brand IDs, role names, or environment URLs.
-- **MUST NOT** define new "status badge" / "metric card" / "empty state" variants inline — use the canonical components from `src/components/ui/`.
+- **MUST NOT** define new "status badge" / "metric card" / "empty state" variants inline — use the canonical components from `apps/web/src/components/ui/`.
 - **MUST NOT** import from `@supabase/supabase-js` directly in app code; go through `@/lib/supabase/{client,server}`.
 - **MUST NOT** use raw `fetch()` to your own API routes from a Server Component — call the data layer directly via Supabase.
 - **MUST NOT** add prop drilling beyond 2 levels — extract a hook or a context provider.

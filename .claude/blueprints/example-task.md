@@ -82,7 +82,7 @@ COMMIT;
 
 #### 2. Types & Validation
 ```typescript
-// src/lib/types/task-types.ts
+// packages/shared/src/types/task-types.ts
 export interface TaskEntity {
   id: string
   tenant_id: string
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
 
 #### 4. Services & Hooks
 ```typescript
-// src/lib/services/taskService.ts
+// apps/web/src/lib/services/taskService.ts
 export class TaskService {
   constructor(private supabase: SupabaseClient) {}
 

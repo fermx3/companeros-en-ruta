@@ -41,7 +41,7 @@ Sistema: `tier_color` (del DB) → `#202456` (navy fijo). Solo se configura un c
 - **Scales**: text-sm (14px), text-base (16px), text-lg (18px), text-xl (20px), text-2xl (24px), text-3xl (30px)
 
 ### Custom Icons
-Located at `src/components/icons/index.tsx`. Custom SVG icons from the Perfectapp design:
+Located at `apps/web/src/components/icons/index.tsx`. Custom SVG icons from the Perfectapp design:
 - `IconInicio`, `IconVisitas`, `IconClientes`, `IconAgenda`, `IconMas`
 - `IconMarcas`, `IconMiNivel`, `IconNotificaciones`, `IconPedidos`
 - `IconPuntos`, `IconQR`, `IconCompletado`, `IconPendiente`, `IconTache`
@@ -60,7 +60,7 @@ All accept `className` and `size` props, use `currentColor` for fill.
 4. **Documentar props interface**
 5. **ANTES de crear un componente nuevo**:
    - Buscar componentes existentes con funcionalidad similar usando `grep_search` o `find_by_name`
-   - Buscar imports y nombres relacionados en `src/components/`
+   - Buscar imports y nombres relacionados en `apps/web/src/components/`
    - Si existe componente similar:
      - ¿Se puede reutilizar directamente?
      - ¿Se puede extender con props adicionales?
@@ -92,7 +92,7 @@ All accept `className` and `size` props, use `currentColor` for fill.
 
 #### Reglas anti-duplicación
 
-- **PROHIBIDO** definir componentes locales que repliquen funcionalidad de `src/components/ui/`
+- **PROHIBIDO** definir componentes locales que repliquen funcionalidad de `apps/web/src/components/ui/`
 - **PROHIBIDO** usar SVGs inline — SIEMPRE usar `lucide-react`
 - **PROHIBIDO** hardcodear colores en Button (`bg-blue-600`) — usar variant prop
 - Si un componente canónico no cubre tu caso, **EXTENDER el canónico con props**, no crear uno nuevo

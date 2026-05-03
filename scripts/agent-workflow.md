@@ -15,7 +15,7 @@
 5. .claude/rules/coding-standards.md  — code style
 6. <task blueprint>                   — see step 3 below
 7. <relevant skills>                  — see step 4 below
-8. src/lib/types/database.ts          — schema reference
+8. packages/shared/src/types/database.ts          — schema reference
 9. supabase/migrations/<latest>       — recent DDL
 ```
 
@@ -71,10 +71,10 @@ If a rule conflicts with the task, **stop and ask**.
 ```
 Does the task add/rename/remove a column, table, type, policy, view, function, trigger?
 ├── YES  → migration required
-│         → write migration → apply locally → update src/lib/types/* → run tests
+│         → write migration → apply locally → update packages/shared/src/types/* → run tests
 │         → if RLS: validate with at least 2 roles
 └── NO   → fast path
-          → consult src/lib/types/database.ts for column names
+          → consult packages/shared/src/types/database.ts for column names
           → no migration needed
 ```
 
@@ -85,8 +85,8 @@ Does the task add/rename/remove a column, table, type, policy, view, function, t
 ```
 Does the code path read or write tenant-scoped data?
 ├── YES → must derive tenant_id from authenticated user
-│         ├── server route handler → resolve via src/lib/api/<role>-auth.ts
-│         ├── server component     → src/lib/supabase/server.ts createClient + select user_profiles
+│         ├── server route handler → resolve via apps/web/src/lib/api/<role>-auth.ts
+│         ├── server component     → apps/web/src/lib/supabase/server.ts createClient + select user_profiles
 │         └── client component     → must call an API route, NEVER trust client-supplied tenant_id
 │   AND every query must:
 │         ├── include .eq('tenant_id', tenantId), AND
@@ -150,7 +150,7 @@ Will an identifier appear in:
 - **NEVER** edit existing migrations — add a new one.
 - **NEVER** write to `supabase/migrations/` to "fix" an issue without a clear migration purpose.
 - **ALWAYS** run lint + build + tests before declaring DONE.
-- **ALWAYS** prefer auth helpers in `src/lib/api/` over re-implementing the auth chain.
+- **ALWAYS** prefer auth helpers in `apps/web/src/lib/api/` over re-implementing the auth chain.
 - **ALWAYS** use the `@/` path alias.
 
 ---
@@ -162,9 +162,9 @@ Symptom                                 → First check
 ──────────────────────────────────────────────────────────────────────
 RLS returns empty data                  → Is the user authenticated? Is tenant_id derived?
 Insert fails with role check error      → check validate_visit_data / validate_visit_order_data triggers
-Type error on supabase query            → src/lib/types/supabase.ts may be stale; regenerate or align types/database.ts
+Type error on supabase query            → packages/shared/src/types/supabase.ts may be stale; regenerate or align types/database.ts
 Build hang on Turbopack                 → restart dev server; check next.config.ts pageExtensions
-Cookies not set on auth refresh         → middleware response cookie forwarding (see src/lib/supabase/middleware.ts)
+Cookies not set on auth refresh         → middleware response cookie forwarding (see apps/web/src/lib/supabase/middleware.ts)
 Cross-tenant row appears in response    → STOP. Treat as a security incident. Don't ship.
 Migration fails locally                 → never edit prior migrations; add a corrective one
 ```

@@ -2,14 +2,14 @@
 
 ## Scope
 
-Building and modifying the Next.js App Router UI (`src/app/`, `src/components/`, `src/hooks/`) using:
+Building and modifying the Next.js App Router UI (`apps/web/src/app/`, `apps/web/src/components/`, `apps/web/src/hooks/`) using:
 
 - Next.js 16 App Router (RSC + Client Components)
 - React 19
-- Tailwind CSS 4 + shadcn/ui (locally generated under `src/components/ui/`)
+- Tailwind CSS 4 + shadcn/ui (locally generated under `apps/web/src/components/ui/`)
 - react-hook-form + zod for forms
 - recharts for charts
-- lucide-react for icons (canonical) plus custom icons in `src/components/icons/`
+- lucide-react for icons (canonical) plus custom icons in `apps/web/src/components/icons/`
 
 This skill complements `.claude/skills/backend-apis.md` (data fetching) and `.claude/skills/mobile.md` (mobile compatibility constraints).
 
@@ -17,8 +17,8 @@ This skill complements `.claude/skills/backend-apis.md` (data fetching) and `.cl
 
 ## When to Use
 
-- Adding or modifying any page under `src/app/(auth|dashboard)/...`
-- Creating, extending, or refactoring components under `src/components/`
+- Adding or modifying any page under `apps/web/src/app/(auth|dashboard)/...`
+- Creating, extending, or refactoring components under `apps/web/src/components/`
 - Wiring forms, lists, dashboards, charts
 - Working with role-scoped layouts (`admin/`, `brand/`, `supervisor/`, `promotor/`, `asesor-ventas/`, `client/`)
 
@@ -43,7 +43,7 @@ Roles: `admin`, `brand`, `supervisor`, `promotor`, `asesor-ventas`, `client`.
 - Add `"use client"` ONLY for: state, refs, effects, browser APIs, event handlers needing closures, third-party client-only libs (e.g., `html5-qrcode`).
 - Data fetching:
   - Server Component → call Supabase server client directly.
-  - Client Component → call API route via fetch, OR use a hook from `src/hooks/` (e.g., `useVisits`, `useNotifications`).
+  - Client Component → call API route via fetch, OR use a hook from `apps/web/src/hooks/` (e.g., `useVisits`, `useNotifications`).
 
 ### 3. Reuse before creating
 
@@ -166,20 +166,20 @@ export function VisitsClientView() {
 
 ### 7. Layouts
 
-- Each role has its own layout: `src/app/(dashboard)/<role>/layout.tsx`.
-- Add navigation entries via `src/lib/navigation-config.ts` (one source of truth).
+- Each role has its own layout: `apps/web/src/app/(dashboard)/<role>/layout.tsx`.
+- Add navigation entries via `apps/web/src/lib/navigation-config.ts` (one source of truth).
 - For new pages, set page title via `usePageTitle` hook (Client Component) or in layout metadata.
 
 ### 8. Charts
 
-- Use `recharts`. Match existing patterns in `src/components/kpi/` and `src/app/(dashboard)/brand/kpis/`.
+- Use `recharts`. Match existing patterns in `apps/web/src/components/kpi/` and `apps/web/src/app/(dashboard)/brand/kpis/`.
 - For mobile, charts must respect container width (`ResponsiveContainer`).
 
 ### 9. Realtime UI
 
 - Subscribe via `useEffect` in a Client Component, filter by `tenant_id` (and `brand_id` where applicable).
 - Always unsubscribe on cleanup.
-- See `src/hooks/useNotifications.ts` for the canonical realtime pattern.
+- See `apps/web/src/hooks/useNotifications.ts` for the canonical realtime pattern.
 
 ### 10. Loading / error states
 
@@ -193,7 +193,7 @@ export function VisitsClientView() {
 
 - ❌ Creating a one-off "metric card" inline (`<Card><dl>...</dl></Card>`). Use `MetricCard`.
 - ❌ Hardcoding colors: `<div className="bg-blue-600 text-white">`. Use tokens / variants.
-- ❌ Inline SVG icons. Use `lucide-react` or `src/components/icons/`.
+- ❌ Inline SVG icons. Use `lucide-react` or `apps/web/src/components/icons/`.
 - ❌ Fetching data in `useEffect` inside a feature page when a Server Component or hook fits better.
 - ❌ Calling internal API routes (`/api/...`) from a Server Component. Use the data layer directly.
 - ❌ Wrapping a Server Component prop in `JSON.stringify` and parsing in client — pass typed props.
@@ -207,19 +207,19 @@ export function VisitsClientView() {
 
 ### Promotor visits list
 
-`src/app/(dashboard)/promotor/visitas/` (page) + `src/hooks/useVisits.ts` (data) + `src/components/visits/*` (cards).
+`apps/web/src/app/(dashboard)/promotor/visitas/` (page) + `apps/web/src/hooks/useVisits.ts` (data) + `apps/web/src/components/visits/*` (cards).
 
 ### Brand dashboard
 
-`src/app/(dashboard)/brand/page.tsx` (server) calls into `src/lib/services/brandService.ts`.
+`apps/web/src/app/(dashboard)/brand/page.tsx` (server) calls into `apps/web/src/lib/services/brandService.ts`.
 
 ### QR scanner
 
-Client-only component using `html5-qrcode`. See `src/components/qr/`.
+Client-only component using `html5-qrcode`. See `apps/web/src/components/qr/`.
 
 ### Form with Zod
 
-Login form — `src/components/auth/login-form.tsx` (compare against tests in `__tests__/components/auth/login-form.test.tsx`).
+Login form — `apps/web/src/components/auth/login-form.tsx` (compare against tests in `apps/web/__tests__/components/auth/login-form.test.tsx`).
 
 ---
 

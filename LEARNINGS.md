@@ -10,7 +10,7 @@
 Each entry captures a **surprise** — something that wasn't visible from the code/schema alone and that, if forgotten, would lead to repeated mistakes. The aim is to prevent the same trap from being hit twice.
 
 **DO NOT** record:
-- Things obvious from `src/lib/types/database.ts`
+- Things obvious from `packages/shared/src/types/database.ts`
 - Style preferences (those go in `.claude/rules/coding-standards.md`)
 - One-off ticket details
 - Generic Next.js / Supabase facts
