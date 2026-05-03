@@ -3,7 +3,7 @@
 # ===================
 # Dependencies
 # ===================
-/node_modules
+node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -15,10 +15,15 @@
 # ===================
 # Build & Output
 # ===================
-/.next/
+.next/
 /out/
 /build
-/dist
+dist/
+
+# ===================
+# Turborepo
+# ===================
+.turbo/
 
 # ===================
 # Environment Variables (SECURITY)
