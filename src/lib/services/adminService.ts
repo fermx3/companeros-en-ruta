@@ -1,4 +1,6 @@
-import { createClient } from '@/lib/supabase/client';
+import { createClient as createBrowserClient } from '@/lib/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/types/supabase';
 import { env } from '@/lib/env';
 import { resolveIdColumn } from '@/lib/utils/public-id';
 import type {
@@ -26,8 +28,12 @@ import type {
  */
 
 export class AdminService {
-  private supabase = createClient();
+  private supabase: SupabaseClient<Database>;
   private cachedTenantId: string | null = null;
+
+  constructor(client?: SupabaseClient<Database>) {
+    this.supabase = client ?? createBrowserClient();
+  }
 
   // Generar contraseña temporal para invitaciones
   private generateTempPassword(): string {

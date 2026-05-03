@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedServiceClient } from '@/lib/utils/tenant';
+import { getAuthenticatedServiceClient } from '@/lib/api/tenant';
 import { extractDigits } from '@/lib/utils/phone';
 import { createNotification } from '@/lib/notifications';
 

@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient as createBrowserClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/types/supabase";
 import type {
   CreatePurchaseRequest,
   CreatePurchaseResponse,
@@ -14,7 +16,11 @@ type AssessmentProduct = {
 };
 
 export class VisitService {
-  private supabase = createClient();
+  private supabase: SupabaseClient<Database>;
+
+  constructor(client?: SupabaseClient<Database>) {
+    this.supabase = client ?? createBrowserClient();
+  }
 
   async createVisit(data: CreateVisitRequest): Promise<CreateVisitResponse> {
     // Generar número de visita secuencial

@@ -1,4 +1,4 @@
-import { getAuthenticatedServiceClient } from '@/lib/utils/tenant';
+import { getAuthenticatedServiceClient } from '@/lib/api/tenant';
 
 export async function GET() {
   try {
