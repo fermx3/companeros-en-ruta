@@ -108,7 +108,7 @@ const qsSchema = z.object({
 
 ### 6. Secrets
 
-- All env access goes through `src/lib/env.ts` (Zod-validated). Add new vars there.
+- All env access goes through `apps/web/src/lib/env.ts` (Zod-validated). Add new vars there.
 - `NEXT_PUBLIC_*` vars are exposed to the browser by Next.js — use only for non-secret values.
 - `SUPABASE_SERVICE_ROLE_KEY`, `NEXTAUTH_SECRET` are server-only. Never reference them in a Client Component or in code that ships to the browser bundle.
 - `console.log` of an error object can leak headers/cookies. Log a controlled string + the error message only.
@@ -165,7 +165,7 @@ const qsSchema = z.object({
 [ ] No service-role usage in user-facing flows
 [ ] Output strips server-only fields; uses public_id outward
 [ ] Errors logged, not exposed; status codes are accurate
-[ ] No new secrets / tokens; env access through src/lib/env.ts
+[ ] No new secrets / tokens; env access through apps/web/src/lib/env.ts
 [ ] File uploads constrained by type + size + path prefix
 [ ] QR / signed URLs / public_ids: no raw UUID exposure
 [ ] Sensitive ops write to audit_logs

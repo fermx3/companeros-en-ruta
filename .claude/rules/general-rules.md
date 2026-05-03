@@ -10,7 +10,7 @@
 - **MUST** read `CLAUDE.md` and the rules in `.claude/rules/` before any non-trivial change.
 - **MUST** classify the task (feature / bugfix / refactor) and load the matching blueprint from `.claude/blueprints/`.
 - **MUST** load only the skills relevant to the task (see `scripts/agent-workflow.md` § 3).
-- **MUST** verify schema against `src/lib/types/database.ts` and migrations before writing any Supabase query.
+- **MUST** verify schema against `packages/shared/src/types/database.ts` and migrations before writing any Supabase query.
 - **MUST** state assumptions explicitly when something is unclear; never act on silent assumptions.
 - **MUST** stop and ask the user when any of the conditions in `CLAUDE.md` § 7 apply.
 - **MUST** validate (lint + types + tests + manual UI when applicable) before declaring done.
@@ -21,7 +21,7 @@
 
 - **MUST NOT** assume table/column/enum names. Read them.
 - **MUST NOT** weaken RLS, disable policies, or bypass tenant filters "to make a test pass."
-- **MUST NOT** introduce `service_role` usage outside `src/lib/services/` admin paths without explicit user approval.
+- **MUST NOT** introduce `service_role` usage outside `apps/web/src/lib/services/` admin paths without explicit user approval.
 - **MUST NOT** expose raw UUIDs in URLs, QR codes, exports, or user-facing labels (use `public_id`).
 - **MUST NOT** edit prior migrations. Add a new corrective migration.
 - **MUST NOT** commit, push, or open PRs unless the user explicitly asks.
@@ -59,10 +59,10 @@
 - Exceptions: lookup tables that are not tenant-scoped (none currently — verify in `database.ts` before assuming).
 
 ### B. Auth helper used?
-- For new API routes under `src/app/api/admin/**`: use `resolveAdminAuth` from `src/lib/api/admin-auth.ts`.
-- For `src/app/api/promotor/**`: use `resolvePromotorAuth` from `src/lib/api/promotor-auth.ts`.
-- For `src/app/api/asesor-ventas/**`: use `resolveAsesorAuth` from `src/lib/api/asesor-auth.ts`.
-- For `src/app/api/brand/**`: use `resolveBrandAuth` from `src/lib/api/brand-auth.ts`.
+- For new API routes under `apps/web/src/app/api/admin/**`: use `resolveAdminAuth` from `apps/web/src/lib/api/admin-auth.ts`.
+- For `apps/web/src/app/api/promotor/**`: use `resolvePromotorAuth` from `apps/web/src/lib/api/promotor-auth.ts`.
+- For `apps/web/src/app/api/asesor-ventas/**`: use `resolveAsesorAuth` from `apps/web/src/lib/api/asesor-auth.ts`.
+- For `apps/web/src/app/api/brand/**`: use `resolveBrandAuth` from `apps/web/src/lib/api/brand-auth.ts`.
 - Re-implementing the `getUser → user_profiles → user_roles` chain inline is forbidden in new code.
 
 ### C. Soft-delete respected?
@@ -70,7 +70,7 @@
 
 ### D. Validation at boundary?
 - Every API route that accepts a body MUST validate with a Zod schema before touching Supabase.
-- Schemas live colocated with the route or in `src/lib/types/`.
+- Schemas live colocated with the route or in `packages/shared/src/types/`.
 
 ### E. Public ID exposure?
 - New URL params, exports, QR payloads, and user-visible IDs MUST be `public_id`. Internal foreign keys remain UUID.
@@ -82,7 +82,7 @@
 - Default response style: **terse**. One sentence per update.
 - Don't summarize what the user can read in the diff.
 - If a decision involves trade-offs, state them in 1–2 sentences and ask which the user prefers — don't guess and don't implement both.
-- Use the path:line format when referring to code (e.g., `src/lib/api/admin-auth.ts:48`).
+- Use the path:line format when referring to code (e.g., `apps/web/src/lib/api/admin-auth.ts:48`).
 - Spanish is acceptable in user-facing strings (the product is Spanish). English in code, comments, and identifiers.
 
 ---

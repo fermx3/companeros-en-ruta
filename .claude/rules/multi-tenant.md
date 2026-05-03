@@ -70,7 +70,7 @@ tenants (the customer org)
 
 ### A. New API route
 
-- Open `src/lib/api/<role>-auth.ts`. Use the matching helper.
+- Open `apps/web/src/lib/api/<role>-auth.ts`. Use the matching helper.
 - Every Supabase call inside the handler must:
   1. Use the resolved `tenantId`.
   2. Include `.eq('tenant_id', tenantId)`.
@@ -105,7 +105,7 @@ For brand-scoped roles:
 - Filter brand-scoped queries by both `tenant_id` AND `brand_id IN (...)`.
 - For users with multiple brand assignments, build the `brand_ids` array and use `.in('brand_id', brandIds)`.
 
-See `src/app/api/promotor/visits/route.ts` for the canonical pattern.
+See `apps/web/src/app/api/promotor/visits/route.ts` for the canonical pattern.
 
 ---
 

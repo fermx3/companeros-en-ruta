@@ -12,7 +12,7 @@ You operate inside a **production multi-tenant SaaS** built with Next.js 16 (App
 - Row Level Security (RLS) — never bypass
 - Migration-first database changes
 - Strict TypeScript (no `any` shortcuts beyond what already exists)
-- The actual schema in `src/lib/types/supabase.ts` and `src/lib/types/database.ts`
+- The actual schema in `packages/shared/src/types/supabase.ts` and `packages/shared/src/types/database.ts`
 
 Your role is to plan → verify → implement → validate. **Never guess.**
 
@@ -23,8 +23,8 @@ Your role is to plan → verify → implement → validate. **Never guess.**
 ### 1.1 Schema truth
 
 - **NEVER** assume table/column/enum/policy names. Read them from:
-  1. `src/lib/types/database.ts` (canonical for app code)
-  2. `src/lib/types/supabase.ts` (generated from DB)
+  1. `packages/shared/src/types/database.ts` (canonical for app code)
+  2. `packages/shared/src/types/supabase.ts` (generated from DB)
   3. `supabase/migrations/*.sql` (authoritative DDL)
   4. Local Supabase Docker DB (runtime truth)
 - If you can't verify from at least one of the above → **STOP.**
@@ -40,7 +40,7 @@ Your role is to plan → verify → implement → validate. **Never guess.**
 
 - Every table has RLS enabled.
 - **Never** disable RLS. **Never** use `service_role` key in user-facing flows.
-- `createServiceClient()` (in `src/lib/supabase/server.ts`) is reserved for admin/back-office operations that genuinely need to bypass RLS — document why each time.
+- `createServiceClient()` (in `apps/web/src/lib/supabase/server.ts`) is reserved for admin/back-office operations that genuinely need to bypass RLS — document why each time.
 
 ### 1.4 No raw UUID exposure
 
@@ -63,7 +63,7 @@ Your role is to plan → verify → implement → validate. **Never guess.**
 
 ### 1.7 Secrets
 
-- Never commit secrets, never log tokens, never hardcode keys. `src/lib/env.ts` is the only env entry point — extend it via Zod schemas.
+- Never commit secrets, never log tokens, never hardcode keys. `apps/web/src/lib/env.ts` is the only env entry point — extend it via Zod schemas.
 
 ---
 
@@ -100,14 +100,14 @@ When entering this repo, read in this order:
 2. `.claude/rules/*.md` — enforcement rules
 3. `.claude/skills/<relevant>.md` — domain knowledge
 4. `package.json` — stack & scripts
-5. `src/lib/types/database.ts` — schema reference
-6. `src/lib/supabase/{client,server,middleware}.ts` — Supabase client patterns
-7. `src/lib/api/*-auth.ts` — auth helpers per role
-8. `src/middleware.ts` — route protection
-9. `src/app/(dashboard)/<role>/` — role-scoped UI
-10. `src/app/api/<domain>/route.ts` — API patterns
+5. `packages/shared/src/types/database.ts` — schema reference
+6. `apps/web/src/lib/supabase/{client,server,middleware}.ts` — Supabase client patterns
+7. `apps/web/src/lib/api/*-auth.ts` — auth helpers per role
+8. `apps/web/src/middleware.ts` — route protection
+9. `apps/web/src/app/(dashboard)/<role>/` — role-scoped UI
+10. `apps/web/src/app/api/<domain>/route.ts` — API patterns
 11. `supabase/migrations/` (latest 5–10) — recent schema changes
-12. `__tests__/` — testing patterns
+12. `apps/web/__tests__/` — testing patterns
 
 Don't read everything. Read **only what the task requires**.
 
@@ -120,7 +120,7 @@ Don't read everything. Read **only what the task requires**.
 | Framework | Next.js 16 (App Router, Turbopack) |
 | Runtime | React 19 |
 | Language | TypeScript strict |
-| Styling | Tailwind CSS 4 + shadcn/ui (locally generated in `src/components/ui/`) |
+| Styling | Tailwind CSS 4 + shadcn/ui (locally generated in `apps/web/src/components/ui/`) |
 | Forms | react-hook-form + @hookform/resolvers + zod |
 | Backend | Supabase (`@supabase/ssr`, `@supabase/supabase-js`) |
 | Charts | recharts |
@@ -136,14 +136,14 @@ Path alias: `@/*` → `./src/*`.
 
 - App Router with route groups: `(auth)` (public) and `(dashboard)` (protected).
 - Six role-scoped dashboards: `admin/`, `brand/`, `supervisor/`, `promotor/`, `asesor-ventas/`, `client/`.
-- API routes mirror dashboard structure: `src/app/api/{role}/...`.
+- API routes mirror dashboard structure: `apps/web/src/app/api/{role}/...`.
 - Supabase clients:
-  - `src/lib/supabase/client.ts` → browser
-  - `src/lib/supabase/server.ts` → server components / route handlers (`createClient` + `createServiceClient`)
-  - `src/lib/supabase/middleware.ts` → session refresh + injects `x-supabase-user-id` header
-- Auth resolution helpers per role: `src/lib/api/{admin,asesor,brand,promotor}-auth.ts` — **prefer these** over re-implementing the `getUser → user_profiles → user_roles` chain.
-- Services for complex domain logic: `src/lib/services/{adminService,brandService,qrService,visitService}.ts`.
-- Shared utilities: `src/lib/utils/`, hooks in `src/hooks/`.
+  - `apps/web/src/lib/supabase/client.ts` → browser
+  - `apps/web/src/lib/supabase/server.ts` → server components / route handlers (`createClient` + `createServiceClient`)
+  - `apps/web/src/lib/supabase/middleware.ts` → session refresh + injects `x-supabase-user-id` header
+- Auth resolution helpers per role: `apps/web/src/lib/api/{admin,asesor,brand,promotor}-auth.ts` — **prefer these** over re-implementing the `getUser → user_profiles → user_roles` chain.
+- Services for complex domain logic: `apps/web/src/lib/services/{adminService,brandService,qrService,visitService}.ts`.
+- Shared utilities: `src/lib/utils/`, hooks in `apps/web/src/hooks/`.
 
 ---
 
@@ -166,7 +166,7 @@ Path alias: `@/*` → `./src/*`.
 | `visit_orders` | `status` | `order_status` (enum `visit_order_status_enum`) |
 | `tiers` | `points_threshold` | `min_points_required` |
 
-When in doubt, grep `src/lib/types/database.ts` for the table name.
+When in doubt, grep `packages/shared/src/types/database.ts` for the table name.
 
 ---
 
@@ -179,7 +179,7 @@ You **MUST stop and ask the user** if:
 3. The change spans roles you haven't seen used together (e.g. cross-role data sharing).
 4. A column you need does not exist in `database.ts` (assume it doesn't exist; ask before adding a migration).
 5. The user-supplied requirement contradicts an invariant (multi-tenancy, RLS, public_id, soft-delete).
-6. You'd need to use `service_role` outside `src/lib/services/` admin paths.
+6. You'd need to use `service_role` outside `apps/web/src/lib/services/` admin paths.
 7. A test would require disabling RLS — never do that silently.
 8. Mobile work would break the web — see `.claude/skills/mobile.md`.
 
@@ -216,7 +216,7 @@ If any of the above is not true, the task is **NOT done**. Report what's missing
 - A change risks cross-tenant data leakage
 - A migration cannot be validated locally
 - Build, type-check, or lint fails for reasons you cannot explain
-- A required env var is missing in `src/lib/env.ts`
+- A required env var is missing in `apps/web/src/lib/env.ts`
 
 Report the blocker, propose a resolution, do not continue.
 

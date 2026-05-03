@@ -10,10 +10,10 @@ There are exactly three Supabase client factories. Use the right one.
 
 | File | Function | Use case |
 |------|----------|----------|
-| `src/lib/supabase/client.ts` | `createClient()` | Browser / Client Components |
-| `src/lib/supabase/server.ts` | `createClient()` | Server Components, Route Handlers, Server Actions |
-| `src/lib/supabase/server.ts` | `createServiceClient()` | Admin operations that genuinely require RLS bypass — last resort |
-| `src/lib/supabase/middleware.ts` | `updateSession()` | Next.js middleware (do not call elsewhere) |
+| `apps/web/src/lib/supabase/client.ts` | `createClient()` | Browser / Client Components |
+| `apps/web/src/lib/supabase/server.ts` | `createClient()` | Server Components, Route Handlers, Server Actions |
+| `apps/web/src/lib/supabase/server.ts` | `createServiceClient()` | Admin operations that genuinely require RLS bypass — last resort |
+| `apps/web/src/lib/supabase/middleware.ts` | `updateSession()` | Next.js middleware (do not call elsewhere) |
 
 ### MUST
 
@@ -34,10 +34,10 @@ There are exactly three Supabase client factories. Use the right one.
 ### MUST
 
 - **MUST** use the role-scoped auth helpers in route handlers:
-  - `src/lib/api/admin-auth.ts` → `resolveAdminAuth`
-  - `src/lib/api/promotor-auth.ts` → `resolvePromotorAuth`
-  - `src/lib/api/asesor-auth.ts` → `resolveAsesorAuth`
-  - `src/lib/api/brand-auth.ts` → `resolveBrandAuth`
+  - `apps/web/src/lib/api/admin-auth.ts` → `resolveAdminAuth`
+  - `apps/web/src/lib/api/promotor-auth.ts` → `resolvePromotorAuth`
+  - `apps/web/src/lib/api/asesor-auth.ts` → `resolveAsesorAuth`
+  - `apps/web/src/lib/api/brand-auth.ts` → `resolveBrandAuth`
 - **MUST** check `isXxxAuthError(result)` before destructuring success fields, and return `xxxAuthErrorResponse(result)` on failure.
 - **MUST** rely on `x-supabase-user-id` header (set by middleware) for cheap user resolution. Helpers already do this; don't bypass.
 - **MUST** treat `user_roles.status = 'active'` AND `deleted_at IS NULL` as the join condition for active roles.
@@ -88,7 +88,7 @@ There are exactly three Supabase client factories. Use the right one.
   - SELECT policy (tenant + role-scoped)
   - INSERT WITH CHECK (tenant + role-scoped)
   - UPDATE / DELETE policies (or "manage" via function helpers — see `20260221150000_*` series)
-- **MUST** update `src/lib/types/database.ts` AND regenerate `src/lib/types/supabase.ts` (or update by hand to match) in the SAME commit as the migration.
+- **MUST** update `packages/shared/src/types/database.ts` AND regenerate `packages/shared/src/types/supabase.ts` (or update by hand to match) in the SAME commit as the migration.
 - **MUST** test the migration locally (apply, query as different roles) before declaring done.
 - **MUST** retro-document any existing-but-unmigrated DB state into a new migration before adding new changes.
 
@@ -184,7 +184,7 @@ Most user-facing tables use a `public_id` column populated by `generate_public_i
 [ ] Migration file follows naming convention; wrapped in BEGIN/COMMIT
 [ ] New tables: id UUID, tenant_id, created_at, updated_at, RLS enabled, policies added
 [ ] Indexes added for new FK columns
-[ ] src/lib/types/database.ts updated in the same commit as the migration
+[ ] packages/shared/src/types/database.ts updated in the same commit as the migration
 [ ] No service-role usage outside admin paths
 [ ] Storage paths prefixed with tenant_id
 [ ] Realtime filters include tenant_id

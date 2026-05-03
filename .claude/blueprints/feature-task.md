@@ -60,7 +60,7 @@ State explicitly:
 
 For each table touched, look up:
 
-1. Column names + types in `src/lib/types/database.ts`
+1. Column names + types in `packages/shared/src/types/database.ts`
 2. Recent migrations affecting the table (`ls supabase/migrations | grep <table>`)
 3. RLS policies (grep migrations for `<table>` + `POLICY`)
 4. Triggers (grep for `validate_<table>_data` or `update_<table>_*`)
@@ -76,7 +76,7 @@ If schema changes are required:
 
 - File: `supabase/migrations/YYYYMMDDHHMMSS_<feature>.sql`
 - Include: DDL, indexes for FKs, `updated_at` trigger, RLS enable, RLS policies, `validate_*` trigger if invariants apply
-- Update `src/lib/types/database.ts` and (regenerate or hand-update) `src/lib/types/supabase.ts`
+- Update `packages/shared/src/types/database.ts` and (regenerate or hand-update) `packages/shared/src/types/supabase.ts`
 - See `.claude/skills/supabase-database.md` for the migration template
 
 If no schema change: proceed directly.
@@ -85,20 +85,20 @@ If no schema change: proceed directly.
 
 For each new route handler:
 
-- Path: `src/app/api/<role>/<feature>/route.ts`
+- Path: `apps/web/src/app/api/<role>/<feature>/route.ts`
 - Methods: GET / POST / PATCH / DELETE — only what's needed
 - Auth: which `<role>-auth.ts` helper applies; create one if missing
-- Validation: define the Zod schema (where it lives — colocated or `src/lib/types/api.ts`)
+- Validation: define the Zod schema (where it lives — colocated or `packages/shared/src/types/api.ts`)
 - Response shape: explicit, typed
 - Status codes: 200 / 201 / 204 / 400 / 401 / 403 / 404 / 409 / 422 / 500 — be precise
 
-For complex flows: decide whether to extract logic into `src/lib/services/<domain>Service.ts` or a Postgres RPC.
+For complex flows: decide whether to extract logic into `apps/web/src/lib/services/<domain>Service.ts` or a Postgres RPC.
 
 ### 5. Plan UI
 
 For each page or component:
 
-- Where it lives: `src/app/(dashboard)/<role>/<feature>/page.tsx`
+- Where it lives: `apps/web/src/app/(dashboard)/<role>/<feature>/page.tsx`
 - Server vs Client decision
 - Data source: Server Component direct fetch, or Client Component + hook
 - Reused canonical components (see `.claude/skills/frontend.md`)

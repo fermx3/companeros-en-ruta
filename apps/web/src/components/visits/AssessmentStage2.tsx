@@ -1,0 +1,358 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { AlertTriangle, ShoppingCart, Package, Gift, Clipboard } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { PhotoEvidenceUpload, EvidencePhoto } from './PhotoEvidenceUpload'
+import { ClientPromotionsPanel, ClientPromotion } from './ClientPromotionsPanel'
+import { OrderQuickAccess, WhyNotBuyingReason, VisitOrder } from './OrderQuickAccess'
+import { OrderModal, CartItem, EditOrderData } from './OrderModal'
+import { VisitInventoryForm } from './VisitInventoryForm'
+import { cn } from '@companeros/shared/utils/cn'
+import type { WizardData } from './VisitAssessmentWizard'
+
+interface AssessmentStage2Props {
+  data: WizardData['stage2']
+  onDataChange: (updates: Partial<WizardData['stage2']>) => void
+  visitId: string
+  clientId: string
+  brandId?: string
+  showValidation?: boolean
+  className?: string
+}
+
+const INVENTORY_EVIDENCE_TYPES = [
+  { value: 'purchase_order', label: 'Orden de compra' },
+  { value: 'inventory_count', label: 'Conteo de inventario' },
+  { value: 'promotion_display', label: 'Display de promoción' },
+  { value: 'general', label: 'General' }
+]
+
+export function AssessmentStage2({
+  data,
+  onDataChange,
+  visitId,
+  clientId,
+  brandId,
+  showValidation,
+  className
+}: AssessmentStage2Props) {
+  const [promotions, setPromotions] = useState<ClientPromotion[]>([])
+  const [orders, setOrders] = useState<VisitOrder[]>([])
+  const [loadingPromotions, setLoadingPromotions] = useState(true)
+  const [showOrderModal, setShowOrderModal] = useState(false)
+  const [showInventorySection, setShowInventorySection] = useState(data.hasInventory)
+  const [editingOrder, setEditingOrder] = useState<{ id: string; data: EditOrderData } | null>(null)
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
+
+  // Load client promotions and orders
+  useEffect(() => {
+    const loadData = async () => {
+      setLoadingPromotions(true)
+      try {
+        // Load client promotions
+        const promotionsUrl = brandId
+          ? `/api/client/${clientId}/promotions?brand_id=${brandId}`
+          : `/api/client/${clientId}/promotions`
+        const promotionsRes = await fetch(promotionsUrl).catch(() => null)
+        if (promotionsRes?.ok) {
+          const promotionsData = await promotionsRes.json()
+          setPromotions(promotionsData.promotions || [])
+        }
+
+        // Load all orders for this visit (no status filter)
+        const ordersRes = await fetch(`/api/promotor/visits/${visitId}/orders`).catch(() => null)
+        if (ordersRes?.ok) {
+          const ordersData = await ordersRes.json()
+          const loadedOrders = ordersData.orders || []
+          setOrders(loadedOrders)
+
+          // Sync hasPurchaseOrder flag if active orders exist
+          const hasActive = loadedOrders.some((o: VisitOrder) => o.order_status !== 'cancelled')
+          if (hasActive && !data.hasPurchaseOrder) {
+            onDataChange({ hasPurchaseOrder: true })
+          }
+        }
+      } catch (error) {
+        console.error('Error loading stage 2 data:', error)
+      } finally {
+        setLoadingPromotions(false)
+      }
+    }
+
+    loadData()
+  }, [clientId, visitId])
+
+  const handleEvidenceChange = (photos: EvidencePhoto[]) => {
+    onDataChange({
+      evidence: photos.map(p => ({
+        id: p.id,
+        file: p.file,
+        previewUrl: p.previewUrl,
+        fileUrl: p.fileUrl,
+        caption: p.caption,
+        evidenceType: p.evidenceType,
+        captureLatitude: p.captureLatitude,
+        captureLongitude: p.captureLongitude
+      }))
+    })
+  }
+
+  const refreshOrders = useCallback(async () => {
+    try {
+      const ordersRes = await fetch(`/api/promotor/visits/${visitId}/orders`)
+      if (ordersRes.ok) {
+        const ordersData = await ordersRes.json()
+        setOrders(ordersData.orders || [])
+      }
+    } catch (error) {
+      console.error('Error refreshing orders:', error)
+    }
+  }, [visitId])
+
+  const handleOrderCreated = (orderId: string) => {
+    onDataChange({
+      orderId,
+      hasPurchaseOrder: true
+    })
+    setEditingOrder(null)
+    refreshOrders()
+  }
+
+  const handleEditOrder = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId)
+    if (!order) return
+
+    const editData: EditOrderData = {
+      distributor_id: order.distributor_id || '',
+      payment_method: order.payment_method || 'cash',
+      order_notes: order.order_notes || '',
+      items: order.items.map(item => ({
+        product_id: item.product_id,
+        product_variant_id: item.product_variant_id,
+        name: item.product_name,
+        variant_name: null,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      } satisfies CartItem)),
+    }
+
+    setEditingOrder({ id: orderId, data: editData })
+    setShowOrderModal(true)
+  }
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta orden?')) return
+
+    setDeletingOrderId(orderId)
+    try {
+      const res = await fetch(
+        `/api/promotor/visits/${visitId}/orders?order_id=${orderId}`,
+        { method: 'DELETE' }
+      )
+      if (res.ok) {
+        await refreshOrders()
+      } else {
+        const result = await res.json()
+        console.error('Error deleting order:', result.error)
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error)
+    } finally {
+      setDeletingOrderId(null)
+    }
+  }
+
+  const handleCloseModal = () => {
+    setShowOrderModal(false)
+    setEditingOrder(null)
+  }
+
+  const handleInventorySave = async (inventoryData: { inventory_skipped: boolean; items: Array<{ product_id: string; current_stock: number; notes?: string | null }> }) => {
+    // Update wizard state with inventory items
+    onDataChange({
+      hasInventory: !inventoryData.inventory_skipped,
+      inventoryItems: inventoryData.items
+    })
+
+    // Save immediately to the API
+    const stageData = {
+      ...data,
+      hasInventory: !inventoryData.inventory_skipped,
+      inventoryItems: inventoryData.items
+    }
+
+    const response = await fetch(`/api/promotor/visits/${visitId}/assessment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stage: 2, data: stageData })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.details || errorData.error || 'Error al guardar inventario')
+    }
+  }
+
+  const missingWhyNotBuying = !data.hasPurchaseOrder && !data.orderId && !data.whyNotBuying
+  const hasValidationIssues = showValidation && missingWhyNotBuying
+
+  return (
+    <div className={cn('space-y-6', className)}>
+      {/* Header */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+          <ShoppingCart className="w-5 h-5 mr-2 text-green-600" />
+          Compra, Inventario y Fidelización
+        </h2>
+        <p className="text-sm text-gray-600 mt-1">
+          Gestiona promociones, órdenes de compra e inventario
+        </p>
+      </div>
+
+      {/* Validation summary banner */}
+      {hasValidationIssues && (
+        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <span>Campos pendientes: selecciona una razón de no compra</span>
+        </div>
+      )}
+
+      {/* Client Promotions Panel */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center">
+            <Gift className="w-4 h-4 mr-2" />
+            Promociones del Cliente
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ClientPromotionsPanel
+            promotions={promotions}
+            loading={loadingPromotions}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Order Quick Access */}
+      <Card className={cn(hasValidationIssues && 'border border-red-300')}>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center">
+            <Clipboard className="w-4 h-4 mr-2" />
+            Orden de Compra
+          </CardTitle>
+          {hasValidationIssues && (
+            <p className="text-xs text-red-500 mt-1">Selecciona una razón de no compra</p>
+          )}
+        </CardHeader>
+        <CardContent>
+          <OrderQuickAccess
+            hasPurchaseOrder={data.hasPurchaseOrder}
+            onHasPurchaseOrderChange={(value) => onDataChange({ hasPurchaseOrder: value })}
+            purchaseOrderNumber={data.purchaseOrderNumber}
+            onPurchaseOrderNumberChange={(value) => onDataChange({ purchaseOrderNumber: value })}
+            whyNotBuying={data.whyNotBuying as WhyNotBuyingReason | null}
+            onWhyNotBuyingChange={(value) => onDataChange({ whyNotBuying: value })}
+            orders={orders}
+            onCreateOrder={() => {
+              setEditingOrder(null)
+              setShowOrderModal(true)
+            }}
+            onEditOrder={handleEditOrder}
+            onDeleteOrder={handleDeleteOrder}
+            deletingOrderId={deletingOrderId}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Inventory Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center">
+              <Package className="w-4 h-4 mr-2" />
+              Inventario
+            </CardTitle>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={showInventorySection}
+                onChange={(e) => {
+                  setShowInventorySection(e.target.checked)
+                  onDataChange({ hasInventory: e.target.checked })
+                }}
+                className="mr-2 rounded border-gray-300 text-blue-600"
+              />
+              <span className="text-sm text-gray-600">Registrar inventario</span>
+            </label>
+          </div>
+        </CardHeader>
+        {showInventorySection && (
+          <CardContent>
+            <VisitInventoryForm
+              visit={{ id: visitId, inventory: data.inventoryItems }}
+              brandId={brandId}
+              onSave={handleInventorySave}
+            />
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Notes */}
+      <Card>
+        <CardContent className="pt-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Notas de compra e inventario
+          </label>
+          <textarea
+            value={data.purchaseInventoryNotes}
+            onChange={(e) => onDataChange({ purchaseInventoryNotes: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={3}
+            placeholder="Observaciones sobre la compra, inventario, promociones aplicadas..."
+          />
+        </CardContent>
+      </Card>
+
+      {/* Photo Evidence */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Evidencia Fotográfica</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PhotoEvidenceUpload
+            photos={data.evidence.map(e => ({
+              id: e.id,
+              file: e.file,
+              previewUrl: e.previewUrl,
+              fileUrl: e.fileUrl,
+              caption: e.caption,
+              evidenceType: e.evidenceType,
+              captureLatitude: e.captureLatitude,
+              captureLongitude: e.captureLongitude,
+              capturedAt: new Date()
+            }))}
+            onPhotosChange={handleEvidenceChange}
+            visitId={visitId}
+            evidenceStage="inventory"
+            evidenceTypes={INVENTORY_EVIDENCE_TYPES}
+            minPhotos={0}
+            maxPhotos={5}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Order Modal */}
+      <OrderModal
+        isOpen={showOrderModal}
+        onClose={handleCloseModal}
+        onOrderCreated={handleOrderCreated}
+        clientId={clientId}
+        visitId={visitId}
+        brandId={brandId}
+        editOrderId={editingOrder?.id}
+        editOrderData={editingOrder?.data}
+      />
+    </div>
+  )
+}

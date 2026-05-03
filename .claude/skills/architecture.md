@@ -11,57 +11,48 @@ This skill is **descriptive of the current repo** — it captures invariants, no
 ## High-Level Layout
 
 ```
-companeros-en-ruta/
-├── src/
-│   ├── app/                       Next.js App Router
-│   │   ├── (auth)/                Public routes (login)
-│   │   ├── (dashboard)/           Protected, role-scoped UIs
-│   │   │   ├── admin/
-│   │   │   ├── brand/
-│   │   │   ├── supervisor/
-│   │   │   ├── promotor/
-│   │   │   ├── asesor-ventas/
-│   │   │   └── client/
-│   │   ├── api/                   Route Handlers (mirror dashboard structure)
-│   │   ├── design-guide/          Internal style/component reference
-│   │   └── unauthorized/
-│   ├── components/
-│   │   ├── ui/                    Canonical primitives (shadcn-style, locally generated)
-│   │   ├── layout/                Shells, navigation, page chrome
-│   │   ├── auth/                  Auth-specific components
-│   │   ├── visits/                Domain — visits
-│   │   ├── brand/                 Domain — brand-side
-│   │   ├── client/                Domain — client/customer-side
-│   │   ├── surveys/               Domain — surveys
-│   │   ├── kpi/                   Domain — KPIs
-│   │   ├── qr/                    Domain — QR
-│   │   ├── exports/               Domain — exports
-│   │   ├── notifications/         Domain — notifications
-│   │   ├── targeting/             Domain — targeting/segmentation
-│   │   ├── icons/                 Custom icons (Perfectapp design)
-│   │   └── providers/             React context providers (Auth, etc.)
-│   ├── hooks/                     Reusable client-side hooks
-│   ├── lib/
-│   │   ├── api/                   Auth helpers per role + visit-detail helpers
-│   │   ├── services/              Domain orchestration (admin, brand, qr, visit)
-│   │   ├── supabase/              client.ts, server.ts, middleware.ts
-│   │   ├── types/                 database.ts, supabase.ts, admin.ts, api.ts, visits.ts
-│   │   ├── utils/                 Pure helpers
-│   │   ├── surveys/               Survey-specific helpers
-│   │   ├── env.ts                 Zod-validated env access
-│   │   ├── navigation-config.ts   Single source of truth for nav per role
-│   │   ├── notifications.ts       Notification helpers
-│   │   └── utils.ts               cn() and similar small utilities
-│   └── middleware.ts              Next.js root middleware (delegates to lib/supabase/middleware.ts)
-├── supabase/
-│   ├── migrations/                Versioned DDL
-│   ├── functions/                 Edge Functions (if any)
+companeros-en-ruta/                pnpm + turbo monorepo
+├── apps/
+│   └── web/                       @companeros/web — Next.js 16 app
+│       ├── src/
+│       │   ├── app/               Next.js App Router (auth + dashboard route groups + api/)
+│       │   ├── components/        UI: ui/, layout/, auth/, visits/, brand/, client/,
+│       │   │                          surveys/, kpi/, qr/, exports/, notifications/,
+│       │   │                          targeting/, icons/, providers/
+│       │   ├── hooks/             Reusable client-side hooks
+│       │   ├── lib/               Web-bound (next/headers, next/server)
+│       │   │   ├── api/           Auth helpers (admin, asesor, brand, promotor) + tenant helper
+│       │   │   ├── supabase/      client.ts, server.ts, middleware.ts
+│       │   │   ├── services/      adminService, brandService, qrService, visitService
+│       │   │   ├── env.ts         Re-exports env.web
+│       │   │   ├── env.web.ts     Maps NEXT_PUBLIC_* onto SharedEnv + adds web-only vars
+│       │   │   ├── navigation-config.ts
+│       │   │   └── notifications.ts
+│       │   ├── types/ui.ts        UI-specific types (web-only)
+│       │   └── middleware.ts      Next.js root middleware
+│       ├── __tests__/             Web jest + Playwright e2e
+│       ├── public/
+│       ├── package.json           name: @companeros/web
+│       └── (next.config.ts, tsconfig.json, jest.config.cjs, playwright.config.ts, vercel.json)
+├── packages/
+│   └── shared/                    @companeros/shared — UI-agnostic, Next-free
+│       └── src/
+│           ├── types/             database, supabase, admin, api, visits, index
+│           ├── utils/             cn, client, csv, onboarding-labels, phone, public-id, targeting
+│           ├── surveys/           resolve-visibility-conditions
+│           └── env/shared.ts      Neutral Zod schema (mobile maps EXPO_PUBLIC_* into it)
+├── supabase/                      Cross-app
+│   ├── migrations/
+│   ├── functions/
 │   └── config.toml
-├── __tests__/                     Mirrors src/ paths + e2e/ + database/
-├── scripts/                       Bash + TS utility scripts
-├── public/
+├── tests/database/                Cross-app DB / RLS tests (run with pnpm test:db)
+├── scripts/                       Cross-app utility scripts (run with tsx)
 ├── docs/                          MVP_STATUS, MIGRATION docs
-├── .claude/                       Agent system (this folder)
+├── .claude/                       Agent system
+├── pnpm-workspace.yaml
+├── turbo.json
+├── package.json                   workspace root (no app code)
+├── MONOREPO.md                    monorepo setup guide
 └── CLAUDE.md / LEARNINGS.md       Top-level rules and journal
 ```
 
@@ -70,28 +61,33 @@ companeros-en-ruta/
 ## Layering & Dependency Direction
 
 ```
-app/(dashboard|api|auth)/...
+apps/web/src/app/(dashboard|api|auth)/...
         │
         ▼
-src/components/* ── src/hooks/* ── src/lib/services/*
-        │                                   │
-        └────────────────── src/lib/api/* (auth helpers, route-side)
-                                            │
-                                            ▼
-                              src/lib/supabase/{client,server,middleware}
-                                            │
-                                            ▼
-                                Supabase (Postgres + RLS)
+apps/web/src/components/* ── apps/web/src/hooks/* ── apps/web/src/lib/services/*
+        │                                                    │
+        └─────────────────────── apps/web/src/lib/api/* (auth helpers, route-side)
+                                                             │
+                                                             ▼
+                                  apps/web/src/lib/supabase/{client,server,middleware}
+                                                             │
+                                                             ▼
+                                          @companeros/shared (types, utils, surveys, env schema)
+                                                             │
+                                                             ▼
+                                                 Supabase (Postgres + RLS)
 ```
 
 Dependency rules:
 
-- `src/lib/types/` depends on **nothing** project-internal except other types.
-- `src/lib/services/` depends on `types` + `supabase`. **Never** on `next/headers`, `app/`, or `components/`.
-- `src/lib/api/` depends on `next/headers`, `types`, `supabase`. May be consumed by `app/api/`.
-- `src/hooks/` depends on `lib` + browser APIs. May be consumed by Client Components.
-- `src/components/` depends on `hooks`, `lib`, other components. Never on `app/`.
-- `src/app/` is the consumer of everything else.
+- `@companeros/shared/types` depends on **nothing** project-internal except other shared types.
+- `@companeros/shared/utils`, `@companeros/shared/surveys`, `@companeros/shared/env/shared` depend only on shared types or third-party packages — never on Next.js, DOM, or any app code.
+- `apps/web/src/lib/services/` depends on shared types + `apps/web/src/lib/supabase/client`. Constructor accepts an injected client (Phase-1 prep), so they can move to shared once a mobile consumer exists.
+- `apps/web/src/lib/api/` depends on `next/headers`, `next/server`, shared types, supabase. Consumed by `app/api/`.
+- `apps/web/src/hooks/` depends on lib + browser APIs. Consumed by Client Components.
+- `apps/web/src/components/` depends on hooks, lib, other components. Never on `app/`.
+- `apps/web/src/app/` is the top-level consumer.
+- **Never** import from `apps/web/...` inside `packages/shared/...`.
 
 If a proposed change creates a cycle or pushes dependencies upward, redesign.
 
@@ -103,7 +99,7 @@ If a proposed change creates a cycle or pushes dependencies upward, redesign.
 |---------|--------|--------|
 | Initial render | Server Component | n/a |
 | Sensitive data fetch | Server Component / Route Handler | Hook → Route Handler |
-| Cookies / auth | `src/lib/supabase/server.ts` | `src/lib/supabase/client.ts` |
+| Cookies / auth | `apps/web/src/lib/supabase/server.ts` | `apps/web/src/lib/supabase/client.ts` |
 | Mutations | Server Action OR Route Handler | Hook calling Route Handler |
 | Realtime subscriptions | n/a | `useEffect` in a Client Component |
 | Forms with validation | Server Component shell + Client form | Client Component |
@@ -118,10 +114,10 @@ Default to Server Component. Add `"use client"` only when state, effects, refs, 
 Browser ──► /<protected route>
               │
               ▼
-       src/middleware.ts
+       apps/web/src/middleware.ts
               │
               ▼
-   src/lib/supabase/middleware.ts
+   apps/web/src/lib/supabase/middleware.ts
               │   ├── refresh session (cookies)
               │   ├── inject x-supabase-user-id header
               │   └── redirect to /login if unauthenticated
@@ -129,10 +125,10 @@ Browser ──► /<protected route>
        Server Component / Route Handler
               │
               ▼
-  src/lib/supabase/server.ts createClient()
+  apps/web/src/lib/supabase/server.ts createClient()
               │
               ▼
-  src/lib/api/<role>-auth.ts resolveXxxAuth()
+  apps/web/src/lib/api/<role>-auth.ts resolveXxxAuth()
               │
               ▼
   Auth context: { user, userProfileId, tenantId, brandId?, role? }
@@ -157,9 +153,9 @@ Six roles, three logical clusters:
 | End user | `client` (consumer of QR / promotions) | Tenant-scoped via `clients.user_id`; reads own data only |
 
 Each role has:
-- A dashboard at `src/app/(dashboard)/<role>/`
-- API routes at `src/app/api/<role>/`
-- An auth helper at `src/lib/api/<role>-auth.ts` (admin, brand, promotor, asesor)
+- A dashboard at `apps/web/src/app/(dashboard)/<role>/`
+- API routes at `apps/web/src/app/api/<role>/`
+- An auth helper at `apps/web/src/lib/api/<role>-auth.ts` (admin, brand, promotor, asesor)
 
 When adding a feature that involves a role for which the helper is missing (e.g., `supervisor`, `client`), create the helper following the existing pattern.
 
@@ -199,7 +195,7 @@ App code MUST NOT skip layer 1 because layer 2 exists. They have different failu
 
 ## Service Layer
 
-`src/lib/services/` contains domain-orchestration code that:
+`apps/web/src/lib/services/` contains domain-orchestration code that:
 
 - Wraps multi-step Supabase calls under a meaningful method name.
 - Stays UI-agnostic (no Next.js or React imports).

@@ -1,0 +1,564 @@
+'use client'
+
+import { useState, useCallback, useEffect } from 'react'
+import { WizardStepper } from '@/components/ui/wizard-stepper'
+import { Button } from '@/components/ui/button'
+import { Alert } from '@/components/ui/feedback'
+import { useToast } from '@/components/ui/toaster'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription
+} from '@/components/ui/dialog'
+import { ArrowLeft, ArrowRight, Save, CheckCircle2, MapPin, Store, Clock, AlertTriangle } from 'lucide-react'
+import { cn } from '@companeros/shared/utils/cn'
+import { fullOwnerName } from '@companeros/shared/utils/client'
+
+interface VisitInfo {
+  client?: {
+    name?: string
+    business_name?: string
+    owner_name?: string
+    owner_last_name?: string
+    address_street?: string
+    address_neighborhood?: string
+  } | null
+  brand?: {
+    name?: string
+  } | null
+  check_in_time?: string | null
+}
+
+export interface WizardData {
+  // Stage 1: Pricing & Category Audit
+  stage1: {
+    brandProductAssessments: Array<{
+      product_id: string
+      product_variant_id?: string
+      current_price: number | null
+      suggested_price: number | null
+      has_active_promotion: boolean
+      promotion_description: string
+      has_pop_material: boolean
+      is_product_present: boolean
+      stock_level: string | null
+    }>
+    competitorAssessments: Array<{
+      competitor_id: string
+      competitor_product_id: string | null
+      product_name_observed: string
+      size_grams: number | null
+      observed_price: number | null
+      has_active_promotion: boolean
+      promotion_description: string
+      has_pop_material: boolean
+    }>
+    pricingAuditNotes: string
+    evidence: Array<{
+      id: string
+      file?: File
+      previewUrl: string
+      fileUrl?: string
+      caption: string
+      evidenceType: string
+      captureLatitude?: number
+      captureLongitude?: number
+    }>
+    completedAt?: Date
+  }
+  // Stage 2: Purchase, Inventory & Loyalty
+  stage2: {
+    hasInventory: boolean
+    hasPurchaseOrder: boolean
+    purchaseOrderNumber: string
+    orderId?: string
+    whyNotBuying: string | null
+    purchaseInventoryNotes: string
+    inventoryItems: Array<{
+      product_id: string
+      product_name?: string
+      current_stock: number
+      notes?: string | null
+    }>
+    evidence: Array<{
+      id: string
+      file?: File
+      previewUrl: string
+      fileUrl?: string
+      caption: string
+      evidenceType: string
+      captureLatitude?: number
+      captureLongitude?: number
+    }>
+    completedAt?: Date
+  }
+  // Stage 3: Communication & POP Execution
+  stage3: {
+    communicationPlanId: string | null
+    communicationCompliance: 'full' | 'partial' | 'non_compliant' | null
+    popMaterialChecks: Array<{
+      pop_material_id: string
+      is_present: boolean
+      condition: string | null
+      notes: string
+    }>
+    exhibitionChecks: Array<{
+      exhibition_id: string
+      is_executed: boolean
+      execution_quality: string | null
+      notes: string
+    }>
+    popExecutionNotes: string
+    evidence: Array<{
+      id: string
+      file?: File
+      previewUrl: string
+      fileUrl?: string
+      caption: string
+      evidenceType: string
+      captureLatitude?: number
+      captureLongitude?: number
+    }>
+    completedAt?: Date
+  }
+}
+
+interface VisitAssessmentWizardProps {
+  visitId: string
+  clientId: string
+  brandId: string
+  visit?: VisitInfo
+  initialData?: Partial<WizardData>
+  onSave: (data: WizardData, stage: number) => Promise<void>
+  onComplete: () => Promise<void>
+  renderStage: (
+    stage: number,
+    data: WizardData,
+    updateData: (updates: Partial<WizardData>) => void,
+    updateStage: <K extends keyof WizardData>(stageKey: K, updates: Partial<WizardData[K]>) => void,
+    showValidation: boolean
+  ) => React.ReactNode
+  className?: string
+}
+
+const STAGES: Array<{ id: string; label: string; shortLabel: string }> = [
+  { id: 'pricing', label: 'Precios y Categoría', shortLabel: 'Precios' },
+  { id: 'inventory', label: 'Compra e Inventario', shortLabel: 'Compra' },
+  { id: 'communication', label: 'Comunicación y POP', shortLabel: 'POP' }
+]
+
+const getInitialData = (): WizardData => ({
+  stage1: {
+    brandProductAssessments: [],
+    competitorAssessments: [],
+    pricingAuditNotes: '',
+    evidence: []
+  },
+  stage2: {
+    hasInventory: false,
+    hasPurchaseOrder: false,
+    purchaseOrderNumber: '',
+    whyNotBuying: null,
+    purchaseInventoryNotes: '',
+    inventoryItems: [],
+    evidence: []
+  },
+  stage3: {
+    communicationPlanId: null,
+    communicationCompliance: null,
+    popMaterialChecks: [],
+    exhibitionChecks: [],
+    popExecutionNotes: '',
+    evidence: []
+  }
+})
+
+export function VisitAssessmentWizard({
+  visitId,
+  clientId,
+  brandId,
+  visit,
+  initialData,
+  onSave,
+  onComplete,
+  renderStage,
+  className
+}: VisitAssessmentWizardProps) {
+  const { toast } = useToast()
+
+  // Client info helpers
+  const clientName = visit?.client?.name || visit?.client?.business_name || 'Cliente'
+  const ownerName = fullOwnerName(visit?.client?.owner_name, visit?.client?.owner_last_name)
+  const clientAddress = [visit?.client?.address_street, visit?.client?.address_neighborhood].filter(Boolean).join(', ')
+  const brandName = visit?.brand?.name
+  const startTime = visit?.check_in_time ? new Date(visit.check_in_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null
+
+  // Live elapsed timer
+  const [elapsed, setElapsed] = useState(() => {
+    if (!visit?.check_in_time) return 0
+    return Math.floor((Date.now() - new Date(visit.check_in_time).getTime()) / 1000)
+  })
+
+  useEffect(() => {
+    if (!visit?.check_in_time) return
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - new Date(visit.check_in_time!).getTime()) / 1000))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [visit?.check_in_time])
+
+  const formatElapsed = (secs: number) => {
+    const mins = Math.floor(secs / 60)
+    const hrs = Math.floor(mins / 60)
+    const s = secs % 60
+    const m = mins % 60
+    return hrs > 0
+      ? `${hrs}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`
+      : `${m}m ${String(s).padStart(2, '0')}s`
+  }
+
+  const [currentStage, setCurrentStage] = useState(0)
+  const [data, setData] = useState<WizardData>(() => ({
+    ...getInitialData(),
+    ...initialData
+  }))
+  const [saving, setSaving] = useState(false)
+  const [savingStage, setSavingStage] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [showValidation, setShowValidation] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+
+  // Validation: check if a stage has missing required fields
+  const getStageWarning = (stageIndex: number): boolean => {
+    switch (stageIndex) {
+      case 0: {
+        // Stage 1: needs at least one product assessment with a price + evidence
+        const s = data.stage1
+        if (s.brandProductAssessments.length === 0) return true
+        if (s.evidence.length === 0) return true
+        return s.brandProductAssessments.some(a => a.is_product_present && a.current_price === null)
+      }
+      case 1: {
+        // Stage 2: if no purchase order and no order created, must have a reason selected
+        const s = data.stage2
+        if (!s.hasPurchaseOrder && !s.orderId && !s.whyNotBuying) return true
+        return false
+      }
+      case 2:
+        // Stage 3: no strict requirements
+        return false
+      default:
+        return false
+    }
+  }
+
+  // Build wizard step state
+  const completedSteps = new Set<number>()
+  const warningSteps = new Set<number>()
+
+  STAGES.forEach((_, index) => {
+    const stageData = data[`stage${index + 1}` as keyof WizardData]
+    const completed = 'completedAt' in stageData && stageData.completedAt != null
+    if (completed) {
+      completedSteps.add(index)
+      if (getStageWarning(index)) warningSteps.add(index)
+    }
+  })
+
+  const allStagesCompleted = STAGES.every((_, i) => completedSteps.has(i) && !warningSteps.has(i))
+  // Stages 1 & 2 completed without warnings — Stage 3 will auto-save on finalize
+  const canFinalize = completedSteps.has(0) && !warningSteps.has(0) && completedSteps.has(1) && !warningSteps.has(1)
+
+  const updateData = useCallback((updates: Partial<WizardData>) => {
+    setData(prev => ({ ...prev, ...updates }))
+  }, [])
+
+  const updateStage = useCallback(<K extends keyof WizardData>(
+    stageKey: K,
+    updates: Partial<WizardData[K]>
+  ) => {
+    setData(prev => ({
+      ...prev,
+      [stageKey]: { ...prev[stageKey], ...updates }
+    }))
+  }, [])
+
+  const handleSaveStage = async () => {
+    setShowValidation(true)
+    setSaving(true)
+    setSavingStage(currentStage)
+    setError(null)
+
+    try {
+      // Mark stage as completed
+      const stageKey = `stage${currentStage + 1}` as keyof WizardData
+      const updatedData = {
+        ...data,
+        [stageKey]: {
+          ...data[stageKey],
+          completedAt: new Date()
+        }
+      }
+      setData(updatedData)
+
+      await onSave(updatedData, currentStage + 1)
+      toast({ variant: 'success', title: 'Etapa guardada' })
+    } catch (err) {
+      console.error('Error saving stage:', err)
+      setError(err instanceof Error ? err.message : 'Error al guardar')
+
+      // Revert completion
+      const stageKey = `stage${currentStage + 1}` as keyof WizardData
+      setData(prev => ({
+        ...prev,
+        [stageKey]: {
+          ...prev[stageKey],
+          completedAt: undefined
+        }
+      }))
+    } finally {
+      setSaving(false)
+      setSavingStage(null)
+    }
+  }
+
+  const handleNext = async () => {
+    // Save current stage before moving
+    await handleSaveStage()
+
+    if (currentStage < STAGES.length - 1) {
+      setCurrentStage(prev => prev + 1)
+      setShowValidation(false)
+    }
+  }
+
+  const handlePrevious = () => {
+    if (currentStage > 0) {
+      setCurrentStage(prev => prev - 1)
+    }
+  }
+
+  const handleStageClick = (index: number) => {
+    // Allow navigation to completed stages or current stage
+    if (completedSteps.has(index) || index <= currentStage) {
+      setCurrentStage(index)
+      setShowValidation(false)
+    }
+  }
+
+  const handleComplete = async () => {
+    // Check stages 1 & 2 are completed
+    const incompleteStages: string[] = []
+    if (!completedSteps.has(0)) incompleteStages.push('Precios y Categoría')
+    if (!completedSteps.has(1)) incompleteStages.push('Compra e Inventario')
+
+    if (incompleteStages.length > 0) {
+      const firstIncompleteIndex = [0, 1].find(i => !completedSteps.has(i))
+      if (firstIncompleteIndex != null) {
+        setCurrentStage(firstIncompleteIndex)
+      }
+      setError(`Completa las siguientes secciones: ${incompleteStages.join(', ')}`)
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      // Auto-save Stage 3 if not yet saved
+      if (!completedSteps.has(2)) {
+        const updatedData = {
+          ...data,
+          stage3: { ...data.stage3, completedAt: new Date() }
+        }
+        setData(updatedData)
+        await onSave(updatedData, 3)
+      }
+
+      await onComplete()
+    } catch (err) {
+      console.error('Error completing wizard:', err)
+      setError(err instanceof Error ? err.message : 'Error al finalizar')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className={cn('flex flex-col min-h-full', className)}>
+      {/* Compact client info header */}
+      {visit && (
+        <div className="bg-white border-b px-4 py-3">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-start justify-between gap-4">
+              {/* Left side: Client info */}
+              <div className="flex-1 min-w-0 space-y-2">
+                {/* Business name */}
+                <div className="flex items-center gap-2">
+                  <Store className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                  <h1 className="font-semibold text-gray-900 truncate">{clientName}</h1>
+                </div>
+
+                {/* Owner and Address in grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-7 text-sm">
+                  {ownerName && (
+                    <div className="flex items-center gap-1.5 text-gray-700">
+                      <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="truncate font-medium">{ownerName}</span>
+                    </div>
+                  )}
+                  {clientAddress && (
+                    <div className="flex items-center gap-1.5 text-gray-600">
+                      <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{clientAddress}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right side: Brand and time */}
+              <div className="flex items-center gap-3 text-sm flex-shrink-0">
+                {brandName && (
+                  <span className="hidden sm:inline text-gray-600 font-medium">{brandName}</span>
+                )}
+                {startTime && (
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-0.5 sm:gap-2 text-sm">
+                    <span className="text-gray-500 text-xs sm:text-sm">{startTime}</span>
+                    <span className="hidden sm:inline text-gray-300">|</span>
+                    <span className="flex items-center text-green-600 font-medium tabular-nums">
+                      <Clock className="w-4 h-4 mr-1" />
+                      {formatElapsed(elapsed)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Progress indicator */}
+      <WizardStepper
+        steps={STAGES}
+        currentStep={currentStage}
+        completedSteps={completedSteps}
+        warningSteps={warningSteps}
+        savingStep={savingStage}
+        onStepClick={handleStageClick}
+        className="bg-white border-b"
+      />
+
+      {/* Error alert */}
+      {error && (
+        <Alert
+          variant="error"
+          className="mx-4 mt-4"
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
+      )}
+
+      {/* Stage content */}
+      <div className="flex-1 overflow-auto p-4">
+        {renderStage(currentStage, data, updateData, updateStage, showValidation)}
+      </div>
+
+      {/* Navigation buttons */}
+      <div className="border-t bg-white p-4">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentStage === 0 || saving}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Anterior
+          </Button>
+
+          <div className="flex items-center space-x-3">
+            {/* Save current stage */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSaveStage}
+              disabled={saving}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Guardar
+            </Button>
+
+            {/* Next or Complete */}
+            {currentStage < STAGES.length - 1 ? (
+              <Button
+                type="button"
+                onClick={handleNext}
+                disabled={saving}
+              >
+                Siguiente
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={() => setShowConfirmDialog(true)}
+                disabled={saving || !canFinalize}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Finalizar Assessment
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Completion hint — only if stages 1 or 2 are incomplete */}
+        {currentStage === STAGES.length - 1 && !canFinalize && (
+          <p className="text-center text-sm text-yellow-600 mt-3">
+            Completa las secciones de Precios y Compra para poder finalizar
+          </p>
+        )}
+      </div>
+
+      {/* Confirmation dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-500" />
+              ¿Finalizar visita?
+            </DialogTitle>
+            <DialogDescription>
+              Una vez finalizada, la visita no podrá ser editada. ¿Estás seguro de que deseas continuar?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                setShowConfirmDialog(false)
+                handleComplete()
+              }}
+            >
+              Finalizar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

@@ -14,7 +14,7 @@ This skill is the **authoritative companion** to `.claude/rules/supabase-rules.m
 - Adding/removing/renaming tables, columns, indexes, enums
 - Authoring RLS policies or DB functions/triggers
 - Investigating schema drift, RLS recursion, or performance issues
-- Updating `src/lib/types/database.ts` and `src/lib/types/supabase.ts`
+- Updating `packages/shared/src/types/database.ts` and `packages/shared/src/types/supabase.ts`
 
 ---
 
@@ -186,8 +186,8 @@ Validate the migration runs end-to-end on a clean local DB.
 
 ### 5. Update TypeScript types
 
-- Update `src/lib/types/database.ts` interfaces in the **same commit**.
-- Regenerate `src/lib/types/supabase.ts` (Supabase CLI: `supabase gen types typescript --local > src/lib/types/supabase.ts`).
+- Update `packages/shared/src/types/database.ts` interfaces in the **same commit**.
+- Regenerate `packages/shared/src/types/supabase.ts` (Supabase CLI: `supabase gen types typescript --local > packages/shared/src/types/supabase.ts`).
 - Verify `npm run build` passes.
 
 ### 6. Test RLS
@@ -199,7 +199,7 @@ For each RLS policy, validate:
 - Brand-scoped role → only brand rows
 - Insert with mismatched `tenant_id` → fails
 
-Add or extend tests in `__tests__/database/rls.test.ts`.
+Add or extend tests in `tests/database/rls.test.ts`.
 
 ### 7. Update services / API as needed
 
@@ -334,8 +334,8 @@ If a trigger blocks a legitimate operation, the path forward is a migration that
 [ ] Policies use helper functions; (SELECT auth.uid()) wrapping
 [ ] Indexes on every FK column
 [ ] Trigger validations match app-layer expectations
-[ ] src/lib/types/database.ts updated in same commit
-[ ] src/lib/types/supabase.ts regenerated
+[ ] packages/shared/src/types/database.ts updated in same commit
+[ ] packages/shared/src/types/supabase.ts regenerated
 [ ] Local DB applies migration cleanly
 [ ] RLS validated for ≥2 roles, including cross-tenant negative test
 [ ] LEARNINGS.md updated if non-obvious behavior surfaced

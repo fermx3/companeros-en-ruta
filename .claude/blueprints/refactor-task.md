@@ -198,13 +198,13 @@ If you spot related cleanup that's out of scope, list it in the report under "Ou
 
 ## Common Refactor Targets in This Repo
 
-- **Auth chain duplication** — every new route should already use `src/lib/api/<role>-auth.ts`. If you find inline `getUser → user_profiles → user_roles` in a route, that's a candidate.
+- **Auth chain duplication** — every new route should already use `apps/web/src/lib/api/<role>-auth.ts`. If you find inline `getUser → user_profiles → user_roles` in a route, that's a candidate.
 - **RLS policy consolidation** — see migrations `20260221120000_*` series for the helper-function approach. New tables should follow the same pattern.
 - **Inline status badges** — replace with `StatusBadge` / `OrderStatusBadge` / `VisitStatusBadge`.
 - **Inline metric cards / empty states** — replace with `MetricCard` / `EmptyState`.
 - **Quick actions** — `QuickActions` component is the canonical layout (recent commit `4ae09b4`); replace ad-hoc nav grids.
-- **Dashboard service extraction** — heavy `page.tsx` server components with multiple Supabase calls should delegate to `src/lib/services/<domain>Service.ts`.
-- **Survey logic** — survey-related helpers live under `src/lib/surveys/`; new survey code should reuse them rather than re-implementing question rendering.
+- **Dashboard service extraction** — heavy `page.tsx` server components with multiple Supabase calls should delegate to `apps/web/src/lib/services/<domain>Service.ts`.
+- **Survey logic** — survey-related helpers live under `packages/shared/src/surveys/`; new survey code should reuse them rather than re-implementing question rendering.
 
 ---
 

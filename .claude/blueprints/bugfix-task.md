@@ -62,7 +62,7 @@ Recent changes: <commits or migrations or "none">
 
 Walk the call path. For each step, verify:
 
-- Is the schema accessed correctly? (column names in `src/lib/types/database.ts`)
+- Is the schema accessed correctly? (column names in `packages/shared/src/types/database.ts`)
 - Is `tenant_id` derived correctly and filtered correctly?
 - Is the auth helper used? Are role checks correct?
 - Are RLS policies allowing/denying as expected? Test with `psql` as different users.
@@ -88,8 +88,8 @@ Root cause: <one sentence — what was wrong and why>
 
 Add a test that fails on `main` and passes after the fix. Examples:
 
-- API bug: `__tests__/app/api/<role>/<feature>.test.ts` exercising the failing payload
-- RLS bug: `__tests__/database/...` with the cross-tenant negative case
+- API bug: `apps/web/__tests__/app/api/<role>/<feature>.test.ts` exercising the failing payload
+- RLS bug: `tests/database/...` with the cross-tenant negative case
 - UI bug: component or e2e test for the failing interaction
 
 Run the test, confirm red. Then implement the fix.
@@ -181,7 +181,7 @@ Bugs are the highest-signal source of learnings. Append unless the bug was a typ
 | `new row violates row-level security policy` | Insert is missing `tenant_id`, or RLS WITH CHECK isn't met, or user lacks role |
 | `validate_*_data() failed` | Read the trigger source in the migration; usually a tenant or role mismatch |
 | `relation "X" does not exist` in local | Migration not applied; reset local DB |
-| Cookies missing on auth refresh | `src/lib/supabase/middleware.ts` cookie forwarding — see existing comments |
+| Cookies missing on auth refresh | `apps/web/src/lib/supabase/middleware.ts` cookie forwarding — see existing comments |
 | Wrong dashboard after login | Don't auto-redirect from /login; let the login page detect role (per `middleware.ts` comment) |
 | Cross-tenant row visible | STOP. Treat as a P0 incident. Don't ship until root cause is found. |
 

@@ -6,8 +6,8 @@ Writing and running tests with the project's existing tooling:
 
 - **Jest 30** + **@testing-library/react 16** + **jest-environment-jsdom** for unit/integration
 - **MSW 2** for HTTP mocking
-- **Playwright 1.56** for end-to-end (`__tests__/e2e/`)
-- **pg 8** in `__tests__/database/` for DB-level tests
+- **Playwright 1.56** for end-to-end (`apps/web/__tests__/e2e/`)
+- **pg 8** in `tests/database/` for DB-level tests
 - Path alias `@/` resolves to `src/` in jest (`jest.config.cjs`)
 
 Scripts (`package.json`):
@@ -45,9 +45,9 @@ __tests__/
   middleware.test.tsx   # Next.js middleware
 ```
 
-Mirror `src/` paths under `__tests__/`. Component file `src/components/ui/metric-card.tsx` → `__tests__/components/ui/metric-card.test.tsx`.
+Mirror `src/` paths under `apps/web/__tests__/`. Component file `apps/web/src/components/ui/metric-card.tsx` → `apps/web/__tests__/components/ui/metric-card.test.tsx`.
 
-E2E specs go under `__tests__/e2e/*.spec.ts`.
+E2E specs go under `apps/web/__tests__/e2e/*.spec.ts`.
 
 ---
 
@@ -209,12 +209,12 @@ There is no enforced coverage threshold in `jest.config.cjs`. Target by importan
 - API route handlers: 80% line coverage minimum, including auth-failure paths.
 - Hooks: cover loading, success, error.
 - DB triggers/policies: at minimum a happy-path + cross-tenant negative test per policy.
-- UI primitives in `src/components/ui/`: cover variants + a11y semantics.
+- UI primitives in `apps/web/src/components/ui/`: cover variants + a11y semantics.
 
 ### 9. Test data
 
 - Use realistic, anonymized data — not personal info.
-- Build factories under `__tests__/factories/` (create as needed) to avoid fixture sprawl.
+- Build factories under `apps/web/__tests__/factories/` (create as needed) to avoid fixture sprawl.
 
 ### 10. Running locally
 
@@ -242,11 +242,11 @@ npm run test:e2e:ui                         # Playwright UI mode
 
 ## Examples From the Repo
 
-- `__tests__/middleware.test.tsx` — Next.js middleware test.
-- `__tests__/database/rls.test.ts` — RLS pattern (current form is mock-based; extend toward real local DB checks when feasible).
-- `__tests__/integration/auth-flow.test.tsx` — multi-step auth flow.
-- `__tests__/components/ui/*.test.tsx` — UI primitive coverage.
-- `__tests__/e2e/auth.spec.ts` — Playwright login.
+- `apps/web/__tests__/middleware.test.tsx` — Next.js middleware test.
+- `tests/database/rls.test.ts` — RLS pattern (current form is mock-based; extend toward real local DB checks when feasible).
+- `apps/web/__tests__/integration/auth-flow.test.tsx` — multi-step auth flow.
+- `apps/web/__tests__/components/ui/*.test.tsx` — UI primitive coverage.
+- `apps/web/__tests__/e2e/auth.spec.ts` — Playwright login.
 
 ---
 
