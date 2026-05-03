@@ -31,7 +31,6 @@ jobs:
 
       - name: Unit + integration tests (apps/web)
         run: pnpm --filter=@companeros/web test:coverage
-        continue-on-error: true
 
       - name: DB / RLS tests (cross-app)
         run: pnpm test:db
