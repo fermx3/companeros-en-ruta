@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { SurveyStatusBadge } from './SurveyStatusBadge'
 import { Calendar, Users, ClipboardList } from 'lucide-react'
-import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
+import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@companeros/shared/types/database'
 
 const ROLE_LABELS: Record<string, string> = {
   promotor: 'Promotor',

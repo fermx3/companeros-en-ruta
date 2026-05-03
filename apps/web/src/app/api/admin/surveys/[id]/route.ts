@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { resolveIdColumn } from '@/lib/utils/public-id'
-import { resolveVisibilityConditions } from '@/lib/surveys/resolve-visibility-conditions'
+import { resolveIdColumn } from '@companeros/shared/utils/public-id'
+import { resolveVisibilityConditions } from '@companeros/shared/surveys/resolve-visibility-conditions'
 
 export async function GET(
   request: NextRequest,

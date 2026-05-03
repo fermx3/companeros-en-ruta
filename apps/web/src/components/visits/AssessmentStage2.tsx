@@ -8,7 +8,7 @@ import { ClientPromotionsPanel, ClientPromotion } from './ClientPromotionsPanel'
 import { OrderQuickAccess, WhyNotBuyingReason, VisitOrder } from './OrderQuickAccess'
 import { OrderModal, CartItem, EditOrderData } from './OrderModal'
 import { VisitInventoryForm } from './VisitInventoryForm'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import type { WizardData } from './VisitAssessmentWizard'
 
 interface AssessmentStage2Props {

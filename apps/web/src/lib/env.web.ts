@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { parseSharedEnv } from './env.shared';
+import { parseSharedEnv } from '@companeros/shared/env/shared';
 
 /**
  * Web-only env adapter.

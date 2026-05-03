@@ -20,7 +20,7 @@
  */
 
 import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "@companeros/shared/utils/cn"
 
 export interface ToastProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "default" | "success" | "error" | "warning"

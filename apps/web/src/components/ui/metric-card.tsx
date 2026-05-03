@@ -1,7 +1,7 @@
 import React from 'react'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { Card } from './Card'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import type { TrendType, VariantType } from '@/types/ui'
 
 export interface MetricCardProps {

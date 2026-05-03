@@ -1,4 +1,4 @@
-import type { TargetingCriteria } from '@/lib/types/database'
+import type { TargetingCriteria } from '../types/database'
 
 /**
  * Client profile data needed for targeting evaluation.

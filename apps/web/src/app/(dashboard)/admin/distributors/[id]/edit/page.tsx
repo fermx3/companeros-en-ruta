@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import type { DistributorUpdateForm } from '@/lib/types/admin';
+import type { DistributorUpdateForm } from '@companeros/shared/types/admin';
 
 interface BrandAssignment {
   id: string

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedServiceClient } from '@/lib/api/tenant';
-import { extractDigits } from '@/lib/utils/phone';
+import { extractDigits } from '@companeros/shared/utils/phone';
 
 /**
  * API Route para invitar usuarios con permisos de administrador

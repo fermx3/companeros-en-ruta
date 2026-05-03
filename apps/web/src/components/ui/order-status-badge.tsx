@@ -1,6 +1,6 @@
 import React from 'react'
 import { Clock, Package, CheckCircle, XCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 type OrderStatus =
   | 'draft'

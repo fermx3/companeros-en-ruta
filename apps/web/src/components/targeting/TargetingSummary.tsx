@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import type { TargetingCriteria } from '@/lib/types/database'
+import type { TargetingCriteria } from '@companeros/shared/types/database'
 
 interface CatalogItem {
   id: string

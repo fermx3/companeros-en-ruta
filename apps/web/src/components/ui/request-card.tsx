@@ -3,7 +3,7 @@ import { Tag, Percent, MapPin } from 'lucide-react'
 import { Card } from './Card'
 import { StatusBadge } from './status-badge'
 import { ActionButton } from './action-button'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import type { RequestType, StatusType } from '@/types/ui'
 
 export interface RequestCardProps {

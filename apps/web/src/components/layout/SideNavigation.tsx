@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { LogOut, User, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import type { NavItem, NavEntry, NavGroup } from '@/lib/navigation-config'
 import { isNavGroup, flattenEntries } from '@/lib/navigation-config'
 

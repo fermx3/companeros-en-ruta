@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { adminService } from '@/lib/services/adminService';
-import type { Brand, BrandCreateForm } from '@/lib/types/admin';
+import type { Brand, BrandCreateForm } from '@companeros/shared/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useToast } from '@/components/ui/toaster';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';

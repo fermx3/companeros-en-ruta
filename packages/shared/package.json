@@ -1,0 +1,32 @@
+{
+  "name": "@companeros/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types": "./src/types/index.ts",
+    "./types/admin": "./src/types/admin.ts",
+    "./types/api": "./src/types/api.ts",
+    "./types/database": "./src/types/database.ts",
+    "./types/supabase": "./src/types/supabase.ts",
+    "./types/visits": "./src/types/visits.ts",
+    "./utils/cn": "./src/utils/cn.ts",
+    "./utils/client": "./src/utils/client.ts",
+    "./utils/csv": "./src/utils/csv.ts",
+    "./utils/onboarding-labels": "./src/utils/onboarding-labels.ts",
+    "./utils/phone": "./src/utils/phone.ts",
+    "./utils/public-id": "./src/utils/public-id.ts",
+    "./utils/targeting": "./src/utils/targeting.ts",
+    "./surveys/resolve-visibility-conditions": "./src/surveys/resolve-visibility-conditions.ts",
+    "./env/shared": "./src/env/shared.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.80.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

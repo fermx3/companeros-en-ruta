@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
-import { resolveIdColumn } from '@/lib/utils/public-id'
+import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 import { z } from 'zod'
 
 const updateTargetSchema = z.object({

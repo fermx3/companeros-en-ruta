@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
-import { fullOwnerName } from '@/lib/utils/client'
+import { fullOwnerName } from '@companeros/shared/utils/client'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'

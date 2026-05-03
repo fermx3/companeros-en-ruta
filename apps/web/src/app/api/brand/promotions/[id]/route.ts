@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
-import { resolveIdColumn } from '@/lib/utils/public-id'
+import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
 // Promotion type labels
 const PROMOTION_TYPE_LABELS: Record<string, string> = {

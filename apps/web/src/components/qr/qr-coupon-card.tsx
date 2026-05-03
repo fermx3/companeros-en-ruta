@@ -22,7 +22,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/avatar'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ActionButton } from '@/components/ui/action-button'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export interface QRCouponCardProps {
   /** QR code value to encode */

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/feedback'
 import { Search, X } from 'lucide-react'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
-import { fullOwnerName } from '@/lib/utils/client'
+import { fullOwnerName } from '@companeros/shared/utils/client'
 
 interface AvailableClient {
   id: string

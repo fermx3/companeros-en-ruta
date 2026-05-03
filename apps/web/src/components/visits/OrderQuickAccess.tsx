@@ -2,7 +2,7 @@
 
 import { ShoppingCart, Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export interface VisitOrder {
   id: string

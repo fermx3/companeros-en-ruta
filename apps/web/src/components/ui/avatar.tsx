@@ -13,7 +13,7 @@
 
 import * as React from 'react'
 import { Building2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export type AvatarSize = 'sm' | 'md' | 'lg'
 

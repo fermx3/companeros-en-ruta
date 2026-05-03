@@ -41,6 +41,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@companeros/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.75.0(react@19.2.0))
@@ -147,6 +150,25 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.2.4
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  packages/shared:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: 2.80.0
+        version: 2.80.0
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.5.0
+      zod:
+        specifier: ^4.1.12
+        version: 4.4.2
+    devDependencies:
       typescript:
         specifier: ^5
         version: 5.9.3

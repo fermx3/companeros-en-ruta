@@ -9,7 +9,7 @@ import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { adminService } from '@/lib/services/adminService';
-import type { Brand } from '@/lib/types/admin';
+import type { Brand } from '@companeros/shared/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { ChevronRight, Plus, Building2, Pencil, Trash2 } from 'lucide-react';
 

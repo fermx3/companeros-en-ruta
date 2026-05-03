@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { escapeCsvValue, csvResponse, formatCsvDate } from '@/lib/utils/csv'
+import { escapeCsvValue, csvResponse, formatCsvDate } from '@companeros/shared/utils/csv'
 import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 
 /**

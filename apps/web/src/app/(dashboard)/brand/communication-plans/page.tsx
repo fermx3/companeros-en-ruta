@@ -15,7 +15,7 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
 import { TargetingBuilder } from '@/components/targeting/TargetingBuilder'
 import { TargetingSummary } from '@/components/targeting/TargetingSummary'
-import type { TargetingCriteria } from '@/lib/types/database'
+import type { TargetingCriteria } from '@companeros/shared/types/database'
 
 interface PlanMaterial {
   id: string

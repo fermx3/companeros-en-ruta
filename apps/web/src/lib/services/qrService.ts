@@ -5,7 +5,7 @@
 
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/types/supabase'
+import type { Database } from '@companeros/shared/types/supabase'
 
 // Types
 export interface QRCode {

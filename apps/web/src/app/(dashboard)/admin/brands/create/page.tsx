@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Select } from '@/components/ui/form-legacy';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { adminService } from '@/lib/services/adminService';
-import { brandCreateSchema, type BrandCreateForm } from '@/lib/types/admin';
+import { brandCreateSchema, type BrandCreateForm } from '@companeros/shared/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 /**

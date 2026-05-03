@@ -1,4 +1,4 @@
-import type { MultipleChoiceOption } from '@/lib/types/database'
+import type { MultipleChoiceOption } from '@companeros/shared/types/database'
 
 /**
  * Normalizes multiple_choice options from DB format to the expected

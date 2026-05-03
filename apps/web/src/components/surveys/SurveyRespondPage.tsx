@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { SurveyForm } from './SurveyForm'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
-import type { SurveyQuestionTypeEnum, MultipleChoiceOption, VisibilityCondition, InputAttributes } from '@/lib/types/database'
+import type { SurveyQuestionTypeEnum, MultipleChoiceOption, VisibilityCondition, InputAttributes } from '@companeros/shared/types/database'
 
 interface Question {
   id: string

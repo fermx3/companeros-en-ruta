@@ -10,7 +10,7 @@ import { SurveyQuestionBuilder, type QuestionData, type SectionData } from '@/co
 import { SurveyPreviewDialog } from '@/components/surveys/SurveyPreviewDialog'
 import { TargetingSummary } from '@/components/targeting'
 import { ArrowLeft, CheckCircle, XCircle, Users, Edit, BarChart3, Eye } from 'lucide-react'
-import type { SurveyStatusEnum, SurveyTargetRoleEnum, TargetingCriteria } from '@/lib/types/database'
+import type { SurveyStatusEnum, SurveyTargetRoleEnum, TargetingCriteria } from '@companeros/shared/types/database'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
 

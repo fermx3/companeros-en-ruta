@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { tenantUpdateSchema } from '@/lib/types/admin';
+import { tenantUpdateSchema } from '@companeros/shared/types/admin';
 import { z } from 'zod';
 
 async function verifyAdmin(supabase: ReturnType<typeof createClient>) {

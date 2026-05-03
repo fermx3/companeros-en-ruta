@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { distributorUpdateSchema } from '@/lib/types/admin';
-import { resolveIdColumn } from '@/lib/utils/public-id';
+import { distributorUpdateSchema } from '@companeros/shared/types/admin';
+import { resolveIdColumn } from '@companeros/shared/utils/public-id';
 import { z } from 'zod';
 
 interface RouteParams {

@@ -8,7 +8,7 @@ import type {
   GenderValue,
   AdvisorSpecializationEnum,
   AdvisorExperienceLevelEnum,
-} from '@/lib/types/database'
+} from '@companeros/shared/types/database'
 import { TargetingSection } from './TargetingSection'
 import { CatalogMultiSelect } from './CatalogMultiSelect'
 import { ReachEstimate } from './ReachEstimate'

@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Camera, X, Upload, MapPin, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import { useGeolocation } from '@/hooks/useGeolocation'
 
 export interface EvidencePhoto {

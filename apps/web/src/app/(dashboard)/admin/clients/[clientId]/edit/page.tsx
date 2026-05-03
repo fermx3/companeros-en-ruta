@@ -7,14 +7,14 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { isValidMxPhone } from '@/lib/utils/phone';
+import { isValidMxPhone } from '@companeros/shared/utils/phone';
 import { adminService } from '@/lib/services/adminService';
 import type {
   Zone,
   Market,
   ClientType,
   CommercialStructure
-} from '@/lib/types/admin';
+} from '@companeros/shared/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface ClientDetail {

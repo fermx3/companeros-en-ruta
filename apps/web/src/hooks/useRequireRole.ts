@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/providers/AuthProvider'
-import type { UserRole } from '@/lib/types'
+import type { UserRole } from '@companeros/shared/types'
 
 interface UseRequireRoleOptions {
   /**

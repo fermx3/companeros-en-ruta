@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
-import { resolveIdColumn } from '@/lib/utils/public-id'
+import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
 export async function PUT(
   request: NextRequest,

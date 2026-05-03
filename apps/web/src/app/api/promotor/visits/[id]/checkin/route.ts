@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { resolveIdColumn } from '@/lib/utils/public-id'
+import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
 // Helper to get promotor profile from auth
 async function getPromotorProfile(supabase: Awaited<ReturnType<typeof createClient>>) {

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { displayPhone } from '@/lib/utils/phone'
+import { displayPhone } from '@companeros/shared/utils/phone'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { ClickableCard } from '@/components/ui/clickable-card'
 import { ListItemActions } from '@/components/ui/list-item-actions'
@@ -21,7 +21,7 @@ import {
   Search,
   Plus
 } from 'lucide-react'
-import { fullOwnerName } from '@/lib/utils/client'
+import { fullOwnerName } from '@companeros/shared/utils/client'
 
 interface Client {
   id: string

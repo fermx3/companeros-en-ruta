@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
-import type { Distributor } from '@/lib/types/admin';
+import type { Distributor } from '@companeros/shared/types/admin';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { StatusType } from '@/types/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';

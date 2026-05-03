@@ -13,7 +13,7 @@ import { WizardStepper } from '@/components/ui/wizard-stepper'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { TargetingBuilder } from '@/components/targeting/TargetingBuilder'
 import { TargetingSummary } from '@/components/targeting/TargetingSummary'
-import type { TargetingCriteria } from '@/lib/types/database'
+import type { TargetingCriteria } from '@companeros/shared/types/database'
 
 type PromotionType =
   | 'discount_percentage'

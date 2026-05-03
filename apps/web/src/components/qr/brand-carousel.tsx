@@ -11,7 +11,7 @@
 
 import React from 'react'
 import { Avatar } from '@/components/ui/avatar'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export interface Brand {
   id: string

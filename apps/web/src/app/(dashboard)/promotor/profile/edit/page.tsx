@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { isValidMxPhone } from '@/lib/utils/phone';
+import { isValidMxPhone } from '@companeros/shared/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useToast } from '@/components/ui/toaster';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';

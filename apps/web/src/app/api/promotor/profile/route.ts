@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolvePromotorAuth, isPromotorAuthError, promotorAuthErrorResponse } from '@/lib/api/promotor-auth'
-import { extractDigits } from '@/lib/utils/phone'
+import { extractDigits } from '@companeros/shared/utils/phone'
 
 interface ZoneInfo {
   id: string

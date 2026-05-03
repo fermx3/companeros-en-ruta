@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
-import { extractDigits, formatMxPhone } from '@/lib/utils/phone'
+import { extractDigits, formatMxPhone } from '@companeros/shared/utils/phone'
 
 interface PhoneInputProps {
   value: string

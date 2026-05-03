@@ -10,7 +10,7 @@ import { ImageUpload } from '@/components/ui/image-upload';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { useToast } from '@/components/ui/toaster';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
-import type { Brand } from '@/lib/types/admin';
+import type { Brand } from '@companeros/shared/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 /**

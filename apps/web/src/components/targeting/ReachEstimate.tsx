@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { Users } from 'lucide-react'
 import { useBrandFetch } from '@/hooks/useBrandFetch'
-import type { TargetingCriteria } from '@/lib/types/database'
+import type { TargetingCriteria } from '@companeros/shared/types/database'
 
 interface ReachEstimateProps {
   criteria: TargetingCriteria

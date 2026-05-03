@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
-import type { Zone, PaginatedResponse } from '@/lib/types/admin';
+import type { Zone, PaginatedResponse } from '@companeros/shared/types/admin';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { MapPin, Plus } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';

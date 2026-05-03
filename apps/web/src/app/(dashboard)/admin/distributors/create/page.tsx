@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import type { DistributorCreateForm } from '@/lib/types/admin';
+import type { DistributorCreateForm } from '@companeros/shared/types/admin';
 
 export default function CreateDistributorPage() {
   usePageTitle('Crear Distribuidor');

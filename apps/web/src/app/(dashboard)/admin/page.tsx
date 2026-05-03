@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { MetricCard } from '@/components/ui/metric-card'
 import { Building2, Users, UserCheck, BarChart3, DollarSign, Plus, UserPlus, UserRound, Gift, Settings } from 'lucide-react'
-import type { AdminDashboardMetrics, RecentActivity } from '@/lib/types/admin'
+import type { AdminDashboardMetrics, RecentActivity } from '@companeros/shared/types/admin'
 import { QuickActions } from '@/components/layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
 

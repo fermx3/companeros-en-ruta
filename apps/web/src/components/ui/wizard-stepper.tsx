@@ -1,7 +1,7 @@
 'use client'
 
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export interface WizardStep {
   id: string

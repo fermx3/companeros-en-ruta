@@ -1,7 +1,7 @@
 import React from 'react'
 import { Loader2 } from 'lucide-react'
 import { Button, type ButtonProps } from './button'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export interface ActionButtonProps extends Omit<ButtonProps, 'variant' | 'size'> {
     variant?: 'primary' | 'secondary' | 'ghost' | 'destructive'

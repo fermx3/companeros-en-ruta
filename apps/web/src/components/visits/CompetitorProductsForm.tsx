@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Plus, Trash2, Building2, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export interface CompetitorProduct {
   id: string

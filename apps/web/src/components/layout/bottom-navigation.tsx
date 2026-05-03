@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import type { NavEntry } from '@/lib/navigation-config'
 import { flattenEntries, isNavGroup } from '@/lib/navigation-config'
 import { IconMas } from '@/components/icons'

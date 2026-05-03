@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { distributorCreateSchema } from '@/lib/types/admin';
+import { distributorCreateSchema } from '@companeros/shared/types/admin';
 import { z } from 'zod';
 
 /**

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
-import { resolveIdColumn } from '@/lib/utils/public-id'
+import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
 interface OrderDetailItem {
   id: string

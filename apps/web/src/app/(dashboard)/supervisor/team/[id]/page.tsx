@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Users, CheckCircle, Clock, Star, Mail, Phone } from 'lucide-react'
-import { displayPhone } from '@/lib/utils/phone'
+import { displayPhone } from '@companeros/shared/utils/phone'
 import Link from 'next/link'
 import { usePageTitle } from '@/hooks/usePageTitle'
 

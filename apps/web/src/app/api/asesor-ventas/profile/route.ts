@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
-import { extractDigits } from '@/lib/utils/phone'
+import { extractDigits } from '@companeros/shared/utils/phone'
 
 interface UserRole {
   id: string

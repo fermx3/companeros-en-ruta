@@ -19,7 +19,7 @@ import {
   MapPin
 } from 'lucide-react'
 import { useGeolocation } from '@/hooks/useGeolocation'
-import { fullOwnerName } from '@/lib/utils/client'
+import { fullOwnerName } from '@companeros/shared/utils/client'
 
 interface QRValidationResult {
   valid: boolean

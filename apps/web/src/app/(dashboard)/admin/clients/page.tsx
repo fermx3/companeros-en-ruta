@@ -7,13 +7,13 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
 import { adminService } from '@/lib/services/adminService';
-import { fullOwnerName } from '@/lib/utils/client';
+import { fullOwnerName } from '@companeros/shared/utils/client';
 import type {
   Client,
   PaginatedResponse,
   Zone,
   Market
-} from '@/lib/types/admin';
+} from '@companeros/shared/types/admin';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { StatusType } from '@/types/ui';
 import { EmptyState } from '@/components/ui/EmptyState';

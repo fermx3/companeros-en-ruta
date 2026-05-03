@@ -1,12 +1,12 @@
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/types/supabase";
+import type { Database } from "@companeros/shared/types/supabase";
 import type {
   CreatePurchaseRequest,
   CreatePurchaseResponse,
   CreateVisitRequest,
   CreateVisitResponse,
-} from "../types/visits";
+} from "@companeros/shared/types/visits";
 
 type AssessmentProduct = {
   product_id: string;

@@ -13,7 +13,7 @@ import { TargetingSummary } from '@/components/targeting'
 import { ArrowLeft, Send, Edit, BarChart3, AlertCircle, Eye } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
-import type { SurveyStatusEnum, SurveyTargetRoleEnum, TargetingCriteria } from '@/lib/types/database'
+import type { SurveyStatusEnum, SurveyTargetRoleEnum, TargetingCriteria } from '@companeros/shared/types/database'
 
 const ROLE_LABELS: Record<string, string> = {
   promotor: 'Promotor',

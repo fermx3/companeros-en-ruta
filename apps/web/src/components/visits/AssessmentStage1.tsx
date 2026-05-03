@@ -5,7 +5,7 @@ import { AlertTriangle, DollarSign, Package, Tag, TrendingUp } from 'lucide-reac
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { PhotoEvidenceUpload, EvidencePhoto } from './PhotoEvidenceUpload'
 import { CompetitorProductsForm, Competitor, CompetitorAssessment } from './CompetitorProductsForm'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import type { WizardData } from './VisitAssessmentWizard'
 
 interface Product {

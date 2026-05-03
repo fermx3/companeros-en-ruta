@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/server';
-import type { NotificationType } from '@/lib/types/database';
+import type { NotificationType } from '@companeros/shared/types/database';
 
 interface CreateNotificationParams {
   tenant_id: string;

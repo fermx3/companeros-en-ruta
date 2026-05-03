@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { extractDigits } from '@/lib/utils/phone'
-import { fullOwnerName } from '@/lib/utils/client'
+import { extractDigits } from '@companeros/shared/utils/phone'
+import { fullOwnerName } from '@companeros/shared/utils/client'
 
 interface ClientProfile {
   id: string

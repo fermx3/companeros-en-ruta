@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { adminService } from '@/lib/services/adminService'
-import type { UserProfile, UserRoleRecord, Brand, Distributor } from '@/lib/types/admin'
+import type { UserProfile, UserRoleRecord, Brand, Distributor } from '@companeros/shared/types/admin'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
 

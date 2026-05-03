@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
-import type { Notification } from '@/lib/types/database';
+import type { Notification } from '@companeros/shared/types/database';
 
 interface UseNotificationsOptions {
   onNewNotification?: (notification: Notification) => void;

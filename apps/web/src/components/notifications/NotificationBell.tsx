@@ -6,8 +6,8 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useToast } from '@/components/ui/toaster';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import type { Notification } from '@/lib/types/database';
+import { cn } from '@companeros/shared/utils/cn';
+import type { Notification } from '@companeros/shared/types/database';
 
 const NOTIFICATION_TYPE_ICONS: Record<string, string> = {
   promotion_approved: '🎉',

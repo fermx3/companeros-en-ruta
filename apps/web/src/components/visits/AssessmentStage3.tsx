@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Megaphone, Layers, LayoutGrid, CheckCircle2, AlertCircle, XCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { PhotoEvidenceUpload, EvidencePhoto } from './PhotoEvidenceUpload'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import type { WizardData } from './VisitAssessmentWizard'
 
 interface CommunicationPlan {

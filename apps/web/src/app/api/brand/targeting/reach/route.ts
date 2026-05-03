@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
-import type { TargetingCriteria } from '@/lib/types/database'
+import type { TargetingCriteria } from '@companeros/shared/types/database'
 
 export async function POST(request: NextRequest) {
   try {

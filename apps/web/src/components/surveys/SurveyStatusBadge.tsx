@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import type { SurveyStatusEnum } from '@/lib/types/database'
+import type { SurveyStatusEnum } from '@companeros/shared/types/database'
 
 const STATUS_CONFIG: Record<SurveyStatusEnum, { label: string; className: string }> = {
   draft: { label: 'Borrador', className: 'bg-gray-100 text-gray-700' },

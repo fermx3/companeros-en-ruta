@@ -8,7 +8,7 @@ import {
   ArrowLeft, Plus, Pencil, Trash2, X, Save, Filter,
 } from 'lucide-react'
 import Link from 'next/link'
-import type { KpiTarget } from '@/lib/types/database'
+import type { KpiTarget } from '@companeros/shared/types/database'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
 

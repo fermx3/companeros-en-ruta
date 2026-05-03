@@ -1,7 +1,7 @@
 import React from 'react'
 import { Card } from './Card'
 import { ActionButton } from './action-button'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export interface QRActionCardProps {
     title: string

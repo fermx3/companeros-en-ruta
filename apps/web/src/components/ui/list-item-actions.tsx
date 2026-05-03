@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 interface ListItemActionsProps {
   className?: string

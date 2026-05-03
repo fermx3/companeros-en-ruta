@@ -2,7 +2,7 @@ import React from 'react'
 import { ChevronRight } from 'lucide-react'
 import { Card } from './Card'
 import { StatusBadge } from './status-badge'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export interface EvaluationItem {
     id: string

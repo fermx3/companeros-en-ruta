@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import { Card } from '@/components/ui/Card'
 
 interface ClickableCardProps {

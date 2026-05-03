@@ -8,7 +8,7 @@ import {
   Users, TrendingUp, MapPin, Settings, Building2, Layers,
   Gift, ChevronRight, ClipboardList, BarChart3, ShoppingCart,
 } from "lucide-react"
-import { displayPhone } from '@/lib/utils/phone'
+import { displayPhone } from '@companeros/shared/utils/phone'
 import { QuickActions } from '@/components/layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import Link from 'next/link'

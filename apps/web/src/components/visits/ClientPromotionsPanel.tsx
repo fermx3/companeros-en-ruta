@@ -1,7 +1,7 @@
 'use client'
 
 import { Gift, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 

@@ -7,7 +7,7 @@ import { MetricCard } from '@/components/ui/metric-card';
 import { Button } from '@/components/ui/button';
 import { PageLoader, Alert } from '@/components/ui/feedback';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { displayPhone } from '@/lib/utils/phone';
+import { displayPhone } from '@companeros/shared/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Star } from 'lucide-react';
 import { IconClientes, IconCompletado, IconPendiente, IconVisitas, IconAgenda } from '@/components/icons';

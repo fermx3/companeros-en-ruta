@@ -1,6 +1,6 @@
 import React from 'react'
 import { MetricCard, type MetricCardProps } from '@/components/ui/metric-card'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export interface DashboardMetricsProps {
     metrics: MetricCardProps[]

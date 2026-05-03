@@ -9,7 +9,7 @@ import { Settings } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { StatusType } from '@/types/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import type { Tenant } from '@/lib/types/admin';
+import type { Tenant } from '@companeros/shared/types/admin';
 
 interface SettingsForm {
   name: string;

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
-import { buildCsvString, csvResponse, formatCsvCurrency } from '@/lib/utils/csv'
+import { buildCsvString, csvResponse, formatCsvCurrency } from '@companeros/shared/utils/csv'
 
 export async function GET(request: NextRequest) {
   try {

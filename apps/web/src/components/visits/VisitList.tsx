@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
-import type { Visit } from '@/lib/types/visits'
+import type { Visit } from '@companeros/shared/types/visits'
 
 // ===========================================
 // Types

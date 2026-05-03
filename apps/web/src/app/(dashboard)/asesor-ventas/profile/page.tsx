@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/Card'
 import { User } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
-import { displayPhone } from '@/lib/utils/phone'
+import { displayPhone } from '@companeros/shared/utils/phone'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function AsesorVentasProfilePage() {

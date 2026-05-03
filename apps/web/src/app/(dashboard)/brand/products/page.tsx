@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { Package, Plus, Edit2, Trash2, ChevronDown, ChevronRight, DollarSign } from 'lucide-react'
 import { ExportButton } from '@/components/ui/export-button'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
 

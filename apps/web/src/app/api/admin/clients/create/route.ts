@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-import { mxPhoneSchema } from '@/lib/utils/phone';
+import { mxPhoneSchema } from '@companeros/shared/utils/phone';
 
 /**
  * API Route para crear un nuevo cliente

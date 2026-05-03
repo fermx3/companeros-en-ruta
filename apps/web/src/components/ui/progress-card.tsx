@@ -1,7 +1,7 @@
 import React from 'react'
 import { Crown } from 'lucide-react'
 import { Card } from './Card'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 export interface ProgressCardProps {
     currentTier: string

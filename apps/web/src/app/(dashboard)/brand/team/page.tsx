@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { displayPhone } from '@/lib/utils/phone';
+import { displayPhone } from '@companeros/shared/utils/phone';
 import { ExportButton } from '@/components/ui/export-button';
 import { usePageTitle } from '@/hooks/usePageTitle';
 

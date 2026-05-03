@@ -14,7 +14,7 @@ import { ExportButton } from '@/components/ui/export-button'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { ClickableRow } from '@/components/ui/clickable-row'
 import { ListItemActions } from '@/components/ui/list-item-actions'
-import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@/lib/types/database'
+import type { SurveyStatusEnum, SurveyTargetRoleEnum } from '@companeros/shared/types/database'
 
 interface SurveyListItem {
   id: string

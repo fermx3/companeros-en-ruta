@@ -10,7 +10,7 @@ import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { SideNavigation } from '@/components/layout/SideNavigation';
 import { BottomNavigation } from '@/components/layout/bottom-navigation';
 import { clientNavConfig } from '@/lib/navigation-config';
-import { fullOwnerName } from '@/lib/utils/client';
+import { fullOwnerName } from '@companeros/shared/utils/client';
 
 interface ClientLayoutProps {
   children: React.ReactNode;

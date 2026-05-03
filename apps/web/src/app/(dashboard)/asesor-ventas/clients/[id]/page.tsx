@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { displayPhone, extractDigits } from '@/lib/utils/phone'
+import { displayPhone, extractDigits } from '@companeros/shared/utils/phone'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   Building2,
@@ -25,14 +25,14 @@ import {
   Plus,
   ExternalLink
 } from 'lucide-react'
-import { fullOwnerName } from '@/lib/utils/client'
+import { fullOwnerName } from '@companeros/shared/utils/client'
 import {
   GENDER_LABELS,
   EMPLOYEES_LABELS,
   SUPPLY_SOURCE_LABELS,
   formatBoolean,
   formatOnboardingDate,
-} from '@/lib/utils/onboarding-labels'
+} from '@companeros/shared/utils/onboarding-labels'
 
 interface ClientDetail {
   id: string

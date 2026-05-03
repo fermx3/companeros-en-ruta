@@ -14,8 +14,8 @@ import {
   DialogDescription
 } from '@/components/ui/dialog'
 import { ArrowLeft, ArrowRight, Save, CheckCircle2, MapPin, Store, Clock, AlertTriangle } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { fullOwnerName } from '@/lib/utils/client'
+import { cn } from '@companeros/shared/utils/cn'
+import { fullOwnerName } from '@companeros/shared/utils/client'
 
 interface VisitInfo {
   client?: {

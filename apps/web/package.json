@@ -16,6 +16,7 @@
     "test:all": "pnpm test && pnpm test:e2e"
   },
   "dependencies": {
+    "@companeros/shared": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/auth-helpers-nextjs": "0.10.0",
     "@supabase/ssr": "0.7.0",

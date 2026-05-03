@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { cn } from '@companeros/shared/utils/cn'
 
 interface ClickableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
   href: string

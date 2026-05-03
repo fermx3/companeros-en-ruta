@@ -1,8 +1,8 @@
 import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/lib/types/supabase';
+import type { Database } from '@companeros/shared/types/supabase';
 import { env } from '@/lib/env';
-import { resolveIdColumn } from '@/lib/utils/public-id';
+import { resolveIdColumn } from '@companeros/shared/utils/public-id';
 import type {
   AdminDashboardMetrics,
   RecentActivity,
@@ -20,7 +20,7 @@ import type {
   TenantUpdateForm,
   ApiResponse,
   PaginatedResponse
-} from '@/lib/types/admin';
+} from '@companeros/shared/types/admin';
 
 /**
  * Admin Service - Gestión completa para administradores

@@ -9,8 +9,8 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { Search, MapPin, Phone, Mail, Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { displayPhone } from '@/lib/utils/phone'
-import { fullOwnerName } from '@/lib/utils/client'
+import { displayPhone } from '@companeros/shared/utils/phone'
+import { fullOwnerName } from '@companeros/shared/utils/client'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function PromotorClientsPage() {

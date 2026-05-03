@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-import { mxPhoneSchema } from '@/lib/utils/phone';
-import { resolveIdColumn } from '@/lib/utils/public-id';
+import { mxPhoneSchema } from '@companeros/shared/utils/phone';
+import { resolveIdColumn } from '@companeros/shared/utils/public-id';
 
 /**
  * API Route para actualizar un cliente específico

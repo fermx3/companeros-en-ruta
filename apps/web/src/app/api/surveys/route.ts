@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { TargetingCriteria } from '@/lib/types/database'
-import { clientMatchesTargeting } from '@/lib/utils/targeting'
+import type { TargetingCriteria } from '@companeros/shared/types/database'
+import { clientMatchesTargeting } from '@companeros/shared/utils/targeting'
 
 export async function GET() {
   try {

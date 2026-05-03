@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
-import { resolveVisibilityConditions } from '@/lib/surveys/resolve-visibility-conditions'
+import { resolveVisibilityConditions } from '@companeros/shared/surveys/resolve-visibility-conditions'
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador',

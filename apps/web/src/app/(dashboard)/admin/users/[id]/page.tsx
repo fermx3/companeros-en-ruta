@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { displayPhone } from '@/lib/utils/phone';
+import { displayPhone } from '@companeros/shared/utils/phone';
 import { adminService } from '@/lib/services/adminService';
-import type { UserProfile, UserRoleRecord, Brand } from '@/lib/types/admin';
+import type { UserProfile, UserRoleRecord, Brand } from '@companeros/shared/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useToast } from '@/components/ui/toaster';
 

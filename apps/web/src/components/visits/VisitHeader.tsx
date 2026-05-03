@@ -1,7 +1,7 @@
 'use client'
 
 import { Card } from '@/components/ui/Card'
-import { fullOwnerName } from '@/lib/utils/client'
+import { fullOwnerName } from '@companeros/shared/utils/client'
 
 // ===========================================
 // Types

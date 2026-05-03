@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Workspace packages must be transpiled by Next so they ship .ts source.
+  transpilePackages: ['@companeros/shared'],
+
   typescript: {
     ignoreBuildErrors: false,
   },

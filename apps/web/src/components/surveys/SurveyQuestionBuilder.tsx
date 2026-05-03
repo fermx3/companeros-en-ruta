@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus, Trash2, ChevronUp, ChevronDown, Settings2 } from 'lucide-react'
-import type { SurveyQuestionTypeEnum, MultipleChoiceOption, VisibilityCondition, InputAttributes } from '@/lib/types/database'
+import type { SurveyQuestionTypeEnum, MultipleChoiceOption, VisibilityCondition, InputAttributes } from '@companeros/shared/types/database'
 import { normalizeMultipleChoiceOptions, normalizeScaleOptions } from './normalize-options'
 
 const QUESTION_TYPE_LABELS: Record<SurveyQuestionTypeEnum, string> = {

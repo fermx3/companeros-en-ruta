@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/feedback';
-import type { Client } from '@/lib/types/admin';
-import { fullOwnerName } from '@/lib/utils/client';
-import { displayPhone, extractDigits } from '@/lib/utils/phone';
+import type { Client } from '@companeros/shared/types/admin';
+import { fullOwnerName } from '@companeros/shared/utils/client';
+import { displayPhone, extractDigits } from '@companeros/shared/utils/phone';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { StatusType } from '@/types/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -19,7 +19,7 @@ import {
   SUPPLY_SOURCE_LABELS,
   formatBoolean,
   formatOnboardingDate,
-} from '@/lib/utils/onboarding-labels';
+} from '@companeros/shared/utils/onboarding-labels';
 
 /**
  * Página de detalle de cliente

@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, PageLoader, Alert } from '@/components/ui/feedback'
-import { displayPhone, extractDigits } from '@/lib/utils/phone'
+import { displayPhone, extractDigits } from '@companeros/shared/utils/phone'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { fullOwnerName } from '@/lib/utils/client'
+import { fullOwnerName } from '@companeros/shared/utils/client'
 import {
   ShoppingBag,
   Package,

@@ -14,7 +14,7 @@ import { useToast } from '@/components/ui/toaster'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import { TargetingBuilder } from '@/components/targeting/TargetingBuilder'
 import { TargetingSummary } from '@/components/targeting/TargetingSummary'
-import type { SurveyTargetRoleEnum, TargetingCriteria } from '@/lib/types/database'
+import type { SurveyTargetRoleEnum, TargetingCriteria } from '@companeros/shared/types/database'
 
 const STEPS = [
   { id: 'info', label: 'Información' },

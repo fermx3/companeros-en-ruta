@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner, Alert } from '@/components/ui/feedback';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { adminService } from '@/lib/services/adminService';
-import type { Brand, Zone, Distributor } from '@/lib/types/admin';
+import type { Brand, Zone, Distributor } from '@companeros/shared/types/admin';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 /**

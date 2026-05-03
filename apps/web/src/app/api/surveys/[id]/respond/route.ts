@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
-import type { SurveyTargetRoleEnum } from '@/lib/types/database'
-import { resolveIdColumn } from '@/lib/utils/public-id'
+import type { SurveyTargetRoleEnum } from '@companeros/shared/types/database'
+import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
 export async function POST(
   request: NextRequest,
