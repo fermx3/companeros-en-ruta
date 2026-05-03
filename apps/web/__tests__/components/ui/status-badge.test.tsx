@@ -7,7 +7,8 @@ describe('StatusBadge', () => {
 
         const badge = screen.getByText('ACTIVO')
         expect(badge).toBeInTheDocument()
-        expect(badge).toHaveClass('bg-green-100', 'text-green-700', 'border-green-200')
+        // Perfectapp design tokens. See apps/web/src/components/ui/status-badge.tsx.
+        expect(badge).toHaveClass('bg-[#e3fee8]', 'text-[#437b56]', 'border-[#c6efd0]')
     })
 
     it('renders pending status', () => {
@@ -21,7 +22,8 @@ describe('StatusBadge', () => {
         render(<StatusBadge status="completed" />)
 
         const badge = screen.getByText('COMPLETADO')
-        expect(badge).toHaveClass('bg-blue-100', 'text-blue-700', 'border-blue-200')
+        // text uses the secondary Perfectapp token (#4d71ed)
+        expect(badge).toHaveClass('bg-blue-100', 'text-[#4d71ed]', 'border-blue-200')
     })
 
     it('renders cancelled status', () => {

@@ -90,7 +90,7 @@ describe('QRActionCard', () => {
         render(<QRActionCard {...defaultProps} />)
 
         const button = screen.getByText('Escanear')
-        // ActionButton should have primary variant and sm size
-        expect(button.closest('button')).toHaveClass('bg-primary')
+        // ActionButton primary variant uses bg-primary-light (Perfectapp).
+        expect(button.closest('button')).toHaveClass('bg-primary-light')
     })
 })

@@ -53,23 +53,22 @@ describe('Authentication Flow Integration', () => {
   it('should complete full auth flow', async () => {
     const user = userEvent.setup()
 
-    // Renderizar login dentro del AuthProvider
     render(
       <AuthProvider>
         <LoginPage />
       </AuthProvider>
     )
 
-    // Verificar elementos del formulario
-    expect(screen.getByPlaceholderText('Email')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Contraseña')).toBeInTheDocument()
+    // The login form does an async session check on mount, then renders.
+    // The Perfectapp form uses 'correo@empresa.com' and a masked password
+    // placeholder; these are the canonical evidence of the form being mounted.
+    const emailInput = await screen.findByPlaceholderText('correo@empresa.com')
+    const passwordInput = screen.getByPlaceholderText('••••••••')
 
-    // Simular login
-    await user.type(screen.getByPlaceholderText('Email'), 'test@example.com')
-    await user.type(screen.getByPlaceholderText('Contraseña'), 'password123')
+    await user.type(emailInput, 'test@example.com')
+    await user.type(passwordInput, 'password123')
     await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
 
-    // Verificar que se llamó la función de login
     expect(mockSignInWithPassword).toHaveBeenCalledWith({
       email: 'test@example.com',
       password: 'password123',

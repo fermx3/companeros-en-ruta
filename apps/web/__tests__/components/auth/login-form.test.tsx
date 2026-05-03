@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { LoginForm } from '@/components/auth/login-form'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -26,41 +26,58 @@ describe('LoginForm', () => {
 
         mockCreateClient.mockReturnValue({
             auth: {
-                signInWithPassword: mockSignInWithPassword
+                // LoginForm probes for an existing session on mount to skip the form
+                // for already-authenticated users. Default: no session → form renders.
+                getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
+                signInWithPassword: mockSignInWithPassword,
             },
-            from: mockFrom
+            from: mockFrom,
         } as any)
     })
 
-    it('renders login form with branding', () => {
+    // The login form mounts a session check (`getSession`) and shows a loader
+    // until it resolves. Tests must `await` the form before interacting.
+    const findEmailInput = () => screen.findByPlaceholderText('correo@empresa.com')
+
+    it('renders login form with branding', async () => {
         render(<LoginForm />)
 
-        expect(screen.getByText('Compañeros')).toBeInTheDocument()
-        expect(screen.getByText('EN RUTA')).toBeInTheDocument()
+        await findEmailInput()
+        expect(screen.getByText('Compañeros en Ruta')).toBeInTheDocument()
         expect(screen.getByText(/Centraliza tu/)).toBeInTheDocument()
     })
 
-    it('renders email and password fields', () => {
+    it('renders email and password fields', async () => {
         render(<LoginForm />)
 
-        expect(screen.getByPlaceholderText('nombre@empresa.com')).toBeInTheDocument()
+        expect(await findEmailInput()).toBeInTheDocument()
         expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument()
     })
 
-    it('renders submit button', () => {
+    it('renders submit button', async () => {
         render(<LoginForm />)
 
+        await findEmailInput()
         expect(screen.getByRole('button', { name: /Iniciar Sesión/i })).toBeInTheDocument()
     })
 
     it('shows validation error for invalid email', async () => {
-        render(<LoginForm />)
+        const form = render(<LoginForm />)
 
-        const emailInput = screen.getByPlaceholderText('nombre@empresa.com')
-        const submitButton = screen.getByRole('button', { name: /Iniciar Sesión/i })
+        const emailInput = await findEmailInput() as HTMLInputElement
 
-        fireEvent.change(emailInput, { target: { value: 'invalid-email' } })
-        fireEvent.click(submitButton)
+        await act(async () => {
+            fireEvent.change(emailInput, { target: { value: 'invalid-email' } })
+        })
+
+        // Submit the form directly; clicking the type=submit button in jsdom
+        // sometimes fails to bubble through the shadcn-wrapped layout. Submitting
+        // the form element is the more reliable path and exercises the same
+        // RHF + Zod resolver pipeline.
+        const formEl = emailInput.closest('form')!
+        await act(async () => {
+            fireEvent.submit(formEl)
+        })
 
         await waitFor(() => {
             expect(screen.getByText('Email inválido')).toBeInTheDocument()
@@ -70,7 +87,7 @@ describe('LoginForm', () => {
     it('shows validation error for short password', async () => {
         render(<LoginForm />)
 
-        const emailInput = screen.getByPlaceholderText('nombre@empresa.com')
+        const emailInput = await findEmailInput()
         const passwordInput = screen.getByPlaceholderText('••••••••')
         const submitButton = screen.getByRole('button', { name: /Iniciar Sesión/i })
 
@@ -83,12 +100,12 @@ describe('LoginForm', () => {
         })
     })
 
-    it('toggles password visibility', () => {
+    it('toggles password visibility', async () => {
         render(<LoginForm />)
 
+        await findEmailInput()
         const passwordInput = screen.getByPlaceholderText('••••••••') as HTMLInputElement
         const allButtons = screen.getAllByRole('button')
-        // Find the toggle button (not the submit button)
         const toggleButton = allButtons.find(btn => (btn as HTMLButtonElement).type === 'button' && !btn.textContent?.includes('Iniciar'))
 
         expect(passwordInput.type).toBe('password')
@@ -110,7 +127,7 @@ describe('LoginForm', () => {
 
         render(<LoginForm />)
 
-        const emailInput = screen.getByPlaceholderText('nombre@empresa.com')
+        const emailInput = await findEmailInput()
         const passwordInput = screen.getByPlaceholderText('••••••••')
         const submitButton = screen.getByRole('button', { name: /Iniciar Sesión/i })
 
@@ -141,7 +158,7 @@ describe('LoginForm', () => {
 
         render(<LoginForm />)
 
-        const emailInput = screen.getByPlaceholderText('nombre@empresa.com')
+        const emailInput = await findEmailInput()
         const passwordInput = screen.getByPlaceholderText('••••••••')
         const submitButton = screen.getByRole('button', { name: /Iniciar Sesión/i })
 
@@ -161,32 +178,39 @@ describe('LoginForm', () => {
 
         render(<LoginForm />)
 
-        const emailInput = screen.getByPlaceholderText('nombre@empresa.com')
+        const emailInput = await findEmailInput()
         const passwordInput = screen.getByPlaceholderText('••••••••')
         const submitButton = screen.getByRole('button', { name: /Iniciar Sesión/i })
 
-        fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-        fireEvent.change(passwordInput, { target: { value: 'password123' } })
-        fireEvent.click(submitButton)
+        await act(async () => {
+            fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+            fireEvent.change(passwordInput, { target: { value: 'password123' } })
+        })
+        await act(async () => {
+            fireEvent.click(submitButton)
+        })
 
-        // Button should be disabled during loading
-        expect(submitButton).toBeDisabled()
+        await waitFor(() => {
+            expect(submitButton).toBeDisabled()
+        })
     })
 
-    it('has icons in input fields', () => {
+    it('has icons in input fields', async () => {
         const { container } = render(<LoginForm />)
 
-        // Should have Mail and Lock icons
+        await findEmailInput()
         const icons = container.querySelectorAll('svg')
         expect(icons.length).toBeGreaterThan(0)
     })
 
-    it('has mobile-first design with rounded-xl inputs', () => {
+    it('has mobile-first design with rounded inputs', async () => {
         const { container } = render(<LoginForm />)
 
+        await findEmailInput()
         const inputs = container.querySelectorAll('input')
         inputs.forEach(input => {
-            expect(input).toHaveClass('rounded-xl')
+            // Perfectapp login uses rounded-full pills, h-12 inputs
+            expect(input).toHaveClass('rounded-full')
             expect(input).toHaveClass('h-12')
         })
     })

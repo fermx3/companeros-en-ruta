@@ -64,7 +64,8 @@ describe('BottomNavigation', () => {
         render(<BottomNavigation entries={promotorNavConfig.entries} />)
 
         const homeLink = screen.getByText('Inicio').closest('a')
-        expect(homeLink).toHaveClass('text-primary', 'bg-primary/5')
+        // Perfectapp bottom nav: active item uses text-primary only (no bg pill)
+        expect(homeLink).toHaveClass('text-primary')
     })
 
     it('has correct styling for inactive items', () => {
@@ -74,7 +75,8 @@ describe('BottomNavigation', () => {
         render(<BottomNavigation entries={promotorNavConfig.entries} />)
 
         const visitsLink = screen.getByText('Visitas').closest('a')
-        expect(visitsLink).toHaveClass('text-muted-foreground')
+        // Inactive items: navy text with primary on hover (Perfectapp tokens)
+        expect(visitsLink).toHaveClass('text-navy')
     })
 
     it('is fixed at bottom with correct z-index', () => {
