@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification, createBulkNotifications } from '@/lib/notifications'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type UserRoleType = Database['public']['Enums']['user_role_type_enum']
 
 export async function POST(
   request: NextRequest,
@@ -150,7 +153,7 @@ async function notifyTargetedRespondents(
       .from('user_roles')
       .select('user_profile_id')
       .eq('tenant_id', survey.tenant_id)
-      .in('role', dbRoles as any)
+      .in('role', dbRoles as UserRoleType[])
       .eq('status', 'active')
       .is('deleted_at', null)
 

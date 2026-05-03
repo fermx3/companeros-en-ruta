@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type SurveyStatus = Database['public']['Enums']['survey_status_enum']
 
 async function getAdminProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -85,10 +88,10 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (status && status !== 'all') {
-      query = query.eq('survey_status', status as any)
+      query = query.eq('survey_status', status as SurveyStatus)
     } else {
       // Admin should not see drafts — those belong to brand managers
-      query = query.neq('survey_status', 'draft' as any)
+      query = query.neq('survey_status', 'draft' as SurveyStatus)
     }
 
     if (search) {
@@ -103,9 +106,9 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      countQuery = countQuery.eq('survey_status', status as any)
+      countQuery = countQuery.eq('survey_status', status as SurveyStatus)
     } else {
-      countQuery = countQuery.neq('survey_status', 'draft' as any)
+      countQuery = countQuery.neq('survey_status', 'draft' as SurveyStatus)
     }
     if (search) {
       countQuery = countQuery.or(`title.ilike.%${search}%,public_id.ilike.%${search}%`)
@@ -125,7 +128,7 @@ export async function GET(request: NextRequest) {
       .from('surveys')
       .select('survey_status')
       .eq('tenant_id', tenantId)
-      .neq('survey_status', 'draft' as any)
+      .neq('survey_status', 'draft' as SurveyStatus)
       .is('deleted_at', null)
 
     const metrics = {
@@ -135,8 +138,13 @@ export async function GET(request: NextRequest) {
       closed: metricsData?.filter(s => s.survey_status === 'closed').length || 0
     }
 
-    // Map response_count from the nested count query
-    const surveysWithCount = (surveys || []).map((s: any) => ({
+    // Map response_count from the nested count query.
+    // The select projection includes `survey_responses(count)` which Supabase
+    // types as a tuple; narrow without `any`.
+    type SurveyRow = NonNullable<typeof surveys>[number] & {
+      survey_responses?: { count: number }[] | null
+    }
+    const surveysWithCount = ((surveys || []) as SurveyRow[]).map((s) => ({
       ...s,
       response_count: s.survey_responses?.[0]?.count ?? 0,
       survey_responses: undefined

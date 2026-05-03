@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch brands separately since there's no FK relationship
     const brandIds = [...new Set(visits?.map(v => v.brand_id).filter(Boolean))]
-    let brandsMap: Record<string, { id: string; name: string; logo_url: string | null }> = {}
+    const brandsMap: Record<string, { id: string; name: string; logo_url: string | null }> = {}
 
     if (brandIds.length > 0) {
       const { data: brands } = await supabase

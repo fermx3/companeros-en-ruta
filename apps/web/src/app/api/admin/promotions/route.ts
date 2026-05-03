@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type PromotionStatus = Database['public']['Enums']['promotion_status_enum']
 
 // Helper to get admin profile from auth
 async function getAdminProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -131,7 +134,7 @@ export async function GET(request: NextRequest) {
 
     // Apply status filter
     if (status && status !== 'all') {
-      query = query.eq('status', status as any)
+      query = query.eq('status', status as PromotionStatus)
     }
 
     // Apply brand filter
@@ -152,7 +155,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
 
     if (status && status !== 'all') {
-      countQuery = countQuery.eq('status', status as any)
+      countQuery = countQuery.eq('status', status as PromotionStatus)
     }
 
     if (brandId) {

@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     // Get employee counts per distributor
     const distributorIds = (distributors || []).map(d => d.id);
-    let employeeCounts: Record<string, number> = {};
+    const employeeCounts: Record<string, number> = {};
 
     if (distributorIds.length > 0) {
       const { data: employees } = await serviceSupabase

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { resolveAdminAuth, isAdminAuthError, adminAuthErrorResponse } from '@/lib/api/admin-auth'
+import type { Database } from '@companeros/shared/types/supabase'
+
+type OrderStatus = Database['public']['Enums']['order_status_enum']
+type VisitOrderStatus = Database['public']['Enums']['visit_order_status_enum']
+type SourceChannel = Database['public']['Enums']['order_source_channel_enum']
 
 interface AdminOrder {
   id: string
@@ -90,14 +95,14 @@ export async function GET(request: NextRequest) {
               .eq('tenant_id', tenantId)
               .is('deleted_at', null)
 
-            if (status && status !== 'all') ordersQuery = ordersQuery.eq('order_status', status as any)
+            if (status && status !== 'all') ordersQuery = ordersQuery.eq('order_status', status as OrderStatus)
             if (clientId) ordersQuery = ordersQuery.eq('client_id', clientId)
             if (brandId) ordersQuery = ordersQuery.eq('brand_id', brandId)
             if (distributorId) ordersQuery = ordersQuery.eq('distributor_id', distributorId)
             if (assignedTo) ordersQuery = ordersQuery.eq('assigned_to', assignedTo)
             if (dateFrom) ordersQuery = ordersQuery.gte('order_date', dateFrom)
             if (dateTo) ordersQuery = ordersQuery.lte('order_date', dateTo)
-            if (sourceChannel) ordersQuery = ordersQuery.eq('source_channel', sourceChannel as any)
+            if (sourceChannel) ordersQuery = ordersQuery.eq('source_channel', sourceChannel as SourceChannel)
             if (search) ordersQuery = ordersQuery.ilike('order_number', `%${search}%`)
             ordersQuery = ordersQuery.order('created_at', { ascending: false })
 
@@ -123,7 +128,7 @@ export async function GET(request: NextRequest) {
               .eq('tenant_id', tenantId)
               .is('deleted_at', null)
 
-            if (status && status !== 'all') visitQuery = visitQuery.eq('order_status', status as any)
+            if (status && status !== 'all') visitQuery = visitQuery.eq('order_status', status as VisitOrderStatus)
             if (clientId) visitQuery = visitQuery.eq('client_id', clientId)
             if (dateFrom) visitQuery = visitQuery.gte('order_date', dateFrom)
             if (dateTo) visitQuery = visitQuery.lte('order_date', dateTo)

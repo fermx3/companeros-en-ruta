@@ -162,7 +162,7 @@ export async function PUT(
     }
 
     // Update sections if provided (must be done BEFORE questions for FK references)
-    let sectionIdMap: Record<string, string> = {}
+    const sectionIdMap: Record<string, string> = {}
     if (sections !== undefined) {
       // Delete existing sections (CASCADE will null out question section_id references)
       await supabase.from('survey_sections').delete().eq('survey_id', currentSurvey.id)
@@ -196,7 +196,7 @@ export async function PUT(
     }
 
     // Update questions if provided
-    let questionIdMap: Record<string, string> = {}
+    const questionIdMap: Record<string, string> = {}
     if (questions !== undefined) {
       // Delete existing questions
       await supabase.from('survey_questions').delete().eq('survey_id', currentSurvey.id)

@@ -117,17 +117,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Verificar que las referencias (zone, market, etc.) pertenecen al tenant
+    // Verificar que las referencias (zone, market, etc.) pertenecen al tenant.
+    // `as const` narrows each `table` to a literal so `.from()` accepts it.
     const referencesToValidate = [
       { table: 'zones', id: validatedData.zone_id, name: 'zona' },
       { table: 'markets', id: validatedData.market_id, name: 'mercado' },
       { table: 'client_types', id: validatedData.client_type_id, name: 'tipo de cliente' },
       { table: 'commercial_structures', id: validatedData.commercial_structure_id, name: 'estructura comercial' }
-    ];
+    ] as const;
 
     for (const ref of referencesToValidate) {
       const { data, error } = await serviceSupabase
-        .from(ref.table as any)
+        .from(ref.table)
         .select('id')
         .eq('id', ref.id)
         .eq('tenant_id', profile.tenant_id)

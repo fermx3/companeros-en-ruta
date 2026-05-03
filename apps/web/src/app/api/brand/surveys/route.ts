@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create sections (before questions, for FK references)
-    let sectionIdMap: Record<string, string> = {}
+    const sectionIdMap: Record<string, string> = {}
     if (sections.length > 0) {
       const sectionRows = sections.map((s: { title: string; description?: string; sort_order: number; visibility_condition?: unknown }, idx: number) => ({
         survey_id: newSurvey.id,
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create questions
-    let questionIdMap: Record<string, string> = {}
+    const questionIdMap: Record<string, string> = {}
     if (questions.length > 0) {
       const questionRows = questions.map((q: { question_text: string; question_type: string; is_required?: boolean; sort_order: number; options?: unknown; section_sort_order?: number; section_id?: string; input_attributes?: unknown }, idx: number) => ({
         survey_id: newSurvey.id,

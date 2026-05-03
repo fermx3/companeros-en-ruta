@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import type { Database } from '@companeros/shared/types/supabase';
 import { mxPhoneSchema } from '@companeros/shared/utils/phone';
 
 /**
@@ -85,18 +86,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createClientSchema.parse(body);
 
-    // Verificar que las referencias (zone, market, etc.) pertenecen al tenant
+    // Verificar que las referencias (zone, market, etc.) pertenecen al tenant.
+    // `as const` narrows each `table` to a literal so `.from()` accepts it.
     const serviceSupabase = createServiceClient();
     const referencesToValidate = [
       { table: 'zones', id: validatedData.zone_id, name: 'zona' },
       { table: 'markets', id: validatedData.market_id, name: 'mercado' },
       { table: 'client_types', id: validatedData.client_type_id, name: 'tipo de cliente' },
       { table: 'commercial_structures', id: validatedData.commercial_structure_id, name: 'estructura comercial' }
-    ];
+    ] as const;
 
     for (const ref of referencesToValidate) {
       const { data, error } = await serviceSupabase
-        .from(ref.table as any)
+        .from(ref.table)
         .select('id')
         .eq('id', ref.id)
         .eq('tenant_id', profile.tenant_id)
@@ -164,7 +166,7 @@ export async function POST(request: NextRequest) {
 
     const { data: newClient, error: insertError } = await serviceSupabase
       .from('clients')
-      .insert(clientData as any)
+      .insert(clientData as unknown as Database['public']['Tables']['clients']['Insert'])
       .select('*')
       .single();
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@companeros/shared/types/supabase'
 
 /**
  * Admin CRUD for KPI definitions
@@ -9,7 +11,7 @@ import { createClient } from '@/lib/supabase/server'
  * DELETE — deactivate a KPI definition (id in body)
  */
 
-async function resolveAdminAuth(supabase: any) {
+async function resolveAdminAuth(supabase: SupabaseClient<Database>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return { error: 'Usuario no autenticado', status: 401 }
 
@@ -27,7 +29,7 @@ async function resolveAdminAuth(supabase: any) {
     .select('role, status')
     .eq('user_profile_id', profile.id)
 
-  const isAdmin = roles?.some((r: any) => r.status === 'active' && r.role === 'admin')
+  const isAdmin = roles?.some((r) => r.status === 'active' && r.role === 'admin')
   if (!isAdmin) return { error: 'Acceso no autorizado', status: 403 }
 
   return { user, tenantId: profile.tenant_id }
@@ -127,7 +129,7 @@ export async function PATCH(request: NextRequest) {
     if (!id) return NextResponse.json({ error: 'id es requerido' }, { status: 400 })
 
     // Only allow specific fields
-    const allowed: Record<string, any> = {}
+    const allowed: Record<string, unknown> = {}
     if (updates.label !== undefined) allowed.label = updates.label
     if (updates.description !== undefined) allowed.description = updates.description
     if (updates.icon !== undefined) allowed.icon = updates.icon

@@ -107,9 +107,9 @@ export async function GET(request: NextRequest) {
       monthly_quota: number | null
       performance_rating: number | null
     }> = {}
-    let visitCounts: Record<string, number> = {}
+    const visitCounts: Record<string, number> = {}
     let orderCounts: Record<string, number> = {}
-    let lastActivity: Record<string, string | null> = {}
+    const lastActivity: Record<string, string | null> = {}
 
     if (userProfileIds.length > 0) {
       const [assignmentsResult, visitsResult, ordersResult] = await Promise.all([
