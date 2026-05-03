@@ -1,342 +1,229 @@
-# CLAUDE.md
+# CLAUDE.md — Compañeros en Ruta
 
-## Project Context — Compañeros en Ruta
-
-This repository contains a **production-grade, multi-tenant SaaS** built with **Next.js (App Router)** and **Supabase** as the backend platform. The system is architected around **strict database-driven design**, with **PostgreSQL + Row Level Security (RLS)** as the core enforcement layer for multi-tenancy and access control.
-
-This file defines **non-negotiable rules** for how Claude must operate when working in this repository.
+> **You are a Staff-level production engineer.** Accuracy, multi-tenant safety, and verification are mandatory. Speed without certainty is failure.
 
 ---
 
-## 🚨 NON‑NEGOTIABLE RULES (READ FIRST)
+## 0. AGENT IDENTITY
 
-### 1. Schema Truth & No Guessing
+You operate inside a **production multi-tenant SaaS** built with Next.js 16 (App Router) + Supabase (PostgreSQL + RLS). Every line of code must respect:
 
-* You **MUST NOT assume** any table, column, type, relation, policy, view, function, or enum.
-* You **MUST base all schema-dependent work** on the **current project state**, using the following hierarchy:
+- Strict tenant isolation (`tenant_id` everywhere)
+- Row Level Security (RLS) — never bypass
+- Migration-first database changes
+- Strict TypeScript (no `any` shortcuts beyond what already exists)
+- The actual schema in `src/lib/types/supabase.ts` and `src/lib/types/database.ts`
 
-  1. **`src/lib/types/database.ts`** — Primary reference for column names, field types, and relationships when writing TypeScript code (frontend/API)
-  2. **Versioned migrations in this repo** — Authoritative for DDL, structural understanding, and schema history
-  3. **Local Supabase Postgres instance (Docker)** — Runtime verification, built from migrations
-  4. **Hosted Supabase DB** — Final production checks when needed
-
-The working assumption for this repository is:
-
-* The schema is controlled via migrations.
-* No one is changing the database structure outside this repository.
-* The types file (`src/lib/types/database.ts`) maps 1:1 to the DB schema and is kept in sync with migrations.
-* Therefore, the **types file + migrations + local Supabase DB** represent the **most current schema** when kept in sync.
-
-For **TypeScript code tasks** (queries, data access, API routes, components), consulting the types file is sufficient for column/field verification.
-
-For **structural changes** (DDL, new tables, RLS, migrations), you must verify against migrations and/or the local DB.
-
-If you have not verified the schema from **at least one of these sources**, you are operating on invalid assumptions.
-
-**DO NOT PROCEED.**
+Your role is to plan → verify → implement → validate. **Never guess.**
 
 ---
 
-### 2. Connection Policy (Local-First, Remote When Needed)
+## 1. NON-NEGOTIABLE HARD RULES
 
-You **MUST NOT perform full database dumps repeatedly**.
+### 1.1 Schema truth
 
-#### Default workflow: Local-first
+- **NEVER** assume table/column/enum/policy names. Read them from:
+  1. `src/lib/types/database.ts` (canonical for app code)
+  2. `src/lib/types/supabase.ts` (generated from DB)
+  3. `supabase/migrations/*.sql` (authoritative DDL)
+  4. Local Supabase Docker DB (runtime truth)
+- If you can't verify from at least one of the above → **STOP.**
 
-You **MUST** use one of these as the default verification sources:
+### 1.2 Multi-tenant isolation
 
-* **Supabase CLI + local Supabase (Docker)** (preferred)
-* **Local PostgreSQL connection** to the Supabase Docker DB
+- Every query that touches a tenant-scoped table **MUST** filter by `tenant_id`.
+- Tenant-scoped tables (non-exhaustive): `clients`, `visits`, `orders`, `products`, `brands`, `user_profiles`, `user_roles`, `qr_codes`, `notifications`, `surveys`, `promotions`, `client_assignments`, `client_brand_memberships`, `zones`.
+- **Never** trust `tenant_id` from the request body. Derive it from the authenticated user via `user_profiles.tenant_id`.
+- Cross-tenant data leakage = production incident. Treat with the same severity as an SQL injection.
 
-#### Remote Supabase connection
+### 1.3 RLS-first
 
-A direct connection to the hosted Supabase project is **NOT required for every task**.
+- Every table has RLS enabled.
+- **Never** disable RLS. **Never** use `service_role` key in user-facing flows.
+- `createServiceClient()` (in `src/lib/supabase/server.ts`) is reserved for admin/back-office operations that genuinely need to bypass RLS — document why each time.
 
-You **MUST connect to the hosted Supabase project** only when:
+### 1.4 No raw UUID exposure
 
-* the task is explicitly about **remote-only resources** (e.g., Edge Functions deployed state, storage buckets configuration, auth settings, project settings)
-* you are about to **ship** database changes and need a **final verification** against the hosted project
-* there is evidence of **schema drift** (local vs remote mismatch) or uncertainty
+- Every primary table has a `public_id` (e.g., `CLI-XXXX`, `VIS-XXXX`, `ORD-XXXX`).
+- URLs, exports, QR codes, and user-visible labels MUST use `public_id`.
+- Internal joins use `id`. Public surfaces use `public_id`.
+- If you find a route param that takes a raw UUID for user-visible navigation, surface it as a finding.
 
-Credentials may be used **only to establish connections** — never as a source of schema truth.
+### 1.5 Migration-first
 
-#### Available database scripts
+- ALL DB changes go through `supabase/migrations/` with format `YYYYMMDDHHMMSS_description.sql`.
+- Schema drift is a blocker. If you detect drift, retro-document it before adding new changes.
+- **Never** edit historical migrations.
 
-For local database management, the following scripts are available:
+### 1.6 Strict TypeScript
 
-* **Import local backup**: `bash ./scripts/import_local_backup.sh` - Imports code/data to the local database
-* **Export remote backup**: `bash ./scripts/export_remote_backup.sh` - Exports data from remote database
+- `tsconfig.json` enforces `strict: true`. Don't weaken it.
+- Import types from `@/lib/types/database` and `@/lib/types/supabase`.
+- `any` is a last resort and must be flagged in the PR description.
 
-#### If connection or sync fails
+### 1.7 Secrets
 
-If you cannot confirm schema from migrations/local DB **or** cannot complete a required remote verification:
-
-* ❌ Do NOT guess
-* ❌ Do NOT simulate schema
-* ❌ Do NOT continue implementation
-
-Instead:
-
-1. Stop immediately
-2. Explain **why** verification failed
-3. Provide **exact, actionable steps** to restore verification (local sync and/or remote access)
-
-**DO NOT CONTINUE UNTIL VERIFICATION IS RESTORED.**
-
----
-
-## 🗄️ REQUIRED DB SNAPSHOT (ONLY WHEN SCHEMA / RLS IS IMPACTED)
-
-When a task impacts database structure or access control, you **MUST base decisions on a verified snapshot**.
-
-**Fast path (no DDL impact):** If the task only involves reading/writing existing columns (no schema changes), consulting `src/lib/types/database.ts` is sufficient. A full DB snapshot is not required.
-
-### Preferred sources (in order)
-
-1. **`src/lib/types/database.ts`** (fast-path for TypeScript code tasks)
-2. **Repo migrations** (authoritative history)
-3. **Local Supabase DB (Docker)** built from migrations (authoritative current state)
-4. **Hosted Supabase DB** (verification when needed)
-
-### Minimum required understanding:
-
-* Tables
-* Columns
-* Column types
-* Views
-
-### Additionally (only if relevant, no overkill):
-
-* Foreign keys / relationships
-* RLS policies
-* Functions and triggers
-* Enums and extensions
-
-### Output rule
-
-* You are **not required** to print a full schema dump.
-* Only surface the relevant portion of the snapshot **when it impacts the proposed change**.
-* Your solution **must be derived from verified sources above**.
+- Never commit secrets, never log tokens, never hardcode keys. `src/lib/env.ts` is the only env entry point — extend it via Zod schemas.
 
 ---
 
-## 🧱 DATABASE CHANGES POLICY (MIGRATION-FIRST)
+## 2. MANDATORY WORKFLOW (BEFORE WRITING CODE)
 
-* **All database changes MUST be implemented via migrations**
-* Manual or implicit changes are not acceptable
+Run this checklist for EVERY non-trivial task:
 
-### Local-first change workflow
-
-When proposing database changes, you should assume this workflow:
-
-1. Create / update **versioned migrations** in the repo
-2. Apply them to the **local Supabase DB (Docker)**
-3. Validate behavior locally (including RLS implications)
-4. If the change is destined for production, perform a **final remote verification** step as required
-
-### If you cannot apply migrations yourself
-
-* Provide the **exact SQL migration** required
-* Clearly explain **why** you cannot apply it
-
-### Retro-documentation rule
-
-If changes are detected that were made previously without migrations:
-
-* You **MUST retro-document them** into proper migrations
-* This must happen **before any new changes** are introduced
-
----
-
-## 🔐 SECURITY RULES
-
-* Never hardcode secrets
-* Never log credentials or tokens
-* Prefer local, least-privilege authentication methods
-* Treat all tenant data as sensitive
-* Never weaken or bypass RLS for convenience
-
-Multi-tenancy isolation is a **hard requirement**, not an optimization.
-
----
-
-## ⚠️ COMMON SCHEMA PITFALLS (MUST READ)
-
-These are **frequently confused field names** that cause runtime errors. **ALWAYS** use the correct column names listed below.
-
-### user_profiles table
-
-| ❌ WRONG | ✅ CORRECT | Notes |
-|----------|------------|-------|
-| `auth_user_id` | `user_id` | Links to `auth.users.id` |
-| `full_name` | `first_name`, `last_name` | Concatenate for display: `${first_name} ${last_name}` |
-
-**Query example:**
-```typescript
-// ✅ CORRECT
-const { data } = await supabase
-  .from('user_profiles')
-  .select('tenant_id, first_name, last_name')
-  .eq('user_id', user.id)  // NOT auth_user_id!
-  .single()
+```
+[ ] 1. Read CLAUDE.md (this file)
+[ ] 2. Identify task type → load matching blueprint:
+       - new feature       → .claude/blueprints/feature-task.md
+       - bugfix            → .claude/blueprints/bugfix-task.md
+       - refactor          → .claude/blueprints/refactor-task.md
+[ ] 3. Identify domain skills required → load from .claude/skills/
+       (frontend, backend-apis, supabase-database, data-sql,
+        testing-qa, security, mobile, architecture)
+[ ] 4. Verify schema for affected tables (types/database.ts → migrations → local DB)
+[ ] 5. Identify affected RLS policies + tenant isolation surfaces
+[ ] 6. Run scripts/agent-workflow.md decision tree
+[ ] 7. Plan: list files to change, migrations needed, tests required
+[ ] 8. Confirm plan with user if scope is ambiguous
+[ ] 9. Implement
+[ ] 10. Validate (lint, type-check, tests, build)
+[ ] 11. Append non-obvious findings to LEARNINGS.md
 ```
 
-### visits table
+---
 
-| ❌ WRONG | ✅ CORRECT | Notes |
-|----------|------------|-------|
-| `status` | `visit_status` | Enum: `visit_status_enum`. Frontend maps it to `status` for convenience |
+## 3. REPO READING ORDER
 
-**Query example:**
-```typescript
-// ✅ CORRECT
-const { data } = await supabase
-  .from('visits')
-  .select('id, visit_status, promotor_id')
-  .eq('visit_status', 'in_progress')  // NOT status!
-  .eq('promotor_id', userProfile.id)
-```
+When entering this repo, read in this order:
 
-### orders table
+1. `CLAUDE.md` (this file) — rules
+2. `.claude/rules/*.md` — enforcement rules
+3. `.claude/skills/<relevant>.md` — domain knowledge
+4. `package.json` — stack & scripts
+5. `src/lib/types/database.ts` — schema reference
+6. `src/lib/supabase/{client,server,middleware}.ts` — Supabase client patterns
+7. `src/lib/api/*-auth.ts` — auth helpers per role
+8. `src/middleware.ts` — route protection
+9. `src/app/(dashboard)/<role>/` — role-scoped UI
+10. `src/app/api/<domain>/route.ts` — API patterns
+11. `supabase/migrations/` (latest 5–10) — recent schema changes
+12. `__tests__/` — testing patterns
 
-| ❌ WRONG | ✅ CORRECT | Notes |
-|----------|------------|-------|
-| `status` | `order_status` | Enum: `order_status_enum` |
-
-**Query example:**
-```typescript
-// ✅ CORRECT
-const { data } = await supabase
-  .from('orders')
-  .select('id, order_number, order_status, total_amount')
-  .eq('order_status', 'pending')  // NOT status!
-```
-
-### visit_orders table
-
-| ❌ WRONG | ✅ CORRECT | Notes |
-|----------|------------|-------|
-| `status` | `order_status` | Enum: `visit_order_status_enum` |
-
-**Query example:**
-```typescript
-// ✅ CORRECT
-const { data } = await supabase
-  .from('visit_orders')
-  .select('id, order_number, order_status')
-  .eq('visit_id', visitId)
-  .eq('order_status', 'draft')  // NOT status!
-```
-
-### TypeScript Types — Primary Code Reference
-
-`src/lib/types/database.ts` is the **primary source of truth** for column names and types when writing TypeScript code.
-
-**Before writing any Supabase query or data access code**, consult this file for correct field names.
-
-Always import and use types from `@/lib/types/database`:
-
-```typescript
-import type { UserProfile, Order, VisitOrder, VisitStageAssessment } from '@/lib/types/database'
-```
-
-**Maintenance rule**: When a migration adds, renames, or removes columns, the corresponding types in `src/lib/types/database.ts` **MUST be updated in the same commit**. Failing to do so creates drift between the schema and the codebase.
+Don't read everything. Read **only what the task requires**.
 
 ---
 
-## 🏗️ STACK & ARCHITECTURAL CONTEXT
+## 4. STACK SUMMARY (FROM PACKAGE.JSON)
 
-You are operating in the following environment:
+| Layer | Tech |
+|------|------|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Runtime | React 19 |
+| Language | TypeScript strict |
+| Styling | Tailwind CSS 4 + shadcn/ui (locally generated in `src/components/ui/`) |
+| Forms | react-hook-form + @hookform/resolvers + zod |
+| Backend | Supabase (`@supabase/ssr`, `@supabase/supabase-js`) |
+| Charts | recharts |
+| QR | html5-qrcode + qrcode.react |
+| Tests | jest + @testing-library/react + msw + playwright |
+| Deploy | Vercel |
 
-### Frontend
-
-* Next.js 16 (App Router, Turbopack)
-* React 19
-* TypeScript (strict)
-* Tailwind CSS 4 + shadcn/ui
-* Zod, React Hook Form, Recharts, date-fns
-
-### Backend / Platform
-
-* Supabase (PostgreSQL, Auth, Storage, Realtime, Edge Functions)
-* supabase-js v2
-* supabase-ssr
-
-### Architecture
-
-* Multi-tenant SaaS
-* Tenants → Brands → Users / Zones / Clients
-* RLS enforced on **all tables**
-
-You must respect:
-
-* Server Components vs Client Components boundaries
-* Server Actions data access patterns
-* RLS-aware querying at all times
+Path alias: `@/*` → `./src/*`.
 
 ---
 
-## 📚 SKILLS & BLUEPRINTS
+## 5. ARCHITECTURE INVARIANTS
 
-This repository contains project-specific guides in `.claude/`:
-
-### Skills (`.claude/skills/`)
-Detailed implementation guides for this project. **Consult before implementing**:
-* `api-integration.md` — Next.js Route Handlers + Supabase patterns
-* `frontend-design.md` — Design system, components, Tailwind + shadcn/ui
-* `supabase-database.md` — Multi-tenant DB architecture, schema, RLS
-
-### Blueprints (`.claude/blueprints/`)
-Task templates ensuring CLAUDE.md compliance:
-* `example-task.md` — Standard task structure with schema verification
-
-**These complement the general skills in `skills/` (backend-apis, frontend, data-sql, etc.)**
+- App Router with route groups: `(auth)` (public) and `(dashboard)` (protected).
+- Six role-scoped dashboards: `admin/`, `brand/`, `supervisor/`, `promotor/`, `asesor-ventas/`, `client/`.
+- API routes mirror dashboard structure: `src/app/api/{role}/...`.
+- Supabase clients:
+  - `src/lib/supabase/client.ts` → browser
+  - `src/lib/supabase/server.ts` → server components / route handlers (`createClient` + `createServiceClient`)
+  - `src/lib/supabase/middleware.ts` → session refresh + injects `x-supabase-user-id` header
+- Auth resolution helpers per role: `src/lib/api/{admin,asesor,brand,promotor}-auth.ts` — **prefer these** over re-implementing the `getUser → user_profiles → user_roles` chain.
+- Services for complex domain logic: `src/lib/services/{adminService,brandService,qrService,visitService}.ts`.
+- Shared utilities: `src/lib/utils/`, hooks in `src/hooks/`.
 
 ---
 
-## 🧪 QUALITY GATES (MANDATORY)
+## 6. KNOWN SCHEMA PITFALLS (MEMORIZE)
 
-Before considering any change complete, the solution must be compatible with:
+| Table | ❌ wrong | ✅ correct |
+|-------|---------|-----------|
+| `user_profiles` | `auth_user_id` | `user_id` (FK to `auth.users.id`) |
+| `user_profiles` | `full_name` | `first_name` + `last_name` |
+| `user_profiles` | `job_title` | `position` |
+| `user_roles` | `user_id` | `user_profile_id` |
+| `user_roles` | `is_active` | `status` enum + `deleted_at` soft-delete |
+| `clients` | `contact_name` | `owner_name` |
+| `clients` | `address_zip` | `address_postal_code` |
+| `client_assignments` | `promotor_id` / `user_id` | `user_profile_id` |
+| `products` | `code` | `sku` |
+| `visits` | `status` | `visit_status` (enum `visit_status_enum`) |
+| `visits` | `advisor_id` | `promotor_id` |
+| `orders` | `status` | `order_status` (enum `order_status_enum`) |
+| `visit_orders` | `status` | `order_status` (enum `visit_order_status_enum`) |
+| `tiers` | `points_threshold` | `min_points_required` |
 
-* Linting
-* Type checking
-* Unit / integration tests
-* Build process
-
-If a proposal would break any of these, you must surface it explicitly.
-
----
-
-## ⛔ BLOCKING CONDITIONS
-
-You must **STOP IMMEDIATELY** if:
-
-* The database schema cannot be verified
-* RLS implications are unclear
-* A change risks cross-tenant data leakage
-* A migration cannot be validated
-
-In these cases, explain the blocker and propose a safe resolution path.
+When in doubt, grep `src/lib/types/database.ts` for the table name.
 
 ---
 
-## 🧭 MAINTENANCE OF THIS FILE
+## 7. WHEN TO STOP AND ASK
 
-If architectural decisions change (database strategy, auth model, tenancy rules):
+You **MUST stop and ask the user** if:
 
-* This file **must be updated first**
-* Code changes should follow only after alignment
+1. The task requires DB changes but you can't access local Supabase / migrations.
+2. RLS implications are unclear (could a non-tenant user read/write?).
+3. The change spans roles you haven't seen used together (e.g. cross-role data sharing).
+4. A column you need does not exist in `database.ts` (assume it doesn't exist; ask before adding a migration).
+5. The user-supplied requirement contradicts an invariant (multi-tenancy, RLS, public_id, soft-delete).
+6. You'd need to use `service_role` outside `src/lib/services/` admin paths.
+7. A test would require disabling RLS — never do that silently.
+8. Mobile work would break the web — see `.claude/skills/mobile.md`.
 
-When in doubt:
-
-> **Inspect the database first.**
+**Never proceed with assumptions.** Stating an assumption explicitly is acceptable; acting on a silent one is not.
 
 ---
 
-## FINAL DIRECTIVE
+## 8. DEFINITION OF DONE
 
-You are expected to behave as a **senior production engineer**.
+A change is DONE only when ALL the following are true:
 
-Accuracy, safety, and verification are mandatory.
+- [ ] Plan was written and (if scope > trivial) confirmed with user
+- [ ] All affected tables/columns/enums verified against `database.ts` / migrations
+- [ ] Every new/modified query filters by `tenant_id` where required
+- [ ] RLS implications evaluated; if RLS changed → migration written
+- [ ] Public-facing identifiers use `public_id`, not raw UUIDs
+- [ ] TypeScript strict passes (`npm run build` or `tsc --noEmit`)
+- [ ] Lint passes (`npm run lint`)
+- [ ] Unit/integration tests added or updated; `npm run test` passes
+- [ ] If UI: dev server tested in browser (golden path + 1 edge case)
+- [ ] If migration: applied locally, validated, RLS tested for at least 2 roles
+- [ ] No `console.log` / debug statements left
+- [ ] No secrets / tokens introduced
+- [ ] LEARNINGS.md updated if anything non-obvious surfaced
 
-Speed without certainty is failure.
+If any of the above is not true, the task is **NOT done**. Report what's missing.
+
+---
+
+## 9. BLOCKING CONDITIONS — STOP IMMEDIATELY
+
+- Schema cannot be verified
+- RLS policy effects are uncertain
+- A change risks cross-tenant data leakage
+- A migration cannot be validated locally
+- Build, type-check, or lint fails for reasons you cannot explain
+- A required env var is missing in `src/lib/env.ts`
+
+Report the blocker, propose a resolution, do not continue.
+
+---
+
+## 10. FINAL DIRECTIVE
+
+> **Inspect the database first. Verify before you write. Filter by tenant. Respect RLS. Use public_id outward, UUID inward. Migrate, don't mutate.**
+
+If you remember nothing else, remember that.
