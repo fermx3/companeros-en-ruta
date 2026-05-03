@@ -3,6 +3,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@companeros/shared/types/supabase';
 import { env } from '@/lib/env';
 import { resolveIdColumn } from '@companeros/shared/utils/public-id';
+
+type Tables = Database['public']['Tables'];
+type BrandInsert = Tables['brands']['Insert'];
 import type {
   AdminDashboardMetrics,
   RecentActivity,
@@ -168,7 +171,10 @@ export class AdminService {
 
       // Map visits
       for (const v of visitsRes.data || []) {
-        const clientName = (v.client as any)?.business_name || 'Cliente';
+        // The select uses client:clients(business_name); supabase-js types this as
+        // an object or array depending on the relationship. Narrow safely.
+        const client = v.client as { business_name?: string | null } | { business_name?: string | null }[] | null;
+        const clientName = (Array.isArray(client) ? client[0]?.business_name : client?.business_name) || 'Cliente';
         activities.push({
           id: v.id,
           tenant_id: tenantId,
@@ -319,7 +325,7 @@ export class AdminService {
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-');
 
-      const brand: Partial<Brand> = {
+      const brand: BrandInsert = {
         public_id: publicId,
         name: brandData.name,
         slug,
@@ -337,7 +343,7 @@ export class AdminService {
 
       const { data, error } = await this.supabase
         .from('brands')
-        .insert(brand as any)
+        .insert(brand)
         .select()
         .single();
 
@@ -685,12 +691,16 @@ export class AdminService {
       throw new Error('Usuario no encontrado o sin permisos para modificar');
     }
 
+    // UserProfile uses Record<string, unknown> for `preferences` while the
+    // generated Supabase `Update` type expects strict `Json`. Cast to bridge
+    // the gap; the runtime values are JSON-serializable.
+    const update = {
+      ...userData,
+      updated_at: new Date().toISOString(),
+    } as unknown as Tables['user_profiles']['Update'];
     const { data, error } = await this.supabase
       .from('user_profiles')
-      .update({
-        ...userData,
-        updated_at: new Date().toISOString()
-      } as any)
+      .update(update)
       .eq('id', userId)
       .eq('tenant_id', tenantId)
       .select()
@@ -855,12 +865,16 @@ export class AdminService {
     try {
       const tenantId = await this.getCurrentTenantId();
 
+      // Tenant.settings is Record<string, unknown> while the generated Supabase
+      // Update type expects strict `Json`. Cast to bridge — runtime values are
+      // JSON-serializable.
+      const update = {
+        ...tenantData,
+        updated_at: new Date().toISOString(),
+      } as unknown as Tables['tenants']['Update'];
       const { data, error } = await this.supabase
         .from('tenants')
-        .update({
-          ...tenantData,
-          updated_at: new Date().toISOString()
-        } as any)
+        .update(update)
         .eq('id', tenantId)
         .select()
         .single();
@@ -1034,8 +1048,11 @@ export class AdminService {
       if (reviveError) throw new Error(`Error al asignar rol: ${reviveError.message}`);
       data = revived as unknown as UserRoleRecord;
     } else {
-      // Insert a new role record
-      const insertData: Record<string, unknown> = {
+      // Insert a new role record. Cast bridges:
+      //   - scope: typed locally as string, generated type narrows to a union
+      //   - zone_id: appended conditionally; omitted from the strict insert type
+      //     in the generated Supabase types but accepted at the SQL layer.
+      const insertData = {
         user_profile_id: userProfileId,
         tenant_id: tenantId,
         role: roleData.role,
@@ -1044,8 +1061,8 @@ export class AdminService {
         is_primary: shouldBePrimary,
         granted_by: currentUserProfile.id,
         granted_at: new Date().toISOString(),
-        status: 'active'
-      };
+        status: 'active',
+      } as Record<string, unknown>;
 
       if (roleData.zone_id) {
         insertData.zone_id = roleData.zone_id;
@@ -1053,7 +1070,7 @@ export class AdminService {
 
       const { data: inserted, error: insertError } = await this.supabase
         .from('user_roles')
-        .insert(insertData as any)
+        .insert(insertData as unknown as Tables['user_roles']['Insert'])
         .select()
         .single();
 

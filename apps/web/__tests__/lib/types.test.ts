@@ -1,4 +1,4 @@
-import { UserRole, User, Brand } from '@/lib/types'
+import type { UserRole, User, Brand } from '@companeros/shared/types'
 
 describe('Type Definitions', () => {
   it('should define correct UserRole types', () => {

@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Buscar el usuario por email
-      const existingUser = existingUsers.users?.find((user: any) => user.email === email);
+      const existingUser = existingUsers.users?.find((user) => user.email === email);
 
       if (!existingUser) {
         return NextResponse.json(
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       authUser = authData;
     }
 
-    let userWasCreatedNew = !authError?.message?.includes('User already registered') && !authError?.message?.includes('already exists');
+    const userWasCreatedNew = !authError?.message?.includes('User already registered') && !authError?.message?.includes('already exists');
 
     try {
       // 2. Verificar si ya existe el perfil o crearlo
