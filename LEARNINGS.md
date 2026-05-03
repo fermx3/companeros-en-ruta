@@ -100,17 +100,23 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
 - **Severity:** Low. Lint warnings, no runtime impact.
 - **Tracked in:** unmark `continue-on-error: true` from `Lint` step in `.github/workflows/test.yml` once fixed.
 
-#### B. Unit tests — 20 failures in CI without `.env.local`
+#### B. Unit tests — split into B1 (fixed) + B2 (open)
 
-- **Files:** mostly `__tests__/components/**`, `__tests__/integration/**`, `__tests__/lib/supabase/client.test.ts`
-- **Cause:** `apps/web/src/lib/env.web.ts` calls `parseSharedEnv(...)` at module evaluation. When jest imports any module that transitively pulls in `@/lib/env`, the Zod parse throws because CI has no `.env.local` and GH Secrets aren't injected for unit tests.
-- **Fix approach (pick one):**
-  1. **Best:** make `env.web.ts` lazy — export a getter `getEnv()` that parses on first call, not at import time. Tests can mock `getEnv` cleanly. Production behavior unchanged (first request still triggers parse, fails fast on missing secrets).
-  2. **Cheap:** add a `jest.setup.js` that sets dummy `process.env.NEXT_PUBLIC_*` values before any test imports run.
-  3. **Brittle:** add `SUPABASE_URL` etc. as GH Action env vars in the unit-test step (couples tests to real values).
-- **Effort:** Low (#2) to medium (#1). Recommend #1 for cleanliness; it also benefits mobile.
-- **Severity:** Medium. Tests aren't catching regressions in the affected modules.
-- **Tracked in:** unmark `continue-on-error: true` from `Unit + integration tests (apps/web)` step once fixed.
+##### B1 — env-import crashes in CI (FIXED 2026-05-03)
+
+- **Status:** ✅ Fixed in PR #13.
+- **Cause:** `apps/web/src/lib/env.web.ts` calls `parseSharedEnv(...)` at module load. CI lacked `.env.local` so any module that transitively imported `@/lib/env` crashed at import → 5 test files never even loaded.
+- **Fix:** `apps/web/jest.setup.js` now sets schema-valid dummies for all 6 env keys with the `||=` pattern, so local `.env.local` values still win when present.
+- **Result:** CI baseline went from 21 fail / 103 pass / 123 total to 21 fail / 107 pass / 128 total — matches local exactly.
+
+##### B2 — 21 stale unit tests (OPEN)
+
+- **Files affected (exact):** `__tests__/components/auth/login-form.test.tsx` (8 tests), `__tests__/app/(auth)/login/page.test.tsx` (4), `__tests__/components/layout/bottom-navigation.test.tsx` (2), `__tests__/components/ui/{action-button,request-card,status-badge,qr-action-card}.test.tsx` (mixed), `__tests__/integration/auth-flow.test.tsx` (1).
+- **Cause:** Tests assert old Tailwind class names (e.g. `bg-green-100 text-green-700`). Components migrated to the **Perfectapp design system** (e.g. `bg-[#e3fee8] text-[#437b56]`) — see commit `3da420a` and the Perfectapp UI overhaul. Test assertions never updated.
+- **Fix approach:** Update test assertions to match the new tokens. Where possible, assert on **semantic** outcomes (text content, role, aria-state) rather than class names — that prevents this kind of drift.
+- **Effort:** Medium — ~21 assertions across 7 files. Mechanical but needs care to avoid asserting on internal styling that may change again.
+- **Severity:** Medium. The components themselves are not broken; the tests are out of date and don't catch real regressions while they fail.
+- **Tracked in:** unmark `continue-on-error: true` from the `Unit + integration tests (apps/web)` step once these are updated.
 
 #### C. E2E Playwright — `next dev` fails to boot in CI without Supabase secrets
 
