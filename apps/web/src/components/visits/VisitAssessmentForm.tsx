@@ -17,7 +17,7 @@ interface VisitAssessmentFormProps {
       comments: string | null
     }
   }
-  onSave: (data: any) => Promise<void>
+  onSave: (data: Record<string, unknown>) => Promise<void>
 }
 
 export function VisitAssessmentForm({ visit, onSave }: VisitAssessmentFormProps) {
@@ -64,7 +64,7 @@ export function VisitAssessmentForm({ visit, onSave }: VisitAssessmentFormProps)
     }
   }
 
-  const updateField = (field: string, value: any) => {
+  const updateField = (field: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value

@@ -30,7 +30,7 @@ interface VisitInventoryFormProps {
   }
   brandId?: string
   products?: Product[]
-  onSave: (data: any) => Promise<void>
+  onSave: (data: { inventory_skipped: boolean; items: Array<{ product_id: string; current_stock: number; notes?: string | null }> }) => Promise<void>
 }
 
 export function VisitInventoryForm({ visit, brandId, products: propProducts, onSave }: VisitInventoryFormProps) {
@@ -100,7 +100,7 @@ export function VisitInventoryForm({ visit, brandId, products: propProducts, onS
     setInventoryItems(prev => prev.filter((_, i) => i !== index))
   }
 
-  const updateInventoryItem = (index: number, field: keyof InventoryItem, value: any) => {
+  const updateInventoryItem = (index: number, field: keyof InventoryItem, value: InventoryItem[keyof InventoryItem]) => {
     setInventoryItems(prev => prev.map((item, i) =>
       i === index ? { ...item, [field]: value } : item
     ))

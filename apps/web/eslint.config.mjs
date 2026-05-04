@@ -30,6 +30,9 @@ const eslintConfig = defineConfig([
       "react-hooks/exhaustive-deps": "warn",
       // refs is also in this same family.
       "react-hooks/refs": "warn",
+      // preserve-manual-memoization is the React Compiler signaling it
+      // skipped optimization; not a runtime bug.
+      "react-hooks/preserve-manual-memoization": "warn",
     },
   },
 ]);

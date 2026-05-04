@@ -58,8 +58,8 @@ Your role is to plan → verify → implement → validate. **Never guess.**
 ### 1.6 Strict TypeScript
 
 - `tsconfig.json` enforces `strict: true`. Don't weaken it.
-- Import types from `@/lib/types/database` and `@/lib/types/supabase`.
-- `any` is a last resort and must be flagged in the PR description.
+- Import types from `@companeros/shared/types/database` and `@companeros/shared/types/supabase`.
+- **`any` is forbidden.** CI lint is a hard gate; new `as any` / `: any` fails the workflow. Use the typed alternative documented in `.claude/rules/coding-standards.md` § "`any` is forbidden" — there's a recipe for every pattern (`Database['public']['Enums'][...]` for enum casts, `Tables[...]['Insert']` for inserts, `SupabaseClient<Database>` for function params, structural shapes for join projections, etc.). The only acceptable `any` is a `// eslint-disable-next-line @typescript-eslint/no-explicit-any` with a one-line rationale on the same line.
 
 ### 1.7 Secrets
 

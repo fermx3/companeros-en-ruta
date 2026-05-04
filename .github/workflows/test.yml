@@ -27,7 +27,6 @@ jobs:
 
       - name: Lint
         run: pnpm lint
-        continue-on-error: true
 
       - name: Unit + integration tests (apps/web)
         run: pnpm --filter=@companeros/web test:coverage

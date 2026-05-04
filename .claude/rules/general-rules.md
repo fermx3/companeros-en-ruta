@@ -25,6 +25,7 @@
 
 - **MUST NOT** push, commit, or merge directly to `master`. Always go through a feature branch + PR.
 - **MUST NOT** force-push to `master` under any circumstances. Force-push to feature branches is allowed only when necessary and not on shared branches.
+- **MUST NOT** introduce new `as any` / `: any` to silence the type-checker. See `.claude/rules/coding-standards.md` § "`any` is forbidden" — there is a typed alternative for every pattern in this codebase. CI lint is a hard gate; new `any` will fail the workflow.
 - **MUST NOT** assume table/column/enum names. Read them.
 - **MUST NOT** weaken RLS, disable policies, or bypass tenant filters "to make a test pass."
 - **MUST NOT** introduce `service_role` usage outside `apps/web/src/lib/services/` admin paths without explicit user approval.
