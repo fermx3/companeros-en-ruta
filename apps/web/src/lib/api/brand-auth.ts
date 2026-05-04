@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { resolveUserId } from './auth-resolver'
 
 interface BrandAuthSuccess {
   user: { id: string; email?: string }
@@ -37,26 +37,11 @@ export async function resolveBrandAuth(
   supabase: SupabaseClient,
   requestedBrandId?: string | null
 ): Promise<BrandAuthResult> {
-  // 1. Get authenticated user — prefer middleware-injected header to avoid redundant getUser()
-  let userId: string | undefined
-  try {
-    const h = await headers()
-    userId = h.get('x-supabase-user-id') || undefined
-  } catch {
-    // headers() not available outside request context — fallback below
+  const userId = await resolveUserId(supabase)
+  if (!userId) {
+    return { _type: 'brand_auth_error', message: 'Usuario no autenticado', status: 401 }
   }
-
-  let user: { id: string; email?: string }
-
-  if (userId) {
-    user = { id: userId }
-  } else {
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
-      return { _type: 'brand_auth_error', message: 'Usuario no autenticado', status: 401 }
-    }
-    user = authUser
-  }
+  const user: { id: string; email?: string } = { id: userId }
 
   // 2. Get user profile + roles in a single embedded query
   const { data: userProfile, error: profileError } = await supabase

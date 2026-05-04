@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { resolveUserId } from './auth-resolver'
 
 interface AsesorAuthSuccess {
   user: { id: string }
@@ -27,25 +27,11 @@ type AsesorAuthResult = AsesorAuthSuccess | AsesorAuthError
 export async function resolveAsesorAuth(
   supabase: SupabaseClient
 ): Promise<AsesorAuthResult> {
-  let userId: string | undefined
-  try {
-    const h = await headers()
-    userId = h.get('x-supabase-user-id') || undefined
-  } catch {
-    // headers() not available outside request context
+  const userId = await resolveUserId(supabase)
+  if (!userId) {
+    return { _type: 'asesor_auth_error', message: 'Usuario no autenticado', status: 401 }
   }
-
-  let user: { id: string }
-
-  if (userId) {
-    user = { id: userId }
-  } else {
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
-      return { _type: 'asesor_auth_error', message: 'Usuario no autenticado', status: 401 }
-    }
-    user = authUser
-  }
+  const user: { id: string } = { id: userId }
 
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')
