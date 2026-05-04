@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 // Helper to get promotor profile from auth
-async function getPromotorProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function getPromotorProfile(supabase: Awaited<Awaited<ReturnType<typeof createClient>>>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {

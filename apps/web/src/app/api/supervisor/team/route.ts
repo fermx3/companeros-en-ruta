@@ -16,7 +16,7 @@ interface TeamMember {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get('search') || ''
 

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
 // Helper to get promotor profile from auth
-async function getPromotorProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function getPromotorProfile(supabase: Awaited<Awaited<ReturnType<typeof createClient>>>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {

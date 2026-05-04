@@ -79,6 +79,16 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
 
 > Append below. Newest at top.
 
+### 2026-05-03 — `Authorization: Bearer` needs transport-level setup, not just JWT validation
+
+- **Context:** PR B (`feat/mobile-bootstrap`). The original PR A `auth-resolver` validated a Bearer access token via `supabase.auth.getUser(token)` and returned the user id. Smoke-testing against a real promotor account returned 200 → 404 with `"Perfil de usuario no encontrado"`. The token was valid; the lookup failed.
+- **Symptom:** `getUser(token)` returns the correct user, but the next `supabase.from('user_profiles').select(...)` query runs as the anonymous role (PostgREST sees no `Authorization` header). RLS hides every tenant row → `.single()` returns no data → 404.
+- **Root cause:** The route's `createClient()` returns the `@supabase/ssr` `createServerClient` wired to Next's cookie adapter. That client reads its session from cookies on every PostgREST request. Calling `getUser(token)` does **not** mutate the client's session, and `supabase.auth.setSession({ access_token, refresh_token: '' })` only writes to the cookie store (which is read-only inside route handlers in this setup), so the next REST call still goes out anonymous.
+- **Fix / Rule:** `apps/web/src/lib/supabase/server.ts` `createClient()` now reads `headers()` itself. If the request carries `Authorization: Bearer <token>`, it returns a vanilla `@supabase/supabase-js` client with `global.headers.Authorization` pre-bound to the Bearer token (and `persistSession: false`, no cookies). All subsequent `.from(...)` queries on that client run under the Bearer-derived JWT and RLS resolves correctly. The cookie/SSR client is still returned for cookie-only requests (web), so web behavior is unchanged. `createClient()` is now `async` because `headers()` is async — every server-side caller adds `await`, and helper signatures using `ReturnType<typeof createClient>` switch to `Awaited<ReturnType<typeof createClient>>`.
+- **Tags:** #api #auth #supabase #ssr #mobile #rls
+
+---
+
 ### 2026-05-03 — Cross-app `@types/react` minor must match (web ↔ mobile)
 
 - **Context:** PR B (`feat/mobile-bootstrap`). Adding `apps/mobile` with `@types/react: ~19.1` while `apps/web` had `~19.2` caused `apps/web/src/components/qr/brand-carousel.tsx` to fail typecheck with `Type '{ children: string; jsx: true; }' is not assignable to type DetailedHTMLProps<StyleHTMLAttributes<HTMLStyleElement>, HTMLStyleElement>` even though the file wasn't modified.

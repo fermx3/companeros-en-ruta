@@ -3,7 +3,7 @@ import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
 import { resolvePromotorAuth, isPromotorAuthError } from '@/lib/api/promotor-auth'
 
-type SupabaseServer = Awaited<ReturnType<typeof createClient>>
+type SupabaseServer = Awaited<Awaited<ReturnType<typeof createClient>>>
 
 // Promotor profile + the list of all active promotor brand IDs (one user can
 // be a promotor for multiple brands).

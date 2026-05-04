@@ -8,7 +8,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-async function verifyAdmin(supabase: ReturnType<typeof createClient>) {
+async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
     return { error: NextResponse.json({ error: 'No autorizado' }, { status: 401 }) };
@@ -48,7 +48,7 @@ async function verifyAdmin(supabase: ReturnType<typeof createClient>) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const supabase = createClient();
+    const supabase = await createClient();
     const auth = await verifyAdmin(supabase);
     if ('error' in auth && auth.error) return auth.error;
     const { profile } = auth as { profile: { id: string; tenant_id: string } };
@@ -129,7 +129,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const supabase = createClient();
+    const supabase = await createClient();
     const auth = await verifyAdmin(supabase);
     if ('error' in auth && auth.error) return auth.error;
     const { profile } = auth as { profile: { id: string; tenant_id: string } };

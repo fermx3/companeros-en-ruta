@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
 // Helper to get admin profile from auth
-async function getAdminProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function getAdminProfile(supabase: Awaited<Awaited<ReturnType<typeof createClient>>>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {

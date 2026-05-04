@@ -5,7 +5,7 @@ import type { Database } from '@companeros/shared/types/supabase'
 type PromotionStatus = Database['public']['Enums']['promotion_status_enum']
 
 // Helper to get admin profile from auth
-async function getAdminProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function getAdminProfile(supabase: Awaited<Awaited<ReturnType<typeof createClient>>>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {

@@ -9,7 +9,7 @@ import type { Database } from '@companeros/shared/types/supabase';
 export async function GET(request: NextRequest) {
   try {
     // Verificar autenticación
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
