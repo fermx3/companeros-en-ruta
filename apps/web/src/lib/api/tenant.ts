@@ -17,7 +17,7 @@ export async function getCurrentTenantId(): Promise<string> {
 
   try {
     // Usar el cliente normal que maneja cookies automáticamente
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Obtener usuario autenticado desde las cookies
     const { data: { user }, error: userError } = await supabase.auth.getUser();

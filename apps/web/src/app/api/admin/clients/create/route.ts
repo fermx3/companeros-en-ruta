@@ -42,7 +42,7 @@ const createClientSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Verificar autenticación usando client que puede leer cookies de sesión
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {

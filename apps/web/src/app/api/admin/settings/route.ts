@@ -3,7 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { tenantUpdateSchema } from '@companeros/shared/types/admin';
 import { z } from 'zod';
 
-async function verifyAdmin(supabase: ReturnType<typeof createClient>) {
+async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
     return { error: NextResponse.json({ error: 'No autorizado' }, { status: 401 }) };
@@ -42,7 +42,7 @@ async function verifyAdmin(supabase: ReturnType<typeof createClient>) {
  */
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const auth = await verifyAdmin(supabase);
     if ('error' in auth && auth.error) return auth.error;
     const { profile } = auth as { profile: { id: string; tenant_id: string } };
@@ -71,7 +71,7 @@ export async function GET() {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const auth = await verifyAdmin(supabase);
     if ('error' in auth && auth.error) return auth.error;
     const { profile } = auth as { profile: { id: string; tenant_id: string } };

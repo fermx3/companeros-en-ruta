@@ -11,6 +11,10 @@
     "NEXT_PUBLIC_BRAND_PANEL_BASE_URL",
     "NEXT_PUBLIC_ENABLE_DEMO_BRAND",
     "NEXT_PUBLIC_ENABLE_AI_INSIGHTS",
+    "EXPO_PUBLIC_SUPABASE_URL",
+    "EXPO_PUBLIC_SUPABASE_ANON_KEY",
+    "EXPO_PUBLIC_DEMO_TENANT_ID",
+    "EXPO_PUBLIC_WEB_API_BASE",
     "SUPABASE_SERVICE_ROLE_KEY",
     "NEXTAUTH_SECRET",
     "NEXTAUTH_URL",
@@ -24,6 +28,9 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
       "dependsOn": ["^build"]
     },
     "test": {

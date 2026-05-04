@@ -2,14 +2,7 @@
 
 ## Scope
 
-Constraints and patterns for migrating role-scoped flows from web (Next.js) to mobile (React Native / Expo) **without breaking the web app**.
-
-This skill is forward-looking: as of the current commit on `main`, the project is web-only (Next.js 16 + Tailwind). Mobile migration is anticipated. This document defines the rules so:
-
-1. New web code is **mobile-portable** by default.
-2. When mobile starts, the team has a clear playbook.
-
-If a mobile package (`apps/mobile`, `expo`, etc.) appears in the repo and contradicts this guide, follow the actual code and propose updating this skill.
+Constraints and patterns for the Expo (React Native) mobile app at `apps/mobile`. The mobile app shares the canonical contract with `apps/web` (Supabase RLS + the web Route Handlers under `apps/web/src/app/api/`). The web app must keep working at all times.
 
 ---
 
@@ -35,38 +28,44 @@ If the user asks for mobile work that would require restructuring web code today
 
 ---
 
-## Sharing Strategy (current monorepo)
-
-The repo is now a pnpm + turbo monorepo. The split that already exists:
+## Layout (post-bootstrap)
 
 ```
-packages/shared/                # @companeros/shared
-  src/types/                    # ✅ shared (database, supabase, admin, api, visits)
-  src/utils/                    # ✅ shared (cn, csv, phone, public-id, etc.)
-  src/surveys/                  # ✅ shared (resolve-visibility-conditions)
-  src/env/shared.ts             # ✅ neutral Zod schema (mobile maps EXPO_PUBLIC_* into it)
+packages/shared/                # @companeros/shared (DOM-free, RN-safe)
+  src/types/                    # database, supabase, admin, api, visits
+  src/utils/                    # cn, csv, phone, public-id, ...
+  src/surveys/                  # resolve-visibility-conditions
+  src/env/shared.ts             # neutral Zod schema (apps map EXPO_PUBLIC_* / NEXT_PUBLIC_* → SharedEnv)
 
-apps/web/src/lib/
-  api/                          # web-only — auth helpers use next/headers
-  supabase/                     # web-only — server.ts/middleware.ts use next/server
-  services/                     # NOT YET in shared. Phase-1 made constructors
-                                # injectable, so they can move when mobile lands.
-  env.ts, env.web.ts            # web-only — maps NEXT_PUBLIC_* onto SharedEnv
-  navigation-config.ts          # web-only — uses lucide-react
-  notifications.ts              # web-only — uses createServiceClient
+apps/web/                       # Next.js 16
+  src/lib/api/auth-resolver.ts  # accepts cookie + Bearer → resolveUserId(supabase)
+  src/lib/api/<role>-auth.ts    # all 4 helpers delegate to auth-resolver
 
-apps/web/src/components/ui/     # web-only (shadcn + Tailwind)
-apps/web/src/hooks/             # web-only
-
-apps/mobile/                    # to be created (PR 3, separate)
+apps/mobile/                    # Expo SDK 54 + Expo Router 6 + NativeWind 4
+  app/                          # file-based routes
+    _layout.tsx                 # root layout (QueryClientProvider, NativeWind css)
+    index.tsx                   # session-based redirect
+    (auth)/login.tsx            # email + password
+    (promotor)/visits.tsx       # promotor visit list
+    (promotor)/visits/[id].tsx  # detail (full impl in subsequent PR)
+  src/env.ts                    # parses EXPO_PUBLIC_* via parseSharedEnv
+  src/lib/supabase.ts           # SDK client + SecureStore adapter
+  src/lib/api.ts                # apiFetch<T>(path, init) — Bearer wrapper
+  src/lib/auth.ts               # useSession() hook + signOut()
+  src/lib/query.ts              # TanStack Query client
+  src/features/<domain>/api.ts  # useXxx hooks (TanStack Query)
+  metro.config.js               # monorepo resolution (watchFolders + nodeModulesPaths)
+  babel.config.js               # babel-preset-expo + nativewind/babel
+  tailwind.config.js            # nativewind preset + Perfectapp tokens
+  global.css                    # @tailwind directives, imported in app/_layout.tsx
 ```
 
-Mobile (Expo) will:
-- Consume `@companeros/shared` directly (Expo's metro bundler handles workspace TS via `transpilePackages` equivalents).
-- Have its own `src/env.ts` mapping `EXPO_PUBLIC_*` onto `SharedEnv`.
-- Have its own Supabase client wrapper using AsyncStorage / SecureStore.
-- Have its own auth helpers reading `Authorization: Bearer` instead of cookies.
-- Implement its own UI primitives (no shadcn).
+The mobile app:
+- Consumes `@companeros/shared` directly via Metro's monorepo config.
+- Has its own `src/env.ts` mapping `EXPO_PUBLIC_*` onto `SharedEnv`.
+- Has its own Supabase client wrapper using `expo-secure-store` for token persistence.
+- Calls the **web API** with `Authorization: Bearer <access_token>` rather than re-implementing route handlers.
+- Implements its own UI primitives with NativeWind (no shadcn).
 
 ---
 
@@ -108,18 +107,24 @@ The API routes under `apps/web/src/app/api/...` are the **public contract**. Mob
 
 ---
 
-## Auth Strategy (web vs mobile)
+## Auth Strategy
 
-| Concern | Web (today) | Mobile (future) |
-|---------|-------------|-----------------|
-| Session transport | HttpOnly cookies via `@supabase/ssr` | Access/refresh tokens stored in secure storage (Expo SecureStore / Keychain) |
-| Session refresh | Middleware (`apps/web/src/lib/supabase/middleware.ts`) | Supabase JS client auto-refresh |
-| User identity injection | `x-supabase-user-id` header injected in middleware | Bearer token verified server-side |
-| API auth helpers | `apps/web/src/lib/api/<role>-auth.ts` (use `next/headers`) | Mirror helpers that read `Authorization` header |
+| Concern | Web | Mobile |
+|---------|-----|--------|
+| Session transport | HttpOnly cookies via `@supabase/ssr` | Access/refresh tokens in `expo-secure-store` |
+| Session refresh | Middleware (`apps/web/src/lib/supabase/middleware.ts`) | `supabase.auth` auto-refresh |
+| User identity in API routes | `x-supabase-user-id` header injected by middleware | `Authorization: Bearer <access_token>` validated via `supabase.auth.getUser(token)` |
+| Server-side resolver | `apps/web/src/lib/api/auth-resolver.ts` → `resolveUserId(supabase)` (handles BOTH paths transparently) | (same — mobile calls the same web routes) |
+| Role guards | `apps/web/src/lib/api/<role>-auth.ts` (admin/asesor/brand/promotor) | (same — those helpers all delegate to `resolveUserId`) |
 
-When introducing the mobile client:
-1. Add a `apps/web/src/lib/api/<role>-auth-bearer.ts` (or extend the existing helpers) that reads `Authorization: Bearer` instead of cookies. Mobile calls the same web API routes; only the auth transport differs.
-2. Keep both code paths converged via a shared `verifyRoleFromToken(token)` core.
+**New API routes MUST go through one of the role helpers** (or, if the route is public/role-agnostic, through `resolveUserId` directly). Inline `supabase.auth.getUser()` in route handlers will only see cookie sessions and silently 401 mobile traffic.
+
+### Adding a new mobile screen that calls the web API
+
+1. Open or extend `apps/mobile/src/features/<domain>/api.ts` and add a TanStack Query hook calling `apiFetch<ResponseType>('/api/<role>/<endpoint>')`.
+2. `apiFetch` (`apps/mobile/src/lib/api.ts`) attaches `Authorization: Bearer ${session.access_token}` automatically. Don't re-implement.
+3. The web route's role helper will resolve the Bearer-derived user via `resolveUserId`. No web-side changes needed.
+4. If the web route doesn't yet use the role helper (it has its own inline `getUser()` chain), refactor it to use the helper in the same PR.
 
 ---
 
@@ -135,14 +140,13 @@ Avoid duplicating logic between mobile and `apps/web/src/app/api/...`. If a mobi
 
 ---
 
-## UI Sharing
+## UI
 
-Tailwind + shadcn does not run on React Native. Plan for:
+Mobile uses **NativeWind 4** (Tailwind for React Native). The Perfectapp design tokens live in `apps/mobile/tailwind.config.js` and mirror what `apps/web` uses (`primary`, `navy`, `success`, etc.). NativeWind's `className` prop is type-augmented via `apps/mobile/nativewind-env.d.ts`.
 
-- Mobile gets its own primitives library (e.g., `nativewind` + custom components).
-- Domain components (calendar, list, form) get **logic** shared via hooks/services and **rendering** kept platform-specific.
-
-Don't attempt to share `apps/web/src/components/ui/*` to mobile.
+- **Don't** import from `apps/web/src/components/ui/*` — those are shadcn / Tailwind for the DOM.
+- **Do** create RN primitives under `apps/mobile/src/components/ui/` when you have at least 2 callers.
+- Keep tokens in sync. If you add a token to web's Tailwind config, mirror it in `apps/mobile/tailwind.config.js`.
 
 ---
 
@@ -176,7 +180,7 @@ Don't attempt to share `apps/web/src/components/ui/*` to mobile.
 
 Stop and ask if:
 
-1. The user asks to "share code with mobile" but no mobile app exists yet.
-2. A change requires moving code out of `src/` into `packages/shared/` — discuss the migration plan first.
-3. A mobile-specific dependency is requested but the mobile app isn't initialized.
-4. The proposed mobile path conflicts with existing web behavior.
+1. A change requires moving code out of `apps/web/src/` into `packages/shared/` — discuss the migration plan first.
+2. The proposed mobile path conflicts with existing web behavior.
+3. You'd need to bypass `resolveUserId` / the role helpers in a new web route handler.
+4. A `@types/react` or `react` version bump is proposed in only one app — both apps must move together (see `MONOREPO.md` § "Cross-app `@types/react` alignment" and `LEARNINGS.md` 2026-05-03).

@@ -131,7 +131,7 @@ export async function POST(
 }
 
 async function notifyTargetedRespondents(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Awaited<Awaited<ReturnType<typeof createClient>>>,
   survey: { id: string; title: string; tenant_id: string; target_roles: string[] }
 ) {
   // Map survey target roles to user_roles role names

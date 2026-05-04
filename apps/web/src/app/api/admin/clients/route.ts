@@ -11,7 +11,7 @@ type Enums = Database['public']['Enums'];
 export async function GET(request: NextRequest) {
   try {
     // Verificar autenticación
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {

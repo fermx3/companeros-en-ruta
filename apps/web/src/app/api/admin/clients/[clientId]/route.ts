@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { clientId } = await params;
 
     // Verificar autenticación usando client que puede leer cookies de sesión
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -175,7 +175,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { clientId } = await params;
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -293,7 +293,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { clientId } = await params;
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {

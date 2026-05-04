@@ -4,7 +4,7 @@ import type { Database } from '@companeros/shared/types/supabase'
 
 type SurveyStatus = Database['public']['Enums']['survey_status_enum']
 
-async function getAdminProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function getAdminProfile(supabase: Awaited<Awaited<ReturnType<typeof createClient>>>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {

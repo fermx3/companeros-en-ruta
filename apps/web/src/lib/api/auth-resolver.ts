@@ -31,6 +31,11 @@ export async function resolveUserId(
     if (auth?.startsWith('Bearer ')) {
       const token = auth.slice('Bearer '.length).trim()
       if (token) {
+        // `createClient()` (apps/web/src/lib/supabase/server.ts) already
+        // pre-bound this token as the global Authorization header when it
+        // detected the Bearer scheme, so subsequent `.from(...)` queries on
+        // this client run with the Bearer-derived JWT and RLS resolves
+        // correctly. Here we only validate the JWT and extract the user id.
         const { data, error } = await supabase.auth.getUser(token)
         if (!error && data.user) return data.user.id
         return null

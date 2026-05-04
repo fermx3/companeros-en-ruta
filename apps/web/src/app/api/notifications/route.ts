@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
  * Staff users have a user_profile_id; client users have a client_id.
  * Returns the appropriate filter field and value.
  */
-async function resolveNotificationIdentity(supabase: ReturnType<typeof createClient>) {
+async function resolveNotificationIdentity(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return { error: 'No autorizado', status: 401 } as const;
 
@@ -42,7 +42,7 @@ async function resolveNotificationIdentity(supabase: ReturnType<typeof createCli
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const identity = await resolveNotificationIdentity(supabase);
 
     if ('error' in identity) {
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const identity = await resolveNotificationIdentity(supabase);
 
     if ('error' in identity) {
@@ -153,7 +153,7 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const identity = await resolveNotificationIdentity(supabase);
 
     if ('error' in identity) {

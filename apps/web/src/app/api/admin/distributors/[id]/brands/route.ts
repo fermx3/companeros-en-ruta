@@ -6,7 +6,7 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function verifyAdmin(supabase: Awaited<Awaited<ReturnType<typeof createClient>>>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { error: NextResponse.json({ error: 'No autorizado' }, { status: 401 }) }

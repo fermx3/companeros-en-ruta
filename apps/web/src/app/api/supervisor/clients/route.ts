@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get('search') || ''
     const promotorId = searchParams.get('promotor_id') || ''

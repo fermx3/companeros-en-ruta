@@ -1,53 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@companeros/shared/types/supabase'
 import { createClient } from '@/lib/supabase/server'
+import { resolvePromotorAuth, isPromotorAuthError } from '@/lib/api/promotor-auth'
 
-// Helper to get promotor profile from auth
-async function getPromotorProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+type SupabaseServer = Awaited<Awaited<ReturnType<typeof createClient>>>
 
-  if (authError || !user) {
-    return { error: { message: 'Usuario no autenticado', status: 401 } }
-  }
-
-  const { data: userProfile, error: profileError } = await supabase
-    .from('user_profiles')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (profileError || !userProfile) {
-    return { error: { message: 'Perfil de usuario no encontrado', status: 404 } }
+// Promotor profile + the list of all active promotor brand IDs (one user can
+// be a promotor for multiple brands).
+async function getPromotorProfile(supabase: SupabaseServer) {
+  const auth = await resolvePromotorAuth(supabase)
+  if (isPromotorAuthError(auth)) {
+    return { error: { message: auth.message, status: auth.status } }
   }
 
   const { data: roles } = await supabase
     .from('user_roles')
-    .select('id, role, status, brand_id, tenant_id')
-    .eq('user_profile_id', userProfile.id)
+    .select('brand_id')
+    .eq('user_profile_id', auth.userProfileId)
+    .eq('status', 'active')
+    .eq('role', 'promotor')
+    .is('deleted_at', null)
 
-  const promotorRole = roles?.find(role =>
-    role.status === 'active' && role.role === 'promotor'
-  )
-
-  if (!promotorRole) {
-    return { error: { message: 'Usuario no tiene rol de promotor activo', status: 403 } }
-  }
-
-  // Collect all brand IDs from active promotor roles
-  const promotorBrandIds = [...new Set(
-    (roles || [])
-      .filter(r => r.status === 'active' && r.role === 'promotor' && r.brand_id)
-      .map(r => r.brand_id as string)
-  )]
+  const promotorBrandIds = [
+    ...new Set((roles || []).map(r => r.brand_id).filter(Boolean) as string[]),
+  ]
 
   return {
-    user,
-    userProfile,
-    promotorRole,
-    promotorId: userProfile.id,
-    tenantId: promotorRole.tenant_id,
-    brandId: promotorRole.brand_id,
-    promotorBrandIds
+    user: auth.user,
+    promotorId: auth.userProfileId,
+    tenantId: auth.tenantId,
+    brandId: auth.brandId,
+    promotorBrandIds,
   }
 }
 
@@ -64,7 +47,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { user, promotorId } = result
+    const { promotorId } = result
 
     // Parse query params
     const searchParams = request.nextUrl.searchParams
@@ -218,7 +201,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { user, promotorId, tenantId, brandId, promotorBrandIds } = result
+    const { promotorId, tenantId, brandId, promotorBrandIds } = result
 
     const body = await request.json()
     const {
