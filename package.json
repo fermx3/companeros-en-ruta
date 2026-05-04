@@ -9,7 +9,10 @@
     "lint": "turbo lint",
     "test": "turbo test",
     "test:e2e": "pnpm --filter=@companeros/web test:e2e",
-    "test:db": "jest --config tests/database/jest.config.cjs"
+    "test:db": "jest --config tests/database/jest.config.cjs",
+    "mobile": "pnpm --filter=@companeros/mobile start",
+    "mobile:ios": "pnpm --filter=@companeros/mobile ios",
+    "mobile:android": "pnpm --filter=@companeros/mobile android"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.80.0",

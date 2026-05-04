@@ -1,13 +1,14 @@
 # Monorepo Setup
 
-This repo is a pnpm + turbo monorepo. The Next.js app lives at `apps/web`. Shared, UI-agnostic code (types, schemas, helpers) lives at `packages/shared` and is consumed via `@companeros/shared/...`.
+This repo is a pnpm + turbo monorepo. The Next.js web app lives at `apps/web`. The Expo (React Native) mobile app lives at `apps/mobile`. Shared, UI-agnostic code (types, schemas, helpers) lives at `packages/shared` and is consumed via `@companeros/shared/...`.
 
 ## Layout
 
 ```
 companeros-en-ruta/
 ├── apps/
-│   └── web/                Next.js 16 app (production)
+│   ├── web/                Next.js 16 app (production)
+│   └── mobile/             Expo (React Native) app — Promotor MVP
 ├── packages/
 │   └── shared/             types, utils, surveys, env schema (UI-agnostic)
 ├── supabase/               migrations + functions (cross-app)
@@ -35,8 +36,39 @@ pnpm --filter=@companeros/web test                # web jest suite
 pnpm test:db                                      # cross-app DB / RLS tests
 pnpm --filter=@companeros/web test:e2e            # Playwright
 
+pnpm mobile                                       # Expo dev server (apps/mobile)
+pnpm mobile:ios                                   # Boot iOS simulator
+pnpm mobile:android                               # Boot Android emulator
+
 pnpm turbo build                                  # build everything via turbo
 ```
+
+## Mobile app (apps/mobile)
+
+Expo SDK 54, React Native 0.81, Expo Router 6, NativeWind 4. Auth uses Supabase
+JS with `expo-secure-store` for token persistence; data is fetched from the
+**web API** with `Authorization: Bearer <access_token>` (the web auth helpers
+accept Bearer in addition to the cookie-based middleware header — see
+`apps/web/src/lib/api/auth-resolver.ts`).
+
+Required env (copy `apps/mobile/.env.example` → `apps/mobile/.env.local`):
+
+| Var | Purpose |
+|-----|---------|
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
+| `EXPO_PUBLIC_WEB_API_BASE` | Base URL of the web API (`http://localhost:3000` for dev, Vercel URL otherwise) |
+| `EXPO_PUBLIC_DEMO_TENANT_ID` | (optional) demo tenant UUID |
+
+Mobile-specific config files:
+
+- `metro.config.js` — points Metro at the monorepo root so it can resolve
+  `@companeros/shared`. `disableHierarchicalLookup` keeps Metro from walking
+  up past `apps/mobile/node_modules` and pulling in non-RN-safe packages.
+- `babel.config.js` — `babel-preset-expo` + `nativewind/babel`.
+- `tailwind.config.js` — NativeWind preset with Perfectapp tokens.
+- `global.css` — `@tailwind` directives, imported once in `app/_layout.tsx`.
+- `nativewind-env.d.ts` — ambient `className` prop types for RN components.
 
 ## Vercel deployment
 
@@ -73,3 +105,7 @@ These versions are pinned (no caret) because pnpm fresh resolution picked higher
 - `@supabase/ssr`: 0.7.0
 - `@supabase/auth-helpers-nextjs`: 0.10.0
 - `recharts`: 3.3.0
+
+## Cross-app `@types/react` alignment
+
+`apps/web` and `apps/mobile` must keep `@types/react` on the same minor (currently `~19.2`). When the two diverge, pnpm produces two `@types+react@<X>` directories and TypeScript resolves the styled-jsx augmentation against a different React types instance than the one the web app's tsc is using — the symptom is `<style jsx>` errors in `apps/web` even though the source hasn't changed. If you bump one app, bump the other in the same PR.

@@ -79,6 +79,16 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
 
 > Append below. Newest at top.
 
+### 2026-05-03 — Cross-app `@types/react` minor must match (web ↔ mobile)
+
+- **Context:** PR B (`feat/mobile-bootstrap`). Adding `apps/mobile` with `@types/react: ~19.1` while `apps/web` had `~19.2` caused `apps/web/src/components/qr/brand-carousel.tsx` to fail typecheck with `Type '{ children: string; jsx: true; }' is not assignable to type DetailedHTMLProps<StyleHTMLAttributes<HTMLStyleElement>, HTMLStyleElement>` even though the file wasn't modified.
+- **Symptom:** Pre-existing `<style jsx>` blocks suddenly stop type-checking after a fresh `pnpm install` that pulls a second `@types+react@<X>` directory into `node_modules/.pnpm/`.
+- **Root cause:** `next/dist/styled-jsx/types/global.d.ts` augments `react`'s `StyleHTMLAttributes` to add the `jsx` and `global` props. The augmentation file does `import React from 'react'`, and the augmentation only applies to whichever `@types/react` it resolves to. With two `@types/react` minors in the tree, pnpm's strict isolation can route the augmentation to a *different* React types instance than the one `apps/web`'s tsc loads — so the augmentation never reaches the web code.
+- **Fix / Rule:** Pin `@types/react` to the same minor across `apps/web` and `apps/mobile`. Bumps must be coordinated in the same PR. Documented in `MONOREPO.md` § "Cross-app `@types/react` alignment".
+- **Tags:** #monorepo #types #pnpm #styled-jsx #mobile
+
+---
+
 ### 2026-05-03 — CI baseline: 3 known-failing checks (lint, unit tests, E2E)
 
 - **Context:** `.github/workflows/test.yml`. PR #11 (monorepo migration) surfaced these via the new pnpm/turbo pipeline. All three were failing on master too — the monorepo migration just made them visible because the workflow now runs cleanly up to those steps.
