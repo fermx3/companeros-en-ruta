@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { resolveUserId } from './auth-resolver'
 
 interface AdminAuthSuccess {
   user: { id: string }
@@ -25,25 +25,11 @@ type AdminAuthResult = AdminAuthSuccess | AdminAuthError
 export async function resolveAdminAuth(
   supabase: SupabaseClient
 ): Promise<AdminAuthResult> {
-  let userId: string | undefined
-  try {
-    const h = await headers()
-    userId = h.get('x-supabase-user-id') || undefined
-  } catch {
-    // headers() not available outside request context
+  const userId = await resolveUserId(supabase)
+  if (!userId) {
+    return { _type: 'admin_auth_error', message: 'Usuario no autenticado', status: 401 }
   }
-
-  let user: { id: string }
-
-  if (userId) {
-    user = { id: userId }
-  } else {
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
-      return { _type: 'admin_auth_error', message: 'Usuario no autenticado', status: 401 }
-    }
-    user = authUser
-  }
+  const user: { id: string } = { id: userId }
 
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')
