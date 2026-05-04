@@ -21,6 +21,8 @@ export default function LoginScreen() {
         return
       }
       router.replace('/(promotor)/visits')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error de red')
     } finally {
       setSubmitting(false)
     }
