@@ -38,7 +38,7 @@ export function Tabs({ value, onValueChange, children, className }: TabsProps) {
     <div className={cn('w-full', className)}>
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child as React.ReactElement<any>, {
+          return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
             currentValue: value,
             onValueChange,
           })
@@ -65,7 +65,7 @@ export function TabsList({ children, className, value, onValueChange }: TabsList
     <div className={cn('flex gap-3 p-1 bg-muted/30 rounded-xl', className)}>
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child as React.ReactElement<any>, {
+          return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
             currentValue: value,
             onValueChange,
           })

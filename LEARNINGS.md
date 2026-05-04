@@ -102,17 +102,19 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
   - In `apps/web/src/app/api/admin/users/{create,invite}/route.ts`: dropped the `(user: any)` annotation from a `.find` callback (the inferred type from `auth.admin.listUsers` is sufficient), and changed `let userWasCreatedNew` to `const` (`prefer-const`).
 - **Result:** services + admin user routes scope is now lint-clean. 21 errors + 2 warnings → 0.
 
-##### A2 — Project-wide lint baseline (mostly closed)
+##### A2 — Project-wide lint baseline (CLOSED 2026-05-03)
 
-- **Status:** Most batches merged. Remaining: ~10 errors in `components/` + stragglers (batch 5), and the deferred React 19 hook-rule refactor (see below).
-- **Progress:** 241 → ~10 errors (~96% reduction) across batches:
+- **Status:** ✅ **Closed.** Project lint goes from 241 errors to **0 errors**. The `Lint` CI step is now a hard gate (`continue-on-error: true` removed in batch 5).
+- **Progress:** 241 → 0 errors (100% reduction) across 6 batches:
   - Batch 1: lib + hooks easy wins (PR #16)
   - Batch 3a: api/admin/ (PR #17)
   - Batch 3b: api/brand/ partial (PR #18)
   - Batch 3c: api/brand/exports + points + targeting (PR #19)
   - Batch 3d: api/{asesor,client,promotor,qr,supervisor,surveys}/ + brand/kpis/ (PR #20)
-  - Batch 4: app/(dashboard)/* — typing + React-hooks rule downgrade (this PR)
-- **Tracked in:** keep `continue-on-error: true` on the `Lint` step until batch 5 + the React-hooks refactor are done.
+  - Batch 4: app/(dashboard)/* — typing + React-hooks rule downgrade (PR #21)
+  - Batch 5: components/* + final stragglers + un-gated lint in CI (this PR)
+- **Remaining (warnings only, non-blocking):** ~161 warnings, dominated by the
+  React 19 hook-rule violations covered by the deferred sub-issue below.
 
 ##### A2 sub-issue — React 19 hook rules downgraded to `warn` (DEFERRED REFACTOR)
 

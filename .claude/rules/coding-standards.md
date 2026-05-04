@@ -9,11 +9,31 @@
 ### TypeScript
 
 - **MUST** use `strict: true` (already enforced in `tsconfig.json`).
-- **MUST** import shared types from `@/lib/types/database` and `@/lib/types/supabase`.
+- **MUST** import shared types from `@companeros/shared/types/database` and `@companeros/shared/types/supabase`.
 - **MUST** type Supabase clients via `Database` generic: `createClient<Database>(...)` (already configured in `apps/web/src/lib/supabase/{client,server}.ts`).
-- **MUST** prefer `interface` for public domain shapes, `type` for unions/utility types.
-- **MUST** use the `@/` path alias — never deep relative paths (`../../../`).
+- **MUST** prefer `interface` for public domain shapes, `type` for unions/utility types. **MUST NOT** declare an empty `interface X extends Y {}` — use `type X = Y` instead (lint rule `@typescript-eslint/no-empty-object-type` blocks this).
+- **MUST** use the `@/` path alias inside `apps/web` — never deep relative paths (`../../../`).
 - **MUST** type API responses with explicit return shapes. Don't return `Response` without a known body.
+
+### `any` is forbidden — use proper types instead
+
+These patterns are caught by `pnpm lint` (gated in CI). When you reach for `as any` or `: any`, stop and use the typed alternative:
+
+| Pattern you wrote | Use instead |
+|---|---|
+| `.eq('status', value as any)` | `value as Database['public']['Enums']['<enum_name>']` |
+| `.from(tableName as any)` (literal-table dynamic switch) | declare the array `as const` so the strings narrow to the table-name union |
+| `.insert(payload as any)` / `.update(payload as any)` | `as Database['public']['Tables']['<table>']['Insert' \| 'Update']`. If TS rejects because of strict `Json` columns (`preferences`, `settings`, `metadata`), use `as unknown as <T>` with a one-line comment explaining the supabase-js codegen mismatch (precedent: PRs #15, #18, #20). |
+| `function f(supabase: any, ...)` | `function f(supabase: SupabaseClient<Database>, ...)` (alias `SbClient` locally if used many times) |
+| `(item: any) => item.x` in `.map / .filter` | drop the annotation entirely — TS infers from typed query, OR write a small inline structural type (`(p: { is_active?: boolean \| null }) => ...`) |
+| `(joined.client as any)` for Supabase join projections | structural shape with optional fields: `(joined.client as { business_name?: string \| null; email?: string \| null } \| null)`. For unions of object/array, narrow with `Array.isArray`. |
+| `(supabase as any).from('promotor_assignments')` | Only acceptable when the table is genuinely missing from the generated supabase types. **Comment why** and add `// eslint-disable-next-line @typescript-eslint/no-explicit-any` on the same line (precedent: `surveys/route.ts`, `targeting/reach/route.ts`). Regenerating the types is the proper fix. |
+| `catch (err: any) { err.something }` | `catch (err) { (err as { something?: ... }).something }` or refine with `instanceof` checks. |
+| `Record<string, any>` for an accumulator | `Record<string, unknown>` and narrow at the use site. |
+
+### CI gate
+
+`pnpm lint` is a **hard gate** in `.github/workflows/test.yml` (Lint step has no `continue-on-error`). Regressing the lint baseline blocks merges. If you need a local override for a single line, use `// eslint-disable-next-line <rule>` with a reason in a trailing comment — the disable comment IS the documentation.
 
 ### Naming
 
@@ -80,7 +100,7 @@
 - **MUST NOT** mix tabs and spaces. The repo uses 2-space indentation.
 - **MUST NOT** introduce `default exports` for new utility/types modules; named exports only. (Exception: Next.js page/layout files which require default export.)
 - **MUST NOT** create barrel `index.ts` files just to re-export — use them only when the module forms a coherent public API.
-- **MUST NOT** use `any` without an explanatory comment and a follow-up TODO. There are existing `as any` usages tied to Supabase generic limitations — match the existing style if you can't avoid it.
+- **MUST NOT** use `any` to silence the type-checker. The "`any` is forbidden" table above gives a typed alternative for every common case the codebase hit. The only acceptable `any` is a `// eslint-disable-next-line @typescript-eslint/no-explicit-any` with a one-line rationale (e.g., "table missing from generated supabase types").
 - **MUST NOT** hardcode tenant IDs, brand IDs, role names, or environment URLs.
 - **MUST NOT** define new "status badge" / "metric card" / "empty state" variants inline — use the canonical components from `apps/web/src/components/ui/`.
 - **MUST NOT** import from `@supabase/supabase-js` directly in app code; go through `@/lib/supabase/{client,server}`.
@@ -92,12 +112,16 @@
 ## Validation Checklist
 
 ```
-[ ] Path alias @/ used (no ../../../)
-[ ] Types imported from @/lib/types/*
+[ ] Path alias @/ used inside apps/web (no ../../../)
+[ ] Types imported from @companeros/shared/types/*
 [ ] Supabase client comes from @/lib/supabase/{client,server}
 [ ] Zod schema validates every request body
 [ ] Auth helper used in route handlers (no inline getUser → profiles → roles chain)
-[ ] No new `any` without justification
+[ ] No new `any` (see the "`any` is forbidden" table above for the typed
+    alternative for every common case). Any disable-comment needs a one-line
+    rationale on the same line.
+[ ] No empty `interface X extends Y {}` — use `type X = Y`
+[ ] `pnpm --filter=@companeros/web exec eslint src/` returns 0 errors
 [ ] No hex colors / hardcoded design tokens in JSX
 [ ] Canonical UI components used (no inline duplicates)
 [ ] No console.log; only console.error in catch blocks with context
