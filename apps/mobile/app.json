@@ -15,7 +15,10 @@
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true,
           "NSAllowsArbitraryLoadsInWebContent": false
-        }
+        },
+        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para registrar el check-in en el cliente.",
+        "NSCameraUsageDescription": "Necesitamos la cámara para tomar evidencia fotográfica de la visita.",
+        "NSPhotoLibraryUsageDescription": "Necesitamos acceder a tus fotos para adjuntar evidencia de la visita."
       }
     },
     "android": {
@@ -24,11 +27,29 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.companeros.enruta"
+      "package": "com.companeros.enruta",
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Necesitamos tu ubicación para registrar el check-in en el cliente."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Acceso a tus fotos para adjuntar evidencia de la visita.",
+          "cameraPermission": "Acceso a la cámara para capturar evidencia de la visita."
+        }
+      ],
       [
         "expo-splash-screen",
         {
