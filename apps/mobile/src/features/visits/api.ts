@@ -4,6 +4,31 @@ import { apiFetch } from '@/lib/api'
 import { env } from '@/env'
 import { supabase } from '@/lib/supabase'
 
+/**
+ * In local dev the Supabase Storage `getPublicUrl()` returns paths with the
+ * web app's `NEXT_PUBLIC_SUPABASE_URL` (typically `http://127.0.0.1:54321`).
+ * That host is unreachable from a physical phone or simulator on a different
+ * loopback. In dev we rewrite to the host the mobile app is configured with
+ * (`EXPO_PUBLIC_SUPABASE_URL`); in production both sides hit the public
+ * Supabase URL so the rewrite is a no-op.
+ */
+function rewriteDevAssetUrl(url: string): string {
+  if (!__DEV__) return url
+  try {
+    const u = new URL(url)
+    if (u.hostname === '127.0.0.1' || u.hostname === 'localhost') {
+      const target = new URL(env.SUPABASE_URL)
+      u.hostname = target.hostname
+      u.port = target.port
+      u.protocol = target.protocol
+      return u.toString()
+    }
+  } catch {
+    // ignore — return untouched
+  }
+  return url
+}
+
 export interface VisitClient {
   id: string
   public_id: string
@@ -74,7 +99,14 @@ export function useVisit(visitId: string | undefined) {
 export function useEvidence(visitId: string | undefined) {
   return useQuery<{ evidence: EvidenceItem[] }>({
     queryKey: ['promotor', 'visit', visitId, 'evidence'],
-    queryFn: () => apiFetch<{ evidence: EvidenceItem[] }>(`/api/promotor/visits/${visitId}/evidence`),
+    queryFn: async () => {
+      const data = await apiFetch<{ evidence: EvidenceItem[] }>(
+        `/api/promotor/visits/${visitId}/evidence`
+      )
+      return {
+        evidence: data.evidence.map(e => ({ ...e, file_url: rewriteDevAssetUrl(e.file_url) })),
+      }
+    },
     enabled: !!visitId,
   })
 }
