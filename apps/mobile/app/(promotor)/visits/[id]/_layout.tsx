@@ -13,10 +13,10 @@ export default function VisitDetailLayout() {
       <Stack.Screen name="stage1" options={{ title: 'Etapa 1 · Precios' }} />
       <Stack.Screen name="stage2" options={{ title: 'Etapa 2 · Compras' }} />
       <Stack.Screen name="stage3" options={{ title: 'Etapa 3 · POP' }} />
-      <Stack.Screen
-        name="order"
-        options={{ title: 'Crear pedido', presentation: 'modal' }}
-      />
+      {/* `order` screen lands in PR E (apps/mobile/app/(promotor)/visits/[id]/order.tsx).
+        Declaring it here without the file present makes Expo Router emit
+        "Too many screens defined" and partially mount the layout, which
+        breaks navigation context for nested screens. */}
     </Stack>
   )
 }

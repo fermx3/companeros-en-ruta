@@ -157,7 +157,9 @@ export default function Stage3Screen() {
       popExecutionNotes: slice.stage3.popExecutionNotes ?? null,
     })
     if (!parsed.success) {
-      Alert.alert('Datos inválidos', parsed.error.issues[0]?.message ?? '')
+      const issue = parsed.error.issues[0]
+      const where = issue?.path?.length ? ` (${issue.path.join('.')})` : ''
+      Alert.alert('Datos inválidos', `${issue?.message ?? ''}${where}`)
       return
     }
     try {

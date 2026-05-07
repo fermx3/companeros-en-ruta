@@ -28,7 +28,40 @@ interface WizardState {
   reset: (visitId: string) => void
 }
 
-const emptySlice = (): VisitWizardSlice => ({
+// Stable, frozen empty slice. The selector falls back to this exact reference
+// whenever a visitId has no patches yet, so React/Zustand's snapshot
+// comparison sees the same object across renders and doesn't loop. Reducers
+// must always replace the slice (never mutate), which they do via spread.
+const EMPTY_SLICE: VisitWizardSlice = Object.freeze({
+  stage1: Object.freeze({
+    brandProductAssessments: Object.freeze([]) as never,
+    competitorAssessments: Object.freeze([]) as never,
+    pricingAuditNotes: '',
+  }) as Stage1Data,
+  stage2: Object.freeze({
+    hasInventory: false,
+    hasPurchaseOrder: false,
+    purchaseOrderNumber: null,
+    whyNotBuying: null,
+    purchaseInventoryNotes: null,
+    inventoryItems: Object.freeze([]) as never,
+    orderId: null,
+  }) as Stage2Data,
+  stage3: Object.freeze({
+    communicationPlanId: null,
+    communicationCompliance: null,
+    popMaterialChecks: Object.freeze([]) as never,
+    exhibitionChecks: Object.freeze([]) as never,
+    popExecutionNotes: null,
+  }) as Stage3Data,
+  completedStages: new Set<Stage>(),
+  hydrated: false,
+}) as VisitWizardSlice
+
+// Used by reducers when patching a visit that hasn't been hydrated yet —
+// returns a fresh, mutable copy each time so subsequent spread-merges don't
+// accidentally share inner refs across visit slices.
+const emptySliceCopy = (): VisitWizardSlice => ({
   stage1: {
     brandProductAssessments: [],
     competitorAssessments: [],
@@ -101,7 +134,7 @@ export const useWizardStore = create<WizardState>((set) => ({
 
   patchStage1: (visitId, patch) =>
     set(state => {
-      const slice = state.byVisitId[visitId] ?? emptySlice()
+      const slice = state.byVisitId[visitId] ?? emptySliceCopy()
       return {
         byVisitId: {
           ...state.byVisitId,
@@ -112,7 +145,7 @@ export const useWizardStore = create<WizardState>((set) => ({
 
   patchStage2: (visitId, patch) =>
     set(state => {
-      const slice = state.byVisitId[visitId] ?? emptySlice()
+      const slice = state.byVisitId[visitId] ?? emptySliceCopy()
       return {
         byVisitId: {
           ...state.byVisitId,
@@ -123,7 +156,7 @@ export const useWizardStore = create<WizardState>((set) => ({
 
   patchStage3: (visitId, patch) =>
     set(state => {
-      const slice = state.byVisitId[visitId] ?? emptySlice()
+      const slice = state.byVisitId[visitId] ?? emptySliceCopy()
       return {
         byVisitId: {
           ...state.byVisitId,
@@ -134,7 +167,7 @@ export const useWizardStore = create<WizardState>((set) => ({
 
   markCompleted: (visitId, stage) =>
     set(state => {
-      const slice = state.byVisitId[visitId] ?? emptySlice()
+      const slice = state.byVisitId[visitId] ?? emptySliceCopy()
       const next = new Set(slice.completedStages)
       next.add(stage)
       return {
@@ -154,7 +187,7 @@ export const useWizardStore = create<WizardState>((set) => ({
 }))
 
 export function useVisitWizardSlice(visitId: string): VisitWizardSlice {
-  return useWizardStore(state => state.byVisitId[visitId] ?? emptySlice())
+  return useWizardStore(state => state.byVisitId[visitId] ?? EMPTY_SLICE)
 }
 
 // ----- Serializers (slice → POST body) -----

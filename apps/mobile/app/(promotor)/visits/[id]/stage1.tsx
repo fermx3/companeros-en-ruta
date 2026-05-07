@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { Alert, ScrollView, Text, TextInput, View } from 'react-native'
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import { CatalogPicker } from '@/components/wizard/CatalogPicker'
@@ -133,7 +133,12 @@ export default function Stage1Screen() {
       pricingAuditNotes: slice.stage1.pricingAuditNotes || null,
     })
     if (!parsed.success) {
-      Alert.alert('Faltan datos', parsed.error.issues[0]?.message ?? 'Revisa el formulario.')
+      const issue = parsed.error.issues[0]
+      const where = issue?.path?.length ? ` (${issue.path.join('.')})` : ''
+      Alert.alert(
+        'Faltan datos',
+        `${issue?.message ?? 'Revisa el formulario.'}${where}`
+      )
       return
     }
     if (pricingPhotos.length < 1) {
@@ -189,36 +194,34 @@ export default function Stage1Screen() {
           <Text className="text-sm text-gray-500 mb-4">No hay competidores configurados.</Text>
         ) : (
           <View className="bg-white rounded-lg p-3 mb-4">
-            {competitors.map(c => {
-              const products = c.brand_competitor_products ?? []
-              return (
-                <View key={c.id} className="mb-4">
-                  <Text className="text-sm font-medium text-navy mb-1">{c.competitor_name}</Text>
-                  <CatalogPicker
-                    title={`Producto de ${c.competitor_name}`}
-                    items={products.map(p => ({ id: p.id, label: p.product_name }))}
-                    onSelect={item => {
-                      addCompetitorObservation(c.id)
-                      const idx = slice.stage1.competitorAssessments.length
-                      updateCompetitorObservation(idx, { competitor_product_id: item.id, product_name_observed: item.label })
-                    }}
-                    triggerLabel="+ Agregar observación"
-                    emptyLabel="Sin productos cargados — describe abajo"
-                  />
-                </View>
-              )
-            })}
+            {competitors.map(c => (
+              <Pressable
+                key={c.id}
+                className="border border-secondary rounded-lg px-3 py-3 mb-2 flex-row items-center justify-between"
+                onPress={() => addCompetitorObservation(c.id)}
+              >
+                <Text className="text-sm font-medium text-navy">{c.competitor_name}</Text>
+                <Text className="text-sm text-primary-light font-semibold">+ Observar</Text>
+              </Pressable>
+            ))}
             {slice.stage1.competitorAssessments.length > 0 && (
-              <View className="mt-2">
-                <Text className="text-xs text-gray-500 mb-1">Observaciones registradas</Text>
-                {slice.stage1.competitorAssessments.map((obs, i) => (
-                  <CompetitorObservationCard
-                    key={`${obs.competitor_id}-${i}`}
-                    obs={obs}
-                    onChange={patch => updateCompetitorObservation(i, patch)}
-                    onRemove={() => removeCompetitorObservation(i)}
-                  />
-                ))}
+              <View className="mt-3">
+                <Text className="text-xs text-gray-500 mb-1">
+                  Observaciones registradas ({slice.stage1.competitorAssessments.length})
+                </Text>
+                {slice.stage1.competitorAssessments.map((obs, i) => {
+                  const competitor = competitors.find(c => c.id === obs.competitor_id)
+                  return (
+                    <CompetitorObservationCard
+                      key={`${obs.competitor_id}-${i}`}
+                      competitorName={competitor?.competitor_name}
+                      catalogProducts={competitor?.brand_competitor_products ?? []}
+                      obs={obs}
+                      onChange={patch => updateCompetitorObservation(i, patch)}
+                      onRemove={() => removeCompetitorObservation(i)}
+                    />
+                  )
+                })}
               </View>
             )}
           </View>
@@ -355,23 +358,56 @@ function ProductRow({ product, row, onChange }: ProductRowProps) {
 }
 
 interface CompetitorObservationCardProps {
+  competitorName?: string
+  catalogProducts: readonly { id: string; product_name: string }[]
   obs: CompetitorAssessment
   onChange: (patch: Partial<CompetitorAssessment>) => void
   onRemove: () => void
 }
 
-function CompetitorObservationCard({ obs, onChange, onRemove }: CompetitorObservationCardProps) {
+function CompetitorObservationCard({
+  competitorName,
+  catalogProducts,
+  obs,
+  onChange,
+  onRemove,
+}: CompetitorObservationCardProps) {
+  const productItems = catalogProducts.map(p => ({ id: p.id, label: p.product_name }))
   return (
     <View className="border border-gray-200 rounded-lg p-3 mb-2">
-      <View className="flex-row items-start justify-between mb-1">
-        <Text className="text-xs text-gray-500 flex-1">
-          {obs.product_name_observed ?? 'Observación'}
+      <View className="flex-row items-start justify-between mb-2">
+        <Text className="text-sm font-medium text-navy flex-1">
+          {competitorName ?? 'Competidor'}
         </Text>
-        <Text onPress={onRemove} className="text-xs text-destructive font-semibold ml-2">
-          Quitar
-        </Text>
+        <Pressable onPress={onRemove}>
+          <Text className="text-xs text-destructive font-semibold ml-2">Quitar</Text>
+        </Pressable>
       </View>
-      <View className="flex-row gap-2 mt-1">
+      {productItems.length > 0 && (
+        <View className="mb-2">
+          <CatalogPicker
+            title="Producto del catálogo"
+            items={productItems}
+            selectedId={obs.competitor_product_id ?? null}
+            onSelect={item =>
+              onChange({
+                competitor_product_id: item.id,
+                product_name_observed: obs.product_name_observed ?? item.label,
+              })
+            }
+            triggerLabel="Vincular a producto del catálogo (opcional)"
+          />
+        </View>
+      )}
+      <Text className="text-xs text-gray-500 mb-1">Producto observado</Text>
+      <TextInput
+        className="border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2"
+        placeholder="Nombre del producto"
+        placeholderTextColor="#9ca3af"
+        value={obs.product_name_observed ?? ''}
+        onChangeText={v => onChange({ product_name_observed: v || null })}
+      />
+      <View className="flex-row gap-2">
         <View className="flex-1">
           <Text className="text-xs text-gray-500 mb-1">Precio observado</Text>
           <TextInput

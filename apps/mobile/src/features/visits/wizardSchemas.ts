@@ -4,6 +4,18 @@ import { z } from 'zod'
 // Source of truth: apps/web/src/app/api/promotor/visits/[id]/assessment/route.ts
 //
 // Keep in sync until / unless we extract the schemas to @companeros/shared.
+//
+// Note on IDs: we use a permissive UUID-like regex instead of zod's strict
+// `.uuid()` because the seed data ships with nil-pattern UUIDs
+// (e.g. `d0000002-0000-0000-0000-000000000009`) that don't conform to RFC
+// 4122 v1-v8 — the server-side handler doesn't run zod, it just hands them
+// to Postgres which accepts any 8-4-4-4-12 hex pattern.
+const uuidLike = z
+  .string()
+  .regex(
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    'Identificador inválido'
+  )
 
 const stockLevelEnum = z.enum(['out_of_stock', 'low', 'medium', 'high'])
 const whyNotBuyingEnum = z.enum([
@@ -18,8 +30,8 @@ const popConditionEnum = z.enum(['good', 'damaged', 'missing'])
 const executionQualityEnum = z.enum(['excellent', 'good', 'fair', 'poor'])
 
 const brandProductAssessmentSchema = z.object({
-  product_id: z.string().uuid(),
-  product_variant_id: z.string().uuid().nullable().optional(),
+  product_id: uuidLike,
+  product_variant_id: uuidLike.nullable().optional(),
   current_price: z.number().nullable().optional(),
   suggested_price: z.number().nullable().optional(),
   is_product_present: z.boolean(),
@@ -30,8 +42,8 @@ const brandProductAssessmentSchema = z.object({
 })
 
 const competitorAssessmentSchema = z.object({
-  competitor_id: z.string().uuid(),
-  competitor_product_id: z.string().uuid().nullable().optional(),
+  competitor_id: uuidLike,
+  competitor_product_id: uuidLike.nullable().optional(),
   product_name_observed: z.string().nullable().optional(),
   size_grams: z.number().nullable().optional(),
   observed_price: z.number().nullable().optional(),
@@ -47,14 +59,14 @@ const inventoryItemSchema = z.object({
 })
 
 const popMaterialCheckSchema = z.object({
-  pop_material_id: z.string().uuid(),
+  pop_material_id: uuidLike,
   is_present: z.boolean(),
   condition: popConditionEnum.nullable().optional(),
   notes: z.string().nullable().optional(),
 })
 
 const exhibitionCheckSchema = z.object({
-  exhibition_id: z.string().uuid(),
+  exhibition_id: uuidLike,
   is_executed: z.boolean(),
   execution_quality: executionQualityEnum.nullable().optional(),
   notes: z.string().nullable().optional(),
@@ -98,7 +110,7 @@ export function makeStage2Schema(ordersCount: number) {
       whyNotBuying: whyNotBuyingEnum.nullable().optional(),
       purchaseInventoryNotes: z.string().nullable().optional(),
       inventoryItems: z.array(inventoryItemSchema),
-      orderId: z.string().uuid().nullable().optional(),
+      orderId: uuidLike.nullable().optional(),
     })
     .refine(
       d => d.hasPurchaseOrder || ordersCount > 0 || d.whyNotBuying != null,
@@ -116,7 +128,7 @@ export const stage2Schema = makeStage2Schema(0)
 //
 // All fields optional on the server side; we just type-check.
 export const stage3Schema = z.object({
-  communicationPlanId: z.string().uuid().nullable().optional(),
+  communicationPlanId: uuidLike.nullable().optional(),
   communicationCompliance: communicationComplianceEnum.nullable().optional(),
   popMaterialChecks: z.array(popMaterialCheckSchema),
   exhibitionChecks: z.array(exhibitionCheckSchema),
@@ -133,14 +145,14 @@ export const orderPaymentMethodEnum = z.enum([
 ])
 
 export const orderItemSchema = z.object({
-  product_id: z.string().uuid(),
-  product_variant_id: z.string().uuid().nullable().optional(),
+  product_id: uuidLike,
+  product_variant_id: uuidLike.nullable().optional(),
   quantity: z.number().int().positive(),
   unit_price: z.number().nonnegative(),
 })
 
 export const orderSchema = z.object({
-  distributor_id: z.string().uuid(),
+  distributor_id: uuidLike,
   payment_method: orderPaymentMethodEnum,
   order_notes: z.string().nullable().optional(),
   items: z.array(orderItemSchema).min(1),

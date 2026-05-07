@@ -49,47 +49,54 @@ export function CatalogPicker({
         <Text className="text-gray-400">›</Text>
       </Pressable>
 
-      <Modal
-        visible={open}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setOpen(false)}
-      >
-        <View className="flex-1 bg-white">
-          <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
-            <Text className="text-base font-bold text-navy">{title}</Text>
-            <Pressable onPress={() => setOpen(false)} className="p-2">
-              <Text className="text-primary-light font-semibold">Cerrar</Text>
-            </Pressable>
-          </View>
-          {items.length === 0 ? (
-            <View className="flex-1 items-center justify-center px-6">
-              <Text className="text-gray-500 text-center">{emptyLabel}</Text>
+      {/* RN's Modal portals its children to a separate native view controller
+        on iOS, even when visible={false} — those children lose the navigation
+        context, so any re-render that originates from a parent state update
+        (e.g. zustand notifying a sibling SegmentedControl) crashes with
+        MISSING_CONTEXT_ERROR. Mount the Modal only while open. */}
+      {open && (
+        <Modal
+          visible
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setOpen(false)}
+        >
+          <View className="flex-1 bg-white">
+            <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
+              <Text className="text-base font-bold text-navy">{title}</Text>
+              <Pressable onPress={() => setOpen(false)} className="p-2">
+                <Text className="text-primary-light font-semibold">Cerrar</Text>
+              </Pressable>
             </View>
-          ) : (
-            <ScrollView className="flex-1">
-              {items.map(item => {
-                const isSelected = item.id === selectedId
-                return (
-                  <Pressable
-                    key={item.id}
-                    className={`px-4 py-4 border-b border-gray-100 ${isSelected ? 'bg-blue-50' : ''}`}
-                    onPress={() => {
-                      onSelect(item)
-                      setOpen(false)
-                    }}
-                  >
-                    <Text className="text-sm text-navy font-medium">{item.label}</Text>
-                    {item.sublabel && (
-                      <Text className="text-xs text-gray-500 mt-0.5">{item.sublabel}</Text>
-                    )}
-                  </Pressable>
-                )
-              })}
-            </ScrollView>
-          )}
-        </View>
-      </Modal>
+            {items.length === 0 ? (
+              <View className="flex-1 items-center justify-center px-6">
+                <Text className="text-gray-500 text-center">{emptyLabel}</Text>
+              </View>
+            ) : (
+              <ScrollView className="flex-1">
+                {items.map(item => {
+                  const isSelected = item.id === selectedId
+                  return (
+                    <Pressable
+                      key={item.id}
+                      className={`px-4 py-4 border-b border-gray-100 ${isSelected ? 'bg-blue-50' : ''}`}
+                      onPress={() => {
+                        onSelect(item)
+                        setOpen(false)
+                      }}
+                    >
+                      <Text className="text-sm text-navy font-medium">{item.label}</Text>
+                      {item.sublabel && (
+                        <Text className="text-xs text-gray-500 mt-0.5">{item.sublabel}</Text>
+                      )}
+                    </Pressable>
+                  )
+                })}
+              </ScrollView>
+            )}
+          </View>
+        </Modal>
+      )}
     </>
   )
 }

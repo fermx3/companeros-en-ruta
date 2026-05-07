@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 interface Option<T extends string> {
   value: T
@@ -13,6 +13,11 @@ interface SegmentedControlProps<T extends string> {
   disabled?: boolean
 }
 
+// Bypassing NativeWind className on this component on purpose.
+// The interop wrapper around Pressable triggers a navigation-context lookup
+// inside RN's accessibility/feedback machinery on re-render after a Zustand
+// state update, which crashes with MISSING_CONTEXT_ERROR. Using StyleSheet
+// keeps the same visual but avoids the wrapper.
 export function SegmentedControl<T extends string>({
   label,
   value,
@@ -21,21 +26,22 @@ export function SegmentedControl<T extends string>({
   disabled,
 }: SegmentedControlProps<T>) {
   return (
-    <View className="my-2">
-      {label && <Text className="text-xs text-gray-500 mb-1">{label}</Text>}
-      <View className="flex-row bg-gray-100 rounded-lg p-1">
+    <View style={styles.container}>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
+      <View style={styles.track}>
         {options.map(opt => {
           const selected = opt.value === value
           return (
             <Pressable
               key={opt.value}
-              className={`flex-1 py-2 rounded-md items-center ${selected ? 'bg-white shadow' : ''} ${disabled ? 'opacity-50' : ''}`}
-              onPress={() => !disabled && onChange(opt.value)}
-              disabled={disabled}
+              style={[
+                styles.option,
+                selected && styles.optionSelected,
+                disabled && styles.optionDisabled,
+              ]}
+              onPress={disabled ? undefined : () => onChange(opt.value)}
             >
-              <Text
-                className={`text-xs font-medium ${selected ? 'text-navy' : 'text-gray-500'}`}
-              >
+              <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
                 {opt.label}
               </Text>
             </Pressable>
@@ -45,3 +51,31 @@ export function SegmentedControl<T extends string>({
     </View>
   )
 }
+
+const styles = StyleSheet.create({
+  container: { marginVertical: 8 },
+  label: { fontSize: 12, color: '#6b7280', marginBottom: 4 },
+  track: {
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    padding: 4,
+  },
+  option: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  optionSelected: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  optionDisabled: { opacity: 0.5 },
+  optionLabel: { fontSize: 12, color: '#6b7280', fontWeight: '500' },
+  optionLabelSelected: { color: '#0f2444' },
+})
