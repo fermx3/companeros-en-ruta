@@ -10,7 +10,7 @@ export default function PromotorLayout() {
       }}
     >
       <Stack.Screen name="visits" options={{ title: 'Mis Visitas' }} />
-      <Stack.Screen name="visits/[id]" options={{ title: 'Detalle de Visita' }} />
+      <Stack.Screen name="visits/[id]" options={{ headerShown: false }} />
     </Stack>
   )
 }
