@@ -4,6 +4,16 @@ import { apiFetch } from '@/lib/api'
 import { env } from '@/env'
 import { supabase } from '@/lib/supabase'
 
+import type {
+  AssessmentPostBody,
+  BrandCompetitorsResponse,
+  BrandExhibitionsResponse,
+  BrandProductsResponse,
+  CommunicationPlansResponse,
+  PopMaterialsResponse,
+  VisitAssessmentResponse,
+} from './types'
+
 /**
  * In local dev the Supabase Storage `getPublicUrl()` returns paths with the
  * web app's `NEXT_PUBLIC_SUPABASE_URL` (typically `http://127.0.0.1:54321`).
@@ -199,6 +209,136 @@ export function useUploadEvidence(visitId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['promotor', 'visit', visitId, 'evidence'] })
+    },
+  })
+}
+
+// ----- Catalog hooks (brand-scoped; resolveBrandAuth picks up the promotor's brand) -----
+
+export function useBrandProducts(brandId: string | undefined) {
+  return useQuery<BrandProductsResponse>({
+    queryKey: ['brand', 'products', brandId],
+    queryFn: () => apiFetch<BrandProductsResponse>(`/api/brand/products?brand_id=${brandId}`),
+    enabled: !!brandId,
+    staleTime: 5 * 60 * 1000, // catalogs change infrequently within a visit
+  })
+}
+
+export function useBrandCompetitors(brandId: string | undefined) {
+  return useQuery<BrandCompetitorsResponse>({
+    queryKey: ['brand', 'competitors', brandId],
+    queryFn: () =>
+      apiFetch<BrandCompetitorsResponse>(
+        `/api/brand/competitors?brand_id=${brandId}&include_products=true`
+      ),
+    enabled: !!brandId,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCommunicationPlans(brandId: string | undefined) {
+  return useQuery<CommunicationPlansResponse>({
+    queryKey: ['brand', 'communication-plans', brandId],
+    queryFn: () =>
+      apiFetch<CommunicationPlansResponse>(
+        `/api/brand/communication-plans?brand_id=${brandId}&active_only=true`
+      ),
+    enabled: !!brandId,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function usePopMaterials(brandId: string | undefined) {
+  return useQuery<PopMaterialsResponse>({
+    queryKey: ['brand', 'pop-materials', brandId],
+    queryFn: () =>
+      apiFetch<PopMaterialsResponse>(
+        `/api/brand/pop-materials?brand_id=${brandId}&include_system=true`
+      ),
+    enabled: !!brandId,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useExhibitions(brandId: string | undefined) {
+  return useQuery<BrandExhibitionsResponse>({
+    queryKey: ['brand', 'exhibitions', brandId],
+    queryFn: () =>
+      apiFetch<BrandExhibitionsResponse>(
+        `/api/brand/exhibitions?brand_id=${brandId}&active_only=true`
+      ),
+    enabled: !!brandId,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+// ----- Assessment hooks -----
+
+export function useVisitAssessment(visitId: string | undefined) {
+  return useQuery<VisitAssessmentResponse>({
+    queryKey: ['promotor', 'visit', visitId, 'assessment'],
+    queryFn: () => apiFetch<VisitAssessmentResponse>(`/api/promotor/visits/${visitId}/assessment`),
+    enabled: !!visitId,
+  })
+}
+
+export function useSaveStage(visitId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: AssessmentPostBody) =>
+      apiFetch<{ success: true }>(`/api/promotor/visits/${visitId}/assessment`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['promotor', 'visit', visitId, 'assessment'] })
+      qc.invalidateQueries({ queryKey: ['promotor', 'visit', visitId] })
+    },
+  })
+}
+
+export interface FinalizeError extends Error {
+  status?: number
+  missingStages?: number[]
+}
+
+export function useFinalizeAssessment(visitId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      try {
+        return await apiFetch<{ success: true; allStagesCompleted: true }>(
+          `/api/promotor/visits/${visitId}/assessment`,
+          { method: 'PUT' }
+        )
+      } catch (err) {
+        // apiFetch throws ApiError with status + body; surface missing_stages
+        // from the 400 body so callers can route the user back to the gap.
+        if (err && typeof err === 'object' && 'status' in err && 'body' in err) {
+          const e = err as { status: number; body?: string }
+          if (e.status === 400 && e.body) {
+            try {
+              const parsed = JSON.parse(e.body) as { stages?: Record<string, boolean> }
+              if (parsed.stages) {
+                const missing = Object.entries(parsed.stages)
+                  .filter(([, done]) => !done)
+                  .map(([k]) => Number(k.replace('stage', '')))
+                const fe: FinalizeError = Object.assign(new Error('missing_stages'), {
+                  status: 400,
+                  missingStages: missing,
+                })
+                throw fe
+              }
+            } catch {
+              /* fall through */
+            }
+          }
+        }
+        throw err
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['promotor', 'visit', visitId, 'assessment'] })
     },
   })
 }
