@@ -8,9 +8,10 @@ export type StockLevel = 'out_of_stock' | 'low' | 'medium' | 'high'
 export type WhyNotBuying =
   | 'lack_of_budget'
   | 'low_turnover'
-  | 'too_much_stock'
-  | 'price'
-  | 'other'
+  | 'sufficient_inventory'
+  | 'prefers_other_brand'
+  | 'distributor_issues'
+  | 'not_applicable'
 export type CommunicationCompliance = 'full' | 'partial' | 'non_compliant'
 export type PopCondition = 'good' | 'damaged' | 'missing'
 export type ExecutionQuality = 'excellent' | 'good' | 'fair' | 'poor'
@@ -176,6 +177,73 @@ export interface BrandExhibition {
 
 export interface BrandExhibitionsResponse {
   exhibitions: BrandExhibition[]
+}
+
+export interface Distributor {
+  id: string
+  name: string
+  contact_name: string | null
+  contact_phone: string | null
+}
+
+export interface DistributorsResponse {
+  distributors: Distributor[]
+}
+
+export interface ClientPromotion {
+  id: string
+  name: string
+  description: string | null
+  promotion_type: string
+  discount_display: string | null
+  valid_until: string | null
+  status: string
+  usage_limit: number | null
+  times_used: number | null
+  remaining_uses: number | null
+}
+
+export interface ClientPromotionsResponse {
+  promotions: ClientPromotion[]
+}
+
+export type OrderPaymentMethod = 'cash' | 'transfer' | 'credit' | 'check' | 'card'
+
+export interface VisitOrderItem {
+  product_id: string
+  product_variant_id: string | null
+  product_name: string
+  quantity: number
+  unit_price: number
+}
+
+export interface VisitOrder {
+  id: string
+  order_number: string | null
+  order_status: string
+  total_amount: number | string
+  distributor_id: string | null
+  distributor_name: string | null
+  payment_method: OrderPaymentMethod | null
+  order_notes: string | null
+  created_at: string
+  items: VisitOrderItem[]
+}
+
+export interface VisitOrdersResponse {
+  orders: VisitOrder[]
+}
+
+export interface CreateOrderBody {
+  distributor_id: string
+  payment_method: OrderPaymentMethod
+  order_notes?: string | null
+  items: {
+    product_id: string
+    product_variant_id?: string | null
+    quantity: number
+    unit_price: number
+  }[]
 }
 
 // ----- Assessment GET response (used to hydrate the wizard store) -----

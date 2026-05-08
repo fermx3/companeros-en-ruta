@@ -9,9 +9,13 @@ import type {
   BrandCompetitorsResponse,
   BrandExhibitionsResponse,
   BrandProductsResponse,
+  ClientPromotionsResponse,
   CommunicationPlansResponse,
+  CreateOrderBody,
+  DistributorsResponse,
   PopMaterialsResponse,
   VisitAssessmentResponse,
+  VisitOrdersResponse,
 } from './types'
 
 /**
@@ -339,6 +343,66 @@ export function useFinalizeAssessment(visitId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['promotor', 'visit', visitId, 'assessment'] })
+    },
+  })
+}
+
+// ----- Stage 2 hooks -----
+
+export function useDistributors(brandId: string | undefined) {
+  return useQuery<DistributorsResponse>({
+    queryKey: ['promotor', 'distributors', brandId],
+    queryFn: () =>
+      apiFetch<DistributorsResponse>(`/api/promotor/distributors?brand_id=${brandId}`),
+    enabled: !!brandId,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useClientPromotions(clientId: string | undefined, brandId: string | undefined) {
+  return useQuery<ClientPromotionsResponse>({
+    queryKey: ['client', clientId, 'promotions', brandId],
+    queryFn: () => {
+      const qs = brandId ? `?brand_id=${brandId}` : ''
+      return apiFetch<ClientPromotionsResponse>(`/api/client/${clientId}/promotions${qs}`)
+    },
+    enabled: !!clientId,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useVisitOrders(visitId: string | undefined) {
+  return useQuery<VisitOrdersResponse>({
+    queryKey: ['promotor', 'visit', visitId, 'orders'],
+    queryFn: () => apiFetch<VisitOrdersResponse>(`/api/promotor/visits/${visitId}/orders`),
+    enabled: !!visitId,
+  })
+}
+
+export function useCreateOrder(visitId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: CreateOrderBody) =>
+      apiFetch<{ order_id: string; message?: string }>(
+        `/api/promotor/visits/${visitId}/orders`,
+        { method: 'POST', body: JSON.stringify(body) }
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['promotor', 'visit', visitId, 'orders'] })
+    },
+  })
+}
+
+export function useDeleteOrder(visitId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (orderId: string) =>
+      apiFetch<{ message?: string }>(
+        `/api/promotor/visits/${visitId}/orders?order_id=${orderId}`,
+        { method: 'DELETE' }
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['promotor', 'visit', visitId, 'orders'] })
     },
   })
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { Alert, ScrollView, Text, TextInput, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import * as Location from 'expo-location'
 
 import { CatalogPicker } from '@/components/wizard/CatalogPicker'
 import { EvidenceUploader } from '@/components/wizard/EvidenceUploader'
@@ -10,12 +11,15 @@ import { WizardActionBar } from '@/components/wizard/WizardActionBar'
 import { WizardStepper } from '@/components/wizard/WizardStepper'
 
 import {
+  useCheckOut,
   useCommunicationPlans,
   useExhibitions,
+  useFinalizeAssessment,
   usePopMaterials,
   useSaveStage,
   useVisit,
   useVisitAssessment,
+  type FinalizeError,
 } from '@/features/visits/api'
 import {
   serializeStage3,
@@ -62,11 +66,14 @@ export default function Stage3Screen() {
   const exhibitionsQuery = useExhibitions(brandId)
   const assessmentQuery = useVisitAssessment(visitId)
   const saveStage = useSaveStage(visitId)
+  const finalize = useFinalizeAssessment(visitId)
+  const checkOut = useCheckOut(visitId)
 
   const slice = useVisitWizardSlice(visitId)
   const hydrate = useWizardStore(s => s.hydrate)
   const patchStage3 = useWizardStore(s => s.patchStage3)
   const markCompleted = useWizardStore(s => s.markCompleted)
+  const reset = useWizardStore(s => s.reset)
 
   useEffect(() => {
     if (!slice.hydrated && assessmentQuery.data) {
@@ -148,6 +155,19 @@ export default function Stage3Screen() {
     })
   }
 
+  async function getCoords() {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') return null
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      })
+      return { latitude: pos.coords.latitude, longitude: pos.coords.longitude }
+    } catch {
+      return null
+    }
+  }
+
   async function onFinalize() {
     const parsed = stage3Schema.safeParse({
       communicationPlanId: slice.stage3.communicationPlanId ?? null,
@@ -163,15 +183,45 @@ export default function Stage3Screen() {
       return
     }
     try {
+      // 1) Persist stage 3
       await saveStage.mutateAsync(serializeStage3(slice))
       markCompleted(visitId, 3)
+
+      // 2) Verify all stages completed server-side
+      try {
+        await finalize.mutateAsync()
+      } catch (err) {
+        const fe = err as FinalizeError
+        if (fe.missingStages?.length) {
+          const first = fe.missingStages[0]
+          Alert.alert(
+            'Faltan etapas',
+            `Etapas pendientes: ${fe.missingStages.join(', ')}. Volvé a completar la etapa ${first}.`,
+            [
+              {
+                text: 'Ir',
+                onPress: () =>
+                  router.push(`/(promotor)/visits/${visitId}/stage${first}` as never),
+              },
+              { text: 'Cancelar', style: 'cancel' },
+            ]
+          )
+          return
+        }
+        throw err
+      }
+
+      // 3) Check-out (with coords)
+      const coords = await getCoords()
+      const result = await checkOut.mutateAsync(coords ?? {})
+      reset(visitId)
       Alert.alert(
-        'Próximamente',
-        'La etapa 3 quedó guardada. La cadena de finalización (verificar etapas + check-out) se entrega en la próxima iteración.',
-        [{ text: 'Volver al detalle', onPress: () => router.replace(`/(promotor)/visits/${visitId}`) }]
+        'Visita completada',
+        `Duración: ${result.duration_minutes} min`,
+        [{ text: 'Listo', onPress: () => router.replace('/(promotor)/visits') }]
       )
     } catch (e) {
-      Alert.alert('Error al guardar', e instanceof Error ? e.message : '')
+      Alert.alert('Error al finalizar', e instanceof Error ? e.message : '')
     }
   }
 

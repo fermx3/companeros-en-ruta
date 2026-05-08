@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   Text,
@@ -10,7 +11,15 @@ import {
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
 import * as Location from 'expo-location'
 
-import { useCheckIn, useVisit, type VisitListItem } from '@/features/visits/api'
+import {
+  useCheckIn,
+  useEvidence,
+  useVisit,
+  useVisitAssessment,
+  useVisitOrders,
+  type EvidenceItem,
+  type VisitListItem,
+} from '@/features/visits/api'
 
 const STATUS_LABEL: Record<string, string> = {
   planned: 'Planificada',
@@ -154,20 +163,7 @@ export default function VisitIndexScreen() {
         </View>
       )}
 
-      {status === 'completed' && (
-        <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
-          <Text className="text-sm font-semibold text-navy mb-2">Visita completada</Text>
-          <Text className="text-sm text-gray-700">
-            Check-in: {formatTime(visit.check_in_time)}
-          </Text>
-          <Text className="text-sm text-gray-700">
-            Check-out: {formatTime(visit.check_out_time)}
-          </Text>
-          <Text className="text-xs text-gray-500 mt-3">
-            El resumen detallado por etapas estará disponible en la próxima iteración.
-          </Text>
-        </View>
-      )}
+      {status === 'completed' && id && <CompletedSummary visitId={id} visit={visit} />}
 
       {(status === 'cancelled' || status === 'no_show') && (
         <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
@@ -176,6 +172,161 @@ export default function VisitIndexScreen() {
           </Text>
         </View>
       )}
+    </ScrollView>
+  )
+}
+
+const COMPLIANCE_LABEL: Record<string, string> = {
+  full: 'Total',
+  partial: 'Parcial',
+  non_compliant: 'Sin cumplir',
+}
+
+interface CompletedSummaryProps {
+  visitId: string
+  visit: VisitListItem
+}
+
+function CompletedSummary({ visitId, visit }: CompletedSummaryProps) {
+  const assessmentQuery = useVisitAssessment(visitId)
+  const ordersQuery = useVisitOrders(visitId)
+  const evidenceQuery = useEvidence(visitId)
+
+  if (assessmentQuery.isLoading || ordersQuery.isLoading || evidenceQuery.isLoading) {
+    return (
+      <View className="bg-white mt-3 px-4 py-6 items-center">
+        <ActivityIndicator size="small" />
+      </View>
+    )
+  }
+
+  const a = assessmentQuery.data
+  const orders = ordersQuery.data?.orders ?? []
+  const evidence = evidenceQuery.data?.evidence ?? []
+
+  const productsPresent = (a?.brandProductAssessments ?? []).filter(p => p.is_product_present)
+  const competitors = a?.competitorAssessments ?? []
+  const popPresent = (a?.popMaterialChecks ?? []).filter(c => c.is_present)
+  const exhibitionsExecuted = (a?.exhibitionChecks ?? []).filter(c => c.is_executed)
+  const inventoryItems = a?.inventoryItems ?? []
+  const sa = a?.stageAssessment
+
+  const checkInTime = visit.check_in_time ? new Date(visit.check_in_time).getTime() : 0
+  const checkOutTime = visit.check_out_time ? new Date(visit.check_out_time).getTime() : 0
+  const durationMin = checkInTime && checkOutTime
+    ? Math.round((checkOutTime - checkInTime) / 60000)
+    : null
+
+  const orderTotal = orders.reduce((sum, o) => sum + Number(o.total_amount ?? 0), 0)
+
+  const pricingPhotos = evidence.filter(e => e.evidence_stage === 'pricing')
+  const inventoryPhotos = evidence.filter(e => e.evidence_stage === 'inventory')
+  const communicationPhotos = evidence.filter(e => e.evidence_stage === 'communication')
+
+  return (
+    <View>
+      <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
+        <Text className="text-sm font-semibold text-navy mb-2">Visita completada</Text>
+        <Text className="text-sm text-gray-700">
+          Check-in: {formatTime(visit.check_in_time)} · Check-out: {formatTime(visit.check_out_time)}
+        </Text>
+        {durationMin != null && (
+          <Text className="text-xs text-gray-500 mt-0.5">Duración: {durationMin} min</Text>
+        )}
+      </View>
+
+      {/* Stage 1 summary */}
+      <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
+        <Text className="text-sm font-semibold text-navy mb-2">Etapa 1 · Precios</Text>
+        <Text className="text-sm text-gray-700">
+          Productos presentes: {productsPresent.length} de {(a?.brandProductAssessments ?? []).length}
+        </Text>
+        <Text className="text-sm text-gray-700">
+          Observaciones de competencia: {competitors.length}
+        </Text>
+        {sa?.pricing_audit_notes && (
+          <Text className="text-xs text-gray-500 mt-2" numberOfLines={4}>
+            {sa.pricing_audit_notes}
+          </Text>
+        )}
+        <PhotoStrip photos={pricingPhotos} emptyLabel="Sin fotos en esta etapa" />
+      </View>
+
+      {/* Stage 2 summary */}
+      <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
+        <Text className="text-sm font-semibold text-navy mb-2">Etapa 2 · Compras</Text>
+        <Text className="text-sm text-gray-700">
+          Pedido de compra: {sa?.has_purchase_order ? 'sí' : 'no'}
+          {sa?.purchase_order_number ? ` (${sa.purchase_order_number})` : ''}
+        </Text>
+        {!sa?.has_purchase_order && orders.length === 0 && sa?.why_not_buying && (
+          <Text className="text-sm text-gray-700">Motivo: {sa.why_not_buying}</Text>
+        )}
+        <Text className="text-sm text-gray-700">
+          Pedidos creados: {orders.length}
+          {orders.length > 0 ? ` · total $${orderTotal.toFixed(2)}` : ''}
+        </Text>
+        {orders.length > 0 && (
+          <View className="mt-2">
+            {orders.map(o => (
+              <Text key={o.id} className="text-xs text-gray-500" numberOfLines={1}>
+                · {o.order_number ?? 'Pedido'} — {o.distributor_name ?? '—'} ({o.items.length} items)
+              </Text>
+            ))}
+          </View>
+        )}
+        {sa?.has_inventory && inventoryItems.length > 0 && (
+          <Text className="text-sm text-gray-700 mt-1">
+            Inventario: {inventoryItems.length} items
+          </Text>
+        )}
+        {sa?.purchase_inventory_notes && (
+          <Text className="text-xs text-gray-500 mt-2" numberOfLines={4}>
+            {sa.purchase_inventory_notes}
+          </Text>
+        )}
+        <PhotoStrip photos={inventoryPhotos} emptyLabel="Sin fotos en esta etapa" />
+      </View>
+
+      {/* Stage 3 summary */}
+      <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
+        <Text className="text-sm font-semibold text-navy mb-2">Etapa 3 · POP</Text>
+        {sa?.communication_compliance && (
+          <Text className="text-sm text-gray-700">
+            Cumplimiento: {COMPLIANCE_LABEL[sa.communication_compliance] ?? sa.communication_compliance}
+          </Text>
+        )}
+        <Text className="text-sm text-gray-700">
+          POP presentes: {popPresent.length} de {(a?.popMaterialChecks ?? []).length}
+        </Text>
+        <Text className="text-sm text-gray-700">
+          Exhibiciones ejecutadas: {exhibitionsExecuted.length} de {(a?.exhibitionChecks ?? []).length}
+        </Text>
+        {sa?.pop_execution_notes && (
+          <Text className="text-xs text-gray-500 mt-2" numberOfLines={4}>
+            {sa.pop_execution_notes}
+          </Text>
+        )}
+        <PhotoStrip photos={communicationPhotos} emptyLabel="Sin fotos en esta etapa" />
+      </View>
+    </View>
+  )
+}
+
+function PhotoStrip({ photos, emptyLabel }: { photos: EvidenceItem[]; emptyLabel: string }) {
+  if (photos.length === 0) {
+    return <Text className="text-xs text-gray-400 mt-3">{emptyLabel}</Text>
+  }
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
+      {photos.map(p => (
+        <Image
+          key={p.id}
+          source={{ uri: p.file_url }}
+          className="w-20 h-20 rounded-lg mr-2 bg-gray-200"
+          resizeMode="cover"
+        />
+      ))}
     </ScrollView>
   )
 }
