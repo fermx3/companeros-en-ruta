@@ -212,7 +212,10 @@ export function serializeStage2(slice: VisitWizardSlice): AssessmentPostBody {
       purchaseOrderNumber: slice.stage2.purchaseOrderNumber ?? null,
       whyNotBuying: slice.stage2.whyNotBuying ?? null,
       purchaseInventoryNotes: slice.stage2.purchaseInventoryNotes ?? null,
-      inventoryItems: slice.stage2.inventoryItems,
+      // Drop incomplete rows (product_id empty, e.g. user added an item but
+      // didn't pick a product yet). The web stage 2 handler inserts every
+      // row verbatim and would 500 on an empty product_id FK.
+      inventoryItems: slice.stage2.inventoryItems.filter(it => it.product_id),
       orderId: slice.stage2.orderId ?? null,
     },
   }

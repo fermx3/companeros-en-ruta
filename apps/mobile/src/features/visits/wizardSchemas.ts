@@ -21,9 +21,10 @@ const stockLevelEnum = z.enum(['out_of_stock', 'low', 'medium', 'high'])
 const whyNotBuyingEnum = z.enum([
   'lack_of_budget',
   'low_turnover',
-  'too_much_stock',
-  'price',
-  'other',
+  'sufficient_inventory',
+  'prefers_other_brand',
+  'distributor_issues',
+  'not_applicable',
 ])
 const communicationComplianceEnum = z.enum(['full', 'partial', 'non_compliant'])
 const popConditionEnum = z.enum(['good', 'damaged', 'missing'])

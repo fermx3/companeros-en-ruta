@@ -29,9 +29,10 @@ import { makeStage2Schema } from '@/features/visits/wizardSchemas'
 const WHY_OPTIONS: readonly { value: WhyNotBuying; label: string }[] = [
   { value: 'lack_of_budget', label: 'Sin presupuesto' },
   { value: 'low_turnover', label: 'Baja rotación' },
-  { value: 'too_much_stock', label: 'Stock alto' },
-  { value: 'price', label: 'Precio' },
-  { value: 'other', label: 'Otro' },
+  { value: 'sufficient_inventory', label: 'Stock alto' },
+  { value: 'prefers_other_brand', label: 'Otra marca' },
+  { value: 'distributor_issues', label: 'Distribuidor' },
+  { value: 'not_applicable', label: 'No aplica' },
 ]
 
 export default function Stage2Screen() {
