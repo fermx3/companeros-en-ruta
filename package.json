@@ -12,7 +12,10 @@
     "test:db": "jest --config tests/database/jest.config.cjs",
     "mobile": "pnpm --filter=@companeros/mobile start",
     "mobile:ios": "pnpm --filter=@companeros/mobile ios",
-    "mobile:android": "pnpm --filter=@companeros/mobile android"
+    "mobile:android": "pnpm --filter=@companeros/mobile android",
+    "client-mobile": "pnpm --filter=@companeros/client-mobile start",
+    "client-mobile:ios": "pnpm --filter=@companeros/client-mobile ios",
+    "client-mobile:android": "pnpm --filter=@companeros/client-mobile android"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.80.0",
