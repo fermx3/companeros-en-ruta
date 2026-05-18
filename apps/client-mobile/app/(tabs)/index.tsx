@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
 import { useClientProfile } from '@/features/profile/api'
 import {
+  promotionDiscountLabel,
   useClientPromotions,
   useFeaturedProducts,
   useMemberships,
@@ -95,33 +96,57 @@ export default function HomeTab() {
         </Card>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-          {promotions.slice(0, 6).map(p => (
-            <Pressable
-              key={p.id}
-              className="w-64 mr-3"
-              onPress={() => router.push('/(tabs)/qr')}
-            >
-              <Card>
-                <View className="flex-row items-center mb-1">
-                  <BrandLogo logoUrl={p.brand_logo_url} name={p.brand_name} size={28} />
-                  <Text className="text-xs text-gray-500 ml-2">{p.brand_name}</Text>
-                </View>
-                <Text className="text-sm font-bold text-navy" numberOfLines={1}>
-                  {p.name}
-                </Text>
-                {p.discount_display && (
-                  <Text className="text-base font-bold text-success mt-1">
-                    {p.discount_display}
+          {promotions.slice(0, 6).map(p => {
+            const discount = promotionDiscountLabel(p)
+            const brandName = p.brand?.name ?? 'Marca'
+            const brandColor = p.brand?.brand_color_primary ?? '#1a4480'
+            return (
+              <Pressable
+                key={p.id}
+                className="w-64 mr-3"
+                onPress={() => router.push('/(tabs)/qr')}
+              >
+                <Card>
+                  <View className="flex-row items-center mb-2">
+                    <BrandLogo logoUrl={p.brand?.logo_url ?? null} name={brandName} size={28} />
+                    <Text className="text-xs text-gray-500 ml-2 flex-1" numberOfLines={1}>
+                      {brandName}
+                    </Text>
+                  </View>
+                  <Text className="text-sm font-bold text-navy" numberOfLines={2}>
+                    {p.name}
                   </Text>
-                )}
-                {p.valid_until && (
-                  <Text className="text-[10px] text-gray-400 mt-1">
-                    Vigente hasta {new Date(p.valid_until).toLocaleDateString('es-MX')}
-                  </Text>
-                )}
-              </Card>
-            </Pressable>
-          ))}
+                  {discount && (
+                    <Text
+                      className="text-base font-bold mt-1"
+                      style={{ color: brandColor }}
+                    >
+                      {discount}
+                    </Text>
+                  )}
+                  {p.description && (
+                    <Text className="text-xs text-gray-500 mt-1" numberOfLines={2}>
+                      {p.description}
+                    </Text>
+                  )}
+                  {p.end_date && (
+                    <Text className="text-[10px] text-gray-400 mt-2">
+                      Vigente hasta{' '}
+                      {new Date(p.end_date).toLocaleDateString('es-MX', {
+                        day: 'numeric',
+                        month: 'short',
+                      })}
+                    </Text>
+                  )}
+                  {p.requires_code && p.promo_code && (
+                    <Text className="text-[10px] text-amber-700 mt-0.5 font-semibold">
+                      Código: {p.promo_code}
+                    </Text>
+                  )}
+                </Card>
+              </Pressable>
+            )
+          })}
         </ScrollView>
       )}
 

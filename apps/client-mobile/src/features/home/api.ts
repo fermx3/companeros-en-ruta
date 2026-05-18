@@ -38,21 +38,48 @@ export interface AvailableBrandsResponse {
 
 export interface ClientPromotion {
   id: string
-  brand_id: string
-  brand_name: string | null
-  brand_logo_url: string | null
+  public_id: string
   name: string
   description: string | null
   promotion_type: string
-  discount_display: string | null
-  valid_from: string | null
-  valid_until: string | null
   status: string
+  start_date: string | null
+  end_date: string | null
+  discount_percentage: number | null
+  discount_amount: number | null
+  points_multiplier: number | null
+  buy_quantity: number | null
+  get_quantity: number | null
+  terms_and_conditions: string | null
+  requires_code: boolean | null
+  promo_code: string | null
+  usage_limit_per_client: number | null
+  usage_count_total: number | null
+  usage_limit_total: number | null
+  brand: {
+    id: string
+    name: string
+    logo_url: string | null
+    brand_color_primary: string | null
+    brand_color_secondary: string | null
+  } | null
 }
 
 export interface ClientPromotionsResponse {
   promotions: ClientPromotion[]
   total: number
+}
+
+/**
+ * Build a short, human-readable label for a promotion's main benefit.
+ * Matches what the web's `discount_display` synthesizes server-side.
+ */
+export function promotionDiscountLabel(p: ClientPromotion): string | null {
+  if (p.discount_percentage != null && p.discount_percentage > 0) return `${p.discount_percentage}% off`
+  if (p.discount_amount != null && p.discount_amount > 0) return `$${p.discount_amount} off`
+  if (p.points_multiplier != null && p.points_multiplier > 1) return `${p.points_multiplier}x puntos`
+  if (p.buy_quantity != null && p.get_quantity != null) return `${p.buy_quantity}x${p.get_quantity}`
+  return null
 }
 
 export interface FeaturedProduct {

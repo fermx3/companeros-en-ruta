@@ -5,22 +5,26 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native'
+import { router } from 'expo-router'
 
 import { BadgeStatus } from '@/components/ui/BadgeStatus'
 import { BrandLogo } from '@/components/ui/BrandLogo'
 import { Card } from '@/components/ui/Card'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
-import { QRCard } from '@/components/ui/QRCard'
 import {
+  promotionDiscountLabel,
   useClientPromotions,
   useMemberships,
 } from '@/features/home/api'
-import { useGenerateQR, useQRCodes } from '@/features/qr/api'
+import { discountLabel, useGenerateQR, useQRCodes, type QRCode } from '@/features/qr/api'
+import { useClientProfile } from '@/features/profile/api'
 
 export default function QRTab() {
+  const profileQuery = useClientProfile()
   const membershipsQuery = useMemberships()
   const qrQuery = useQRCodes()
   const generate = useGenerateQR()
@@ -54,24 +58,28 @@ export default function QRTab() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      <View className="bg-white px-4 py-3 border-b border-gray-200">
-        <View className="flex-row bg-gray-100 rounded-lg p-1">
-          <Pressable
-            className={`flex-1 py-2 rounded-md items-center ${tab === 'active' ? 'bg-white shadow' : ''}`}
-            onPress={() => setTab('active')}
-          >
-            <Text className={`text-xs font-medium ${tab === 'active' ? 'text-navy' : 'text-gray-500'}`}>
-              Activos
-            </Text>
-          </Pressable>
-          <Pressable
-            className={`flex-1 py-2 rounded-md items-center ${tab === 'used' ? 'bg-white shadow' : ''}`}
-            onPress={() => setTab('used')}
-          >
-            <Text className={`text-xs font-medium ${tab === 'used' ? 'text-navy' : 'text-gray-500'}`}>
-              Usados
-            </Text>
-          </Pressable>
+      {/* Tabs use StyleSheet (no NativeWind className) — the className wrapper
+        around Pressable inside a tight container can crash with
+        MISSING_CONTEXT_ERROR on the re-render that follows a tap, same
+        symptom we hit on the promotor wizard's SegmentedControl. */}
+      <View style={tabStyles.header}>
+        <View style={tabStyles.track}>
+          {(['active', 'used'] as const).map(opt => {
+            const selected = tab === opt
+            return (
+              <Pressable
+                key={opt}
+                style={[tabStyles.option, selected && tabStyles.optionSelected]}
+                onPress={() => setTab(opt)}
+              >
+                <Text
+                  style={[tabStyles.optionLabel, selected && tabStyles.optionLabelSelected]}
+                >
+                  {opt === 'active' ? 'Activos' : 'Usados'}
+                </Text>
+              </Pressable>
+            )
+          })}
         </View>
       </View>
 
@@ -90,30 +98,7 @@ export default function QRTab() {
             }
           />
         ) : (
-          filtered.map(qr => (
-            <View key={qr.id} className="mb-4">
-              <View className="flex-row items-start justify-between mb-2">
-                <View className="flex-1 pr-2">
-                  <Text className="text-sm font-semibold text-navy">
-                    {qr.promotion_name ?? 'Cupón'}
-                  </Text>
-                  <Text className="text-xs text-gray-500 mt-0.5">{qr.brand_name}</Text>
-                </View>
-                <BadgeStatus status={qr.status} />
-              </View>
-              <QRCard
-                qrValue={qr.qr_code_string}
-                brandName={qr.brand_name}
-                brandColor={qr.brand_color_primary}
-                discountLabel={qr.promotion_discount_display}
-                expiresLabel={
-                  qr.valid_until
-                    ? `Vigente hasta ${new Date(qr.valid_until).toLocaleDateString('es-MX')}`
-                    : null
-                }
-              />
-            </View>
-          ))
+          filtered.map(qr => <QRListCard key={qr.id} qr={qr} />)
         )}
       </ScrollView>
 
@@ -141,8 +126,14 @@ export default function QRTab() {
             activeMemberships={activeMemberships}
             onClose={() => setGeneratorOpen(false)}
             onGenerate={async promotionId => {
+              const clientId = profileQuery.data?.id
+              if (!clientId) {
+                Alert.alert('Cargando perfil', 'Esperá un momento e intentá de nuevo.')
+                return
+              }
               try {
                 await generate.mutateAsync({
+                  client_id: clientId,
                   brand_id: selectedBrandId,
                   promotion_id: promotionId,
                 })
@@ -158,6 +149,89 @@ export default function QRTab() {
     </View>
   )
 }
+
+function QRListCard({ qr }: { qr: QRCode }) {
+  const brandName = qr.brand?.name ?? 'Marca'
+  const promotionName = qr.promotion?.name ?? 'Cupón sin promoción específica'
+  const discount = discountLabel(qr)
+  return (
+    <Card className="mb-3">
+      <View className="flex-row items-start justify-between mb-2">
+        <View className="flex-row items-center flex-1 pr-2">
+          <BrandLogo logoUrl={qr.brand?.logo_url ?? null} name={brandName} size={32} />
+          <View className="ml-2 flex-1">
+            <Text className="text-sm font-bold text-navy" numberOfLines={1}>
+              {promotionName}
+            </Text>
+            <Text className="text-xs text-gray-500" numberOfLines={1}>
+              {brandName}
+            </Text>
+          </View>
+        </View>
+        <BadgeStatus status={qr.status} />
+      </View>
+
+      {discount && (
+        <Text className="text-lg font-bold mt-1 mb-2 text-success">{discount}</Text>
+      )}
+
+      <View className="border-t border-gray-100 pt-2">
+        {qr.valid_until && (
+          <Text className="text-xs text-gray-500">
+            Vigente hasta{' '}
+            {new Date(qr.valid_until).toLocaleDateString('es-MX', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })}
+          </Text>
+        )}
+        <Text className="text-xs text-gray-400 mt-0.5">Código {qr.code}</Text>
+      </View>
+
+      {qr.status === 'active' && (
+        <Pressable
+          className="mt-3 h-10 rounded-full items-center justify-center bg-primary-light"
+          onPress={() => router.push(`/qr/${qr.id}` as never)}
+        >
+          <Text className="text-white font-semibold text-sm">Ver QR</Text>
+        </Pressable>
+      )}
+    </Card>
+  )
+}
+
+const tabStyles = StyleSheet.create({
+  header: {
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  track: {
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    padding: 4,
+  },
+  option: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  optionSelected: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  optionLabel: { fontSize: 12, color: '#6b7280', fontWeight: '500' },
+  optionLabelSelected: { color: '#0f2444' },
+})
 
 interface GeneratorSheetProps {
   brandId: string
@@ -233,8 +307,8 @@ function GeneratorSheet({
                     {p.name}
                   </Text>
                 </View>
-                {p.discount_display && (
-                  <Text className="text-sm font-bold text-success">{p.discount_display}</Text>
+                {promotionDiscountLabel(p) && (
+                  <Text className="text-sm font-bold text-success">{promotionDiscountLabel(p)}</Text>
                 )}
                 {p.description && (
                   <Text className="text-xs text-gray-500 mt-1" numberOfLines={2}>{p.description}</Text>

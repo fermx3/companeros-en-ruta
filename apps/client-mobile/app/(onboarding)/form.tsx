@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -13,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 
 import { useOnboardingData, useSubmitOnboarding } from '@/features/onboarding/api'
 
@@ -164,11 +166,10 @@ export default function OnboardingForm() {
               options={GENDER_OPTIONS}
               onChange={v => setValue('gender', v)}
             />
-            <FieldText
-              control={control}
-              name="date_of_birth"
-              label="Fecha de nacimiento (AAAA-MM-DD)"
-              placeholder="1990-01-01"
+            <FieldDate
+              label="Fecha de nacimiento"
+              value={watch('date_of_birth')}
+              onChange={v => setValue('date_of_birth', v)}
             />
             <FieldText
               control={control}
@@ -404,6 +405,72 @@ function FieldChips<T extends string>({ label, value, options, onChange }: Field
           )
         })}
       </View>
+    </View>
+  )
+}
+
+interface FieldDateProps {
+  label: string
+  value: string | undefined
+  onChange: (next: string) => void
+}
+
+function FieldDate({ label, value, onChange }: FieldDateProps) {
+  const [open, setOpen] = useState(false)
+  const parsed = value ? new Date(value) : new Date(1990, 0, 1)
+  const displayLabel = value
+    ? new Date(value).toLocaleDateString('es-MX', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : 'Seleccionar fecha'
+
+  function handlePickerChange(event: DateTimePickerEvent, picked?: Date) {
+    if (Platform.OS === 'android') {
+      setOpen(false)
+      if (event.type === 'dismissed' || !picked) return
+    }
+    if (picked) {
+      // Persist as YYYY-MM-DD (server expects ISO date string).
+      const yyyy = picked.getFullYear()
+      const mm = String(picked.getMonth() + 1).padStart(2, '0')
+      const dd = String(picked.getDate()).padStart(2, '0')
+      onChange(`${yyyy}-${mm}-${dd}`)
+    }
+  }
+
+  return (
+    <View className="mb-3">
+      <Text className="text-xs text-gray-600 mb-1">{label}</Text>
+      <Pressable
+        className="border border-gray-300 bg-white rounded-lg px-3 py-2.5"
+        onPress={() => setOpen(true)}
+      >
+        <Text className={`text-sm ${value ? 'text-navy' : 'text-gray-400'}`}>
+          {displayLabel}
+        </Text>
+      </Pressable>
+      {open && (
+        <View className="bg-white rounded-lg mt-2 border border-gray-200">
+          <DateTimePicker
+            value={parsed}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            maximumDate={new Date()}
+            minimumDate={new Date(1920, 0, 1)}
+            onChange={handlePickerChange}
+          />
+          {Platform.OS === 'ios' && (
+            <Pressable
+              className="py-2 items-center border-t border-gray-200"
+              onPress={() => setOpen(false)}
+            >
+              <Text className="text-primary-light font-semibold">Listo</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
     </View>
   )
 }

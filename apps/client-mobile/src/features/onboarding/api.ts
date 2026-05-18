@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { apiFetch } from '@/lib/api'
+import type { ClientProfile } from '@/features/profile/api'
 
 export interface ClientOnboardingData {
   id: string
@@ -72,9 +73,18 @@ export function useSubmitOnboarding() {
         method: 'PATCH',
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['client', 'profile'] })
-      qc.invalidateQueries({ queryKey: ['client', 'onboarding'] })
+    onSuccess: async () => {
+      // Optimistically flip the local cache flag so the index.tsx branch sees
+      // the new state immediately on navigation. `invalidateQueries` triggers
+      // a refetch but does not block the next render — without this patch,
+      // the redirect lands back on /(onboarding)/welcome for one frame.
+      qc.setQueryData<ClientProfile | undefined>(['client', 'profile'], old =>
+        old ? { ...old, onboarding_completed: true } : old
+      )
+      await Promise.all([
+        qc.refetchQueries({ queryKey: ['client', 'profile'] }),
+        qc.invalidateQueries({ queryKey: ['client', 'onboarding'] }),
+      ])
     },
   })
 }
