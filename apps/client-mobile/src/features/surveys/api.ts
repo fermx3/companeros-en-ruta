@@ -12,7 +12,7 @@ export interface SurveyListItem {
   end_date: string | null
   brands: { name: string; logo_url: string | null } | null
   /** True when the user has already submitted a response. */
-  already_responded?: boolean
+  has_responded?: boolean
 }
 
 export interface SurveysListResponse {
@@ -54,6 +54,8 @@ export interface SurveyDetailResponse {
     survey_sections: SurveySection[]
     survey_questions: SurveyQuestion[]
   }
+  has_responded: boolean
+  existing_response: { id: string; submitted_at: string } | null
 }
 
 export function useSurveys() {
@@ -87,15 +89,22 @@ export function useSubmitSurvey(surveyId: string) {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['client', 'surveys'] })
+      qc.invalidateQueries({ queryKey: ['client', 'surveys', surveyId] })
     },
   })
 }
 
 /**
- * The web's respond endpoint currently requires a user_profiles row (staff
- * users only) and 403s on client submissions. Callers can branch on this to
- * show a clearer "no soportado" message rather than the raw 403.
+ * Client submissions to /api/surveys/[id]/respond were 403'd before the
+ * survey_responses.client_id migration. Kept as defense-in-depth so older
+ * builds or unexpected regressions surface a clear message instead of a raw
+ * error.
  */
 export function isClientSubmitUnsupported(err: unknown): boolean {
   return err instanceof ApiError && err.status === 403
+}
+
+/** A 409 from the respond endpoint means the user already submitted this survey. */
+export function isDuplicateSurveyResponse(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 409
 }

@@ -66,7 +66,7 @@ function SurveyRow({ s }: { s: SurveyListItem }) {
                 Hasta {new Date(s.end_date).toLocaleDateString('es-MX')}
               </Text>
             )}
-            {s.already_responded && (
+            {s.has_responded && (
               <Text className="text-[10px] text-success mt-1 font-semibold">
                 Ya respondida
               </Text>
