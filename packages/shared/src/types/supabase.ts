@@ -6133,30 +6133,33 @@ export type Database = {
       }
       survey_responses: {
         Row: {
+          client_id: string | null
           created_at: string
           id: string
           public_id: string
-          respondent_id: string
+          respondent_id: string | null
           respondent_role: Database["public"]["Enums"]["survey_target_role_enum"]
           submitted_at: string
           survey_id: string
           tenant_id: string
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           id?: string
           public_id?: string
-          respondent_id: string
+          respondent_id?: string | null
           respondent_role: Database["public"]["Enums"]["survey_target_role_enum"]
           submitted_at?: string
           survey_id: string
           tenant_id: string
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           id?: string
           public_id?: string
-          respondent_id?: string
+          respondent_id?: string | null
           respondent_role?: Database["public"]["Enums"]["survey_target_role_enum"]
           submitted_at?: string
           survey_id?: string

@@ -17,6 +17,7 @@ import { Card } from '@/components/ui/Card'
 import { ScreenHeader } from '@/components/ui/ScreenHeader'
 import {
   isClientSubmitUnsupported,
+  isDuplicateSurveyResponse,
   useSubmitSurvey,
   useSurvey,
   type SurveyQuestion,
@@ -31,6 +32,8 @@ export default function SurveyRunnerScreen() {
   const [answers, setAnswers] = useState<Answers>({})
 
   const survey = surveyQuery.data?.survey
+  const hasResponded = surveyQuery.data?.has_responded ?? false
+  const existingResponse = surveyQuery.data?.existing_response ?? null
   const sortedQuestions = useMemo(() => {
     const qs = survey?.survey_questions ?? []
     return [...qs].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -72,6 +75,14 @@ export default function SurveyRunnerScreen() {
         { text: 'Volver', onPress: () => router.back() },
       ])
     } catch (e) {
+      if (isDuplicateSurveyResponse(e)) {
+        Alert.alert(
+          'Ya respondiste',
+          'Ya enviaste tu respuesta a esta encuesta. ¡Gracias!',
+          [{ text: 'Volver', onPress: () => router.back() }]
+        )
+        return
+      }
       if (isClientSubmitUnsupported(e)) {
         Alert.alert(
           'Aún no soportado',
@@ -104,6 +115,32 @@ export default function SurveyRunnerScreen() {
               ? surveyQuery.error.message
               : 'No pudimos cargar la encuesta'}
           </Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  if (hasResponded) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        <ScreenHeader title={survey.title} showBack />
+        <View className="flex-1 items-center justify-center px-6">
+          <Card className="w-full items-center">
+            <Text className="text-base font-bold text-navy text-center mb-2">
+              Ya respondiste esta encuesta
+            </Text>
+            <Text className="text-sm text-gray-600 text-center mb-4">
+              {existingResponse?.submitted_at
+                ? `Enviada el ${new Date(existingResponse.submitted_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}. ¡Gracias por tus respuestas!`
+                : '¡Gracias por tus respuestas!'}
+            </Text>
+            <Pressable
+              className="h-11 px-6 rounded-full bg-primary-light items-center justify-center"
+              onPress={() => router.back()}
+            >
+              <Text className="text-white font-semibold">Volver</Text>
+            </Pressable>
+          </Card>
         </View>
       </SafeAreaView>
     )

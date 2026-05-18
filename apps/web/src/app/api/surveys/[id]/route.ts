@@ -18,6 +18,7 @@ export async function GET(
     // Resolve tenant — staff users have user_profiles, client users may only have clients
     let tenantId: string
     let profileId: string | null = null
+    let clientId: string | null = null
 
     const { data: userProfile } = await supabase
       .from('user_profiles')
@@ -41,6 +42,7 @@ export async function GET(
         return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
       }
       tenantId = clientRow.tenant_id
+      clientId = clientRow.id
     }
 
     const { data: survey, error: fetchError } = await supabase
@@ -93,15 +95,19 @@ export async function GET(
       survey.survey_sections.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
     }
 
-    // Check if already responded
+    // Check if already responded — staff by respondent_id, clients by client_id
     let existingResponse: { id: string; submitted_at: string }[] | null = null
-    if (profileId) {
-      const { data } = await supabase
+    {
+      const dupQuery = supabase
         .from('survey_responses')
         .select('id, submitted_at')
         .eq('survey_id', survey.id)
-        .eq('respondent_id', profileId)
         .limit(1)
+      const { data } = profileId
+        ? await dupQuery.eq('respondent_id', profileId)
+        : clientId
+          ? await dupQuery.eq('client_id', clientId)
+          : { data: null }
       existingResponse = data
     }
 

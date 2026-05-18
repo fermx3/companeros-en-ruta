@@ -250,18 +250,25 @@ export async function GET() {
       return true
     })
 
-    // Check which surveys the user has already responded to
+    // Check which surveys the user has already responded to.
+    // Staff respondents are keyed by respondent_id (user_profiles.id);
+    // client respondents are keyed by client_id.
     const surveyIds = filteredSurveys.map(s => s.id)
     let respondedSurveys: Set<string> = new Set()
 
-    if (surveyIds.length > 0 && profileId) {
-      const { data: responses } = await supabase
-        .from('survey_responses')
-        .select('survey_id')
-        .eq('respondent_id', profileId)
-        .in('survey_id', surveyIds)
+    if (surveyIds.length > 0) {
+      const respondentColumn = profileId ? 'respondent_id' : 'client_id'
+      const respondentValue = profileId ?? clientRow?.id ?? null
 
-      respondedSurveys = new Set((responses || []).map(r => r.survey_id))
+      if (respondentValue) {
+        const { data: responses } = await supabase
+          .from('survey_responses')
+          .select('survey_id')
+          .eq(respondentColumn, respondentValue)
+          .in('survey_id', surveyIds)
+
+        respondedSurveys = new Set((responses || []).map(r => r.survey_id))
+      }
     }
 
     const surveysWithStatus = filteredSurveys.map(({ targeting_criteria, brand_id, ...survey }) => ({

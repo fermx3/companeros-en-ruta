@@ -28,7 +28,9 @@ export async function POST(
       userId = user.id
     }
 
-    // Resolve tenant — staff users have user_profiles, client users may only have clients
+    // Resolve respondent — staff users have user_profiles, client users
+    // only have a row in `clients`. We attach the response to whichever
+    // exists; the survey_responses check constraint guarantees exactly one.
     const { data: userProfile } = await supabase
       .from('user_profiles')
       .select('id, tenant_id')
@@ -37,6 +39,7 @@ export async function POST(
 
     let tenantId: string
     let profileId: string | null = null
+    let clientId: string | null = null
 
     if (userProfile) {
       tenantId = userProfile.tenant_id
@@ -54,13 +57,7 @@ export async function POST(
         return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
       }
       tenantId = clientRow.tenant_id
-    }
-
-    if (!profileId) {
-      return NextResponse.json(
-        { error: 'Tu perfil no permite enviar respuestas de encuestas aún' },
-        { status: 403 }
-      )
+      clientId = clientRow.id
     }
 
     // First: resolve the survey (may use public_id)
@@ -95,21 +92,27 @@ export async function POST(
       return NextResponse.json({ error: 'Encuesta no encontrada o no activa' }, { status: 404 })
     }
 
-    // Then: check duplicates and determine role IN PARALLEL (using resolved survey.id)
-    const [existingResponseResult, userRolesResult] = await Promise.all([
-      supabase
-        .from('survey_responses')
-        .select('id')
-        .eq('survey_id', survey.id)
-        .eq('respondent_id', profileId)
-        .limit(1),
+    // Then: check duplicates and determine role IN PARALLEL (using resolved survey.id).
+    // Duplicate-check column depends on which respondent type we have.
+    const dupQuery = supabase
+      .from('survey_responses')
+      .select('id')
+      .eq('survey_id', survey.id)
+      .limit(1)
 
-      supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_profile_id', profileId)
-        .eq('status', 'active')
-        .is('deleted_at', null),
+    const [existingResponseResult, userRolesResult] = await Promise.all([
+      profileId
+        ? dupQuery.eq('respondent_id', profileId)
+        : dupQuery.eq('client_id', clientId!),
+
+      profileId
+        ? supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_profile_id', profileId)
+            .eq('status', 'active')
+            .is('deleted_at', null)
+        : Promise.resolve({ data: [] as { role: string }[] }),
     ])
 
     // Check date range
@@ -126,13 +129,15 @@ export async function POST(
       )
     }
 
-    // Determine respondent role
+    // Determine respondent role. Clients (no user_profile) are always 'client'.
     const userRoles = userRolesResult.data
 
     let respondentRole: SurveyTargetRoleEnum = 'client'
-    const roles = (userRoles || []).map(r => r.role)
-    if (roles.includes('promotor')) respondentRole = 'promotor'
-    else if (roles.includes('asesor_de_ventas')) respondentRole = 'asesor_de_ventas'
+    if (profileId) {
+      const roles = (userRoles || []).map(r => r.role)
+      if (roles.includes('promotor')) respondentRole = 'promotor'
+      else if (roles.includes('asesor_de_ventas')) respondentRole = 'asesor_de_ventas'
+    }
 
     // Validate body
     const body = await request.json()
@@ -213,14 +218,16 @@ export async function POST(
       }
     }
 
-    // Create response
+    // Create response — attach to either user_profiles or clients per the
+    // check constraint survey_responses_respondent_or_client_check.
     const { data: newResponse, error: responseError } = await supabase
       .from('survey_responses')
       .insert({
         survey_id: survey.id,
         tenant_id: survey.tenant_id,
         respondent_id: profileId,
-        respondent_role: respondentRole
+        client_id: clientId,
+        respondent_role: respondentRole,
       })
       .select()
       .single()
