@@ -1,4 +1,13 @@
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native'
+import { useCallback } from 'react'
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native'
 import { router } from 'expo-router'
 
 import { BrandLogo } from '@/components/ui/BrandLogo'
@@ -24,8 +33,25 @@ export default function HomeTab() {
   const promotions = promotionsQuery.data?.promotions ?? []
   const products = productsQuery.data?.products ?? []
 
+  const refreshing =
+    profileQuery.isRefetching ||
+    membershipsQuery.isRefetching ||
+    promotionsQuery.isRefetching ||
+    productsQuery.isRefetching
+
+  const onRefresh = useCallback(() => {
+    profileQuery.refetch()
+    membershipsQuery.refetch()
+    promotionsQuery.refetch()
+    productsQuery.refetch()
+  }, [profileQuery, membershipsQuery, promotionsQuery, productsQuery])
+
   return (
-    <ScrollView className="flex-1 bg-gray-50" contentContainerClassName="p-4 pb-8">
+    <ScrollView
+      className="flex-1 bg-gray-50"
+      contentContainerClassName="p-4 pb-8"
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       {/* Greeting */}
       <Text className="text-2xl font-bold text-navy">
         Hola {profile?.owner_name?.split(' ')[0] ?? profile?.business_name ?? ''}

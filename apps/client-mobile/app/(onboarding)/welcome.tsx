@@ -10,7 +10,7 @@ export default function OnboardingWelcome() {
           ¡Bienvenido a Compañeros!
         </Text>
         <Text className="text-base text-gray-600 text-center mb-8">
-          Antes de empezar, completá unos datos rápidos sobre tu negocio. Son 2 pasos
+          Antes de empezar, completa unos datos rápidos sobre tu negocio. Son 2 pasos
           cortos y te tomarán menos de 3 minutos.
         </Text>
         <Pressable
