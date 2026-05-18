@@ -91,8 +91,8 @@ export default function QRDetailScreen() {
         {qr.status === 'active' && (
           <View className="bg-blue-50 rounded-xl p-3 w-full">
             <Text className="text-xs text-navy text-center">
-              Mostrale esta pantalla al promotor para que escanee el código.
-              No necesitás conexión a internet en este momento.
+              Muéstrale esta pantalla al promotor para que escanee el código.
+              No necesitas conexión a internet en este momento.
             </Text>
           </View>
         )}

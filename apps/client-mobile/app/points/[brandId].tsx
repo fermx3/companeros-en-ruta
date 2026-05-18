@@ -110,7 +110,7 @@ export default function PointsDetailScreen() {
           ) : (
             <ListEmptyState
               title="Sin movimientos"
-              body="Cuando ganes o canjees puntos en esta marca, los vas a ver acá."
+              body="Cuando ganes o canjees puntos en esta marca, los vas a ver aquí."
             />
           )
         }

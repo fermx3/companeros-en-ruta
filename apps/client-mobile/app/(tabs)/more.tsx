@@ -1,4 +1,12 @@
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native'
 import { router } from 'expo-router'
 
 import { BrandLogo } from '@/components/ui/BrandLogo'
@@ -25,7 +33,16 @@ export default function MoreTab() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" contentContainerClassName="p-4">
+    <ScrollView
+      className="flex-1 bg-gray-50"
+      contentContainerClassName="p-4"
+      refreshControl={
+        <RefreshControl
+          refreshing={pointsQuery.isRefetching}
+          onRefresh={pointsQuery.refetch}
+        />
+      }
+    >
       <Pressable className="mb-2" onPress={() => router.push('/profile')}>
         <Card>
           <Text className="text-sm font-semibold text-navy">Mi perfil</Text>
@@ -39,7 +56,7 @@ export default function MoreTab() {
           <ActivityIndicator />
         ) : !summary || summary.brands.length === 0 ? (
           <Text className="text-xs text-gray-500">
-            Aún no tenés puntos. Unite a una marca en la pestaña Marcas.
+            Aún no tienes puntos. Únete a una marca en la pestaña Marcas.
           </Text>
         ) : (
           <>

@@ -100,7 +100,7 @@ export default function OrdersTab() {
           ) : (
             <ListEmptyState
               title={status === 'all' ? 'Sin pedidos' : 'Sin pedidos en este estado'}
-              body="Cuando recibas un pedido del promotor o lo hagas vos mismo, va a aparecer acá."
+              body="Cuando recibas un pedido del promotor o lo hagas tú mismo, va a aparecer aquí."
             />
           )
         }

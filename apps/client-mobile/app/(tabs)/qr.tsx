@@ -4,6 +4,7 @@ import {
   Alert,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -83,7 +84,13 @@ export default function QRTab() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="p-4 pb-8"
+        refreshControl={
+          <RefreshControl refreshing={qrQuery.isRefetching} onRefresh={qrQuery.refetch} />
+        }
+      >
         {qrQuery.isLoading ? (
           <Card>
             <ActivityIndicator />
@@ -290,7 +297,7 @@ function GeneratorSheet({
           <ActivityIndicator />
         ) : promotions.length === 0 ? (
           <Text className="text-sm text-gray-500 mb-2">
-            No hay promociones activas. Igual podés generar un cupón genérico de la marca.
+            No hay promociones activas. Puedes generar un cupón genérico de la marca.
           </Text>
         ) : (
           promotions.map(p => {

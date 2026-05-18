@@ -33,7 +33,7 @@ export default function SurveysListScreen() {
           ) : (
             <ListEmptyState
               title="Sin encuestas disponibles"
-              body="Cuando una marca lance una encuesta para vos, va a aparecer acá."
+              body="Cuando una marca lance una encuesta para ti, va a aparecer aquí."
             />
           )
         }

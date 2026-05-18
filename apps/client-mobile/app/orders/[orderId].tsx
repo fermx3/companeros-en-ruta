@@ -72,7 +72,7 @@ export default function OrderDetailScreen() {
             <Card className="mb-3">
               <Text className="text-xs text-gray-500">
                 El detalle de los productos del pedido se verá pronto. Por ahora vas
-                a poder ver el resumen y el estado del pedido desde acá.
+                a poder ver el resumen y el estado del pedido desde aquí.
               </Text>
             </Card>
           </>
