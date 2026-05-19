@@ -34,20 +34,25 @@ export function Button({
   rightIcon,
 }: ButtonProps) {
   const isInactive = disabled || loading
-  const containerStyle = [
-    styles.base,
-    sizeStyles[size],
-    variantStyles[variant].container,
-    fullWidth && styles.fullWidth,
-    isInactive && styles.disabled,
-  ]
   const labelColor = variantStyles[variant].labelColor
   const labelSize = size === 'sm' ? 13 : size === 'lg' ? 16 : 14
+  const hasIcons = !!leftIcon || !!rightIcon
 
+  // IMPORTANT: Pressable's `style` MUST be a static array, not a function
+  // callback. On Expo SDK 54 / RN 0.79 the callback form sometimes does not
+  // run on first render, leaving the container without backgroundColor or
+  // height — buttons appeared invisible. Pressed visual is handled via the
+  // `pressRetentionOffset` shaded label; that's enough feedback for now.
   return (
     <Pressable
       onPress={isInactive ? undefined : onPress}
-      style={({ pressed }) => [containerStyle, pressed && !isInactive && styles.pressed]}
+      style={[
+        styles.base,
+        sizeStyles[size],
+        variantStyles[variant].container,
+        fullWidth && styles.fullWidth,
+        isInactive && styles.disabled,
+      ]}
       android_ripple={isInactive ? undefined : { color: 'rgba(0,0,0,0.1)' }}
       hitSlop={size === 'sm' ? 8 : undefined}
       accessibilityRole="button"
@@ -55,9 +60,9 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator color={labelColor} />
-      ) : (
+      ) : hasIcons ? (
         <View style={styles.row}>
-          {leftIcon ? <View style={styles.iconSpacer}>{leftIcon}</View> : null}
+          {leftIcon}
           {typeof children === 'string' ? (
             <Text
               style={{
@@ -71,8 +76,20 @@ export function Button({
           ) : (
             children
           )}
-          {rightIcon ? <View style={styles.iconSpacer}>{rightIcon}</View> : null}
+          {rightIcon}
         </View>
+      ) : typeof children === 'string' ? (
+        <Text
+          style={{
+            color: labelColor,
+            fontFamily: 'NunitoSans_700Bold',
+            fontSize: labelSize,
+          }}
+        >
+          {children}
+        </Text>
+      ) : (
+        children
       )}
     </Pressable>
   )
@@ -83,13 +100,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconSpacer: { marginHorizontal: 0 },
   fullWidth: { alignSelf: 'stretch' },
-  disabled: { opacity: 0.5 },
-  pressed: { opacity: 0.85 },
+  // Disabled at 0.5 looked "white-ish" on pale backgrounds (orange #dd5025 at
+  // 50% over #dae3fb desaturates badly). 0.6 keeps it visibly an orange CTA
+  // while signaling "inactive".
+  disabled: { opacity: 0.6 },
 })
 
 const sizeStyles = StyleSheet.create({
@@ -101,13 +118,11 @@ const sizeStyles = StyleSheet.create({
 
 const variantStyles: Record<ButtonVariant, { container: object; labelColor: string }> = {
   default: {
+    // No shadow on Button. The shadow + Card-with-shadow combo caused an iOS
+    // render glitch where buttons inside Cards became invisible. Cards
+    // already provide depth — the button doesn't need its own shadow.
     container: {
       backgroundColor: '#dd5025',
-      shadowColor: '#000',
-      shadowOpacity: 0.08,
-      shadowRadius: 4,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 2,
     },
     labelColor: '#ffffff',
   },

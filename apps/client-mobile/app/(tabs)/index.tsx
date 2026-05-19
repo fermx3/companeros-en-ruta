@@ -12,7 +12,9 @@ import { router } from 'expo-router'
 
 import { BrandLogo } from '@/components/ui/BrandLogo'
 import { Card } from '@/components/ui/Card'
+import { IconPedidos, IconQR } from '@/components/ui/Icon'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
+import { User } from 'lucide-react-native'
 import { useClientProfile } from '@/features/profile/api'
 import {
   promotionDiscountLabel,
@@ -20,6 +22,8 @@ import {
   useFeaturedProducts,
   useMemberships,
 } from '@/features/home/api'
+
+const PRIMARY_HEX = '#dd5025' // mirrors colors.primary.DEFAULT
 
 export default function HomeTab() {
   const profileQuery = useClientProfile()
@@ -48,27 +52,27 @@ export default function HomeTab() {
 
   return (
     <ScrollView
-      className="flex-1 bg-gray-50"
+      className="flex-1 bg-app-bg"
       contentContainerClassName="p-4 pb-8"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       {/* Greeting */}
-      <Text className="text-2xl font-bold text-navy">
+      <Text className="text-3xl font-black text-navy">
         Hola {profile?.owner_name?.split(' ')[0] ?? profile?.business_name ?? ''}
       </Text>
-      <Text className="text-sm text-gray-500 mt-1 mb-4">
+      <Text className="text-sm text-muted-foreground mt-1 mb-4">
         {profile?.business_name ?? ''}
       </Text>
 
       {/* Memberships / tier progress */}
-      <Text className="text-sm font-semibold text-navy mb-2">Mis niveles</Text>
+      <Text className="text-sm font-bold text-navy mb-2">Mis niveles</Text>
       {membershipsQuery.isLoading ? (
         <Card className="mb-4">
           <ActivityIndicator />
         </Card>
       ) : activeMemberships.length === 0 ? (
         <Card className="mb-4">
-          <Text className="text-sm text-gray-500">
+          <Text className="text-sm text-muted-foreground">
             Aún no estás unido a ninguna marca. Ve a la pestaña Marcas para descubrir.
           </Text>
         </Card>
@@ -85,21 +89,21 @@ export default function HomeTab() {
                 <View className="flex-row items-center mb-2">
                   <BrandLogo logoUrl={m.brand_logo_url} name={m.brand_name} size={36} />
                   <View className="flex-1 ml-3">
-                    <Text className="text-sm font-semibold text-navy">{m.brand_name}</Text>
-                    <Text className="text-xs text-gray-500">
+                    <Text className="text-sm font-bold text-navy">{m.brand_name}</Text>
+                    <Text className="text-xs text-muted-foreground">
                       {tier?.name ?? 'Sin nivel'} · {m.points_balance} pts
                     </Text>
                   </View>
                 </View>
                 {next && next.points_needed > 0 && (
                   <>
-                    <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <View className="h-2 bg-muted rounded-full overflow-hidden">
                       <View
-                        className="h-2 bg-primary-light rounded-full"
+                        className="h-2 bg-primary rounded-full"
                         style={{ width: `${Math.round(ratio * 100)}%` }}
                       />
                     </View>
-                    <Text className="text-xs text-gray-500 mt-1">
+                    <Text className="text-xs text-muted-foreground mt-1">
                       Te faltan {next.points_needed} pts para {next.name}
                     </Text>
                   </>
@@ -111,21 +115,21 @@ export default function HomeTab() {
       )}
 
       {/* Promotions */}
-      <Text className="text-sm font-semibold text-navy mb-2">Promociones para ti</Text>
+      <Text className="text-sm font-bold text-navy mb-2">Promociones para ti</Text>
       {promotionsQuery.isLoading ? (
         <Card className="mb-4">
           <ActivityIndicator />
         </Card>
       ) : promotions.length === 0 ? (
         <Card className="mb-4">
-          <Text className="text-sm text-gray-500">No hay promociones disponibles ahora.</Text>
+          <Text className="text-sm text-muted-foreground">No hay promociones disponibles ahora.</Text>
         </Card>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
           {promotions.slice(0, 6).map(p => {
             const discount = promotionDiscountLabel(p)
             const brandName = p.brand?.name ?? 'Marca'
-            const brandColor = p.brand?.brand_color_primary ?? '#1a4480'
+            const brandColor = p.brand?.brand_color_primary ?? PRIMARY_HEX
             return (
               <Pressable
                 key={p.id}
@@ -135,7 +139,7 @@ export default function HomeTab() {
                 <Card>
                   <View className="flex-row items-center mb-2">
                     <BrandLogo logoUrl={p.brand?.logo_url ?? null} name={brandName} size={28} />
-                    <Text className="text-xs text-gray-500 ml-2 flex-1" numberOfLines={1}>
+                    <Text className="text-xs text-muted-foreground ml-2 flex-1" numberOfLines={1}>
                       {brandName}
                     </Text>
                   </View>
@@ -151,12 +155,12 @@ export default function HomeTab() {
                     </Text>
                   )}
                   {p.description && (
-                    <Text className="text-xs text-gray-500 mt-1" numberOfLines={2}>
+                    <Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>
                       {p.description}
                     </Text>
                   )}
                   {p.end_date && (
-                    <Text className="text-[10px] text-gray-400 mt-2">
+                    <Text className="text-[10px] text-muted-foreground mt-2">
                       Vigente hasta{' '}
                       {new Date(p.end_date).toLocaleDateString('es-MX', {
                         day: 'numeric',
@@ -165,7 +169,7 @@ export default function HomeTab() {
                     </Text>
                   )}
                   {p.requires_code && p.promo_code && (
-                    <Text className="text-[10px] text-amber-700 mt-0.5 font-semibold">
+                    <Text className="text-[10px] text-amber-700 mt-0.5 font-bold">
                       Código: {p.promo_code}
                     </Text>
                   )}
@@ -177,33 +181,27 @@ export default function HomeTab() {
       )}
 
       {/* Quick actions */}
-      <Text className="text-sm font-semibold text-navy mb-2">Acciones rápidas</Text>
+      <Text className="text-sm font-bold text-navy mb-2">Acciones rápidas</Text>
       <View className="flex-row gap-2 mb-4">
-        <Pressable
-          className="flex-1 bg-white border border-gray-200 rounded-2xl p-4 items-center"
+        <QuickAction
+          icon={<IconQR size={24} color={PRIMARY_HEX} />}
+          label="Generar QR"
           onPress={() => router.push('/(tabs)/qr')}
-        >
-          <Text className="text-2xl mb-1">🔳</Text>
-          <Text className="text-sm font-semibold text-navy">Generar QR</Text>
-        </Pressable>
-        <Pressable
-          className="flex-1 bg-white border border-gray-200 rounded-2xl p-4 items-center"
+        />
+        <QuickAction
+          icon={<IconPedidos size={24} color={PRIMARY_HEX} />}
+          label="Mis pedidos"
           onPress={() => router.push('/(tabs)/orders')}
-        >
-          <Text className="text-2xl mb-1">📦</Text>
-          <Text className="text-sm font-semibold text-navy">Mis pedidos</Text>
-        </Pressable>
-        <Pressable
-          className="flex-1 bg-white border border-gray-200 rounded-2xl p-4 items-center"
+        />
+        <QuickAction
+          icon={<User size={24} color={PRIMARY_HEX} />}
+          label="Perfil"
           onPress={() => router.push('/profile')}
-        >
-          <Text className="text-2xl mb-1">👤</Text>
-          <Text className="text-sm font-semibold text-navy">Perfil</Text>
-        </Pressable>
+        />
       </View>
 
       {/* Featured products */}
-      <Text className="text-sm font-semibold text-navy mb-2">Productos destacados</Text>
+      <Text className="text-sm font-bold text-navy mb-2">Productos destacados</Text>
       {productsQuery.isLoading ? (
         <Card>
           <ActivityIndicator />
@@ -218,15 +216,15 @@ export default function HomeTab() {
                 {p.image_url && (
                   <Image
                     source={{ uri: p.image_url }}
-                    className="w-full h-24 rounded-lg mb-2 bg-gray-200"
+                    className="w-full h-24 rounded-lg mb-2 bg-muted"
                     resizeMode="cover"
                   />
                 )}
-                <Text className="text-sm font-medium text-navy" numberOfLines={2}>
+                <Text className="text-sm font-bold text-navy" numberOfLines={2}>
                   {p.name}
                 </Text>
                 {p.base_price != null && (
-                  <Text className="text-xs text-gray-500 mt-1">
+                  <Text className="text-xs text-muted-foreground mt-1">
                     ${Number(p.base_price).toFixed(2)}
                   </Text>
                 )}
@@ -236,5 +234,35 @@ export default function HomeTab() {
         </View>
       )}
     </ScrollView>
+  )
+}
+
+function QuickAction({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: React.ReactNode
+  label: string
+  onPress: () => void
+}) {
+  return (
+    <Pressable
+      className="flex-1 bg-card rounded-2xl p-4 items-center"
+      style={{
+        borderWidth: 1,
+        borderColor: 'rgba(204,204,204,0.4)',
+        shadowColor: '#000',
+        shadowOpacity: 0.04,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: 1,
+      }}
+      onPress={onPress}
+      android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
+    >
+      <View className="mb-2">{icon}</View>
+      <Text className="text-xs font-bold text-navy">{label}</Text>
+    </Pressable>
   )
 }

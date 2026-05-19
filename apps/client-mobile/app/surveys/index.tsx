@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { BrandLogo } from '@/components/ui/BrandLogo'
 import { Card } from '@/components/ui/Card'
+import { ChevronRight } from '@/components/ui/Icon'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
 import { ScreenHeader } from '@/components/ui/ScreenHeader'
 import { useSurveys, type SurveyListItem } from '@/features/surveys/api'
@@ -13,7 +14,7 @@ export default function SurveysListScreen() {
   const surveys = surveysQuery.data?.surveys ?? []
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
       <ScreenHeader title="Encuestas" showBack />
       <FlatList
         data={surveys}
@@ -54,25 +55,25 @@ function SurveyRow({ s }: { s: SurveyListItem }) {
               {s.title}
             </Text>
             {s.brands?.name && (
-              <Text className="text-xs text-gray-500 mt-0.5">{s.brands.name}</Text>
+              <Text className="text-xs text-muted-foreground mt-0.5">{s.brands.name}</Text>
             )}
             {s.description && (
-              <Text className="text-xs text-gray-500 mt-1" numberOfLines={2}>
+              <Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>
                 {s.description}
               </Text>
             )}
             {s.end_date && (
-              <Text className="text-[10px] text-gray-400 mt-1">
+              <Text className="text-[10px] text-muted-foreground mt-1">
                 Hasta {new Date(s.end_date).toLocaleDateString('es-MX')}
               </Text>
             )}
             {s.has_responded && (
-              <Text className="text-[10px] text-success mt-1 font-semibold">
+              <Text className="text-[10px] text-success mt-1 font-bold uppercase tracking-wider">
                 Ya respondida
               </Text>
             )}
           </View>
-          <Text className="text-gray-400">›</Text>
+          <ChevronRight size={18} color="#999999" />
         </View>
       </Card>
     </Pressable>

@@ -22,7 +22,11 @@ module.exports = {
         warning: '#ffe159',
         muted: {
           DEFAULT: '#f5f5f5',
-          foreground: '#999999',
+          // Bumped from web's #999999 to #4b5563. The web uses muted-fg on
+          // white (~3:1, marginal); mobile uses it on bg-app-bg (#dae3fb)
+          // where #999999 drops to ~2:1 and fails WCAG AA. #4b5563 hits
+          // ~6.4:1 on the blue and ~8.6:1 on white — passes AAA on both.
+          foreground: '#4b5563',
         },
         border: '#cccccc',
         'app-bg': '#dae3fb',

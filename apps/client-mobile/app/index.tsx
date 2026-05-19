@@ -1,6 +1,7 @@
-import { ActivityIndicator, Pressable, Text, View } from 'react-native'
+import { ActivityIndicator, Text, View } from 'react-native'
 import { Redirect } from 'expo-router'
 
+import { Button } from '@/components/ui/Button'
 import { signOut, useSession } from '@/lib/auth'
 import { useClientProfile } from '@/features/profile/api'
 
@@ -10,7 +11,7 @@ export default function Index() {
 
   if (sessionLoading || (session && profileQuery.isLoading)) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-app-bg">
         <ActivityIndicator size="large" />
       </View>
     )
@@ -21,21 +22,22 @@ export default function Index() {
   // Profile not found → user's auth account isn't linked to a client row.
   if (profileQuery.error) {
     return (
-      <View className="flex-1 items-center justify-center bg-white px-6">
+      <View className="flex-1 items-center justify-center bg-app-bg px-6">
         <Text className="text-base font-bold text-navy mb-2 text-center">
           Tu usuario no está vinculado a un cliente
         </Text>
-        <Text className="text-sm text-gray-600 text-center mb-6">
-          Contactá al administrador para que vincule esta cuenta a tu tienda.
+        <Text className="text-sm text-muted-foreground text-center mb-6">
+          Contacta al administrador para que vincule esta cuenta a tu tienda.
         </Text>
-        <Pressable
-          className="px-4 py-2 rounded-full border border-secondary"
+        <Button
           onPress={async () => {
             await signOut()
           }}
+          variant="outline"
+          size="default"
         >
-          <Text className="text-gray-700 font-semibold text-sm">Cerrar sesión</Text>
-        </Pressable>
+          Cerrar sesión
+        </Button>
       </View>
     )
   }

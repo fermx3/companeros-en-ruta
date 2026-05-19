@@ -4,7 +4,6 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
-  StyleSheet,
   Text,
   View,
 } from 'react-native'
@@ -12,6 +11,7 @@ import { router } from 'expo-router'
 
 import { BadgeStatus } from '@/components/ui/BadgeStatus'
 import { Card } from '@/components/ui/Card'
+import { FilterChip } from '@/components/ui/FilterChip'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
 import { useOrders, type OrderStatus, type UnifiedOrder } from '@/features/orders/api'
 
@@ -33,30 +33,24 @@ export default function OrdersTab() {
   const summary = ordersQuery.data?.pages[0]?.summary
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Filter chips — StyleSheet to avoid NativeWind+Pressable+map crash */}
-      <View style={tabStyles.header}>
+    <View className="flex-1 bg-app-bg">
+      <View
+        className="bg-card py-2.5"
+        style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(204,204,204,0.4)' }}
+      >
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
           data={STATUS_OPTIONS}
           keyExtractor={i => i.value}
           contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
-          renderItem={({ item }) => {
-            const selected = item.value === status
-            return (
-              <Pressable
-                style={[tabStyles.chip, selected && tabStyles.chipSelected]}
-                onPress={() => setStatus(item.value)}
-              >
-                <Text
-                  style={[tabStyles.chipLabel, selected && tabStyles.chipLabelSelected]}
-                >
-                  {item.label}
-                </Text>
-              </Pressable>
-            )
-          }}
+          renderItem={({ item }) => (
+            <FilterChip
+              label={item.label}
+              selected={item.value === status}
+              onPress={() => setStatus(item.value)}
+            />
+          )}
         />
       </View>
 
@@ -75,18 +69,18 @@ export default function OrdersTab() {
             <Card className="mb-3">
               <View className="flex-row justify-between">
                 <View className="items-center flex-1">
-                  <Text className="text-xl font-bold text-navy">{summary.total_orders}</Text>
-                  <Text className="text-xs text-gray-500">Pedidos</Text>
+                  <Text className="text-2xl font-black text-navy">{summary.total_orders}</Text>
+                  <Text className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mt-0.5">Pedidos</Text>
                 </View>
                 <View className="items-center flex-1">
-                  <Text className="text-xl font-bold text-navy">
+                  <Text className="text-2xl font-black text-navy">
                     ${Math.round(summary.total_spent).toLocaleString('es-MX')}
                   </Text>
-                  <Text className="text-xs text-gray-500">Total</Text>
+                  <Text className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mt-0.5">Total</Text>
                 </View>
                 <View className="items-center flex-1">
-                  <Text className="text-xl font-bold text-navy">{summary.pending_orders}</Text>
-                  <Text className="text-xs text-gray-500">Pendientes</Text>
+                  <Text className="text-2xl font-black text-navy">{summary.pending_orders}</Text>
+                  <Text className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mt-0.5">Pendientes</Text>
                 </View>
               </View>
             </Card>
@@ -129,8 +123,8 @@ function OrderRow({ order }: { order: UnifiedOrder }) {
       <Card className="mb-2">
         <View className="flex-row items-start justify-between mb-1">
           <View className="flex-1 pr-2">
-            <Text className="text-sm font-semibold text-navy">{order.order_number}</Text>
-            <Text className="text-xs text-gray-500 mt-0.5" numberOfLines={1}>
+            <Text className="text-sm font-bold text-navy">{order.order_number}</Text>
+            <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={1}>
               {order.brand_name ?? 'Marca'}
               {order.promotor_name ? ` · ${order.promotor_name}` : ''}
             </Text>
@@ -138,7 +132,7 @@ function OrderRow({ order }: { order: UnifiedOrder }) {
           <BadgeStatus status={order.order_status} />
         </View>
         <View className="flex-row items-center justify-between mt-2">
-          <Text className="text-xs text-gray-500">
+          <Text className="text-xs text-muted-foreground">
             {new Date(order.order_date).toLocaleDateString('es-MX', {
               day: 'numeric',
               month: 'short',
@@ -155,26 +149,3 @@ function OrderRow({ order }: { order: UnifiedOrder }) {
     </Pressable>
   )
 }
-
-const tabStyles = StyleSheet.create({
-  header: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    backgroundColor: '#ffffff',
-  },
-  chipSelected: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
-  },
-  chipLabel: { fontSize: 12, color: '#4b5563', fontWeight: '500' },
-  chipLabelSelected: { color: '#ffffff' },
-})

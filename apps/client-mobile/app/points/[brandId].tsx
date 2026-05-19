@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { BrandLogo } from '@/components/ui/BrandLogo'
 import { Card } from '@/components/ui/Card'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
+import { MetricCard } from '@/components/ui/MetricCard'
 import { ScreenHeader } from '@/components/ui/ScreenHeader'
 import { usePointsDetail, type PointsTransaction } from '@/features/points/api'
 
@@ -22,13 +23,13 @@ function TxRow({ tx }: { tx: PointsTransaction }) {
     <Card className="mb-2">
       <View className="flex-row items-start justify-between">
         <View className="flex-1 pr-2">
-          <Text className="text-sm font-semibold text-navy">
+          <Text className="text-sm font-bold text-navy">
             {txIcon(tx.transaction_type)} {tx.transaction_type}
           </Text>
-          <Text className="text-xs text-gray-500 mt-0.5" numberOfLines={2}>
+          <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={2}>
             {tx.source_description ?? tx.source_type ?? '—'}
           </Text>
-          <Text className="text-[10px] text-gray-400 mt-1">
+          <Text className="text-[10px] text-muted-foreground mt-1">
             {new Date(tx.transaction_date).toLocaleDateString('es-MX', {
               day: 'numeric',
               month: 'short',
@@ -45,7 +46,7 @@ function TxRow({ tx }: { tx: PointsTransaction }) {
             {positive ? '+' : ''}
             {tx.points}
           </Text>
-          <Text className="text-[10px] text-gray-400 mt-0.5">
+          <Text className="text-[10px] text-muted-foreground mt-0.5">
             Saldo: {tx.balance_after}
           </Text>
         </View>
@@ -64,7 +65,7 @@ export default function PointsDetailScreen() {
   const summary = firstPage?.summary
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
       <ScreenHeader title={brand?.name ?? 'Puntos'} showBack />
       <FlatList
         data={transactions}
@@ -75,31 +76,27 @@ export default function PointsDetailScreen() {
         }
         ListHeaderComponent={
           summary ? (
-            <Card className="mb-3">
-              <View className="flex-row items-center mb-3">
-                <BrandLogo logoUrl={brand?.logo_url ?? null} name={brand?.name} size={40} />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-bold text-navy" numberOfLines={1}>
-                    {brand?.name}
-                  </Text>
-                  <Text className="text-xs text-gray-500">Historial de puntos</Text>
+            <View className="mb-3">
+              <Card className="mb-2">
+                <View className="flex-row items-center">
+                  <BrandLogo logoUrl={brand?.logo_url ?? null} name={brand?.name} size={40} />
+                  <View className="ml-3 flex-1">
+                    <Text className="text-sm font-bold text-navy" numberOfLines={1}>
+                      {brand?.name}
+                    </Text>
+                    <Text className="text-xs text-muted-foreground">Historial de puntos</Text>
+                  </View>
+                </View>
+              </Card>
+              <View className="flex-row gap-2">
+                <View className="flex-1">
+                  <MetricCard label="Saldo" value={summary.current_balance} />
+                </View>
+                <View className="flex-1">
+                  <MetricCard label="Acumulados" value={summary.lifetime_points} />
                 </View>
               </View>
-              <View className="flex-row justify-between mt-1">
-                <View className="items-center flex-1">
-                  <Text className="text-2xl font-bold text-navy">
-                    {summary.current_balance}
-                  </Text>
-                  <Text className="text-xs text-gray-500">Saldo</Text>
-                </View>
-                <View className="items-center flex-1">
-                  <Text className="text-2xl font-bold text-navy">
-                    {summary.lifetime_points}
-                  </Text>
-                  <Text className="text-xs text-gray-500">Acumulados</Text>
-                </View>
-              </View>
-            </Card>
+            </View>
           ) : null
         }
         ListEmptyComponent={

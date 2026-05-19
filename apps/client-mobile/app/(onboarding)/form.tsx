@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native'
 import { router } from 'expo-router'
@@ -16,10 +15,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 
+import { Button } from '@/components/ui/Button'
+import { FilterChip } from '@/components/ui/FilterChip'
+import { Input } from '@/components/ui/Input'
 import { useOnboardingData, useSubmitOnboarding } from '@/features/onboarding/api'
 
-// Schema mirrored verbatim from
-// apps/web/src/app/(dashboard)/client/onboarding/form/page.tsx (lines 16-39).
 const formSchema = z.object({
   owner_name: z.string().min(1, 'Nombre es requerido'),
   owner_last_name: z.string().optional(),
@@ -82,7 +82,6 @@ export default function OnboardingForm() {
     },
   })
 
-  // Pre-fill once data arrives.
   useEffect(() => {
     if (!dataQuery.data) return
     const c = dataQuery.data.client
@@ -126,7 +125,7 @@ export default function OnboardingForm() {
 
   if (dataQuery.isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-white items-center justify-center">
+      <SafeAreaView className="flex-1 bg-app-bg items-center justify-center">
         <ActivityIndicator size="large" />
       </SafeAreaView>
     )
@@ -135,13 +134,15 @@ export default function OnboardingForm() {
   const clientTypes = dataQuery.data?.client_types ?? []
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-app-bg">
       <View className="px-4 pt-4">
         <View className="flex-row gap-2 mb-4">
-          <View className={`flex-1 h-1.5 rounded-full ${step >= 1 ? 'bg-primary-light' : 'bg-gray-200'}`} />
-          <View className={`flex-1 h-1.5 rounded-full ${step >= 2 ? 'bg-primary-light' : 'bg-gray-200'}`} />
+          <View className={`flex-1 h-1.5 rounded-full ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
+          <View className={`flex-1 h-1.5 rounded-full ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
         </View>
-        <Text className="text-xs text-gray-500 mb-2">Paso {step} de 2</Text>
+        <Text className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
+          Paso {step} de 2
+        </Text>
       </View>
       <ScrollView className="flex-1" contentContainerClassName="p-4 pb-32">
         {step === 1 && (
@@ -252,7 +253,7 @@ export default function OnboardingForm() {
               onChange={v => setValue('offers_topups', v)}
             />
 
-            <Text className="text-sm font-semibold text-navy mt-4 mb-2">
+            <Text className="text-sm font-bold text-navy mt-4 mb-2">
               ¿Dónde compras tu mercancía?
             </Text>
             <View className="flex-row flex-wrap gap-2 mb-4">
@@ -260,26 +261,17 @@ export default function OnboardingForm() {
                 const sources = watch('supply_sources') ?? []
                 const selected = sources.includes(opt.value)
                 return (
-                  <Pressable
+                  <FilterChip
                     key={opt.value}
-                    className={`px-3 py-2 rounded-full border ${
-                      selected
-                        ? 'bg-primary-light border-primary-light'
-                        : 'bg-white border-secondary'
-                    }`}
+                    label={opt.label}
+                    selected={selected}
                     onPress={() => {
                       const next = selected
                         ? sources.filter(s => s !== opt.value)
                         : [...sources, opt.value]
                       setValue('supply_sources', next)
                     }}
-                  >
-                    <Text
-                      className={`text-xs font-medium ${selected ? 'text-white' : 'text-gray-700'}`}
-                    >
-                      {opt.label}
-                    </Text>
-                  </Pressable>
+                  />
                 )
               })}
             </View>
@@ -301,34 +293,38 @@ export default function OnboardingForm() {
         )}
       </ScrollView>
 
-      <View className="flex-row gap-3 px-4 py-3 bg-white border-t border-gray-200">
+      <View
+        className="flex-row gap-3 px-4 py-3 bg-card"
+        style={{ borderTopWidth: 1, borderTopColor: 'rgba(204,204,204,0.4)' }}
+      >
         {step === 1 ? (
-          <Pressable
-            className="flex-1 h-12 rounded-full bg-primary-light items-center justify-center"
-            onPress={handleNext}
-          >
-            <Text className="text-white font-bold">Siguiente</Text>
-          </Pressable>
+          <Button onPress={handleNext} variant="default" size="lg" fullWidth>
+            Siguiente
+          </Button>
         ) : (
           <>
-            <Pressable
-              className="flex-1 h-12 rounded-full border border-secondary items-center justify-center"
-              onPress={() => setStep(1)}
-              disabled={submit.isPending}
-            >
-              <Text className="text-gray-700 font-semibold">Atrás</Text>
-            </Pressable>
-            <Pressable
-              className="flex-1 h-12 rounded-full bg-primary-light items-center justify-center disabled:opacity-50"
-              onPress={handleSubmit(onSubmit)}
-              disabled={submit.isPending}
-            >
-              {submit.isPending ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text className="text-white font-bold">Guardar</Text>
-              )}
-            </Pressable>
+            <View className="flex-1">
+              <Button
+                onPress={() => setStep(1)}
+                variant="outline"
+                size="lg"
+                fullWidth
+                disabled={submit.isPending}
+              >
+                Atrás
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button
+                onPress={handleSubmit(onSubmit)}
+                variant="default"
+                size="lg"
+                fullWidth
+                loading={submit.isPending}
+              >
+                Guardar
+              </Button>
+            </View>
           </>
         )}
       </View>
@@ -348,24 +344,31 @@ interface FieldTextProps {
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
 }
 
-function FieldText({ control, name, label, placeholder, error, keyboardType = 'default', autoCapitalize = 'sentences' }: FieldTextProps) {
+function FieldText({
+  control,
+  name,
+  label,
+  placeholder,
+  error,
+  keyboardType = 'default',
+  autoCapitalize = 'sentences',
+}: FieldTextProps) {
   return (
     <View className="mb-3">
-      <Text className="text-xs text-gray-600 mb-1">{label}</Text>
+      <Text className="text-xs text-muted-foreground mb-1 font-bold uppercase tracking-wider">{label}</Text>
       <Controller
         control={control}
         name={name}
         render={({ field: { value, onChange, onBlur } }) => (
-          <TextInput
-            className="border border-gray-300 bg-white rounded-lg px-3 py-2.5 text-sm"
+          <Input
             placeholder={placeholder}
-            placeholderTextColor="#9ca3af"
             value={typeof value === 'string' ? value : value == null ? '' : String(value)}
             onChangeText={onChange}
             onBlur={onBlur}
             keyboardType={keyboardType}
             autoCapitalize={autoCapitalize}
             autoCorrect={false}
+            invalid={!!error}
           />
         )}
       />
@@ -384,26 +387,16 @@ interface FieldChipsProps<T extends string> {
 function FieldChips<T extends string>({ label, value, options, onChange }: FieldChipsProps<T>) {
   return (
     <View className="mb-3">
-      <Text className="text-xs text-gray-600 mb-1">{label}</Text>
+      <Text className="text-xs text-muted-foreground mb-1 font-bold uppercase tracking-wider">{label}</Text>
       <View className="flex-row flex-wrap gap-2">
-        {options.map(opt => {
-          const selected = value === opt.value
-          return (
-            <Pressable
-              key={opt.value}
-              className={`px-3 py-2 rounded-full border ${
-                selected
-                  ? 'bg-primary-light border-primary-light'
-                  : 'bg-white border-secondary'
-              }`}
-              onPress={() => onChange(opt.value)}
-            >
-              <Text className={`text-xs font-medium ${selected ? 'text-white' : 'text-gray-700'}`}>
-                {opt.label}
-              </Text>
-            </Pressable>
-          )
-        })}
+        {options.map(opt => (
+          <FilterChip
+            key={opt.value}
+            label={opt.label}
+            selected={value === opt.value}
+            onPress={() => onChange(opt.value)}
+          />
+        ))}
       </View>
     </View>
   )
@@ -432,7 +425,6 @@ function FieldDate({ label, value, onChange }: FieldDateProps) {
       if (event.type === 'dismissed' || !picked) return
     }
     if (picked) {
-      // Persist as YYYY-MM-DD (server expects ISO date string).
       const yyyy = picked.getFullYear()
       const mm = String(picked.getMonth() + 1).padStart(2, '0')
       const dd = String(picked.getDate()).padStart(2, '0')
@@ -442,17 +434,25 @@ function FieldDate({ label, value, onChange }: FieldDateProps) {
 
   return (
     <View className="mb-3">
-      <Text className="text-xs text-gray-600 mb-1">{label}</Text>
+      <Text className="text-xs text-muted-foreground mb-1 font-bold uppercase tracking-wider">{label}</Text>
       <Pressable
-        className="border border-gray-300 bg-white rounded-lg px-3 py-2.5"
+        className="bg-card px-3 rounded-lg justify-center"
+        style={{
+          height: 44,
+          borderWidth: 1,
+          borderColor: '#cccccc',
+        }}
         onPress={() => setOpen(true)}
       >
-        <Text className={`text-sm ${value ? 'text-navy' : 'text-gray-400'}`}>
+        <Text className={`text-sm ${value ? 'text-navy' : 'text-muted-foreground'}`}>
           {displayLabel}
         </Text>
       </Pressable>
       {open && (
-        <View className="bg-white rounded-lg mt-2 border border-gray-200">
+        <View
+          className="bg-card rounded-lg mt-2"
+          style={{ borderWidth: 1, borderColor: 'rgba(204,204,204,0.4)' }}
+        >
           <DateTimePicker
             value={parsed}
             mode="date"
@@ -463,10 +463,11 @@ function FieldDate({ label, value, onChange }: FieldDateProps) {
           />
           {Platform.OS === 'ios' && (
             <Pressable
-              className="py-2 items-center border-t border-gray-200"
+              className="py-2 items-center"
+              style={{ borderTopWidth: 1, borderTopColor: 'rgba(204,204,204,0.4)' }}
               onPress={() => setOpen(false)}
             >
-              <Text className="text-primary-light font-semibold">Listo</Text>
+              <Text className="text-primary font-bold">Listo</Text>
             </Pressable>
           )}
         </View>
@@ -475,17 +476,27 @@ function FieldDate({ label, value, onChange }: FieldDateProps) {
   )
 }
 
-function FieldToggle({ label, value, onChange }: { label: string; value: boolean | undefined; onChange: (v: boolean) => void }) {
+function FieldToggle({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: boolean | undefined
+  onChange: (v: boolean) => void
+}) {
   return (
     <Pressable
-      className="flex-row items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-3 mb-2"
+      className="flex-row items-center justify-between bg-card rounded-lg px-3 py-3 mb-2"
+      style={{ borderWidth: 1, borderColor: 'rgba(204,204,204,0.4)' }}
       onPress={() => onChange(!value)}
     >
       <Text className="text-sm text-navy flex-1 pr-3">{label}</Text>
       <View
-        className={`w-5 h-5 rounded border-2 items-center justify-center ${
-          value ? 'bg-primary-light border-primary-light' : 'border-gray-300'
+        className={`w-5 h-5 rounded items-center justify-center ${
+          value ? 'bg-primary' : 'bg-card'
         }`}
+        style={{ borderWidth: 2, borderColor: value ? '#dd5025' : '#cccccc' }}
       >
         {value && <Text className="text-white text-xs">✓</Text>}
       </View>

@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
+import { MetricCard } from '@/components/ui/MetricCard'
 import { ScreenHeader } from '@/components/ui/ScreenHeader'
 import { useClientProfile, useUpdateClientProfile } from '@/features/profile/api'
 
@@ -47,7 +50,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
       <ScreenHeader title="Mi perfil" showBack />
       <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
         {profileQuery.isLoading || !profile ? (
@@ -57,89 +60,101 @@ export default function ProfileScreen() {
         ) : (
           <>
             <Card className="mb-3">
-              <Text className="text-xs text-gray-500">Negocio</Text>
-              <Text className="text-base font-semibold text-navy mt-1">
+              <Text className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+                Negocio
+              </Text>
+              <Text className="text-base font-bold text-navy mt-1">
                 {profile.business_name ?? '—'}
               </Text>
               {profile.legal_name && (
-                <Text className="text-xs text-gray-500 mt-0.5">{profile.legal_name}</Text>
+                <Text className="text-xs text-muted-foreground mt-0.5">{profile.legal_name}</Text>
               )}
-              <Text className="text-xs text-gray-500 mt-2">
-                Dueño: {profile.owner_name ?? '—'}
+              <Text className="text-xs text-navy mt-2">
+                <Text className="text-muted-foreground">Dueño: </Text>
+                {profile.owner_name ?? '—'}
               </Text>
               {profile.client_type_name && (
-                <Text className="text-xs text-gray-500">Tipo: {profile.client_type_name}</Text>
+                <Text className="text-xs text-navy">
+                  <Text className="text-muted-foreground">Tipo: </Text>
+                  {profile.client_type_name}
+                </Text>
               )}
             </Card>
 
             <Card className="mb-3">
-              <Text className="text-xs text-gray-500">Ubicación</Text>
+              <Text className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+                Ubicación
+              </Text>
               {profile.address_street && (
                 <Text className="text-sm text-navy mt-1">{profile.address_street}</Text>
               )}
               {profile.address_neighborhood && (
-                <Text className="text-sm text-gray-700">{profile.address_neighborhood}</Text>
+                <Text className="text-sm text-navy">{profile.address_neighborhood}</Text>
               )}
-              <Text className="text-xs text-gray-500 mt-1">
-                {profile.address_city ?? ''}{profile.address_state ? `, ${profile.address_state}` : ''}{profile.address_postal_code ? ` · ${profile.address_postal_code}` : ''}
+              <Text className="text-xs text-muted-foreground mt-1">
+                {profile.address_city ?? ''}
+                {profile.address_state ? `, ${profile.address_state}` : ''}
+                {profile.address_postal_code ? ` · ${profile.address_postal_code}` : ''}
               </Text>
               {profile.zone_name && (
-                <Text className="text-xs text-gray-500 mt-1">Zona: {profile.zone_name}</Text>
+                <Text className="text-xs text-muted-foreground mt-1">Zona: {profile.zone_name}</Text>
               )}
               {profile.market_name && (
-                <Text className="text-xs text-gray-500">Mercado: {profile.market_name}</Text>
+                <Text className="text-xs text-muted-foreground">Mercado: {profile.market_name}</Text>
               )}
             </Card>
 
             <Card className="mb-3">
-              <Text className="text-xs text-gray-500 mb-2">Contacto (editable)</Text>
-              <Text className="text-xs text-gray-500 mb-1">Teléfono (10 dígitos)</Text>
-              <TextInput
-                className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm mb-3"
+              <Text className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
+                Contacto (editable)
+              </Text>
+              <Text className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-1">
+                Teléfono (10 dígitos)
+              </Text>
+              <Input
                 placeholder="5512345678"
-                placeholderTextColor="#9ca3af"
                 keyboardType="number-pad"
                 value={phone}
                 onChangeText={setPhone}
               />
-              <Text className="text-xs text-gray-500 mb-1">WhatsApp (10 dígitos)</Text>
-              <TextInput
-                className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm"
+              <Text className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-1 mt-3">
+                WhatsApp (10 dígitos)
+              </Text>
+              <Input
                 placeholder="5512345678"
-                placeholderTextColor="#9ca3af"
                 keyboardType="number-pad"
                 value={whatsapp}
                 onChangeText={setWhatsapp}
               />
               {profile.email && (
-                <Text className="text-xs text-gray-400 mt-3">Email: {profile.email}</Text>
+                <Text className="text-xs text-muted-foreground mt-3">Email: {profile.email}</Text>
               )}
-              <Pressable
-                className="mt-3 h-11 rounded-full bg-primary-light items-center justify-center disabled:opacity-50"
-                onPress={onSave}
-                disabled={update.isPending}
-              >
-                {update.isPending ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text className="text-white font-bold">Guardar cambios</Text>
-                )}
-              </Pressable>
+              <View className="mt-3">
+                <Button
+                  onPress={onSave}
+                  variant="default"
+                  size="default"
+                  fullWidth
+                  loading={update.isPending}
+                >
+                  Guardar cambios
+                </Button>
+              </View>
             </Card>
 
-            <Card className="mb-3">
-              <Text className="text-xs text-gray-500 mb-2">Estadísticas</Text>
-              <View className="flex-row justify-between">
-                <View className="items-center flex-1">
-                  <Text className="text-2xl font-bold text-navy">{profile.total_points}</Text>
-                  <Text className="text-xs text-gray-500">Puntos</Text>
-                </View>
-                <View className="items-center flex-1">
-                  <Text className="text-2xl font-bold text-navy">{profile.total_orders}</Text>
-                  <Text className="text-xs text-gray-500">Pedidos</Text>
-                </View>
+            <Text className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
+              Estadísticas
+            </Text>
+            <View className="flex-row gap-2 mb-3">
+              <View className="flex-1">
+                <MetricCard label="Puntos" value={profile.total_points} />
               </View>
-              <Text className="text-xs text-gray-400 mt-3 text-center">
+              <View className="flex-1">
+                <MetricCard label="Pedidos" value={profile.total_orders} />
+              </View>
+            </View>
+            <Card className="mb-3">
+              <Text className="text-xs text-muted-foreground text-center">
                 Miembro desde{' '}
                 {new Date(profile.created_at).toLocaleDateString('es-MX', {
                   month: 'short',
@@ -147,7 +162,7 @@ export default function ProfileScreen() {
                 })}
               </Text>
               {profile.last_visit_date && (
-                <Text className="text-xs text-gray-400 text-center">
+                <Text className="text-xs text-muted-foreground text-center mt-1">
                   Última visita:{' '}
                   {new Date(profile.last_visit_date).toLocaleDateString('es-MX')}
                 </Text>
