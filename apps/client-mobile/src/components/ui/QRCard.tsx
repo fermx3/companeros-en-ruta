@@ -18,24 +18,26 @@ export function QRCard({
   expiresLabel,
   size = 180,
 }: QRCardProps) {
-  const accent = brandColor ?? '#1a4480'
+  // Fallback mirrors colors.primary.DEFAULT in tailwind.config.js. Brand color
+  // takes precedence when present so each brand's QR feels owned by them.
+  const accent = brandColor ?? '#dd5025'
   return (
     <View
-      className="bg-white rounded-2xl p-4 border-2 items-center"
+      className="bg-card rounded-2xl p-4 border-2 items-center"
       style={{ borderColor: accent }}
     >
-      {brandName && (
+      {brandName ? (
         <Text className="text-sm font-bold mb-2" style={{ color: accent }}>
           {brandName}
         </Text>
-      )}
+      ) : null}
       <QRCode value={qrValue} size={size} backgroundColor="white" color={accent} />
-      {discountLabel && (
+      {discountLabel ? (
         <Text className="text-base font-bold mt-3 text-success">{discountLabel}</Text>
-      )}
-      {expiresLabel && (
-        <Text className="text-xs text-gray-500 mt-1">{expiresLabel}</Text>
-      )}
+      ) : null}
+      {expiresLabel ? (
+        <Text className="text-xs text-muted-foreground mt-1">{expiresLabel}</Text>
+      ) : null}
     </View>
   )
 }
