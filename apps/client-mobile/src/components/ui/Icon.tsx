@@ -22,6 +22,8 @@ export {
   X,
   Plus,
   Search,
+  Eye,
+  EyeOff,
 } from 'lucide-react-native'
 
 interface CustomIconProps {
