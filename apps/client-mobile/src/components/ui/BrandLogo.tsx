@@ -25,7 +25,7 @@ export function BrandLogo({ logoUrl, name, size = 40 }: BrandLogoProps) {
   return (
     <View
       style={{ width: size, height: size, borderRadius: size / 2 }}
-      className="bg-gray-200 items-center justify-center"
+      className="bg-muted items-center justify-center"
     >
       <Text className="text-navy font-bold" style={{ fontSize: size * 0.4 }}>
         {initials}
