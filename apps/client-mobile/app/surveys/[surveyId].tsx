@@ -6,14 +6,15 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { BrandLogo } from '@/components/ui/BrandLogo'
+import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
 import { ScreenHeader } from '@/components/ui/ScreenHeader'
 import {
   isClientSubmitUnsupported,
@@ -22,6 +23,11 @@ import {
   useSurvey,
   type SurveyQuestion,
 } from '@/features/surveys/api'
+
+// Survey input chips/options use StyleSheet for the same Pressable+map crash
+// workaround documented in Button.tsx. These are screen-local; the broader
+// SegmentedControl/FilterChip primitives don't fit the radio/checkbox visual
+// of a survey question, so we keep the local StyleSheet here.
 
 type Answers = Record<string, unknown>
 
@@ -44,7 +50,6 @@ export default function SurveyRunnerScreen() {
   }
 
   async function onSubmit() {
-    // Required check
     const missing = sortedQuestions.filter(q => {
       if (!q.is_required) return false
       const v = answers[q.id]
@@ -96,7 +101,7 @@ export default function SurveyRunnerScreen() {
 
   if (surveyQuery.isLoading || !survey) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
         <ScreenHeader title="Encuesta" showBack />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator />
@@ -107,7 +112,7 @@ export default function SurveyRunnerScreen() {
 
   if (surveyQuery.error) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
         <ScreenHeader title="Encuesta" showBack />
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-sm text-destructive text-center">
@@ -122,24 +127,21 @@ export default function SurveyRunnerScreen() {
 
   if (hasResponded) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
         <ScreenHeader title={survey.title} showBack />
         <View className="flex-1 items-center justify-center px-6">
           <Card className="w-full items-center">
             <Text className="text-base font-bold text-navy text-center mb-2">
               Ya respondiste esta encuesta
             </Text>
-            <Text className="text-sm text-gray-600 text-center mb-4">
+            <Text className="text-sm text-muted-foreground text-center mb-4">
               {existingResponse?.submitted_at
                 ? `Enviada el ${new Date(existingResponse.submitted_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}. ¡Gracias por tus respuestas!`
                 : '¡Gracias por tus respuestas!'}
             </Text>
-            <Pressable
-              className="h-11 px-6 rounded-full bg-primary-light items-center justify-center"
-              onPress={() => router.back()}
-            >
-              <Text className="text-white font-semibold">Volver</Text>
-            </Pressable>
+            <Button onPress={() => router.back()} variant="default" size="default">
+              Volver
+            </Button>
           </Card>
         </View>
       </SafeAreaView>
@@ -147,7 +149,7 @@ export default function SurveyRunnerScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
       <ScreenHeader title={survey.title} showBack />
       <ScrollView contentContainerClassName="p-4 pb-32">
         <Card className="mb-3">
@@ -157,13 +159,13 @@ export default function SurveyRunnerScreen() {
               name={survey.brands?.name ?? 'Marca'}
               size={32}
             />
-            <Text className="text-xs text-gray-500 ml-2 flex-1" numberOfLines={1}>
+            <Text className="text-xs text-muted-foreground ml-2 flex-1" numberOfLines={1}>
               {survey.brands?.name ?? 'Encuesta'}
             </Text>
           </View>
           <Text className="text-base font-bold text-navy">{survey.title}</Text>
           {survey.description && (
-            <Text className="text-sm text-gray-600 mt-2">{survey.description}</Text>
+            <Text className="text-sm text-navy mt-2">{survey.description}</Text>
           )}
         </Card>
 
@@ -178,18 +180,19 @@ export default function SurveyRunnerScreen() {
         ))}
       </ScrollView>
 
-      <View className="px-4 py-3 bg-white border-t border-gray-200">
-        <Pressable
-          className="h-12 rounded-full bg-primary-light items-center justify-center disabled:opacity-50"
+      <View
+        className="px-4 py-3 bg-card"
+        style={{ borderTopWidth: 1, borderTopColor: 'rgba(204,204,204,0.4)' }}
+      >
+        <Button
           onPress={onSubmit}
-          disabled={submit.isPending}
+          variant="default"
+          size="lg"
+          fullWidth
+          loading={submit.isPending}
         >
-          {submit.isPending ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="text-white font-bold">Enviar respuestas</Text>
-          )}
-        </Pressable>
+          Enviar respuestas
+        </Button>
       </View>
     </SafeAreaView>
   )
@@ -205,10 +208,10 @@ interface QuestionRowProps {
 function QuestionRow({ index, question, value, onChange }: QuestionRowProps) {
   return (
     <Card className="mb-2">
-      <Text className="text-xs text-gray-500 mb-1">
+      <Text className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-bold">
         Pregunta {index} {question.is_required ? '· requerida' : ''}
       </Text>
-      <Text className="text-sm font-semibold text-navy mb-2">
+      <Text className="text-sm font-bold text-navy mb-2">
         {question.question_text}
       </Text>
       <QuestionInput question={question} value={value} onChange={onChange} />
@@ -221,25 +224,21 @@ function QuestionInput({ question, value, onChange }: Omit<QuestionRowProps, 'in
 
   if (t === 'text' || t === 'long_text' || t === 'text_long' || t === 'textarea') {
     return (
-      <TextInput
-        className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm"
+      <Input
         placeholder="Tu respuesta…"
-        placeholderTextColor="#9ca3af"
         value={typeof value === 'string' ? value : ''}
         onChangeText={onChange}
         multiline={t !== 'text'}
-        style={t !== 'text' ? { minHeight: 70 } : undefined}
+        style={t !== 'text' ? { minHeight: 70, height: undefined, paddingTop: 10 } : undefined}
       />
     )
   }
 
   if (t === 'number' || t === 'numeric') {
     return (
-      <TextInput
-        className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm"
+      <Input
         keyboardType="number-pad"
         placeholder="0"
-        placeholderTextColor="#9ca3af"
         value={typeof value === 'string' ? value : value != null ? String(value) : ''}
         onChangeText={onChange}
       />
@@ -259,6 +258,8 @@ function QuestionInput({ question, value, onChange }: Omit<QuestionRowProps, 'in
               key={String(opt.v)}
               style={[inputStyles.chip, selected && inputStyles.chipSelected]}
               onPress={() => onChange(opt.v)}
+              hitSlop={8}
+              android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
             >
               <Text style={[inputStyles.chipLabel, selected && inputStyles.chipLabelSelected]}>
                 {opt.label}
@@ -282,6 +283,8 @@ function QuestionInput({ question, value, onChange }: Omit<QuestionRowProps, 'in
               key={n}
               style={[inputStyles.chip, selected && inputStyles.chipSelected]}
               onPress={() => onChange(n)}
+              hitSlop={8}
+              android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
             >
               <Text style={[inputStyles.chipLabel, selected && inputStyles.chipLabelSelected]}>
                 {n}
@@ -317,6 +320,7 @@ function QuestionInput({ question, value, onChange }: Omit<QuestionRowProps, 'in
                 onChange(opt.value)
               }
             }}
+            android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
           >
             <View style={[inputStyles.bullet, selected && inputStyles.bulletSelected]}>
               {selected && <Text style={inputStyles.bulletTick}>✓</Text>}
@@ -328,7 +332,7 @@ function QuestionInput({ question, value, onChange }: Omit<QuestionRowProps, 'in
         )
       })}
       {options.length === 0 && (
-        <Text className="text-xs text-gray-500">
+        <Text className="text-xs text-muted-foreground">
           Sin opciones disponibles para esta pregunta (tipo: {t}).
         </Text>
       )}
@@ -343,11 +347,11 @@ const inputStyles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#cccccc',
     backgroundColor: '#ffffff',
   },
-  chipSelected: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  chipLabel: { fontSize: 13, color: '#4b5563', fontWeight: '500' },
+  chipSelected: { backgroundColor: '#4d71ed', borderColor: '#4d71ed' },
+  chipLabel: { fontSize: 13, color: '#4b5563', fontFamily: 'NunitoSans_700Bold' },
   chipLabelSelected: { color: '#ffffff' },
   option: {
     flexDirection: 'row',
@@ -356,23 +360,23 @@ const inputStyles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(204,204,204,0.6)',
     marginBottom: 6,
     backgroundColor: '#ffffff',
   },
-  optionSelected: { borderColor: '#2563eb', backgroundColor: '#eff6ff' },
+  optionSelected: { borderColor: '#4d71ed', backgroundColor: 'rgba(77,113,237,0.08)' },
   bullet: {
     width: 18,
     height: 18,
     borderRadius: 5,
     borderWidth: 1.5,
-    borderColor: '#cbd5e1',
+    borderColor: '#cccccc',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
   },
-  bulletSelected: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  bulletSelected: { backgroundColor: '#4d71ed', borderColor: '#4d71ed' },
   bulletTick: { color: '#ffffff', fontSize: 11, fontWeight: '700' },
   optionLabel: { fontSize: 14, color: '#374151', flex: 1 },
-  optionLabelSelected: { color: '#0f2444', fontWeight: '500' },
+  optionLabelSelected: { color: '#202456', fontFamily: 'NunitoSans_700Bold' },
 })

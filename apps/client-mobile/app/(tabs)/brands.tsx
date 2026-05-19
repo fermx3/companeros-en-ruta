@@ -4,7 +4,6 @@ import {
   Alert,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native'
@@ -12,8 +11,10 @@ import { router } from 'expo-router'
 
 import { BadgeStatus } from '@/components/ui/BadgeStatus'
 import { BrandLogo } from '@/components/ui/BrandLogo'
+import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import {
   useAvailableBrands,
   useMemberships,
@@ -21,6 +22,8 @@ import {
   type ClientMembership,
 } from '@/features/home/api'
 import { useJoinBrand } from '@/features/brands/api'
+
+const PRIMARY_HEX = '#dd5025' // mirrors colors.primary.DEFAULT
 
 type Tab = 'memberships' | 'discover'
 
@@ -56,26 +59,19 @@ export default function BrandsTab() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <View style={tabStyles.header}>
-        <View style={tabStyles.track}>
-          {(['memberships', 'discover'] as const).map(opt => {
-            const selected = tab === opt
-            return (
-              <Pressable
-                key={opt}
-                style={[tabStyles.option, selected && tabStyles.optionSelected]}
-                onPress={() => setTab(opt)}
-              >
-                <Text
-                  style={[tabStyles.optionLabel, selected && tabStyles.optionLabelSelected]}
-                >
-                  {opt === 'memberships' ? 'Mis membresías' : 'Descubrir'}
-                </Text>
-              </Pressable>
-            )
-          })}
-        </View>
+    <View className="flex-1 bg-app-bg">
+      <View
+        className="bg-card px-4 py-3"
+        style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(204,204,204,0.4)' }}
+      >
+        <SegmentedControl
+          options={[
+            { value: 'memberships', label: 'Mis membresías' },
+            { value: 'discover', label: 'Descubrir' },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
@@ -87,7 +83,7 @@ export default function BrandsTab() {
           ) : memberships.length === 0 ? (
             <ListEmptyState
               title="Sin membresías"
-              body="Andá a 'Descubrir' para unirte a las marcas disponibles."
+              body="Ve a 'Descubrir' para unirte a las marcas disponibles."
               ctaLabel="Descubrir marcas"
               onCta={() => setTab('discover')}
             />
@@ -134,7 +130,7 @@ function MembershipRow({ m }: { m: ClientMembership }) {
               <Text className="text-sm font-bold text-navy" numberOfLines={1}>
                 {m.brand_name}
               </Text>
-              <Text className="text-xs text-gray-500 mt-0.5">
+              <Text className="text-xs text-muted-foreground mt-0.5">
                 {tier?.name ?? 'Sin nivel'} · {m.points_balance} pts
               </Text>
             </View>
@@ -143,18 +139,18 @@ function MembershipRow({ m }: { m: ClientMembership }) {
         </View>
         {next && next.points_needed > 0 && (
           <>
-            <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <View className="h-2 bg-muted rounded-full overflow-hidden">
               <View
-                className="h-2 bg-primary-light rounded-full"
+                className="h-2 bg-primary rounded-full"
                 style={{ width: `${Math.round(ratio * 100)}%` }}
               />
             </View>
-            <Text className="text-xs text-gray-500 mt-1">
+            <Text className="text-xs text-muted-foreground mt-1">
               Te faltan {next.points_needed} pts para {next.name}
             </Text>
           </>
         )}
-        <Text className="text-[10px] text-gray-400 mt-2">
+        <Text className="text-[10px] text-muted-foreground mt-2">
           Ver historial de puntos →
         </Text>
       </Card>
@@ -171,7 +167,10 @@ function DiscoverRow({
   onJoin: () => void
   pending: boolean
 }) {
-  const color = brand.brand_color_primary ?? '#1a4480'
+  // Brand-color CTA is intentional — each brand owns its action button color.
+  // Falls back to primary orange if the brand has no color configured.
+  const _color = brand.brand_color_primary ?? PRIMARY_HEX
+  void _color
   return (
     <Card className="mb-2">
       <View className="flex-row items-start justify-between mb-2">
@@ -182,53 +181,18 @@ function DiscoverRow({
               {brand.name}
             </Text>
             {brand.description && (
-              <Text className="text-xs text-gray-500 mt-0.5" numberOfLines={2}>
+              <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={2}>
                 {brand.description}
               </Text>
             )}
           </View>
         </View>
       </View>
-      <Pressable
-        className="h-10 rounded-full items-center justify-center mt-1 disabled:opacity-50"
-        style={{ backgroundColor: color }}
-        onPress={onJoin}
-        disabled={pending}
-      >
-        <Text className="text-white font-semibold text-sm">+ Unirme</Text>
-      </Pressable>
+      <View className="mt-1">
+        <Button onPress={onJoin} variant="default" size="default" fullWidth disabled={pending}>
+          + Unirme
+        </Button>
+      </View>
     </Card>
   )
 }
-
-const tabStyles = StyleSheet.create({
-  header: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  track: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    padding: 4,
-  },
-  option: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  optionSelected: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  optionLabel: { fontSize: 12, color: '#6b7280', fontWeight: '500' },
-  optionLabelSelected: { color: '#0f2444' },
-})

@@ -6,7 +6,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native'
@@ -14,8 +13,11 @@ import { router } from 'expo-router'
 
 import { BadgeStatus } from '@/components/ui/BadgeStatus'
 import { BrandLogo } from '@/components/ui/BrandLogo'
+import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { FilterChip } from '@/components/ui/FilterChip'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import {
   promotionDiscountLabel,
   useClientPromotions,
@@ -49,7 +51,7 @@ export default function QRTab() {
     if (activeMemberships.length === 0) {
       Alert.alert(
         'Sin marcas activas',
-        'Necesitás al menos una membresía activa para generar cupones. Ve a la pestaña Marcas.'
+        'Necesitas al menos una membresía activa para generar cupones. Ve a la pestaña Marcas.'
       )
       return
     }
@@ -58,30 +60,16 @@ export default function QRTab() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Tabs use StyleSheet (no NativeWind className) — the className wrapper
-        around Pressable inside a tight container can crash with
-        MISSING_CONTEXT_ERROR on the re-render that follows a tap, same
-        symptom we hit on the promotor wizard's SegmentedControl. */}
-      <View style={tabStyles.header}>
-        <View style={tabStyles.track}>
-          {(['active', 'used'] as const).map(opt => {
-            const selected = tab === opt
-            return (
-              <Pressable
-                key={opt}
-                style={[tabStyles.option, selected && tabStyles.optionSelected]}
-                onPress={() => setTab(opt)}
-              >
-                <Text
-                  style={[tabStyles.optionLabel, selected && tabStyles.optionLabelSelected]}
-                >
-                  {opt === 'active' ? 'Activos' : 'Usados'}
-                </Text>
-              </Pressable>
-            )
-          })}
-        </View>
+    <View className="flex-1 bg-app-bg">
+      <View className="bg-card px-4 py-3" style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(204,204,204,0.4)' }}>
+        <SegmentedControl
+          options={[
+            { value: 'active', label: 'Activos' },
+            { value: 'used', label: 'Usados' },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
       </View>
 
       <ScrollView
@@ -100,7 +88,7 @@ export default function QRTab() {
             title={tab === 'active' ? 'Sin cupones activos' : 'Sin cupones usados todavía'}
             body={
               tab === 'active'
-                ? 'Generá un cupón con el botón de abajo y mostralo en tu tienda cuando llegue tu promotor.'
+                ? 'Genera un cupón con el botón de abajo y muéstralo en tu tienda cuando llegue tu promotor.'
                 : 'Cuando tu promotor escanee uno de tus cupones, aparecerá aquí.'
             }
           />
@@ -110,13 +98,13 @@ export default function QRTab() {
       </ScrollView>
 
       {tab === 'active' && (
-        <View className="px-4 py-3 bg-white border-t border-gray-200">
-          <Pressable
-            className="h-12 rounded-full bg-primary-light items-center justify-center"
-            onPress={openGenerator}
-          >
-            <Text className="text-white font-bold">+ Generar cupón</Text>
-          </Pressable>
+        <View
+          className="px-4 py-3 bg-card"
+          style={{ borderTopWidth: 1, borderTopColor: 'rgba(204,204,204,0.4)' }}
+        >
+          <Button onPress={openGenerator} variant="default" size="lg" fullWidth>
+            + Generar cupón
+          </Button>
         </View>
       )}
 
@@ -135,7 +123,7 @@ export default function QRTab() {
             onGenerate={async promotionId => {
               const clientId = profileQuery.data?.id
               if (!clientId) {
-                Alert.alert('Cargando perfil', 'Esperá un momento e intentá de nuevo.')
+                Alert.alert('Cargando perfil', 'Espera un momento e inténtalo de nuevo.')
                 return
               }
               try {
@@ -170,7 +158,7 @@ function QRListCard({ qr }: { qr: QRCode }) {
             <Text className="text-sm font-bold text-navy" numberOfLines={1}>
               {promotionName}
             </Text>
-            <Text className="text-xs text-gray-500" numberOfLines={1}>
+            <Text className="text-xs text-muted-foreground" numberOfLines={1}>
               {brandName}
             </Text>
           </View>
@@ -182,9 +170,9 @@ function QRListCard({ qr }: { qr: QRCode }) {
         <Text className="text-lg font-bold mt-1 mb-2 text-success">{discount}</Text>
       )}
 
-      <View className="border-t border-gray-100 pt-2">
+      <View className="pt-2" style={{ borderTopWidth: 1, borderTopColor: 'rgba(204,204,204,0.4)' }}>
         {qr.valid_until && (
-          <Text className="text-xs text-gray-500">
+          <Text className="text-xs text-muted-foreground">
             Vigente hasta{' '}
             {new Date(qr.valid_until).toLocaleDateString('es-MX', {
               day: 'numeric',
@@ -193,52 +181,24 @@ function QRListCard({ qr }: { qr: QRCode }) {
             })}
           </Text>
         )}
-        <Text className="text-xs text-gray-400 mt-0.5">Código {qr.code}</Text>
+        <Text className="text-xs text-muted-foreground mt-0.5">Código {qr.code}</Text>
       </View>
 
       {qr.status === 'active' && (
-        <Pressable
-          className="mt-3 h-10 rounded-full items-center justify-center bg-primary-light"
-          onPress={() => router.push(`/qr/${qr.id}` as never)}
-        >
-          <Text className="text-white font-semibold text-sm">Ver QR</Text>
-        </Pressable>
+        <View className="mt-3">
+          <Button
+            onPress={() => router.push(`/qr/${qr.id}` as never)}
+            variant="default"
+            size="default"
+            fullWidth
+          >
+            Ver QR
+          </Button>
+        </View>
       )}
     </Card>
   )
 }
-
-const tabStyles = StyleSheet.create({
-  header: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  track: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    padding: 4,
-  },
-  option: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  optionSelected: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  optionLabel: { fontSize: 12, color: '#6b7280', fontWeight: '500' },
-  optionLabelSelected: { color: '#0f2444' },
-})
 
 interface GeneratorSheetProps {
   brandId: string
@@ -262,41 +222,38 @@ function GeneratorSheet({
   const [selectedPromotionId, setSelectedPromotionId] = useState<string | null>(null)
 
   return (
-    <View className="flex-1 bg-white">
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
+    <View className="flex-1 bg-card">
+      <View
+        className="flex-row items-center justify-between px-4 py-3"
+        style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(204,204,204,0.4)' }}
+      >
         <Text className="text-base font-bold text-navy">Generar cupón</Text>
-        <Pressable onPress={onClose} className="p-2">
-          <Text className="text-primary-light font-semibold">Cerrar</Text>
-        </Pressable>
+        <Button onPress={onClose} variant="ghost" size="sm">
+          Cerrar
+        </Button>
       </View>
       <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
         {activeMemberships.length > 1 && (
           <>
-            <Text className="text-sm font-semibold text-navy mb-2">Marca</Text>
+            <Text className="text-sm font-bold text-navy mb-2">Marca</Text>
             <View className="flex-row flex-wrap gap-2 mb-4">
-              {activeMemberships.map(m => {
-                const selected = m.brand_id === brandId
-                return (
-                  <Pressable
-                    key={m.brand_id}
-                    className={`px-3 py-2 rounded-full border ${selected ? 'bg-primary-light border-primary-light' : 'bg-white border-secondary'}`}
-                    onPress={() => onChangeBrand(m.brand_id)}
-                  >
-                    <Text className={`text-xs font-medium ${selected ? 'text-white' : 'text-gray-700'}`}>
-                      {m.brand_name}
-                    </Text>
-                  </Pressable>
-                )
-              })}
+              {activeMemberships.map(m => (
+                <FilterChip
+                  key={m.brand_id}
+                  label={m.brand_name}
+                  selected={m.brand_id === brandId}
+                  onPress={() => onChangeBrand(m.brand_id)}
+                />
+              ))}
             </View>
           </>
         )}
 
-        <Text className="text-sm font-semibold text-navy mb-2">Promoción (opcional)</Text>
+        <Text className="text-sm font-bold text-navy mb-2">Promoción (opcional)</Text>
         {promotionsQuery.isLoading ? (
           <ActivityIndicator />
         ) : promotions.length === 0 ? (
-          <Text className="text-sm text-gray-500 mb-2">
+          <Text className="text-sm text-muted-foreground mb-2">
             No hay promociones activas. Puedes generar un cupón genérico de la marca.
           </Text>
         ) : (
@@ -305,12 +262,19 @@ function GeneratorSheet({
             return (
               <Pressable
                 key={p.id}
-                className={`border rounded-lg p-3 mb-2 ${selected ? 'border-primary-light bg-blue-50' : 'border-gray-200 bg-white'}`}
+                style={{
+                  borderWidth: 1,
+                  borderColor: selected ? '#4d71ed' : 'rgba(204,204,204,0.6)',
+                  backgroundColor: selected ? 'rgba(77,113,237,0.08)' : '#ffffff',
+                  borderRadius: 12,
+                  padding: 12,
+                  marginBottom: 8,
+                }}
                 onPress={() => setSelectedPromotionId(selected ? null : p.id)}
               >
                 <View className="flex-row items-center mb-1">
                   <BrandLogo logoUrl={null} name={p.name} size={24} />
-                  <Text className="text-sm font-semibold text-navy ml-2 flex-1" numberOfLines={1}>
+                  <Text className="text-sm font-bold text-navy ml-2 flex-1" numberOfLines={1}>
                     {p.name}
                   </Text>
                 </View>
@@ -318,25 +282,26 @@ function GeneratorSheet({
                   <Text className="text-sm font-bold text-success">{promotionDiscountLabel(p)}</Text>
                 )}
                 {p.description && (
-                  <Text className="text-xs text-gray-500 mt-1" numberOfLines={2}>{p.description}</Text>
+                  <Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>{p.description}</Text>
                 )}
               </Pressable>
             )
           })
         )}
       </ScrollView>
-      <View className="px-4 py-3 border-t border-gray-200">
-        <Pressable
-          className="h-12 rounded-full bg-primary-light items-center justify-center disabled:opacity-50"
+      <View
+        className="px-4 py-3"
+        style={{ borderTopWidth: 1, borderTopColor: 'rgba(204,204,204,0.4)' }}
+      >
+        <Button
           onPress={() => onGenerate(selectedPromotionId)}
-          disabled={pending}
+          variant="default"
+          size="lg"
+          fullWidth
+          loading={pending}
         >
-          {pending ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="text-white font-bold">Generar cupón</Text>
-          )}
-        </Pressable>
+          Generar cupón
+        </Button>
       </View>
     </View>
   )
