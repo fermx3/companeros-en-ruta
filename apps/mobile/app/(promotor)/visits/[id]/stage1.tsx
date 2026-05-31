@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import { CatalogPicker } from '@/components/wizard/CatalogPicker'
 import { EvidenceUploader } from '@/components/wizard/EvidenceUploader'
-import { SegmentedControl } from '@/components/wizard/SegmentedControl'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Toggle } from '@/components/wizard/Toggle'
 import { WizardActionBar } from '@/components/wizard/WizardActionBar'
 import { WizardStepper } from '@/components/wizard/WizardStepper'

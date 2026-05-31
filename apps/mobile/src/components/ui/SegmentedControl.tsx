@@ -1,33 +1,32 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
-interface Option<T extends string> {
+// All styling via StyleSheet — see Button.tsx header comment. The .map below
+// renders Pressable instances, which is the exact pattern that triggers the
+// NativeWind MISSING_CONTEXT_ERROR crash if any of these used className.
+
+interface SegmentOption<T extends string> {
   value: T
   label: string
 }
 
 interface SegmentedControlProps<T extends string> {
-  label?: string
+  options: readonly SegmentOption<T>[]
   value: T | null | undefined
-  options: readonly Option<T>[]
   onChange: (next: T) => void
+  label?: string
   disabled?: boolean
 }
 
-// Bypassing NativeWind className on this component on purpose.
-// The interop wrapper around Pressable triggers a navigation-context lookup
-// inside RN's accessibility/feedback machinery on re-render after a Zustand
-// state update, which crashes with MISSING_CONTEXT_ERROR. Using StyleSheet
-// keeps the same visual but avoids the wrapper.
 export function SegmentedControl<T extends string>({
-  label,
-  value,
   options,
+  value,
   onChange,
-  disabled,
+  label,
+  disabled = false,
 }: SegmentedControlProps<T>) {
   return (
     <View style={styles.container}>
-      {label ? <Text style={styles.label}>{label}</Text> : null}
+      {label ? <Text style={styles.heading}>{label}</Text> : null}
       <View style={styles.track}>
         {options.map(opt => {
           const selected = opt.value === value
@@ -40,6 +39,9 @@ export function SegmentedControl<T extends string>({
                 disabled && styles.optionDisabled,
               ]}
               onPress={disabled ? undefined : () => onChange(opt.value)}
+              android_ripple={disabled ? undefined : { color: 'rgba(0,0,0,0.05)' }}
+              accessibilityRole="button"
+              accessibilityState={{ selected, disabled }}
             >
               <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
                 {opt.label}
@@ -53,29 +55,41 @@ export function SegmentedControl<T extends string>({
 }
 
 const styles = StyleSheet.create({
-  container: { marginVertical: 8 },
-  label: { fontSize: 12, color: '#6b7280', marginBottom: 4 },
+  container: {},
+  heading: {
+    fontSize: 12,
+    color: '#4b5563',
+    fontFamily: 'NunitoSans_700Bold',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   track: {
     flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
     padding: 4,
   },
   option: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingVertical: 9,
+    borderRadius: 7,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   optionSelected: {
     backgroundColor: '#ffffff',
     shadowColor: '#000',
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
   },
   optionDisabled: { opacity: 0.5 },
-  optionLabel: { fontSize: 12, color: '#6b7280', fontWeight: '500' },
-  optionLabelSelected: { color: '#0f2444' },
+  optionLabel: {
+    fontSize: 13,
+    color: '#4b5563',
+    fontFamily: 'NunitoSans_700Bold',
+  },
+  optionLabelSelected: { color: '#202456' },
 })

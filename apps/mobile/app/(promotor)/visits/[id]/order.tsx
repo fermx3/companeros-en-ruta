@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View 
 import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import { CatalogPicker } from '@/components/wizard/CatalogPicker'
-import { SegmentedControl } from '@/components/wizard/SegmentedControl'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { WizardActionBar } from '@/components/wizard/WizardActionBar'
 
 import {
