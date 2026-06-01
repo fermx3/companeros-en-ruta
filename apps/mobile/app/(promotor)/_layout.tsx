@@ -5,8 +5,8 @@ export default function PromotorLayout() {
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: '#ffffff' },
-        headerTintColor: '#0f2444',
-        headerTitleStyle: { fontWeight: '700' },
+        headerTintColor: '#202456',
+        headerTitleStyle: { fontFamily: 'NunitoSans_700Bold' },
       }}
     >
       <Stack.Screen name="visits" options={{ title: 'Mis Visitas' }} />

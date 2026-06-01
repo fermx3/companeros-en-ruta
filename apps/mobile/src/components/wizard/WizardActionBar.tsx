@@ -1,4 +1,6 @@
-import { ActivityIndicator, Pressable, Text, View } from 'react-native'
+import { View } from 'react-native'
+
+import { Button } from '@/components/ui/Button'
 
 interface WizardActionBarProps {
   onPrevious?: () => void
@@ -18,28 +20,36 @@ export function WizardActionBar({
   nextDisabled = false,
 }: WizardActionBarProps) {
   return (
-    <View className="flex-row gap-3 px-4 py-3 bg-white border-t border-gray-200">
+    <View
+      className="flex-row gap-3 px-4 py-3 bg-card"
+      style={{ borderTopWidth: 1, borderTopColor: 'rgba(204,204,204,0.4)' }}
+    >
       {onPrevious && (
-        <Pressable
-          className="flex-1 h-12 rounded-full border border-secondary items-center justify-center disabled:opacity-50"
-          onPress={onPrevious}
-          disabled={loading}
-        >
-          <Text className="text-gray-700 font-semibold">{previousLabel}</Text>
-        </Pressable>
+        <View className="flex-1">
+          <Button
+            onPress={onPrevious}
+            variant="outline"
+            size="lg"
+            fullWidth
+            disabled={loading}
+          >
+            {previousLabel}
+          </Button>
+        </View>
       )}
       {onNext && (
-        <Pressable
-          className="flex-1 h-12 rounded-full bg-primary-light items-center justify-center disabled:opacity-50"
-          onPress={onNext}
-          disabled={loading || nextDisabled}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="text-white font-bold">{nextLabel}</Text>
-          )}
-        </Pressable>
+        <View className="flex-1">
+          <Button
+            onPress={onNext}
+            variant="default"
+            size="lg"
+            fullWidth
+            loading={loading}
+            disabled={nextDisabled}
+          >
+            {nextLabel}
+          </Button>
+        </View>
       )}
     </View>
   )

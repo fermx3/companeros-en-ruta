@@ -8,32 +8,13 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 
+import { BadgeStatus } from '@/components/ui/BadgeStatus'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { ListEmptyState } from '@/components/ui/ListEmptyState'
+import { MetricCard } from '@/components/ui/MetricCard'
 import { signOut } from '@/lib/auth'
 import { useMyVisits, type VisitListItem } from '@/features/visits/api'
-
-const STATUS_LABEL: Record<string, string> = {
-  planned: 'Planificada',
-  in_progress: 'En curso',
-  completed: 'Completada',
-  cancelled: 'Cancelada',
-  no_show: 'No se presentó',
-}
-
-const STATUS_BG: Record<string, string> = {
-  planned: 'bg-blue-100',
-  in_progress: 'bg-amber-100',
-  completed: 'bg-success-bg',
-  cancelled: 'bg-red-100',
-  no_show: 'bg-gray-100',
-}
-
-const STATUS_TEXT: Record<string, string> = {
-  planned: 'text-blue-700',
-  in_progress: 'text-amber-700',
-  completed: 'text-success',
-  cancelled: 'text-red-700',
-  no_show: 'text-gray-700',
-}
 
 function VisitRow({ visit }: { visit: VisitListItem }) {
   const status = visit.visit_status
@@ -42,38 +23,33 @@ function VisitRow({ visit }: { visit: VisitListItem }) {
     ?? '—'
 
   return (
-    <Pressable
-      className="bg-white rounded-2xl px-4 py-4 mb-3 border border-gray-200"
-      onPress={() => router.push(`/(promotor)/visits/${visit.id}`)}
-    >
-      <View className="flex-row items-start justify-between mb-2">
-        <View className="flex-1 pr-3">
-          <Text className="text-base font-semibold text-navy" numberOfLines={1}>
-            {clientName}
-          </Text>
-          <Text className="text-xs text-gray-500 mt-0.5">{visit.public_id}</Text>
+    <Pressable onPress={() => router.push(`/(promotor)/visits/${visit.id}`)}>
+      <Card className="mb-3">
+        <View className="flex-row items-start justify-between mb-2">
+          <View className="flex-1 pr-3">
+            <Text className="text-base font-bold text-navy" numberOfLines={1}>
+              {clientName}
+            </Text>
+            <Text className="text-xs text-muted-foreground mt-0.5">{visit.public_id}</Text>
+          </View>
+          <BadgeStatus status={status} />
         </View>
-        <View className={`px-3 py-1 rounded-full ${STATUS_BG[status] ?? 'bg-gray-100'}`}>
-          <Text className={`text-xs font-medium ${STATUS_TEXT[status] ?? 'text-gray-700'}`}>
-            {STATUS_LABEL[status] ?? status}
+        {visit.client?.address_street && (
+          <Text className="text-sm text-navy" numberOfLines={1}>
+            {visit.client.address_street}
+            {visit.client.address_neighborhood ? `, ${visit.client.address_neighborhood}` : ''}
           </Text>
-        </View>
-      </View>
-      {visit.client?.address_street && (
-        <Text className="text-sm text-gray-600" numberOfLines={1}>
-          {visit.client.address_street}
-          {visit.client.address_neighborhood ? `, ${visit.client.address_neighborhood}` : ''}
-        </Text>
-      )}
-      {visit.visit_date && (
-        <Text className="text-xs text-gray-400 mt-1">
-          {new Date(visit.visit_date).toLocaleDateString('es-MX', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          })}
-        </Text>
-      )}
+        )}
+        {visit.visit_date && (
+          <Text className="text-xs text-muted-foreground mt-1">
+            {new Date(visit.visit_date).toLocaleDateString('es-MX', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })}
+          </Text>
+        )}
+      </Card>
     </Pressable>
   )
 }
@@ -83,7 +59,7 @@ export default function VisitsScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
+      <View className="flex-1 items-center justify-center bg-app-bg">
         <ActivityIndicator size="large" />
       </View>
     )
@@ -91,13 +67,13 @@ export default function VisitsScreen() {
 
   if (error) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50 px-6">
+      <View className="flex-1 items-center justify-center bg-app-bg px-6">
         <Text className="text-destructive text-center mb-4">
           Error al cargar visitas: {error instanceof Error ? error.message : 'desconocido'}
         </Text>
-        <Pressable className="px-4 py-2 rounded-full bg-primary-light" onPress={() => refetch()}>
-          <Text className="text-white font-semibold">Reintentar</Text>
-        </Pressable>
+        <Button onPress={() => refetch()} variant="default" size="default">
+          Reintentar
+        </Button>
       </View>
     )
   }
@@ -106,20 +82,17 @@ export default function VisitsScreen() {
   const metrics = data?.metrics
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-app-bg">
       {metrics && (
-        <View className="bg-white border-b border-gray-200 px-4 py-3 flex-row justify-between">
-          <View className="items-center flex-1">
-            <Text className="text-2xl font-bold text-navy">{metrics.completedVisits}</Text>
-            <Text className="text-xs text-gray-500">Completadas</Text>
+        <View className="px-4 pt-3 pb-1 flex-row gap-2">
+          <View className="flex-1">
+            <MetricCard label="Completadas" value={metrics.completedVisits} />
           </View>
-          <View className="items-center flex-1">
-            <Text className="text-2xl font-bold text-navy">{metrics.totalClients}</Text>
-            <Text className="text-xs text-gray-500">Clientes</Text>
+          <View className="flex-1">
+            <MetricCard label="Clientes" value={metrics.totalClients} />
           </View>
-          <View className="items-center flex-1">
-            <Text className="text-2xl font-bold text-navy">{metrics.effectiveness}%</Text>
-            <Text className="text-xs text-gray-500">Efectividad</Text>
+          <View className="flex-1">
+            <MetricCard label="Efectividad" value={`${metrics.effectiveness}%`} />
           </View>
         </View>
       )}
@@ -127,24 +100,29 @@ export default function VisitsScreen() {
       <FlatList
         data={visits}
         keyExtractor={(v) => v.id}
-        contentContainerClassName="px-4 py-4"
+        contentContainerClassName="px-4 py-3"
         renderItem={({ item }) => <VisitRow visit={item} />}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         ListEmptyComponent={
-          <View className="items-center mt-12">
-            <Text className="text-gray-500">No hay visitas este mes</Text>
-          </View>
+          <ListEmptyState
+            title="No hay visitas este mes"
+            body="Cuando tengas visitas asignadas, las verás aquí."
+          />
         }
         ListFooterComponent={
-          <Pressable
-            className="mt-4 py-3 rounded-full border border-secondary items-center"
-            onPress={async () => {
-              await signOut()
-              router.replace('/(auth)/login')
-            }}
-          >
-            <Text className="text-gray-600 font-medium">Cerrar sesión</Text>
-          </Pressable>
+          <View className="mt-4">
+            <Button
+              onPress={async () => {
+                await signOut()
+                router.replace('/(auth)/login')
+              }}
+              variant="outline"
+              size="default"
+              fullWidth
+            >
+              Cerrar sesión
+            </Button>
+          </View>
         }
       />
     </View>

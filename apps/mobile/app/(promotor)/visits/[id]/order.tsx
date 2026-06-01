@@ -159,14 +159,14 @@ export default function OrderModalScreen() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-app-bg">
       <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
-        <Text className="text-sm font-semibold text-navy mb-2">Distribuidor</Text>
-        <View className="bg-white rounded-lg p-3 mb-4">
+        <Text className="text-sm font-bold text-navy mb-2">Distribuidor</Text>
+        <View className="bg-card rounded-lg p-3 mb-4">
           {distributorsQuery.isLoading ? (
             <View className="flex-row items-center">
               <ActivityIndicator size="small" />
-              <Text className="text-sm text-gray-500 ml-2">Cargando…</Text>
+              <Text className="text-sm text-muted-foreground ml-2">Cargando…</Text>
             </View>
           ) : (
             <CatalogPicker
@@ -180,8 +180,8 @@ export default function OrderModalScreen() {
           )}
         </View>
 
-        <Text className="text-sm font-semibold text-navy mb-2">Forma de pago</Text>
-        <View className="bg-white rounded-lg p-3 mb-4">
+        <Text className="text-sm font-bold text-navy mb-2">Forma de pago</Text>
+        <View className="bg-card rounded-lg p-3 mb-4">
           <SegmentedControl
             value={paymentMethod}
             options={PAYMENT_OPTIONS}
@@ -189,15 +189,15 @@ export default function OrderModalScreen() {
           />
         </View>
 
-        <Text className="text-sm font-semibold text-navy mb-2">Productos</Text>
-        <View className="bg-white rounded-lg p-3 mb-4">
+        <Text className="text-sm font-bold text-navy mb-2">Productos</Text>
+        <View className="bg-card rounded-lg p-3 mb-4">
           {items.length === 0 && (
-            <Text className="text-sm text-gray-500 mb-2">Sin items todavía.</Text>
+            <Text className="text-sm text-muted-foreground mb-2">Sin items todavía.</Text>
           )}
           {items.map((it, i) => (
-            <View key={it.productOptionId} className="border border-gray-200 rounded-lg p-3 mb-2">
+            <View key={it.productOptionId} className="border border-border rounded-lg p-3 mb-2">
               <View className="flex-row items-start justify-between mb-1">
-                <Text className="text-sm font-medium text-navy flex-1" numberOfLines={2}>
+                <Text className="text-sm font-bold text-navy flex-1" numberOfLines={2}>
                   {it.productLabel}
                 </Text>
                 <Pressable onPress={() => removeItem(i)}>
@@ -206,12 +206,12 @@ export default function OrderModalScreen() {
               </View>
               <View className="flex-row gap-2 mt-1">
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 mb-1">Cantidad</Text>
+                  <Text className="text-xs text-muted-foreground mb-1">Cantidad</Text>
                   <TextInput
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="border border-border rounded-lg px-3 py-2 text-sm"
                     keyboardType="number-pad"
                     placeholder="1"
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor="#4b5563"
                     value={it.quantity?.toString() ?? '1'}
                     onChangeText={v =>
                       updateItem(i, { quantity: v ? parseInt(v, 10) : 1 })
@@ -219,18 +219,18 @@ export default function OrderModalScreen() {
                   />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 mb-1">Precio unitario</Text>
+                  <Text className="text-xs text-muted-foreground mb-1">Precio unitario</Text>
                   <TextInput
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="border border-border rounded-lg px-3 py-2 text-sm"
                     keyboardType="decimal-pad"
                     placeholder="0.00"
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor="#4b5563"
                     value={it.unit_price?.toString() ?? '0'}
                     onChangeText={v => updateItem(i, { unit_price: v ? Number(v) : 0 })}
                   />
                 </View>
               </View>
-              <Text className="text-xs text-gray-500 mt-2">
+              <Text className="text-xs text-muted-foreground mt-2">
                 Subtotal: ${(it.quantity * it.unit_price).toFixed(2)}
               </Text>
             </View>
@@ -244,18 +244,18 @@ export default function OrderModalScreen() {
           />
         </View>
 
-        <Text className="text-sm font-semibold text-navy mb-2">Notas (opcional)</Text>
+        <Text className="text-sm font-bold text-navy mb-2">Notas (opcional)</Text>
         <TextInput
-          className="bg-white border border-gray-300 rounded-lg p-3 text-sm text-gray-800 min-h-[80px] mb-4"
+          className="bg-card border border-border rounded-lg p-3 text-sm text-navy min-h-[80px] mb-4"
           placeholder="Comentarios para el distribuidor…"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor="#4b5563"
           multiline
           value={notes}
           onChangeText={setNotes}
         />
 
-        <View className="bg-white rounded-lg p-3 mb-4 flex-row items-center justify-between">
-          <Text className="text-sm font-semibold text-navy">Total</Text>
+        <View className="bg-card rounded-lg p-3 mb-4 flex-row items-center justify-between">
+          <Text className="text-sm font-bold text-navy">Total</Text>
           <Text className="text-lg font-bold text-navy">${total.toFixed(2)}</Text>
         </View>
       </ScrollView>

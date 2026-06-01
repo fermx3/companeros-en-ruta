@@ -16,17 +16,20 @@ const LABELS: Record<Stage, string> = {
 
 export function WizardStepper({ current, completed, onJumpTo }: WizardStepperProps) {
   return (
-    <View className="bg-white px-4 py-3 border-b border-gray-200">
+    <View
+      className="bg-card px-4 py-3"
+      style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(204,204,204,0.4)' }}
+    >
       <View className="flex-row justify-between items-center">
         {([1, 2, 3] as const).map((stage, idx) => {
           const isCurrent = stage === current
           const isCompleted = completed.has(stage)
           const reachable = isCurrent || isCompleted
           const dotBg = isCurrent
-            ? 'bg-primary-light'
+            ? 'bg-primary'
             : isCompleted
               ? 'bg-success'
-              : 'bg-gray-300'
+              : 'bg-border'
           return (
             <View key={stage} className="flex-row items-center flex-1">
               <Pressable
@@ -42,14 +45,14 @@ export function WizardStepper({ current, completed, onJumpTo }: WizardStepperPro
                   </Text>
                 </View>
                 <Text
-                  className={`text-xs mt-1 ${isCurrent ? 'text-navy font-semibold' : 'text-gray-500'}`}
+                  className={`text-xs mt-1 ${isCurrent ? 'text-navy font-bold' : 'text-muted-foreground'}`}
                 >
                   {LABELS[stage]}
                 </Text>
               </Pressable>
               {idx < 2 && (
                 <View
-                  className={`flex-1 h-0.5 mx-2 ${completed.has(stage) ? 'bg-success' : 'bg-gray-200'}`}
+                  className={`flex-1 h-0.5 mx-2 ${completed.has(stage) ? 'bg-success' : 'bg-border'}`}
                 />
               )}
             </View>

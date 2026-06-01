@@ -158,7 +158,7 @@ export default function Stage1Screen() {
   const competitors = competitorsQuery.data?.competitors ?? []
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-app-bg">
       <WizardStepper
         current={1}
         completed={slice.completedStages}
@@ -168,13 +168,13 @@ export default function Stage1Screen() {
       />
       <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
         {/* Brand products */}
-        <Text className="text-sm font-semibold text-navy mb-2">Productos de la marca</Text>
+        <Text className="text-sm font-bold text-navy mb-2">Productos de la marca</Text>
         {productsLoading ? (
-          <Text className="text-sm text-gray-500 mb-4">Cargando catálogo…</Text>
+          <Text className="text-sm text-muted-foreground mb-4">Cargando catálogo…</Text>
         ) : products.length === 0 ? (
-          <Text className="text-sm text-gray-500 mb-4">No hay productos cargados.</Text>
+          <Text className="text-sm text-muted-foreground mb-4">No hay productos cargados.</Text>
         ) : (
-          <View className="bg-white rounded-lg p-3 mb-4">
+          <View className="bg-card rounded-lg p-3 mb-4">
             {slice.stage1.brandProductAssessments.map(row => (
               <ProductRow
                 key={`${row.product_id}:${row.product_variant_id ?? ''}`}
@@ -187,26 +187,26 @@ export default function Stage1Screen() {
         )}
 
         {/* Competitors */}
-        <Text className="text-sm font-semibold text-navy mb-2">Competencia observada</Text>
+        <Text className="text-sm font-bold text-navy mb-2">Competencia observada</Text>
         {competitorsQuery.isLoading ? (
-          <Text className="text-sm text-gray-500 mb-4">Cargando competidores…</Text>
+          <Text className="text-sm text-muted-foreground mb-4">Cargando competidores…</Text>
         ) : competitors.length === 0 ? (
-          <Text className="text-sm text-gray-500 mb-4">No hay competidores configurados.</Text>
+          <Text className="text-sm text-muted-foreground mb-4">No hay competidores configurados.</Text>
         ) : (
-          <View className="bg-white rounded-lg p-3 mb-4">
+          <View className="bg-card rounded-lg p-3 mb-4">
             {competitors.map(c => (
               <Pressable
                 key={c.id}
                 className="border border-secondary rounded-lg px-3 py-3 mb-2 flex-row items-center justify-between"
                 onPress={() => addCompetitorObservation(c.id)}
               >
-                <Text className="text-sm font-medium text-navy">{c.competitor_name}</Text>
+                <Text className="text-sm font-bold text-navy">{c.competitor_name}</Text>
                 <Text className="text-sm text-primary-light font-semibold">+ Observar</Text>
               </Pressable>
             ))}
             {slice.stage1.competitorAssessments.length > 0 && (
               <View className="mt-3">
-                <Text className="text-xs text-gray-500 mb-1">
+                <Text className="text-xs text-muted-foreground mb-1">
                   Observaciones registradas ({slice.stage1.competitorAssessments.length})
                 </Text>
                 {slice.stage1.competitorAssessments.map((obs, i) => {
@@ -228,18 +228,18 @@ export default function Stage1Screen() {
         )}
 
         {/* Notes */}
-        <Text className="text-sm font-semibold text-navy mb-2">Notas de auditoría</Text>
+        <Text className="text-sm font-bold text-navy mb-2">Notas de auditoría</Text>
         <TextInput
-          className="bg-white border border-gray-300 rounded-lg p-3 text-sm text-gray-800 min-h-[80px] mb-4"
+          className="bg-card border border-border rounded-lg p-3 text-sm text-navy min-h-[80px] mb-4"
           placeholder="Observaciones de precios y promociones…"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor="#4b5563"
           multiline
           value={slice.stage1.pricingAuditNotes}
           onChangeText={v => patchStage1(visitId, { pricingAuditNotes: v })}
         />
 
         {/* Evidence */}
-        <View className="bg-white rounded-lg p-3 mb-4">
+        <View className="bg-card rounded-lg p-3 mb-4">
           <EvidenceUploader visitId={visitId} stage="pricing" min={1} max={5} />
         </View>
       </ScrollView>
@@ -274,8 +274,8 @@ function ProductRow({ product, row, onChange }: ProductRowProps) {
   )
 
   return (
-    <View className="border-b border-gray-100 pb-3 mb-3">
-      <Text className="text-sm font-medium text-navy">
+    <View className="border-b border-border pb-3 mb-3">
+      <Text className="text-sm font-bold text-navy">
         {product?.name ?? 'Producto'}
       </Text>
       {variantOptions.length > 0 && (
@@ -304,23 +304,23 @@ function ProductRow({ product, row, onChange }: ProductRowProps) {
         <View className="mt-1">
           <View className="flex-row gap-2">
             <View className="flex-1">
-              <Text className="text-xs text-gray-500 mb-1">Precio actual</Text>
+              <Text className="text-xs text-muted-foreground mb-1">Precio actual</Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                className="border border-border rounded-lg px-3 py-2 text-sm"
                 keyboardType="decimal-pad"
                 placeholder="$0.00"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#4b5563"
                 value={row.current_price?.toString() ?? ''}
                 onChangeText={v => onChange({ current_price: v ? Number(v) : null })}
               />
             </View>
             <View className="flex-1">
-              <Text className="text-xs text-gray-500 mb-1">Sugerido</Text>
+              <Text className="text-xs text-muted-foreground mb-1">Sugerido</Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                className="border border-border rounded-lg px-3 py-2 text-sm"
                 keyboardType="decimal-pad"
                 placeholder="$0.00"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#4b5563"
                 value={row.suggested_price?.toString() ?? ''}
                 onChangeText={v => onChange({ suggested_price: v ? Number(v) : null })}
               />
@@ -339,9 +339,9 @@ function ProductRow({ product, row, onChange }: ProductRowProps) {
           />
           {row.has_active_promotion && (
             <TextInput
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1"
+              className="border border-border rounded-lg px-3 py-2 text-sm mt-1"
               placeholder="Describe la promoción"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor="#4b5563"
               value={row.promotion_description ?? ''}
               onChangeText={v => onChange({ promotion_description: v || null })}
             />
@@ -374,9 +374,9 @@ function CompetitorObservationCard({
 }: CompetitorObservationCardProps) {
   const productItems = catalogProducts.map(p => ({ id: p.id, label: p.product_name }))
   return (
-    <View className="border border-gray-200 rounded-lg p-3 mb-2">
+    <View className="border border-border rounded-lg p-3 mb-2">
       <View className="flex-row items-start justify-between mb-2">
-        <Text className="text-sm font-medium text-navy flex-1">
+        <Text className="text-sm font-bold text-navy flex-1">
           {competitorName ?? 'Competidor'}
         </Text>
         <Pressable onPress={onRemove}>
@@ -399,33 +399,33 @@ function CompetitorObservationCard({
           />
         </View>
       )}
-      <Text className="text-xs text-gray-500 mb-1">Producto observado</Text>
+      <Text className="text-xs text-muted-foreground mb-1">Producto observado</Text>
       <TextInput
-        className="border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2"
+        className="border border-border rounded-lg px-3 py-2 text-sm mb-2"
         placeholder="Nombre del producto"
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor="#4b5563"
         value={obs.product_name_observed ?? ''}
         onChangeText={v => onChange({ product_name_observed: v || null })}
       />
       <View className="flex-row gap-2">
         <View className="flex-1">
-          <Text className="text-xs text-gray-500 mb-1">Precio observado</Text>
+          <Text className="text-xs text-muted-foreground mb-1">Precio observado</Text>
           <TextInput
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="border border-border rounded-lg px-3 py-2 text-sm"
             keyboardType="decimal-pad"
             placeholder="$0.00"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#4b5563"
             value={obs.observed_price?.toString() ?? ''}
             onChangeText={v => onChange({ observed_price: v ? Number(v) : null })}
           />
         </View>
         <View className="flex-1">
-          <Text className="text-xs text-gray-500 mb-1">Tamaño (g)</Text>
+          <Text className="text-xs text-muted-foreground mb-1">Tamaño (g)</Text>
           <TextInput
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="border border-border rounded-lg px-3 py-2 text-sm"
             keyboardType="decimal-pad"
             placeholder="0"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#4b5563"
             value={obs.size_grams?.toString() ?? ''}
             onChangeText={v => onChange({ size_grams: v ? Number(v) : null })}
           />
