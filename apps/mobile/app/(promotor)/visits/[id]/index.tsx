@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Pressable,
   ScrollView,
   Text,
   View,
@@ -11,6 +10,10 @@ import {
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
 import * as Location from 'expo-location'
 
+import { BadgeStatus } from '@/components/ui/BadgeStatus'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { ScreenHeader } from '@/components/ui/ScreenHeader'
 import {
   useCheckIn,
   useEvidence,
@@ -27,14 +30,6 @@ const STATUS_LABEL: Record<string, string> = {
   completed: 'Completada',
   cancelled: 'Cancelada',
   no_show: 'No se presentó',
-}
-
-const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
-  planned: { bg: 'bg-blue-100', text: 'text-blue-700' },
-  in_progress: { bg: 'bg-amber-100', text: 'text-amber-700' },
-  completed: { bg: 'bg-success-bg', text: 'text-success' },
-  cancelled: { bg: 'bg-red-100', text: 'text-red-700' },
-  no_show: { bg: 'bg-gray-100', text: 'text-gray-700' },
 }
 
 function formatTime(iso: string | null | undefined) {
@@ -60,7 +55,6 @@ export default function VisitIndexScreen() {
   const visit = visitQuery.data?.visit
   const status = visit?.visit_status
 
-  // Redirect into the wizard the moment the visit is in progress.
   useEffect(() => {
     if (status === 'in_progress') {
       router.replace(`/(promotor)/visits/${id}/stage1`)
@@ -94,85 +88,86 @@ export default function VisitIndexScreen() {
 
   if (visitQuery.isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" />
+      <View className="flex-1 bg-app-bg">
+        <ScreenHeader title="Detalle de visita" showBack />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" />
+        </View>
       </View>
     )
   }
   if (visitQuery.error || !visit) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50 px-6">
-        <Text className="text-destructive text-center mb-4">
-          {visitQuery.error instanceof Error ? visitQuery.error.message : 'Visita no encontrada'}
-        </Text>
-        <Pressable className="px-4 py-2 rounded-full bg-primary-light" onPress={() => visitQuery.refetch()}>
-          <Text className="text-white font-semibold">Reintentar</Text>
-        </Pressable>
+      <View className="flex-1 bg-app-bg">
+        <ScreenHeader title="Detalle de visita" showBack />
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-destructive text-center mb-4">
+            {visitQuery.error instanceof Error ? visitQuery.error.message : 'Visita no encontrada'}
+          </Text>
+          <Button onPress={() => visitQuery.refetch()} variant="default" size="default">
+            Reintentar
+          </Button>
+        </View>
       </View>
     )
   }
 
-  const badge = STATUS_BADGE[status ?? ''] ?? STATUS_BADGE.planned
-
   return (
-    <ScrollView className="flex-1 bg-gray-50" contentContainerClassName="pb-12">
-      {/* Header */}
-      <View className="bg-white px-4 py-4 border-b border-gray-200">
+    <View className="flex-1 bg-app-bg">
+      <ScreenHeader title="Detalle de visita" showBack />
+      <ScrollView contentContainerClassName="p-4 pb-12">
+        {/* Header card */}
+        <Card className="mb-3">
         <View className="flex-row items-start justify-between">
           <View className="flex-1 pr-3">
             <Text className="text-lg font-bold text-navy" numberOfLines={2}>
               {clientNameOf(visit.client)}
             </Text>
-            <Text className="text-xs text-gray-500 mt-0.5">{visit.public_id}</Text>
+            <Text className="text-xs text-muted-foreground mt-0.5">{visit.public_id}</Text>
           </View>
-          <View className={`px-3 py-1 rounded-full ${badge.bg}`}>
-            <Text className={`text-xs font-medium ${badge.text}`}>
-              {STATUS_LABEL[status ?? ''] ?? status}
-            </Text>
-          </View>
+          <BadgeStatus status={status ?? 'planned'} />
         </View>
         {visit.client?.address_street && (
-          <Text className="text-sm text-gray-600 mt-2">
+          <Text className="text-sm text-navy mt-2">
             {visit.client.address_street}
             {visit.client.address_neighborhood ? `, ${visit.client.address_neighborhood}` : ''}
           </Text>
         )}
         {visit.client?.phone && (
-          <Text className="text-sm text-gray-500 mt-0.5">Tel: {visit.client.phone}</Text>
+          <Text className="text-sm text-muted-foreground mt-0.5">Tel: {visit.client.phone}</Text>
         )}
-      </View>
+      </Card>
 
       {/* Status-specific body */}
       {status === 'planned' && (
-        <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
-          <Text className="text-sm font-semibold text-navy mb-2">Iniciar visita</Text>
-          <Text className="text-sm text-gray-600 mb-3">
+        <Card className="mb-3">
+          <Text className="text-sm font-bold text-navy mb-2">Iniciar visita</Text>
+          <Text className="text-sm text-muted-foreground mb-4">
             Vamos a registrar tu ubicación y comenzar la captura.
           </Text>
-          <Pressable
-            className="h-12 rounded-full bg-primary-light items-center justify-center disabled:opacity-50"
+          <Button
             onPress={onCheckIn}
-            disabled={checkIn.isPending}
+            variant="default"
+            size="lg"
+            fullWidth
+            loading={checkIn.isPending}
           >
-            {checkIn.isPending ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text className="text-white font-bold">Hacer check-in (con GPS)</Text>
-            )}
-          </Pressable>
-        </View>
+            Hacer check-in (con GPS)
+          </Button>
+        </Card>
       )}
 
       {status === 'completed' && id && <CompletedSummary visitId={id} visit={visit} />}
 
       {(status === 'cancelled' || status === 'no_show') && (
-        <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
-          <Text className="text-sm text-gray-600">
+        <Card className="mb-3">
+          <Text className="text-sm text-muted-foreground">
             Esta visita está marcada como {STATUS_LABEL[status]?.toLowerCase()}. No se puede iniciar.
           </Text>
-        </View>
+        </Card>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   )
 }
 
@@ -194,9 +189,9 @@ function CompletedSummary({ visitId, visit }: CompletedSummaryProps) {
 
   if (assessmentQuery.isLoading || ordersQuery.isLoading || evidenceQuery.isLoading) {
     return (
-      <View className="bg-white mt-3 px-4 py-6 items-center">
+      <Card className="mb-3 items-center py-6">
         <ActivityIndicator size="small" />
-      </View>
+      </Card>
     )
   }
 
@@ -225,97 +220,97 @@ function CompletedSummary({ visitId, visit }: CompletedSummaryProps) {
 
   return (
     <View>
-      <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
-        <Text className="text-sm font-semibold text-navy mb-2">Visita completada</Text>
-        <Text className="text-sm text-gray-700">
+      <Card className="mb-3">
+        <Text className="text-sm font-bold text-navy mb-2">Visita completada</Text>
+        <Text className="text-sm text-navy">
           Check-in: {formatTime(visit.check_in_time)} · Check-out: {formatTime(visit.check_out_time)}
         </Text>
         {durationMin != null && (
-          <Text className="text-xs text-gray-500 mt-0.5">Duración: {durationMin} min</Text>
+          <Text className="text-xs text-muted-foreground mt-0.5">Duración: {durationMin} min</Text>
         )}
-      </View>
+      </Card>
 
       {/* Stage 1 summary */}
-      <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
-        <Text className="text-sm font-semibold text-navy mb-2">Etapa 1 · Precios</Text>
-        <Text className="text-sm text-gray-700">
+      <Card className="mb-3">
+        <Text className="text-sm font-bold text-navy mb-2">Etapa 1 · Precios</Text>
+        <Text className="text-sm text-navy">
           Productos presentes: {productsPresent.length} de {(a?.brandProductAssessments ?? []).length}
         </Text>
-        <Text className="text-sm text-gray-700">
+        <Text className="text-sm text-navy">
           Observaciones de competencia: {competitors.length}
         </Text>
         {sa?.pricing_audit_notes && (
-          <Text className="text-xs text-gray-500 mt-2" numberOfLines={4}>
+          <Text className="text-xs text-muted-foreground mt-2" numberOfLines={4}>
             {sa.pricing_audit_notes}
           </Text>
         )}
         <PhotoStrip photos={pricingPhotos} emptyLabel="Sin fotos en esta etapa" />
-      </View>
+      </Card>
 
       {/* Stage 2 summary */}
-      <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
-        <Text className="text-sm font-semibold text-navy mb-2">Etapa 2 · Compras</Text>
-        <Text className="text-sm text-gray-700">
+      <Card className="mb-3">
+        <Text className="text-sm font-bold text-navy mb-2">Etapa 2 · Compras</Text>
+        <Text className="text-sm text-navy">
           Pedido de compra: {sa?.has_purchase_order ? 'sí' : 'no'}
           {sa?.purchase_order_number ? ` (${sa.purchase_order_number})` : ''}
         </Text>
         {!sa?.has_purchase_order && orders.length === 0 && sa?.why_not_buying && (
-          <Text className="text-sm text-gray-700">Motivo: {sa.why_not_buying}</Text>
+          <Text className="text-sm text-navy">Motivo: {sa.why_not_buying}</Text>
         )}
-        <Text className="text-sm text-gray-700">
+        <Text className="text-sm text-navy">
           Pedidos creados: {orders.length}
           {orders.length > 0 ? ` · total $${orderTotal.toFixed(2)}` : ''}
         </Text>
         {orders.length > 0 && (
           <View className="mt-2">
             {orders.map(o => (
-              <Text key={o.id} className="text-xs text-gray-500" numberOfLines={1}>
+              <Text key={o.id} className="text-xs text-muted-foreground" numberOfLines={1}>
                 · {o.order_number ?? 'Pedido'} — {o.distributor_name ?? '—'} ({o.items.length} items)
               </Text>
             ))}
           </View>
         )}
         {sa?.has_inventory && inventoryItems.length > 0 && (
-          <Text className="text-sm text-gray-700 mt-1">
+          <Text className="text-sm text-navy mt-1">
             Inventario: {inventoryItems.length} items
           </Text>
         )}
         {sa?.purchase_inventory_notes && (
-          <Text className="text-xs text-gray-500 mt-2" numberOfLines={4}>
+          <Text className="text-xs text-muted-foreground mt-2" numberOfLines={4}>
             {sa.purchase_inventory_notes}
           </Text>
         )}
         <PhotoStrip photos={inventoryPhotos} emptyLabel="Sin fotos en esta etapa" />
-      </View>
+      </Card>
 
       {/* Stage 3 summary */}
-      <View className="bg-white mt-3 px-4 py-4 border-y border-gray-200">
-        <Text className="text-sm font-semibold text-navy mb-2">Etapa 3 · POP</Text>
+      <Card className="mb-3">
+        <Text className="text-sm font-bold text-navy mb-2">Etapa 3 · POP</Text>
         {sa?.communication_compliance && (
-          <Text className="text-sm text-gray-700">
+          <Text className="text-sm text-navy">
             Cumplimiento: {COMPLIANCE_LABEL[sa.communication_compliance] ?? sa.communication_compliance}
           </Text>
         )}
-        <Text className="text-sm text-gray-700">
+        <Text className="text-sm text-navy">
           POP presentes: {popPresent.length} de {(a?.popMaterialChecks ?? []).length}
         </Text>
-        <Text className="text-sm text-gray-700">
+        <Text className="text-sm text-navy">
           Exhibiciones ejecutadas: {exhibitionsExecuted.length} de {(a?.exhibitionChecks ?? []).length}
         </Text>
         {sa?.pop_execution_notes && (
-          <Text className="text-xs text-gray-500 mt-2" numberOfLines={4}>
+          <Text className="text-xs text-muted-foreground mt-2" numberOfLines={4}>
             {sa.pop_execution_notes}
           </Text>
         )}
         <PhotoStrip photos={communicationPhotos} emptyLabel="Sin fotos en esta etapa" />
-      </View>
+      </Card>
     </View>
   )
 }
 
 function PhotoStrip({ photos, emptyLabel }: { photos: EvidenceItem[]; emptyLabel: string }) {
   if (photos.length === 0) {
-    return <Text className="text-xs text-gray-400 mt-3">{emptyLabel}</Text>
+    return <Text className="text-xs text-muted-foreground mt-3">{emptyLabel}</Text>
   }
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
@@ -323,7 +318,7 @@ function PhotoStrip({ photos, emptyLabel }: { photos: EvidenceItem[]; emptyLabel
         <Image
           key={p.id}
           source={{ uri: p.file_url }}
-          className="w-20 h-20 rounded-lg mr-2 bg-gray-200"
+          className="w-20 h-20 rounded-lg mr-2 bg-muted"
           resizeMode="cover"
         />
       ))}

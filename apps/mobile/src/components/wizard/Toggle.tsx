@@ -12,10 +12,17 @@ export function Toggle({ label, hint, value, onValueChange, disabled }: TogglePr
   return (
     <View className="flex-row items-center justify-between py-2">
       <View className="flex-1 pr-3">
-        <Text className="text-sm text-navy font-medium">{label}</Text>
-        {hint && <Text className="text-xs text-gray-500 mt-0.5">{hint}</Text>}
+        <Text className="text-sm text-navy font-bold">{label}</Text>
+        {hint && <Text className="text-xs text-muted-foreground mt-0.5">{hint}</Text>}
       </View>
-      <Switch value={value} onValueChange={onValueChange} disabled={disabled} />
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        trackColor={{ true: '#dd5025', false: '#cccccc' }}
+        thumbColor="#ffffff"
+        ios_backgroundColor="#cccccc"
+      />
     </View>
   )
 }

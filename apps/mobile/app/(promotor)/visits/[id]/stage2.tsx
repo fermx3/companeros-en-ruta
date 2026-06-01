@@ -152,7 +152,7 @@ export default function Stage2Screen() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-app-bg">
       <WizardStepper
         current={2}
         completed={slice.completedStages}
@@ -162,24 +162,24 @@ export default function Stage2Screen() {
       />
       <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
         {/* Active client promotions */}
-        <Text className="text-sm font-semibold text-navy mb-2">Promociones activas del cliente</Text>
+        <Text className="text-sm font-bold text-navy mb-2">Promociones activas del cliente</Text>
         {promotionsQuery.isLoading ? (
-          <Text className="text-sm text-gray-500 mb-4">Cargando promociones…</Text>
+          <Text className="text-sm text-muted-foreground mb-4">Cargando promociones…</Text>
         ) : promotions.length === 0 ? (
-          <Text className="text-sm text-gray-500 mb-4">Sin promociones activas para esta marca.</Text>
+          <Text className="text-sm text-muted-foreground mb-4">Sin promociones activas para esta marca.</Text>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
             {promotions.map(p => (
-              <View key={p.id} className="bg-white rounded-lg p-3 mr-2 w-64 border border-gray-200">
-                <Text className="text-sm font-medium text-navy" numberOfLines={1}>{p.name}</Text>
+              <View key={p.id} className="bg-card rounded-lg p-3 mr-2 w-64 border border-border">
+                <Text className="text-sm font-bold text-navy" numberOfLines={1}>{p.name}</Text>
                 {p.discount_display && (
                   <Text className="text-xs text-success font-semibold mt-1">{p.discount_display}</Text>
                 )}
                 {p.description && (
-                  <Text className="text-xs text-gray-500 mt-1" numberOfLines={2}>{p.description}</Text>
+                  <Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>{p.description}</Text>
                 )}
                 {p.valid_until && (
-                  <Text className="text-[10px] text-gray-400 mt-2">
+                  <Text className="text-[10px] text-muted-foreground mt-2">
                     Vigente hasta {new Date(p.valid_until).toLocaleDateString('es-MX')}
                   </Text>
                 )}
@@ -189,8 +189,8 @@ export default function Stage2Screen() {
         )}
 
         {/* Purchase order section */}
-        <Text className="text-sm font-semibold text-navy mb-2">¿Hay orden de compra hoy?</Text>
-        <View className="bg-white rounded-lg p-3 mb-4">
+        <Text className="text-sm font-bold text-navy mb-2">¿Hay orden de compra hoy?</Text>
+        <View className="bg-card rounded-lg p-3 mb-4">
           <Toggle
             label="Sí, hay pedido de compra"
             value={slice.stage2.hasPurchaseOrder}
@@ -203,11 +203,11 @@ export default function Stage2Screen() {
           />
           {slice.stage2.hasPurchaseOrder && (
             <View className="mt-2">
-              <Text className="text-xs text-gray-500 mb-1">Número de pedido (opcional)</Text>
+              <Text className="text-xs text-muted-foreground mb-1">Número de pedido (opcional)</Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                className="border border-border rounded-lg px-3 py-2 text-sm"
                 placeholder="ej. PO-12345"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#4b5563"
                 value={slice.stage2.purchaseOrderNumber ?? ''}
                 onChangeText={v => patchStage2(visitId, { purchaseOrderNumber: v || null })}
               />
@@ -226,27 +226,27 @@ export default function Stage2Screen() {
         </View>
 
         {/* Orders */}
-        <Text className="text-sm font-semibold text-navy mb-2">Pedidos creados en esta visita</Text>
-        <View className="bg-white rounded-lg p-3 mb-4">
+        <Text className="text-sm font-bold text-navy mb-2">Pedidos creados en esta visita</Text>
+        <View className="bg-card rounded-lg p-3 mb-4">
           {ordersQuery.isLoading ? (
-            <Text className="text-sm text-gray-500">Cargando pedidos…</Text>
+            <Text className="text-sm text-muted-foreground">Cargando pedidos…</Text>
           ) : orders.length === 0 ? (
-            <Text className="text-sm text-gray-500 mb-2">Sin pedidos registrados.</Text>
+            <Text className="text-sm text-muted-foreground mb-2">Sin pedidos registrados.</Text>
           ) : (
             orders.map(o => (
               <View
                 key={o.id}
-                className="border border-gray-200 rounded-lg p-3 mb-2"
+                className="border border-border rounded-lg p-3 mb-2"
               >
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1 pr-2">
-                    <Text className="text-sm font-medium text-navy">
+                    <Text className="text-sm font-bold text-navy">
                       {o.order_number ?? 'Pedido'}
                     </Text>
-                    <Text className="text-xs text-gray-500 mt-0.5">
+                    <Text className="text-xs text-muted-foreground mt-0.5">
                       {o.distributor_name ?? '—'} · {o.items.length} items · ${Number(o.total_amount).toFixed(2)}
                     </Text>
-                    <Text className="text-[10px] text-gray-400 mt-0.5">
+                    <Text className="text-[10px] text-muted-foreground mt-0.5">
                       {o.payment_method ?? 'efectivo'} · {o.order_status}
                     </Text>
                   </View>
@@ -261,13 +261,13 @@ export default function Stage2Screen() {
             className="h-11 rounded-full border border-secondary items-center justify-center mt-2"
             onPress={() => router.push(`/(promotor)/visits/${visitId}/order` as never)}
           >
-            <Text className="text-sm text-gray-700 font-medium">+ Crear pedido</Text>
+            <Text className="text-sm text-navy font-medium">+ Crear pedido</Text>
           </Pressable>
         </View>
 
         {/* Inventory */}
-        <Text className="text-sm font-semibold text-navy mb-2">Inventario</Text>
-        <View className="bg-white rounded-lg p-3 mb-4">
+        <Text className="text-sm font-bold text-navy mb-2">Inventario</Text>
+        <View className="bg-card rounded-lg p-3 mb-4">
           <Toggle
             label="Capturar inventario"
             value={slice.stage2.hasInventory}
@@ -276,12 +276,12 @@ export default function Stage2Screen() {
           {slice.stage2.hasInventory && (
             <View className="mt-2">
               {slice.stage2.inventoryItems.length === 0 ? (
-                <Text className="text-xs text-gray-500 mb-2">Sin items todavía.</Text>
+                <Text className="text-xs text-muted-foreground mb-2">Sin items todavía.</Text>
               ) : (
                 slice.stage2.inventoryItems.map((item, i) => (
-                  <View key={i} className="border border-gray-200 rounded-lg p-3 mb-2">
+                  <View key={i} className="border border-border rounded-lg p-3 mb-2">
                     <View className="flex-row items-start justify-between mb-2">
-                      <Text className="text-xs text-gray-500 flex-1">Item {i + 1}</Text>
+                      <Text className="text-xs text-muted-foreground flex-1">Item {i + 1}</Text>
                       <Pressable onPress={() => removeInventoryItem(i)}>
                         <Text className="text-xs text-destructive font-semibold">Quitar</Text>
                       </Pressable>
@@ -294,12 +294,12 @@ export default function Stage2Screen() {
                       triggerLabel="Seleccionar producto"
                     />
                     <View className="mt-2">
-                      <Text className="text-xs text-gray-500 mb-1">Stock actual</Text>
+                      <Text className="text-xs text-muted-foreground mb-1">Stock actual</Text>
                       <TextInput
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        className="border border-border rounded-lg px-3 py-2 text-sm"
                         keyboardType="number-pad"
                         placeholder="0"
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor="#4b5563"
                         value={item.current_stock?.toString() ?? '0'}
                         onChangeText={v =>
                           updateInventoryItem(i, { current_stock: v ? parseInt(v, 10) : 0 })
@@ -307,9 +307,9 @@ export default function Stage2Screen() {
                       />
                     </View>
                     <TextInput
-                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm mt-2"
+                      className="border border-border rounded-lg px-3 py-2 text-sm mt-2"
                       placeholder="Notas (opcional)"
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor="#4b5563"
                       value={item.notes ?? ''}
                       onChangeText={v => updateInventoryItem(i, { notes: v || null })}
                     />
@@ -320,25 +320,25 @@ export default function Stage2Screen() {
                 className="h-10 rounded-full border border-secondary items-center justify-center mt-1"
                 onPress={addInventoryItem}
               >
-                <Text className="text-sm text-gray-700 font-medium">+ Agregar item</Text>
+                <Text className="text-sm text-navy font-medium">+ Agregar item</Text>
               </Pressable>
             </View>
           )}
         </View>
 
         {/* Notes */}
-        <Text className="text-sm font-semibold text-navy mb-2">Notas</Text>
+        <Text className="text-sm font-bold text-navy mb-2">Notas</Text>
         <TextInput
-          className="bg-white border border-gray-300 rounded-lg p-3 text-sm text-gray-800 min-h-[80px] mb-4"
+          className="bg-card border border-border rounded-lg p-3 text-sm text-navy min-h-[80px] mb-4"
           placeholder="Observaciones sobre la compra y el inventario…"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor="#4b5563"
           multiline
           value={slice.stage2.purchaseInventoryNotes ?? ''}
           onChangeText={v => patchStage2(visitId, { purchaseInventoryNotes: v || null })}
         />
 
         {/* Evidence */}
-        <View className="bg-white rounded-lg p-3 mb-4">
+        <View className="bg-card rounded-lg p-3 mb-4">
           <EvidenceUploader visitId={visitId} stage="inventory" max={5} />
         </View>
       </ScrollView>

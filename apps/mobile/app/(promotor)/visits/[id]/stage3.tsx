@@ -232,7 +232,7 @@ export default function Stage3Screen() {
   }))
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-app-bg">
       <WizardStepper
         current={3}
         completed={slice.completedStages}
@@ -242,8 +242,8 @@ export default function Stage3Screen() {
       />
       <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
         {/* Plan */}
-        <Text className="text-sm font-semibold text-navy mb-2">Plan de comunicación</Text>
-        <View className="bg-white rounded-lg p-3 mb-4">
+        <Text className="text-sm font-bold text-navy mb-2">Plan de comunicación</Text>
+        <View className="bg-card rounded-lg p-3 mb-4">
           <CatalogPicker
             title="Plan de comunicación"
             items={planOptions}
@@ -261,21 +261,21 @@ export default function Stage3Screen() {
         </View>
 
         {/* POP materials */}
-        <Text className="text-sm font-semibold text-navy mb-2">Materiales POP</Text>
+        <Text className="text-sm font-bold text-navy mb-2">Materiales POP</Text>
         {popQuery.isLoading ? (
-          <Text className="text-sm text-gray-500 mb-4">Cargando materiales…</Text>
+          <Text className="text-sm text-muted-foreground mb-4">Cargando materiales…</Text>
         ) : materialsForPlan.length === 0 ? (
-          <Text className="text-sm text-gray-500 mb-4">Sin materiales configurados.</Text>
+          <Text className="text-sm text-muted-foreground mb-4">Sin materiales configurados.</Text>
         ) : (
-          <View className="bg-white rounded-lg p-3 mb-4">
+          <View className="bg-card rounded-lg p-3 mb-4">
             {materialsForPlan.map(m => {
               const check = slice.stage3.popMaterialChecks.find(c => c.pop_material_id === m.id)
               if (!check) return null
               return (
-                <View key={m.id} className="border-b border-gray-100 pb-3 mb-3">
-                  <Text className="text-sm font-medium text-navy">{m.material_name}</Text>
+                <View key={m.id} className="border-b border-border pb-3 mb-3">
+                  <Text className="text-sm font-bold text-navy">{m.material_name}</Text>
                   {m.material_category && (
-                    <Text className="text-xs text-gray-500 mt-0.5">{m.material_category}</Text>
+                    <Text className="text-xs text-muted-foreground mt-0.5">{m.material_category}</Text>
                   )}
                   <Toggle
                     label="Presente"
@@ -291,9 +291,9 @@ export default function Stage3Screen() {
                         onChange={v => updatePopCheck(m.id, { condition: v })}
                       />
                       <TextInput
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1"
+                        className="border border-border rounded-lg px-3 py-2 text-sm mt-1"
                         placeholder="Notas (opcional)"
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor="#4b5563"
                         value={check.notes ?? ''}
                         onChangeText={v => updatePopCheck(m.id, { notes: v || null })}
                       />
@@ -306,21 +306,21 @@ export default function Stage3Screen() {
         )}
 
         {/* Exhibitions */}
-        <Text className="text-sm font-semibold text-navy mb-2">Exhibiciones</Text>
+        <Text className="text-sm font-bold text-navy mb-2">Exhibiciones</Text>
         {exhibitionsQuery.isLoading ? (
-          <Text className="text-sm text-gray-500 mb-4">Cargando exhibiciones…</Text>
+          <Text className="text-sm text-muted-foreground mb-4">Cargando exhibiciones…</Text>
         ) : allExhibitions.length === 0 ? (
-          <Text className="text-sm text-gray-500 mb-4">Sin exhibiciones activas.</Text>
+          <Text className="text-sm text-muted-foreground mb-4">Sin exhibiciones activas.</Text>
         ) : (
-          <View className="bg-white rounded-lg p-3 mb-4">
+          <View className="bg-card rounded-lg p-3 mb-4">
             {allExhibitions.map(e => {
               const check = slice.stage3.exhibitionChecks.find(c => c.exhibition_id === e.id)
               if (!check) return null
               return (
-                <View key={e.id} className="border-b border-gray-100 pb-3 mb-3">
-                  <Text className="text-sm font-medium text-navy">{e.exhibition_name}</Text>
+                <View key={e.id} className="border-b border-border pb-3 mb-3">
+                  <Text className="text-sm font-bold text-navy">{e.exhibition_name}</Text>
                   {e.location_description && (
-                    <Text className="text-xs text-gray-500 mt-0.5">{e.location_description}</Text>
+                    <Text className="text-xs text-muted-foreground mt-0.5">{e.location_description}</Text>
                   )}
                   <Toggle
                     label="Ejecutada"
@@ -336,9 +336,9 @@ export default function Stage3Screen() {
                         onChange={v => updateExhibitionCheck(e.id, { execution_quality: v })}
                       />
                       <TextInput
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1"
+                        className="border border-border rounded-lg px-3 py-2 text-sm mt-1"
                         placeholder="Notas (opcional)"
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor="#4b5563"
                         value={check.notes ?? ''}
                         onChangeText={v => updateExhibitionCheck(e.id, { notes: v || null })}
                       />
@@ -351,18 +351,18 @@ export default function Stage3Screen() {
         )}
 
         {/* Notes */}
-        <Text className="text-sm font-semibold text-navy mb-2">Notas de ejecución</Text>
+        <Text className="text-sm font-bold text-navy mb-2">Notas de ejecución</Text>
         <TextInput
-          className="bg-white border border-gray-300 rounded-lg p-3 text-sm text-gray-800 min-h-[80px] mb-4"
+          className="bg-card border border-border rounded-lg p-3 text-sm text-navy min-h-[80px] mb-4"
           placeholder="Comentarios sobre la ejecución del plan…"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor="#4b5563"
           multiline
           value={slice.stage3.popExecutionNotes ?? ''}
           onChangeText={v => patchStage3(visitId, { popExecutionNotes: v || null })}
         />
 
         {/* Evidence */}
-        <View className="bg-white rounded-lg p-3 mb-4">
+        <View className="bg-card rounded-lg p-3 mb-4">
           <EvidenceUploader visitId={visitId} stage="communication" max={5} />
         </View>
       </ScrollView>
