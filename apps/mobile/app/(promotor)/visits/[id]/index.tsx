@@ -13,6 +13,7 @@ import * as Location from 'expo-location'
 import { BadgeStatus } from '@/components/ui/BadgeStatus'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { ScreenHeader } from '@/components/ui/ScreenHeader'
 import {
   useCheckIn,
   useEvidence,
@@ -87,28 +88,36 @@ export default function VisitIndexScreen() {
 
   if (visitQuery.isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-app-bg">
-        <ActivityIndicator size="large" />
+      <View className="flex-1 bg-app-bg">
+        <ScreenHeader title="Detalle de visita" showBack />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" />
+        </View>
       </View>
     )
   }
   if (visitQuery.error || !visit) {
     return (
-      <View className="flex-1 items-center justify-center bg-app-bg px-6">
-        <Text className="text-destructive text-center mb-4">
-          {visitQuery.error instanceof Error ? visitQuery.error.message : 'Visita no encontrada'}
-        </Text>
-        <Button onPress={() => visitQuery.refetch()} variant="default" size="default">
-          Reintentar
-        </Button>
+      <View className="flex-1 bg-app-bg">
+        <ScreenHeader title="Detalle de visita" showBack />
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-destructive text-center mb-4">
+            {visitQuery.error instanceof Error ? visitQuery.error.message : 'Visita no encontrada'}
+          </Text>
+          <Button onPress={() => visitQuery.refetch()} variant="default" size="default">
+            Reintentar
+          </Button>
+        </View>
       </View>
     )
   }
 
   return (
-    <ScrollView className="flex-1 bg-app-bg" contentContainerClassName="p-4 pb-12">
-      {/* Header card */}
-      <Card className="mb-3">
+    <View className="flex-1 bg-app-bg">
+      <ScreenHeader title="Detalle de visita" showBack />
+      <ScrollView contentContainerClassName="p-4 pb-12">
+        {/* Header card */}
+        <Card className="mb-3">
         <View className="flex-row items-start justify-between">
           <View className="flex-1 pr-3">
             <Text className="text-lg font-bold text-navy" numberOfLines={2}>
@@ -157,7 +166,8 @@ export default function VisitIndexScreen() {
           </Text>
         </Card>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   )
 }
 
