@@ -22,14 +22,12 @@ export default function Index() {
   // Branch by role. brand_manager / admin go to the unsupported screen — the
   // mobile app only ships flows for the field roles (promotor, asesor de
   // ventas, supervisor). null role = user has no active role assignment.
-  //
-  // asesor_de_ventas and supervisor currently land on unsupported-role too —
-  // PR P (asesor flows) and PR Q (supervisor flows) will swap those branches
-  // to their own route groups once those screens exist.
+  // supervisor still lands on unsupported-role until PR Q ships its routes.
   switch (role) {
     case 'promotor':
       return <Redirect href="/(promotor)/visits" />
     case 'asesor_de_ventas':
+      return <Redirect href={'/(asesor)/clients' as never} />
     case 'supervisor':
     case 'brand_manager':
     case 'admin':
