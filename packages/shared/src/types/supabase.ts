@@ -5071,6 +5071,73 @@ export type Database = {
           },
         ]
       }
+      push_tokens: {
+        Row: {
+          app_variant: string
+          client_id: string | null
+          created_at: string
+          device_id: string | null
+          expo_push_token: string
+          id: string
+          is_active: boolean
+          last_verified_at: string
+          platform: string | null
+          tenant_id: string
+          updated_at: string
+          user_profile_id: string | null
+        }
+        Insert: {
+          app_variant: string
+          client_id?: string | null
+          created_at?: string
+          device_id?: string | null
+          expo_push_token: string
+          id?: string
+          is_active?: boolean
+          last_verified_at?: string
+          platform?: string | null
+          tenant_id: string
+          updated_at?: string
+          user_profile_id?: string | null
+        }
+        Update: {
+          app_variant?: string
+          client_id?: string | null
+          created_at?: string
+          device_id?: string | null
+          expo_push_token?: string
+          id?: string
+          is_active?: boolean
+          last_verified_at?: string
+          platform?: string | null
+          tenant_id?: string
+          updated_at?: string
+          user_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_tokens_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       qr_codes: {
         Row: {
           brand_id: string | null

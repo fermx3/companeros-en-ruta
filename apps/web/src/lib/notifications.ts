@@ -1,4 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/server';
+import { sendPushToRecipients } from '@/lib/push';
 import type { Database } from '@companeros/shared/types/supabase';
 import type { NotificationType } from '@companeros/shared/types/database';
 
@@ -52,6 +53,20 @@ export async function createNotification(params: CreateNotificationParams) {
     throw new Error(`Failed to create notification: ${error.message}`);
   }
 
+  // Fire-and-forget push dispatch. Failures don't fail the in-app notification
+  // (which already lives in the table and will reach the recipient via the
+  // app's realtime subscription).
+  void sendPushToRecipients([
+    {
+      user_profile_id: params.user_profile_id,
+      client_id: params.client_id,
+      title: params.title,
+      body: params.message,
+      url: params.action_url ?? null,
+      data: { notification_id: data.id, notification_type: params.notification_type ?? 'system' },
+    },
+  ]).catch(err => console.error('[createNotification] push dispatch:', err));
+
   return data;
 }
 
@@ -89,6 +104,22 @@ export async function createBulkNotifications(params: CreateNotificationParams[]
     console.error('[createBulkNotifications] Error:', error.message);
     throw new Error(`Failed to create bulk notifications: ${error.message}`);
   }
+
+  // Fire-and-forget push dispatch for the whole batch. `data` rows match the
+  // input `params` order, so we can correlate notification_id back to each.
+  void sendPushToRecipients(
+    params.map((p, idx) => ({
+      user_profile_id: p.user_profile_id,
+      client_id: p.client_id,
+      title: p.title,
+      body: p.message,
+      url: p.action_url ?? null,
+      data: {
+        notification_id: data?.[idx]?.id,
+        notification_type: p.notification_type ?? 'system',
+      },
+    }))
+  ).catch(err => console.error('[createBulkNotifications] push dispatch:', err));
 
   return data;
 }
