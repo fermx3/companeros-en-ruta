@@ -197,3 +197,19 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
 <!-- - **Root cause:** validate_visit_data() trigger only accepts 'promotor' or 'supervisor'; visit_orders trigger accepts 'asesor_de_ventas' too -->
 <!-- - **Fix / Rule:** For asesor flows, write to visit_orders, not visits. Document at top of any visit-creation handler. -->
 <!-- - **Tags:** #schema #triggers #visits #asesor -->
+
+---
+
+### 2026-06-08 — QR redemption flow lacks client-side realtime reaction
+
+- **Context:** apps/mobile (asesor) scans + redeems → POST /api/qr/redeem; meanwhile apps/client-mobile is on the QR list / detail screen.
+- **Symptom:** When the asesor redeems a client's coupon, the client's app does NOT react (no toast, no badge update, no haptic). The client only sees the change on next manual pull-to-refresh.
+- **What we want:** the client's QR list / detail should auto-refresh AND show a confirmation ("Tu cupón fue canjeado") right after redemption.
+- **Options:**
+  1. **Supabase realtime subscription** on `qr_codes` filtered by `client_id` in apps/client-mobile. Lightweight, no push setup needed. Works only while the app is foregrounded.
+  2. **Expo Push Notifications** via the `redeem_qr_code` RPC → write to a `notifications` row → trigger an Expo push to the client device. Works backgrounded, but needs APNs/FCM credentials + expo-notifications integration.
+  3. **Both:** realtime for in-app, push for background. Probably the right answer for a polished UX.
+- **Effort:** Medium for (1), High for (2). (1) gets us 80% with very little code.
+- **Severity:** Low/Medium. The current flow is functional (the QR redeems correctly); the UX feedback gap is the only issue.
+- **Tracked in:** open issue once we get to it. Probably worth slotting after PR P/Q.
+- **Tags:** #realtime #qr #asesor #client-mobile #notifications

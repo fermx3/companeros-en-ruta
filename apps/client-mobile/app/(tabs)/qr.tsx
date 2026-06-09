@@ -43,8 +43,14 @@ export default function QRTab() {
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
 
   const qrCodes = qrQuery.data?.qr_codes ?? []
+  // After the asesor redeems a single-use coupon, the DB function flips
+  // status to 'fully_redeemed' (see supabase/migrations/20260209010000_*).
+  // Older code used 'used' which is never set by redeem_qr_code for
+  // client-issued QRs. Treat 'fully_redeemed' + 'used' + 'expired' as Usados.
   const filtered = qrCodes.filter(qr =>
-    tab === 'active' ? qr.status === 'active' : qr.status === 'used'
+    tab === 'active'
+      ? qr.status === 'active'
+      : qr.status === 'fully_redeemed' || qr.status === 'used' || qr.status === 'expired'
   )
 
   function openGenerator() {
