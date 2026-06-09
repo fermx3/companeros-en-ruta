@@ -101,10 +101,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Notify brand managers about the QR redemption
+    // Notify both: the brand managers (web dashboard) and the client
+    // (mobile app) whose coupon just got redeemed. Both notifications run
+    // through createBulkNotifications → push dispatch.
     try {
       const serviceClient = createServiceClient()
-      const brandId = (result.qr_data as { brand_id?: string | null } | null)?.brand_id ?? undefined
+      const qrData = result.qr_data as { brand_id?: string | null; client_id?: string | null } | null
+      const brandId = qrData?.brand_id ?? undefined
+      const clientId = qrData?.client_id ?? undefined
 
       // Find brand_manager(s) for the tenant (optionally filtered by brand_id)
       let bmQuery = serviceClient
@@ -120,9 +124,11 @@ export async function POST(request: NextRequest) {
 
       const { data: brandManagers } = await bmQuery
 
+      const notifications: Parameters<typeof createBulkNotifications>[0] = []
+
       if (brandManagers && brandManagers.length > 0) {
-        await createBulkNotifications(
-          brandManagers.map(bm => ({
+        notifications.push(
+          ...brandManagers.map(bm => ({
             tenant_id: userProfile.tenant_id!,
             user_profile_id: bm.user_profile_id,
             title: 'Código QR canjeado',
@@ -132,6 +138,24 @@ export async function POST(request: NextRequest) {
             metadata: { redemption_id: result.redemption_id },
           }))
         )
+      }
+
+      // The client whose coupon was scanned needs to know their cupón fue
+      // usado — otherwise they keep waiting for the asesor.
+      if (clientId) {
+        notifications.push({
+          tenant_id: userProfile.tenant_id!,
+          client_id: clientId,
+          title: 'Tu cupón fue canjeado',
+          message: 'El asesor canjeó tu cupón. ¡Disfrutá del descuento!',
+          notification_type: 'qr_redeemed' as const,
+          action_url: '/(tabs)/qr',
+          metadata: { redemption_id: result.redemption_id },
+        })
+      }
+
+      if (notifications.length > 0) {
+        await createBulkNotifications(notifications)
       }
     } catch (notifError) {
       console.error('Error creating QR redemption notification:', notifError)

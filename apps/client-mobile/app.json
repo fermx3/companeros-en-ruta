@@ -39,6 +39,14 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#dd5025",
+          "defaultChannel": "default"
+        }
       ]
     ],
     "experiments": {
@@ -46,11 +54,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": "REPLACE_ME_RUN_eas_init_FROM_apps_client_mobile"
-      }
+        "projectId": "363fa147-a448-413b-b06c-5337c76ec891"
+      },
+      "router": {}
     },
-    "updates": {
-      "url": "https://u.expo.dev/REPLACE_ME_RUN_eas_init"
-    }
+    "owner": "fermx3"
   }
 }

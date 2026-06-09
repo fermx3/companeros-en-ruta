@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { Text, TextInput } from 'react-native'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import * as Notifications from 'expo-notifications'
 import * as SplashScreen from 'expo-splash-screen'
 import {
   useFonts,
@@ -18,6 +19,20 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { queryClient } from '@/lib/query'
 
 SplashScreen.preventAutoHideAsync().catch(() => {})
+
+// How push notifications are presented while the app is foregrounded. The
+// banner + list + sound flags ensure the OS draws a regular notification
+// instead of silently dropping it. The Realtime subscription updates the
+// in-app UI in parallel; this handler covers iOS's "user has the app open
+// when a push arrives" case.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+})
 
 // React Native doesn't inherit fontFamily through nested <Text>. Default both
 // Text and TextInput to Nunito Sans so screens get the brand font without
