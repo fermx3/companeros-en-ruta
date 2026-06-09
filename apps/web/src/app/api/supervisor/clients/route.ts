@@ -67,13 +67,16 @@ export async function GET(request: NextRequest) {
         assignment_type,
         clients!inner(
           id,
-          name,
+          business_name,
           public_id,
-          client_type,
+          client_type_id,
           status,
-          contact_email,
-          contact_phone,
-          address
+          email,
+          phone,
+          address_street,
+          address_city,
+          address_state,
+          client_types(name)
         )
       `, { count: 'exact' })
       .in('user_profile_id', targetIds)
@@ -86,23 +89,29 @@ export async function GET(request: NextRequest) {
     let clients = assignments?.map(a => {
       const client = a.clients as unknown as {
         id: string
-        name: string
+        business_name: string
         public_id: string
-        client_type: string
+        client_type_id: string | null
         status: string
-        contact_email: string | null
-        contact_phone: string | null
-        address: string | null
+        email: string | null
+        phone: string | null
+        address_street: string | null
+        address_city: string | null
+        address_state: string | null
+        client_types: { name: string } | null
       }
+      const addressParts = [client.address_street, client.address_city, client.address_state]
+        .filter(Boolean)
+        .join(', ')
       return {
         id: client.id,
-        name: client.name,
+        name: client.business_name,
         public_id: client.public_id,
-        client_type: client.client_type,
+        client_type: client.client_types?.name ?? '',
         status: client.status,
-        contact_email: client.contact_email,
-        contact_phone: client.contact_phone,
-        address: client.address,
+        contact_email: client.email,
+        contact_phone: client.phone,
+        address: addressParts || null,
         promotor_id: a.user_profile_id,
         promotor_name: teamMap.get(a.user_profile_id) || 'Desconocido',
         assignment_type: a.assignment_type,
