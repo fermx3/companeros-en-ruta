@@ -18,7 +18,14 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
   completed: { bg: 'bg-success-bg', text: 'text-success', label: 'COMPLETADO' },
   cancelled: { bg: 'bg-red-100', text: 'text-red-700', label: 'CANCELADO' },
   expired: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'EXPIRADO' },
-  used: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'USADO' },
+  // USADO is a positive outcome (the asesor actually scanned the coupon and
+  // the discount was applied) — render in green with a ✓ to distinguish from
+  // EXPIRADO (timed out, never used).
+  used: { bg: 'bg-success-bg', text: 'text-success', label: '✓ USADO' },
+  // redeem_qr_code() flips status to 'fully_redeemed' when redemption_count
+  // hits max_redemptions. For client-issued single-use coupons that fires on
+  // the first scan — treat it as "USADO" in the UI.
+  fully_redeemed: { bg: 'bg-success-bg', text: 'text-success', label: '✓ USADO' },
 }
 
 const SIZE_CLASSES: Record<Size, string> = {
