@@ -13,11 +13,14 @@ import { BrandLogo } from '@/components/ui/BrandLogo'
 import { Card } from '@/components/ui/Card'
 import { ChevronRight } from '@/components/ui/Icon'
 import { signOut } from '@/lib/auth'
+import { useUnreadCount } from '@/features/notifications/api'
 import { usePointsSummary } from '@/features/points/api'
 
 export default function MoreTab() {
   const pointsQuery = usePointsSummary()
+  const unreadQuery = useUnreadCount()
   const summary = pointsQuery.data
+  const unread = unreadQuery.data?.count ?? 0
 
   async function onLogout() {
     Alert.alert('Cerrar sesión', '¿Estás seguro?', [
@@ -44,6 +47,37 @@ export default function MoreTab() {
         />
       }
     >
+      <Pressable className="mb-2" onPress={() => router.push('/notifications' as never)}>
+        <Card>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1 pr-2">
+              <Text className="text-sm font-bold text-navy">Notificaciones</Text>
+              <Text className="text-xs text-muted-foreground mt-0.5">
+                {unread > 0
+                  ? `Tienes ${unread} sin leer`
+                  : 'Cupones, pedidos y promociones'}
+              </Text>
+            </View>
+            {unread > 0 && (
+              <View
+                style={{
+                  backgroundColor: '#dd5025',
+                  borderRadius: 999,
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  marginRight: 8,
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'NunitoSans_700Bold' }}>
+                  {unread > 99 ? '99+' : unread}
+                </Text>
+              </View>
+            )}
+            <ChevronRight size={18} color="#999999" />
+          </View>
+        </Card>
+      </Pressable>
+
       <Pressable className="mb-2" onPress={() => router.push('/profile')}>
         <Card>
           <Text className="text-sm font-bold text-navy">Mi perfil</Text>

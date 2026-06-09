@@ -1,6 +1,10 @@
+import { useEffect } from 'react'
 import { Tabs } from 'expo-router'
 
 import { Home, MoreHorizontal, Package, QrCode, Tag } from '@/components/ui/Icon'
+import { useUnreadCount } from '@/features/notifications/api'
+import { registerForPushNotificationsAsync } from '@/features/notifications/push'
+import { useNotificationsRealtime } from '@/features/notifications/realtime'
 
 const ACTIVE = '#dd5025'
 const INACTIVE = '#999999'
@@ -8,6 +12,21 @@ const NAVY = '#202456'
 const BORDER = '#cccccc'
 
 export default function TabsLayout() {
+  // Mounted only after auth gating in app/index.tsx. Fire push registration
+  // once on first mount and subscribe to Realtime for instant in-app updates.
+  // Re-running on every reload is OK — the backend upserts.
+  useEffect(() => {
+    registerForPushNotificationsAsync().catch(err => {
+      console.error('[tabs] push registration failed:', err)
+    })
+  }, [])
+  useNotificationsRealtime()
+
+  // Live unread count so the Más tab can show a badge from any tab. The
+  // Realtime subscription above invalidates this on INSERT.
+  const unreadQuery = useUnreadCount()
+  const unread = unreadQuery.data?.count ?? 0
+
   return (
     <Tabs
       screenOptions={{
@@ -63,6 +82,8 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused, size }) => (
             <MoreHorizontal size={size} color={focused ? ACTIVE : INACTIVE} />
           ),
+          tabBarBadge: unread > 0 ? (unread > 99 ? '99+' : unread) : undefined,
+          tabBarBadgeStyle: { backgroundColor: ACTIVE, color: '#ffffff' },
         }}
       />
     </Tabs>
