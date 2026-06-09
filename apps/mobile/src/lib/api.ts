@@ -53,7 +53,15 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
   if (!res.ok) {
     const body = await res.text().catch(() => '')
-    throw new ApiError(res.status, `${res.status} ${res.statusText}`, body)
+    // Prefer the server's error message when the body is JSON like { error }.
+    // Falls back to the HTTP status line otherwise.
+    let msg = `${res.status} ${res.statusText}`
+    try {
+      const parsed = JSON.parse(body) as { error?: string; message?: string }
+      if (parsed.error) msg = parsed.error
+      else if (parsed.message) msg = parsed.message
+    } catch { /* not JSON */ }
+    throw new ApiError(res.status, msg, body)
   }
   return res.json() as Promise<T>
 }

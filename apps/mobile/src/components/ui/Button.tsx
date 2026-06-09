@@ -43,6 +43,25 @@ export function Button({
   // run on first render, leaving the container without backgroundColor or
   // height — buttons appeared invisible. Pressed visual is handled via the
   // `pressRetentionOffset` shaded label; that's enough feedback for now.
+  // Wrap text-like children in <Text>. RN crashes if a raw string sits inside
+  // <Pressable> or <View>. JSX with interpolation like `Total ${price}` parses
+  // into an array ["Total $", price, ""] — so we detect arrays of primitives
+  // too, not just plain strings.
+  const isTextLike = (c: ReactNode): boolean => {
+    if (typeof c === 'string' || typeof c === 'number') return true
+    if (Array.isArray(c)) {
+      return c.every(
+        x => x == null || typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean'
+      )
+    }
+    return false
+  }
+  const textStyle = {
+    color: labelColor,
+    fontFamily: 'NunitoSans_700Bold',
+    fontSize: labelSize,
+  }
+
   return (
     <Pressable
       onPress={isInactive ? undefined : onPress}
@@ -63,29 +82,15 @@ export function Button({
       ) : hasIcons ? (
         <View style={styles.row}>
           {leftIcon}
-          {typeof children === 'string' ? (
-            <Text
-              style={{
-                color: labelColor,
-                fontFamily: 'NunitoSans_700Bold',
-                fontSize: labelSize,
-              }}
-            >
-              {children}
-            </Text>
+          {isTextLike(children) ? (
+            <Text style={textStyle}>{children}</Text>
           ) : (
             children
           )}
           {rightIcon}
         </View>
-      ) : typeof children === 'string' ? (
-        <Text
-          style={{
-            color: labelColor,
-            fontFamily: 'NunitoSans_700Bold',
-            fontSize: labelSize,
-          }}
-        >
+      ) : isTextLike(children) ? (
+        <Text style={textStyle}>
           {children}
         </Text>
       ) : (
