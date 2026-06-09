@@ -59,6 +59,7 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(promotor)" />
             <Stack.Screen name="(asesor)" />
+            <Stack.Screen name="(supervisor)" />
             <Stack.Screen name="unsupported-role" />
           </Stack>
         </QueryClientProvider>

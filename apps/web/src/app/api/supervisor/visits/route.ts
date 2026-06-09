@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         client_id,
         clients!inner(
           id,
-          name
+          business_name
         )
       `, { count: 'exact' })
       .in('promotor_id', targetIds)
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
     const { data: visits, count: totalCount } = await query
 
     const formattedVisits = visits?.map(v => {
-      const client = v.clients as unknown as { id: string; name: string }
+      const client = v.clients as unknown as { id: string; business_name: string }
       return {
         id: v.id,
         visit_date: v.visit_date,
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
         client_satisfaction_rating: v.client_satisfaction_rating,
         promotor_id: v.promotor_id,
         promotor_name: teamMap.get(v.promotor_id) || 'Desconocido',
-        client_name: client.name,
+        client_name: client.business_name,
       }
     }) || []
 

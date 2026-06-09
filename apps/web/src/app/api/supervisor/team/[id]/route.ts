@@ -60,12 +60,13 @@ export async function GET(
         assignment_type,
         clients!inner(
           id,
-          name,
+          business_name,
           public_id,
-          client_type,
+          client_type_id,
           status,
-          contact_email,
-          contact_phone
+          email,
+          phone,
+          client_types(name)
         )
       `)
       .eq('user_profile_id', memberProfile.id)
@@ -74,21 +75,22 @@ export async function GET(
     const assignedClients = assignments?.map(a => {
       const client = a.clients as unknown as {
         id: string
-        name: string
+        business_name: string
         public_id: string
-        client_type: string
+        client_type_id: string | null
         status: string
-        contact_email: string | null
-        contact_phone: string | null
+        email: string | null
+        phone: string | null
+        client_types: { name: string } | null
       }
       return {
         id: client.id,
-        name: client.name,
+        name: client.business_name,
         public_id: client.public_id,
-        client_type: client.client_type,
+        client_type: client.client_types?.name ?? '',
         status: client.status,
-        contact_email: client.contact_email,
-        contact_phone: client.contact_phone,
+        contact_email: client.email,
+        contact_phone: client.phone,
         assignment_type: a.assignment_type,
       }
     }) || []
@@ -104,7 +106,7 @@ export async function GET(
         client_id,
         clients!inner(
           id,
-          name
+          business_name
         )
       `)
       .eq('promotor_id', memberProfile.id)
@@ -113,13 +115,13 @@ export async function GET(
       .limit(20)
 
     const visits = recentVisits?.map(v => {
-      const client = v.clients as unknown as { id: string; name: string }
+      const client = v.clients as unknown as { id: string; business_name: string }
       return {
         id: v.id,
         visit_date: v.visit_date,
         visit_status: v.visit_status,
         client_satisfaction_rating: v.client_satisfaction_rating,
-        client_name: client.name,
+        client_name: client.business_name,
       }
     }) || []
 
