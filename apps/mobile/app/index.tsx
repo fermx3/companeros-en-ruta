@@ -1,14 +1,15 @@
 import { Redirect } from 'expo-router'
 import { ActivityIndicator, View } from 'react-native'
 
-import { useSession } from '@/lib/auth'
+import { useSession, useUserRole } from '@/lib/auth'
 
 export default function Index() {
-  const { session, loading } = useSession()
+  const { session, loading: sessionLoading } = useSession()
+  const { role, loading: roleLoading } = useUserRole()
 
-  if (loading) {
+  if (sessionLoading || (session && roleLoading)) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-app-bg">
         <ActivityIndicator size="large" />
       </View>
     )
@@ -18,5 +19,22 @@ export default function Index() {
     return <Redirect href="/(auth)/login" />
   }
 
-  return <Redirect href="/(promotor)/visits" />
+  // Branch by role. brand_manager / admin go to the unsupported screen — the
+  // mobile app only ships flows for the field roles (promotor, asesor de
+  // ventas, supervisor). null role = user has no active role assignment.
+  //
+  // asesor_de_ventas and supervisor currently land on unsupported-role too —
+  // PR P (asesor flows) and PR Q (supervisor flows) will swap those branches
+  // to their own route groups once those screens exist.
+  switch (role) {
+    case 'promotor':
+      return <Redirect href="/(promotor)/visits" />
+    case 'asesor_de_ventas':
+    case 'supervisor':
+    case 'brand_manager':
+    case 'admin':
+    case null:
+    default:
+      return <Redirect href={'/unsupported-role' as never} />
+  }
 }
