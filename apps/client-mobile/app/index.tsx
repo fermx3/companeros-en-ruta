@@ -1,15 +1,31 @@
+import { useEffect, useState } from 'react'
 import { ActivityIndicator, Text, View } from 'react-native'
 import { Redirect } from 'expo-router'
 
 import { Button } from '@/components/ui/Button'
+import { isOnboardingDismissed } from '@/lib/onboarding-dismiss'
 import { signOut, useSession } from '@/lib/auth'
 import { useClientProfile } from '@/features/profile/api'
 
 export default function Index() {
   const { session, loading: sessionLoading } = useSession()
   const profileQuery = useClientProfile()
+  const [dismissChecked, setDismissChecked] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
 
-  if (sessionLoading || (session && profileQuery.isLoading)) {
+  const userId = session?.user?.id ?? null
+
+  useEffect(() => {
+    if (!userId) {
+      setDismissChecked(true)
+      return
+    }
+    isOnboardingDismissed(userId)
+      .then(setDismissed)
+      .finally(() => setDismissChecked(true))
+  }, [userId])
+
+  if (sessionLoading || (session && profileQuery.isLoading) || !dismissChecked) {
     return (
       <View className="flex-1 items-center justify-center bg-app-bg">
         <ActivityIndicator size="large" />
@@ -19,7 +35,6 @@ export default function Index() {
 
   if (!session) return <Redirect href="/(auth)/login" />
 
-  // Profile not found → user's auth account isn't linked to a client row.
   if (profileQuery.error) {
     return (
       <View className="flex-1 items-center justify-center bg-app-bg px-6">
@@ -42,7 +57,10 @@ export default function Index() {
     )
   }
 
-  if (profileQuery.data?.onboarding_completed === false) {
+  // Show onboarding only if not completed AND user hasn't actively dismissed it.
+  // The dismiss flag is per-user; Home keeps a persistent reminder banner so the
+  // skip doesn't make the form invisible forever.
+  if (profileQuery.data?.onboarding_completed === false && !dismissed) {
     return <Redirect href="/(onboarding)/welcome" />
   }
 

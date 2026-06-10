@@ -11,6 +11,8 @@ import {
 import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { AlertCircle } from 'lucide-react-native'
+
 import { BrandLogo } from '@/components/ui/BrandLogo'
 import { Card } from '@/components/ui/Card'
 import { ClipboardList, IconPedidos, IconQR } from '@/components/ui/Icon'
@@ -64,6 +66,8 @@ export default function HomeTab() {
     pendingSurveys.refetch()
   }, [profileQuery, membershipsQuery, promotionsQuery, productsQuery, pendingSurveys])
 
+  const needsOnboarding = profile?.onboarding_completed === false
+
   return (
     <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
       <ScrollView
@@ -71,6 +75,42 @@ export default function HomeTab() {
         contentContainerClassName="p-4 pb-8"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
+      {/* Onboarding reminder — top of everything, persistente */}
+      {needsOnboarding && (
+        <Pressable
+          onPress={() => router.push('/(onboarding)/form' as never)}
+          className="mb-4"
+        >
+          <View
+            className="rounded-2xl p-4 flex-row items-center"
+            style={{ backgroundColor: PRIMARY_HEX }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 12,
+              }}
+            >
+              <AlertCircle size={22} color="#ffffff" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-white font-bold text-sm">
+                Completa tu registro
+              </Text>
+              <Text className="text-white text-xs mt-0.5 opacity-90" numberOfLines={2}>
+                Te toma 3 minutos y desbloqueas todos los beneficios del programa.
+              </Text>
+            </View>
+            <Text className="text-white font-bold text-xs ml-2">Continuar →</Text>
+          </View>
+        </Pressable>
+      )}
+
       {/* Greeting + Profile avatar */}
       <View className="flex-row items-center justify-between mb-4">
         <View className="flex-1 pr-3">

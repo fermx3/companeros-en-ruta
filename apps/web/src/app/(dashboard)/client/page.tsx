@@ -9,7 +9,7 @@ import { LoyaltyPlansSection } from "@/components/client/LoyaltyPlansSection"
 import { WeeklyPromotionsBanner } from "@/components/client/WeeklyPromotionsBanner"
 import { SuggestedProductsGrid } from "@/components/client/SuggestedProductsGrid"
 import { CouponsSection } from "@/components/client/CouponsSection"
-import { ClipboardCheck, ClipboardList, X } from "lucide-react"
+import { ClipboardCheck, ClipboardList } from "lucide-react"
 import { IconQR, IconPedidos } from '@/components/icons'
 import { QuickActions } from '@/components/layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -135,7 +135,6 @@ export default function ClientPortal() {
   const [pendingSurveys, setPendingSurveys] = useState<PendingSurvey[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [bannerDismissed, setBannerDismissed] = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -238,6 +237,27 @@ export default function ClientPortal() {
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
+        {/* Onboarding CTA Banner — persistente arriba de todo hasta que se complete */}
+        {profile && !profile.onboarding_completed && (
+          <Link
+            href="/client/onboarding/form"
+            className="block rounded-2xl bg-primary p-4 text-white shadow-sm hover:opacity-95 transition-opacity"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <ClipboardCheck className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold">Completa tu registro</p>
+                <p className="text-xs opacity-90">
+                  Te toma 3 minutos y desbloqueas todos los beneficios del programa.
+                </p>
+              </div>
+              <span className="text-xs font-bold">Continuar →</span>
+            </div>
+          </Link>
+        )}
+
         {/* 1. Welcome Header */}
         <div>
           <h1 className="text-2xl font-bold text-navy">
@@ -247,33 +267,6 @@ export default function ClientPortal() {
             {profile?.public_id} · {profile?.client_type_name || 'Cliente'}
           </p>
         </div>
-
-        {/* Onboarding CTA Banner */}
-        {profile && !profile.onboarding_completed && !bannerDismissed && (
-          <div className="relative flex items-center gap-4 rounded-2xl border border-primary/30 bg-primary-light/8 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-light/15">
-              <ClipboardCheck className="h-5 w-5 text-primary" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-navy">
-                Completa tu perfil para aprovechar todos los beneficios
-              </p>
-              <Link
-                href="/client/onboarding/form"
-                className="mt-1 inline-block text-sm font-semibold text-primary underline underline-offset-2 hover:text-primary/80"
-              >
-                Completar perfil
-              </Link>
-            </div>
-            <button
-              onClick={() => setBannerDismissed(true)}
-              className="shrink-0 rounded-lg p-1 text-primary/40 hover:bg-primary/10 hover:text-primary"
-              aria-label="Cerrar"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
 
         {/* 2a. LoyaltyPlanSummary — aggregated snapshot */}
         <LoyaltyPlanSummary
