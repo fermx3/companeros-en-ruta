@@ -151,10 +151,10 @@ export function WeeklyPromotionsBanner({ promotions, loading }: WeeklyPromotions
                 Válido hasta {format(new Date(promo.end_date), "dd 'de' MMM", { locale: es })}
               </p>
               <Link
-                href="/client/qr"
+                href={`/client/promotions/${promo.id}`}
                 className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
               >
-                Ver QR
+                Obtener cupón
                 <QrCode className="h-3.5 w-3.5" />
               </Link>
             </div>

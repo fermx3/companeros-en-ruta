@@ -49,6 +49,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // QR codes always attach to a promotion — no generic-brand cupones.
+    // Enforced at the API boundary so older mobile builds or stale flows
+    // surface a clear 400 instead of creating untracked QR rows.
+    if (!promotion_id) {
+      return NextResponse.json(
+        { error: 'promotion_id es requerido. Genera el cupón desde el detalle de la promoción.' },
+        { status: 400 }
+      )
+    }
+
     // 4. Verify access to client
     // Check if user is the client or has admin/brand_manager role
     const { data: client } = await supabase

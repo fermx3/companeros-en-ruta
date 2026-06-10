@@ -24,6 +24,8 @@ export {
   Search,
   Eye,
   EyeOff,
+  Inbox,
+  ClipboardList,
 } from 'lucide-react-native'
 
 interface CustomIconProps {

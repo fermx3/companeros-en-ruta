@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Ticket, Copy, Check } from 'lucide-react'
+import { Ticket, Copy, Check, ChevronRight } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 
 interface PromotionBrand {
@@ -79,7 +80,12 @@ function CopyableCode({ code }: { code: string }) {
 
   return (
     <button
-      onClick={handleCopy}
+      onClick={(e) => {
+        // Wrapped by a Link — keep the copy action isolated from navigation.
+        e.preventDefault()
+        e.stopPropagation()
+        handleCopy()
+      }}
       className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg px-2.5 py-1 text-xs font-mono font-semibold text-gray-700 transition-colors"
     >
       {code}
@@ -120,11 +126,11 @@ export function CouponsSection({ promotions }: CouponsSectionProps) {
 
       <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide lg:grid lg:grid-cols-3 lg:overflow-x-visible">
         {coupons.map((coupon) => (
-          <div
+          <Link
             key={coupon.id}
-            className="min-w-[240px] snap-start rounded-2xl bg-white p-4 shadow-sm flex flex-col gap-3"
+            href={`/client/promotions/${coupon.id}`}
+            className="min-w-[240px] snap-start rounded-2xl bg-white p-4 shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow"
           >
-            {/* Brand + Badge */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
                 <Avatar
@@ -141,19 +147,22 @@ export function CouponsSection({ promotions }: CouponsSectionProps) {
               </span>
             </div>
 
-            {/* Promo name */}
             <p className="text-sm font-medium text-gray-700 line-clamp-2">{coupon.name}</p>
 
-            {/* Promo code (if has one) */}
             {coupon.promo_code && (
               <CopyableCode code={coupon.promo_code} />
             )}
 
-            {/* Valid until */}
-            <p className="text-xs text-gray-400 mt-auto">
-              Valido hasta {format(new Date(coupon.end_date), "dd 'de' MMM yyyy", { locale: es })}
-            </p>
-          </div>
+            <div className="flex items-center justify-between mt-auto">
+              <p className="text-xs text-gray-400">
+                Valido hasta {format(new Date(coupon.end_date), "dd 'de' MMM yyyy", { locale: es })}
+              </p>
+              <span className="text-xs font-semibold text-primary flex items-center gap-0.5">
+                Ver cupón
+                <ChevronRight className="h-3 w-3" />
+              </span>
+            </div>
+          </Link>
         ))}
       </div>
     </div>
