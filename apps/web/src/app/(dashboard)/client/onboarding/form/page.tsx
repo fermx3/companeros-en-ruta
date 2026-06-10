@@ -10,22 +10,31 @@ import { Button } from '@/components/ui/button'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useToast } from '@/components/ui/toaster'
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react'
+import { MX_STATE_NAMES, MX_STATES } from '@companeros/shared/utils/mx-states'
 
 // ---------- Schema ----------
 
 const formSchema = z.object({
   // Step 1: Personal & Business
   owner_name: z.string().min(1, 'Nombre es requerido'),
-  owner_last_name: z.string().optional(),
+  owner_last_name: z.string().min(1, 'Apellido es requerido'),
   gender: z.enum(['masculino', 'femenino', 'otro', 'prefiero_no_decir']).optional(),
   date_of_birth: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   email_opt_in: z.boolean().optional(),
-  whatsapp: z.string().optional(),
+  whatsapp: z
+    .string()
+    .regex(/^\d{10}$/, 'Deben ser exactamente 10 dígitos')
+    .optional()
+    .or(z.literal('')),
   whatsapp_opt_in: z.boolean().optional(),
   client_type_id: z.string().optional(),
-  address_state: z.string().optional(),
-  address_postal_code: z.string().optional(),
+  address_state: z.enum(MX_STATE_NAMES as [string, ...string[]], {
+    message: 'Selecciona un estado',
+  }),
+  address_postal_code: z
+    .string()
+    .regex(/^\d{5}$/, 'Deben ser exactamente 5 dígitos'),
   has_meat_fridge: z.boolean().optional(),
   has_soda_fridge: z.boolean().optional(),
   accepts_card: z.boolean().optional(),
@@ -187,8 +196,13 @@ export default function ClientOnboardingFormPage() {
   }
 
   const handleNext = async () => {
-    // Validate step 1 fields before advancing
-    const valid = await form.trigger(['owner_name'])
+    const valid = await form.trigger([
+      'owner_name',
+      'owner_last_name',
+      'whatsapp',
+      'address_state',
+      'address_postal_code',
+    ])
     if (valid) setStep(2)
   }
 
@@ -259,13 +273,16 @@ export default function ClientOnboardingFormPage() {
 
                   {/* Owner last name */}
                   <div>
-                    <FieldLabel htmlFor="owner_last_name">Apellido(s)</FieldLabel>
+                    <FieldLabel htmlFor="owner_last_name">Apellido(s) *</FieldLabel>
                     <input
                       id="owner_last_name"
                       {...register('owner_last_name')}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Tu apellido"
                     />
+                    {errors.owner_last_name && (
+                      <p className="text-xs text-red-600 mt-1">{errors.owner_last_name.message}</p>
+                    )}
                   </div>
 
                   {/* Gender */}
@@ -329,9 +346,14 @@ export default function ClientOnboardingFormPage() {
                     <input
                       id="whatsapp"
                       {...register('whatsapp')}
+                      inputMode="numeric"
+                      maxLength={10}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="10 dígitos"
                     />
+                    {errors.whatsapp && (
+                      <p className="text-xs text-red-600 mt-1">{errors.whatsapp.message}</p>
+                    )}
                     <div className="mt-2">
                       <ToggleButton
                         label="Acepto recibir comunicaciones por WhatsApp"
@@ -363,20 +385,36 @@ export default function ClientOnboardingFormPage() {
                   {/* Address state + postal code */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <FieldLabel htmlFor="address_state">Estado</FieldLabel>
-                      <input
+                      <FieldLabel htmlFor="address_state">Estado *</FieldLabel>
+                      <select
                         id="address_state"
                         {...register('address_state')}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      >
+                        <option value="">Selecciona...</option>
+                        {MX_STATES.map((s) => (
+                          <option key={s.name} value={s.name}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.address_state && (
+                        <p className="text-xs text-red-600 mt-1">{errors.address_state.message}</p>
+                      )}
                     </div>
                     <div>
-                      <FieldLabel htmlFor="address_postal_code">Código postal</FieldLabel>
+                      <FieldLabel htmlFor="address_postal_code">Código postal *</FieldLabel>
                       <input
                         id="address_postal_code"
                         {...register('address_postal_code')}
+                        inputMode="numeric"
+                        maxLength={5}
                         className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="01000"
                       />
+                      {errors.address_postal_code && (
+                        <p className="text-xs text-red-600 mt-1">{errors.address_postal_code.message}</p>
+                      )}
                     </div>
                   </div>
 

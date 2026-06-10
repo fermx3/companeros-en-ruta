@@ -15,23 +15,36 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 
+import { MX_STATE_NAMES, MX_STATES } from '@companeros/shared/utils/mx-states'
+
 import { Button } from '@/components/ui/Button'
 import { FilterChip } from '@/components/ui/FilterChip'
 import { Input } from '@/components/ui/Input'
+import { Picker } from '@/components/ui/Picker'
+import { clearOnboardingDismiss } from '@/lib/onboarding-dismiss'
+import { useSession } from '@/lib/auth'
 import { useOnboardingData, useSubmitOnboarding } from '@/features/onboarding/api'
 
 const formSchema = z.object({
   owner_name: z.string().min(1, 'Nombre es requerido'),
-  owner_last_name: z.string().optional(),
+  owner_last_name: z.string().min(1, 'Apellido es requerido'),
   gender: z.enum(['masculino', 'femenino', 'otro', 'prefiero_no_decir']).optional(),
   date_of_birth: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   email_opt_in: z.boolean().optional(),
-  whatsapp: z.string().optional(),
+  whatsapp: z
+    .string()
+    .regex(/^\d{10}$/, 'Deben ser exactamente 10 dígitos')
+    .optional()
+    .or(z.literal('')),
   whatsapp_opt_in: z.boolean().optional(),
   client_type_id: z.string().optional(),
-  address_state: z.string().optional(),
-  address_postal_code: z.string().optional(),
+  address_state: z.enum(MX_STATE_NAMES as [string, ...string[]], {
+    message: 'Selecciona un estado',
+  }),
+  address_postal_code: z
+    .string()
+    .regex(/^\d{5}$/, 'Deben ser exactamente 5 dígitos'),
   has_meat_fridge: z.boolean().optional(),
   has_soda_fridge: z.boolean().optional(),
   accepts_card: z.boolean().optional(),
@@ -63,6 +76,7 @@ export default function OnboardingForm() {
   const [step, setStep] = useState<1 | 2>(1)
   const dataQuery = useOnboardingData()
   const submit = useSubmitOnboarding()
+  const { session } = useSession()
 
   const {
     control,
@@ -76,6 +90,9 @@ export default function OnboardingForm() {
     defaultValues: {
       owner_name: '',
       owner_last_name: '',
+      whatsapp: '',
+      address_state: '' as FormData['address_state'],
+      address_postal_code: '',
       email_opt_in: false,
       whatsapp_opt_in: false,
       supply_sources: [],
@@ -110,13 +127,22 @@ export default function OnboardingForm() {
   }, [dataQuery.data, setValue])
 
   async function handleNext() {
-    const ok = await trigger(['owner_name'])
+    const ok = await trigger([
+      'owner_name',
+      'owner_last_name',
+      'whatsapp',
+      'address_state',
+      'address_postal_code',
+    ])
     if (ok) setStep(2)
   }
 
   const onSubmit = async (data: FormData) => {
     try {
       await submit.mutateAsync(data)
+      // Clear any prior "En otro momento" flag so a re-login finds onboarding
+      // properly completed.
+      if (session?.user?.id) await clearOnboardingDismiss(session.user.id)
       router.replace('/')
     } catch (e) {
       Alert.alert('Error al guardar', e instanceof Error ? e.message : 'Inténtalo de nuevo')
@@ -158,8 +184,9 @@ export default function OnboardingForm() {
             <FieldText
               control={control}
               name="owner_last_name"
-              label="Apellido(s)"
+              label="Apellido(s) *"
               placeholder="Tu apellido"
+              error={errors.owner_last_name?.message}
             />
             <FieldChips
               label="Género"
@@ -192,6 +219,8 @@ export default function OnboardingForm() {
               label="WhatsApp (10 dígitos)"
               placeholder="5512345678"
               keyboardType="number-pad"
+              maxLength={10}
+              error={errors.whatsapp?.message}
             />
             <FieldToggle
               label="Quiero recibir promociones por WhatsApp"
@@ -206,18 +235,30 @@ export default function OnboardingForm() {
               options={clientTypes.map(c => ({ value: c.id, label: c.name }))}
               onChange={v => setValue('client_type_id', v)}
             />
-            <FieldText
-              control={control}
-              name="address_state"
-              label="Estado"
-              placeholder="CDMX, Jalisco, ..."
-            />
+            <View className="mb-3">
+              <Text className="text-xs text-muted-foreground mb-1 font-bold uppercase tracking-wider">
+                Estado *
+              </Text>
+              <Picker
+                options={MX_STATES.map(s => ({ value: s.name, label: s.name }))}
+                value={watch('address_state') as string | undefined}
+                onChange={v => setValue('address_state', v as FormData['address_state'], { shouldValidate: true })}
+                placeholder="Selecciona tu estado"
+                title="Selecciona tu estado"
+                invalid={!!errors.address_state}
+              />
+              {errors.address_state && (
+                <Text className="text-xs text-destructive mt-1">{errors.address_state.message}</Text>
+              )}
+            </View>
             <FieldText
               control={control}
               name="address_postal_code"
-              label="Código postal"
+              label="Código postal *"
               placeholder="01000"
               keyboardType="number-pad"
+              maxLength={5}
+              error={errors.address_postal_code?.message}
             />
             <FieldToggle
               label="Tengo refrigerador de carnes / lácteos"
@@ -342,6 +383,7 @@ interface FieldTextProps {
   error?: string
   keyboardType?: 'default' | 'email-address' | 'number-pad'
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
+  maxLength?: number
 }
 
 function FieldText({
@@ -352,6 +394,7 @@ function FieldText({
   error,
   keyboardType = 'default',
   autoCapitalize = 'sentences',
+  maxLength,
 }: FieldTextProps) {
   return (
     <View className="mb-3">
@@ -368,6 +411,7 @@ function FieldText({
             keyboardType={keyboardType}
             autoCapitalize={autoCapitalize}
             autoCorrect={false}
+            maxLength={maxLength}
             invalid={!!error}
           />
         )}

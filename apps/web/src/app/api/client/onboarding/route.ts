@@ -2,19 +2,27 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
+import { MX_STATE_NAMES } from '@companeros/shared/utils/mx-states'
+
 const onboardingSchema = z.object({
   // Personal & business
   owner_name: z.string().min(1).max(255),
-  owner_last_name: z.string().max(255).optional(),
+  owner_last_name: z.string().min(1).max(255),
   gender: z.enum(['masculino', 'femenino', 'otro', 'prefiero_no_decir']).optional(),
   date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato YYYY-MM-DD').optional(),
   email: z.string().email().optional().or(z.literal('')),
   email_opt_in: z.boolean().optional(),
-  whatsapp: z.string().optional(),
+  whatsapp: z
+    .string()
+    .regex(/^\d{10}$/, 'WhatsApp debe ser exactamente 10 dígitos')
+    .optional()
+    .or(z.literal('')),
   whatsapp_opt_in: z.boolean().optional(),
   client_type_id: z.string().uuid().optional(),
-  address_state: z.string().max(100).optional(),
-  address_postal_code: z.string().max(10).optional(),
+  address_state: z.enum(MX_STATE_NAMES as [string, ...string[]], {
+    message: 'Estado inválido',
+  }),
+  address_postal_code: z.string().regex(/^\d{5}$/, 'Código postal debe ser 5 dígitos'),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
 

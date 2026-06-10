@@ -3,8 +3,18 @@ import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Button } from '@/components/ui/Button'
+import { dismissOnboarding } from '@/lib/onboarding-dismiss'
+import { useSession } from '@/lib/auth'
 
 export default function OnboardingWelcome() {
+  const { session } = useSession()
+
+  async function handleSkip() {
+    const userId = session?.user?.id
+    if (userId) await dismissOnboarding(userId)
+    router.replace('/(tabs)')
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-app-bg">
       <View className="flex-1 items-center justify-center px-6">
@@ -24,6 +34,11 @@ export default function OnboardingWelcome() {
           >
             Completar ahora
           </Button>
+          <View className="mt-3">
+            <Button onPress={handleSkip} variant="ghost" size="default" fullWidth>
+              En otro momento
+            </Button>
+          </View>
         </View>
       </View>
     </SafeAreaView>
