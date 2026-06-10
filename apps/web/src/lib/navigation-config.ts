@@ -21,6 +21,7 @@ import {
   Download,
   LayoutGrid,
   Megaphone,
+  Inbox,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -157,10 +158,13 @@ export const clientNavConfig: RoleNavConfig = buildConfig(
   'client',
   'Mi Portal',
   [
+    // First 4 mirror the mobile bottom tab order. BottomNavigation surfaces
+    // these directly; remaining items fall into the "Más" overflow.
     { id: 'home', label: 'Inicio', icon: IconInicio, href: '/client' },
-    { id: 'qr', label: 'Mi QR', icon: IconQR, href: '/client/qr' },
+    { id: 'qr', label: 'Mis QR', icon: IconQR, href: '/client/qr' },
+    { id: 'brands', label: 'Planes', icon: IconMarcas, href: '/client/brands' },
+    { id: 'inbox', label: 'Buzón', icon: Inbox, href: '/client/inbox' },
     { id: 'orders', label: 'Pedidos', icon: IconPedidos, href: '/client/orders' },
-    { id: 'brands', label: 'Marcas', icon: IconMarcas, href: '/client/brands' },
     { id: 'points', label: 'Puntos', icon: Star, href: '/client/points' },
     { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/client/surveys' },
     { id: 'profile', label: 'Mi Perfil', icon: UserCircle, href: '/client/profile' },

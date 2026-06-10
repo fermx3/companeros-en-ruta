@@ -4,12 +4,13 @@ import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/button"
 import { TierProgressCard } from "@/components/client/TierProgressCard"
+import { LoyaltyPlanSummary } from "@/components/client/LoyaltyPlanSummary"
 import { LoyaltyPlansSection } from "@/components/client/LoyaltyPlansSection"
 import { WeeklyPromotionsBanner } from "@/components/client/WeeklyPromotionsBanner"
 import { SuggestedProductsGrid } from "@/components/client/SuggestedProductsGrid"
 import { CouponsSection } from "@/components/client/CouponsSection"
-import { ClipboardCheck, X } from "lucide-react"
-import { IconQR, IconPedidos, IconMarcas, IconMiNivel } from '@/components/icons'
+import { ClipboardCheck, ClipboardList, X } from "lucide-react"
+import { IconQR, IconPedidos } from '@/components/icons'
 import { QuickActions } from '@/components/layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import Link from 'next/link'
@@ -118,12 +119,20 @@ interface Product {
   category: ProductCategory | null
 }
 
+interface PendingSurvey {
+  id: string
+  title: string
+  brands: { name: string; logo_url: string | null } | null
+  has_responded?: boolean
+}
+
 export default function ClientPortal() {
   usePageTitle('Portal de Cliente')
   const [profile, setProfile] = useState<ClientProfile | null>(null)
   const [memberships, setMemberships] = useState<ClientMembership[]>([])
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [pendingSurveys, setPendingSurveys] = useState<PendingSurvey[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [bannerDismissed, setBannerDismissed] = useState(false)
@@ -133,11 +142,12 @@ export default function ClientPortal() {
       setLoading(true)
       setError(null)
 
-      const [profileRes, membershipsRes, promotionsRes, productsRes] = await Promise.all([
+      const [profileRes, membershipsRes, promotionsRes, productsRes, surveysRes] = await Promise.all([
         fetch('/api/client/profile'),
         fetch('/api/client/memberships'),
         fetch('/api/client/promotions'),
         fetch('/api/client/products'),
+        fetch('/api/surveys'),
       ])
 
       if (!profileRes.ok) {
@@ -164,6 +174,14 @@ export default function ClientPortal() {
       if (productsRes.ok) {
         const productsData = await productsRes.json()
         setProducts(productsData.products || [])
+      }
+
+      if (surveysRes.ok) {
+        const surveysData = await surveysRes.json()
+        const pending = (surveysData.surveys || []).filter(
+          (s: PendingSurvey) => !s.has_responded
+        )
+        setPendingSurveys(pending)
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -257,13 +275,47 @@ export default function ClientPortal() {
           </div>
         )}
 
-        {/* 2. TierProgressCard */}
+        {/* 2a. LoyaltyPlanSummary — aggregated snapshot */}
+        <LoyaltyPlanSummary
+          memberships={memberships}
+          promotionsCount={promotions.length}
+          membershipsCount={memberships.length}
+        />
+
+        {/* 2b. TierProgressCard — per primary brand drilldown */}
         {primaryMembership && (
           <TierProgressCard membership={primaryMembership} />
         )}
 
         {/* 3. WeeklyPromotionsBanner */}
         <WeeklyPromotionsBanner promotions={promotions} />
+
+        {/* 3b. Pending surveys banner */}
+        {pendingSurveys.length > 0 && (
+          <Link
+            href="/client/surveys"
+            className="block rounded-2xl bg-primary p-4 text-white shadow-sm hover:opacity-95 transition-opacity"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold">
+                  {pendingSurveys.length === 1
+                    ? 'Tienes 1 encuesta pendiente'
+                    : `Tienes ${pendingSurveys.length} encuestas pendientes`}
+                </p>
+                <p className="text-xs opacity-90 truncate">
+                  {pendingSurveys[0].brands?.name
+                    ? `Empieza con ${pendingSurveys[0].brands.name}`
+                    : 'Responde y gana beneficios'}
+                </p>
+              </div>
+              <span className="text-xs font-bold">Responder →</span>
+            </div>
+          </Link>
+        )}
 
         {/* 4. LoyaltyPlansSection */}
         <LoyaltyPlansSection memberships={memberships} />
@@ -277,10 +329,9 @@ export default function ClientPortal() {
         {/* 7. Quick Actions */}
         <QuickActions
           actions={[
-            { href: '/client/qr', icon: IconQR, label: 'Mi código QR' },
-            { href: '/client/orders', icon: IconPedidos, label: 'Mis Pedidos' },
-            { href: '/client/brands', icon: IconMarcas, label: 'Marcas' },
-            { href: '/client/points', icon: IconMiNivel, label: 'Mi Nivel' },
+            { href: '/client/qr', icon: IconQR, label: 'Mis QR' },
+            { href: '/client/surveys', icon: ClipboardList, label: 'Encuestas' },
+            { href: '/client/orders', icon: IconPedidos, label: 'Pedidos' },
           ]}
         />
       </div>

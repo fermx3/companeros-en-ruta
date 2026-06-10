@@ -24,8 +24,9 @@ describe('BottomNavigation', () => {
         render(<BottomNavigation entries={clientNavConfig.entries} />)
 
         expect(screen.getByText('Inicio')).toBeInTheDocument()
-        expect(screen.getByText('Mi QR')).toBeInTheDocument()
-        expect(screen.getByText('Pedidos')).toBeInTheDocument()
+        expect(screen.getByText('Mis QR')).toBeInTheDocument()
+        expect(screen.getByText('Planes')).toBeInTheDocument()
+        expect(screen.getByText('Buzón')).toBeInTheDocument()
     })
 
     it('renders brand navigation items', () => {

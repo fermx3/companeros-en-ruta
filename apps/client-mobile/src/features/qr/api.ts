@@ -27,7 +27,7 @@ export interface QRCodesResponse {
 export interface GenerateQRBody {
   client_id: string
   brand_id: string
-  promotion_id?: string | null
+  promotion_id: string
 }
 
 export function useQRCodes() {

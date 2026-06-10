@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner, Alert } from '@/components/ui/feedback'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -11,9 +11,8 @@ import { BrandCarousel } from '@/components/qr/brand-carousel'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   QrCode,
-  Plus,
   ChevronLeft,
-  Building2
+  Sparkles,
 } from 'lucide-react'
 
 interface QRCode {
@@ -41,21 +40,6 @@ interface ClientMembership {
   membership_status: string
 }
 
-interface Promotion {
-  id: string
-  public_id: string
-  name: string
-  description: string | null
-  promotion_type: string
-  discount_percentage: number | null
-  discount_amount: number | null
-  start_date: string
-  end_date: string
-  status: string
-  terms_and_conditions: string | null
-  brand: { id: string; name: string; logo_url: string | null } | null
-}
-
 function formatDiscount(type: string | null, value: number | null, description: string | null) {
   if (description) return description
   if (!type || !value) return 'QR de cliente'
@@ -73,20 +57,13 @@ function formatDiscount(type: string | null, value: number | null, description: 
 }
 
 export default function ClientQRPage() {
-  usePageTitle('Mi Código QR')
+  usePageTitle('Mis Cupones QR')
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
   const [qrCodes, setQRCodes] = useState<QRCode[]>([])
   const [memberships, setMemberships] = useState<ClientMembership[]>([])
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'activos' | 'usados'>('activos')
-
-  // Promotion states
-  const [promotions, setPromotions] = useState<Promotion[]>([])
-  const [selectedPromotionId, setSelectedPromotionId] = useState<string | null>(null)
-  const [loadingPromotions, setLoadingPromotions] = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -95,7 +72,7 @@ export default function ClientQRPage() {
 
       const [qrResponse, membershipsResponse] = await Promise.all([
         fetch('/api/qr/generate'),
-        fetch('/api/client/memberships')
+        fetch('/api/client/memberships'),
       ])
 
       if (!qrResponse.ok) {
@@ -108,14 +85,10 @@ export default function ClientQRPage() {
 
       if (membershipsResponse.ok) {
         const membershipsData = await membershipsResponse.json()
-        const activeMemberships = (membershipsData.memberships || [])
-          .filter((m: ClientMembership) => m.membership_status === 'active')
+        const activeMemberships = (membershipsData.memberships || []).filter(
+          (m: ClientMembership) => m.membership_status === 'active'
+        )
         setMemberships(activeMemberships)
-
-        // Auto-select first brand if only one
-        if (activeMemberships.length === 1) {
-          setSelectedBrandId(activeMemberships[0].brand_id)
-        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -129,88 +102,24 @@ export default function ClientQRPage() {
     loadData()
   }, [loadData])
 
-  // Load promotions when brand is selected
-  useEffect(() => {
-    const loadPromotions = async () => {
-      if (!selectedBrandId) {
-        setPromotions([])
-        setSelectedPromotionId(null)
-        return
-      }
+  // Active QRs ordered by closest expiry first; history by most recent.
+  const activeQRs = useMemo(() => {
+    const list = qrCodes.filter(qr => qr.status === 'active')
+    return list.slice().sort((a, b) => {
+      const av = a.valid_until ? new Date(a.valid_until).getTime() : Number.POSITIVE_INFINITY
+      const bv = b.valid_until ? new Date(b.valid_until).getTime() : Number.POSITIVE_INFINITY
+      return av - bv
+    })
+  }, [qrCodes])
+  const historyQRs = useMemo(
+    () =>
+      qrCodes
+        .filter(qr => qr.status !== 'active')
+        .slice()
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    [qrCodes]
+  )
 
-      try {
-        setLoadingPromotions(true)
-        const response = await fetch(`/api/client/promotions?brand_id=${selectedBrandId}`)
-
-        if (response.ok) {
-          const data = await response.json()
-          setPromotions(data.promotions || [])
-        } else {
-          setPromotions([])
-        }
-      } catch (err) {
-        console.error('Error loading promotions:', err)
-        setPromotions([])
-      } finally {
-        setLoadingPromotions(false)
-      }
-    }
-
-    loadPromotions()
-  }, [selectedBrandId])
-
-  const generateQR = async () => {
-    try {
-      setGenerating(true)
-      setError(null)
-      setSuccess(null)
-
-      // Get client ID from profile
-      const profileResponse = await fetch('/api/client/profile')
-      if (!profileResponse.ok) {
-        throw new Error('No se pudo obtener el perfil del cliente')
-      }
-      const profileData = await profileResponse.json()
-
-      // Generate QR
-      const response = await fetch('/api/qr/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: profileData.id,
-          brand_id: selectedBrandId,
-          promotion_id: selectedPromotionId, // Include selected promotion
-          qr_type: 'promotion',
-          max_redemptions: 1,
-          // Default 30 day validity
-          valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error al generar código QR')
-      }
-
-      setSuccess('Código QR generado exitosamente')
-      // Reset promotion selection
-      setSelectedPromotionId(null)
-      // Reload QR codes
-      await loadData()
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      setError(errorMessage)
-    } finally {
-      setGenerating(false)
-    }
-  }
-
-  // Get all active QR codes (support multiple)
-  const activeQRs = qrCodes.filter(qr => qr.status === 'active')
-  // Get history (non-active QRs)
-  const historyQRs = qrCodes.filter(qr => qr.status !== 'active')
-
-  // Filter by selected brand
   const filteredActiveQRs = selectedBrandId
     ? activeQRs.filter(qr => qr.brand?.id === selectedBrandId)
     : activeQRs
@@ -219,11 +128,10 @@ export default function ClientQRPage() {
     ? historyQRs.filter(qr => qr.brand?.id === selectedBrandId)
     : historyQRs
 
-  // Get brands from memberships for carousel
   const brands = memberships.map(m => ({
     id: m.brand_id,
     name: m.brand_name,
-    logo_url: m.brand_logo_url
+    logo_url: m.brand_logo_url,
   }))
 
   if (loading) {
@@ -236,7 +144,6 @@ export default function ClientQRPage() {
 
   return (
     <div className="min-h-screen pb-20">
-      {/* Header */}
       <div className="sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-4">
@@ -253,7 +160,7 @@ export default function ClientQRPage() {
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">Mis Cupones QR</h1>
                   <p className="text-sm text-muted-foreground">
-                    Administra tus cupones de descuento
+                    Genera tus cupones desde el detalle de cada promoción
                   </p>
                 </div>
               </div>
@@ -263,129 +170,32 @@ export default function ClientQRPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Alerts */}
         {error && (
           <Alert variant="error" className="mb-6" onClose={() => setError(null)}>
             {error}
           </Alert>
         )}
-        {success && (
-          <Alert variant="success" className="mb-6" onClose={() => setSuccess(null)}>
-            {success}
-          </Alert>
-        )}
 
-        {/* Generate New QR Button */}
-        {memberships.length > 0 && (
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <h3 className="font-medium text-gray-900">Generar nuevo cupón</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Crea un código QR para obtener descuentos
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {memberships.length > 1 && (
-                      <select
-                        value={selectedBrandId || ''}
-                        onChange={(e) => setSelectedBrandId(e.target.value || null)}
-                        className="px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-                      >
-                        <option value="">Selecciona marca...</option>
-                        {memberships.map((m) => (
-                          <option key={m.brand_id} value={m.brand_id}>
-                            {m.brand_name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                </div>
+        {/* Pointer to promotions — cupones se generan desde ahí, no aquí. */}
+        <Card className="mb-6 border-primary/30 bg-primary/5">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-navy">¿Quieres un cupón nuevo?</p>
+              <p className="text-xs text-muted-foreground">
+                Abre una promoción desde Inicio y toca <span className="font-semibold">Obtener mi cupón</span>.
+              </p>
+            </div>
+            <Link href="/client">
+              <Button variant="default" size="sm">
+                Ver promociones
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
 
-                {/* Promotions Section */}
-                {selectedBrandId && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">Promociones disponibles (opcional)</h4>
-                    {loadingPromotions ? (
-                      <div className="flex justify-center py-4">
-                        <LoadingSpinner size="sm" />
-                      </div>
-                    ) : promotions.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-2 mb-4">
-                        {promotions.map((promo) => {
-                          const isSelected = selectedPromotionId === promo.id
-
-                          // Format discount display
-                          let discountDisplay = 'Promoción especial'
-                          if (promo.promotion_type === 'discount_percentage' && promo.discount_percentage) {
-                            discountDisplay = `${promo.discount_percentage}% OFF`
-                          } else if (promo.promotion_type === 'discount_amount' && promo.discount_amount) {
-                            discountDisplay = `$${promo.discount_amount} OFF`
-                          } else if (promo.promotion_type === 'points_multiplier' && promo.discount_percentage) {
-                            discountDisplay = `${promo.discount_percentage}x puntos`
-                          }
-
-                          return (
-                            <button
-                              key={promo.id}
-                              onClick={() => setSelectedPromotionId(isSelected ? null : promo.id)}
-                              className={`text-left p-3 rounded-lg border-2 transition-all ${isSelected
-                                ? 'border-primary bg-primary/5'
-                                : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                  <p className="font-medium text-sm text-gray-900">{promo.name}</p>
-                                  {promo.description && (
-                                    <p className="text-xs text-gray-600 mt-1">{promo.description}</p>
-                                  )}
-                                </div>
-                                <div className="ml-3 flex-shrink-0">
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    {discountDisplay}
-                                  </span>
-                                </div>
-                              </div>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 py-2">No hay promociones disponibles para esta marca</p>
-                    )}
-                  </div>
-                )}
-
-                {/* Generate Button */}
-                <div className="flex justify-end">
-                  <Button
-                    onClick={generateQR}
-                    disabled={generating || (memberships.length > 1 && !selectedBrandId)}
-                    size="default"
-                  >
-                    {generating ? (
-                      <>
-                        <LoadingSpinner size="sm" className="mr-2" />
-                        Generando...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Generar
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'activos' | 'usados')}>
           <TabsList>
             <TabsTrigger value="activos">
@@ -396,7 +206,6 @@ export default function ClientQRPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Active QRs Tab */}
           <TabsContent value="activos">
             {filteredActiveQRs.length === 0 ? (
               <Card className="mt-6">
@@ -406,7 +215,7 @@ export default function ClientQRPage() {
                   <p className="text-muted-foreground mb-6">
                     {selectedBrandId
                       ? 'No hay cupones activos para esta marca'
-                      : 'Tus cupones de descuento aparecerán aquí'}
+                      : 'Genera tu primer cupón desde el detalle de una promoción'}
                   </p>
                 </CardContent>
               </Card>
@@ -432,7 +241,6 @@ export default function ClientQRPage() {
             )}
           </TabsContent>
 
-          {/* History/Used QRs Tab */}
           <TabsContent value="usados">
             {filteredHistoryQRs.length === 0 ? (
               <Card className="mt-6">
@@ -469,7 +277,6 @@ export default function ClientQRPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Brand Carousel */}
         {brands.length > 1 && (
           <div className="mt-8">
             <BrandCarousel

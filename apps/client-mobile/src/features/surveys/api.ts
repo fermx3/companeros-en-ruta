@@ -65,6 +65,23 @@ export function useSurveys() {
   })
 }
 
+/**
+ * Derives a pending-surveys summary from the same list query so the Home banner
+ * shares cache with the surveys tab. A survey counts as pending when the user
+ * hasn't responded yet.
+ */
+export function usePendingSurveys() {
+  const surveysQuery = useSurveys()
+  const pending = (surveysQuery.data?.surveys ?? []).filter(s => !s.has_responded)
+  return {
+    pendingCount: pending.length,
+    firstPending: pending[0] ?? null,
+    isLoading: surveysQuery.isLoading,
+    isRefetching: surveysQuery.isRefetching,
+    refetch: surveysQuery.refetch,
+  }
+}
+
 export function useSurvey(surveyId: string | undefined) {
   return useQuery<SurveyDetailResponse>({
     queryKey: ['client', 'surveys', surveyId],

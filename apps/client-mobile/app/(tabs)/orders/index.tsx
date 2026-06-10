@@ -8,11 +8,13 @@ import {
   View,
 } from 'react-native'
 import { router } from 'expo-router'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { BadgeStatus } from '@/components/ui/BadgeStatus'
 import { Card } from '@/components/ui/Card'
 import { FilterChip } from '@/components/ui/FilterChip'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
+import { ScreenHeader } from '@/components/ui/ScreenHeader'
 import { useOrders, type OrderStatus, type UnifiedOrder } from '@/features/orders/api'
 
 const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
@@ -25,7 +27,7 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 'cancelled', label: 'Cancelado' },
 ]
 
-export default function OrdersTab() {
+export default function OrdersScreen() {
   const [status, setStatus] = useState<OrderStatus>('all')
   const ordersQuery = useOrders(status)
 
@@ -33,7 +35,8 @@ export default function OrdersTab() {
   const summary = ordersQuery.data?.pages[0]?.summary
 
   return (
-    <View className="flex-1 bg-app-bg">
+    <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
+      <ScreenHeader title="Pedidos" showBack />
       <View
         className="bg-card py-2.5"
         style={{ borderBottomWidth: 1, borderBottomColor: 'rgba(204,204,204,0.4)' }}
@@ -113,7 +116,7 @@ export default function OrdersTab() {
           ) : null
         }
       />
-    </View>
+    </SafeAreaView>
   )
 }
 
