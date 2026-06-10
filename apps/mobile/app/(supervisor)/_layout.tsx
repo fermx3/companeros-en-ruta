@@ -1,6 +1,10 @@
+import { useEffect } from 'react'
 import { Redirect, Tabs } from 'expo-router'
 import { ClipboardList, Home, MoreHorizontal, Users } from 'lucide-react-native'
 
+import { useUnreadCount } from '@/features/notifications/api'
+import { registerForPushNotificationsAsync } from '@/features/notifications/push'
+import { useNotificationsRealtime } from '@/features/notifications/realtime'
 import { useUserRole } from '@/lib/auth'
 
 const ACTIVE = '#dd5025'
@@ -10,6 +14,18 @@ const BORDER = '#cccccc'
 
 export default function SupervisorTabsLayout() {
   const { role, loading } = useUserRole()
+
+  // Push + Realtime wire-up. Hooks must run unconditionally; redirect comes
+  // after so registration only fires for the right role.
+  useEffect(() => {
+    registerForPushNotificationsAsync().catch(err => {
+      console.error('[supervisor] push registration failed:', err)
+    })
+  }, [])
+  useNotificationsRealtime()
+
+  const unreadQuery = useUnreadCount()
+  const unread = unreadQuery.data?.count ?? 0
 
   if (loading) return null
 
@@ -63,6 +79,8 @@ export default function SupervisorTabsLayout() {
           tabBarIcon: ({ focused, size }) => (
             <MoreHorizontal size={size} color={focused ? ACTIVE : INACTIVE} />
           ),
+          tabBarBadge: unread > 0 ? (unread > 99 ? '99+' : unread) : undefined,
+          tabBarBadgeStyle: { backgroundColor: ACTIVE, color: '#ffffff' },
         }}
       />
 

@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
 import * as Location from 'expo-location'
 
@@ -88,17 +89,17 @@ export default function VisitIndexScreen() {
 
   if (visitQuery.isLoading) {
     return (
-      <View className="flex-1 bg-app-bg">
+      <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
         <ScreenHeader title="Detalle de visita" showBack />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" />
         </View>
-      </View>
+      </SafeAreaView>
     )
   }
   if (visitQuery.error || !visit) {
     return (
-      <View className="flex-1 bg-app-bg">
+      <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
         <ScreenHeader title="Detalle de visita" showBack />
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-destructive text-center mb-4">
@@ -108,12 +109,12 @@ export default function VisitIndexScreen() {
             Reintentar
           </Button>
         </View>
-      </View>
+      </SafeAreaView>
     )
   }
 
   return (
-    <View className="flex-1 bg-app-bg">
+    <SafeAreaView className="flex-1 bg-app-bg" edges={['top']}>
       <ScreenHeader title="Detalle de visita" showBack />
       <ScrollView contentContainerClassName="p-4 pb-12">
         {/* Header card */}
@@ -167,7 +168,7 @@ export default function VisitIndexScreen() {
         </Card>
       )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   )
 }
 

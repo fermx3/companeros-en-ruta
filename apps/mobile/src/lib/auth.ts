@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { Session } from '@supabase/supabase-js'
 
+import { unregisterPushTokenAsync } from '@/features/notifications/push'
 import { supabase } from './supabase'
 import { queryClient } from './query'
 
@@ -109,6 +110,13 @@ export function useUserRole(): UserRoleState {
 }
 
 export async function signOut(): Promise<void> {
+  // Deactivate the push token first (still authenticated). Failures are
+  // logged but don't block signOut.
+  try {
+    await unregisterPushTokenAsync()
+  } catch (err) {
+    console.error('[signOut] push deactivate failed:', err)
+  }
   await supabase.auth.signOut()
   // Drop role + per-account caches so the next login starts fresh.
   queryClient.clear()

@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { Text, TextInput } from 'react-native'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import * as Notifications from 'expo-notifications'
 import * as SplashScreen from 'expo-splash-screen'
 import {
   useFonts,
@@ -18,6 +19,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { queryClient } from '@/lib/query'
 
 SplashScreen.preventAutoHideAsync().catch(() => {})
+
+// How push notifications are presented while the app is foregrounded.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+})
 
 // React Native doesn't inherit fontFamily through nested <Text>. Default both
 // Text and TextInput to Nunito Sans so screens get the brand font without
@@ -60,6 +71,7 @@ export default function RootLayout() {
             <Stack.Screen name="(promotor)" />
             <Stack.Screen name="(asesor)" />
             <Stack.Screen name="(supervisor)" />
+            <Stack.Screen name="notifications" />
             <Stack.Screen name="unsupported-role" />
           </Stack>
         </QueryClientProvider>
