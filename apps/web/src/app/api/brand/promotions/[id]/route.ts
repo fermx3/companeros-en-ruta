@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
@@ -275,7 +276,7 @@ export async function PATCH(
               title: 'Nueva promoción pendiente',
               message: `La promoción "${currentPromotion.name}" fue enviada para aprobación`,
               notification_type: 'new_promotion' as const,
-              action_url: `/admin/promotions`,
+              action_url: buildActionUrl('new_promotion', 'admin', { promotion_id: currentPromotion.id }),
               metadata: { promotion_id: currentPromotion.id },
             }))
           )

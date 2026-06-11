@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { displayPhone } from '@companeros/shared/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Star } from 'lucide-react';
+import { PendingSurveysBanner } from '@/components/surveys/PendingSurveysBanner';
 import { IconClientes, IconCompletado, IconPendiente, IconVisitas, IconAgenda } from '@/components/icons';
 import { QuickActions } from '@/components/layout';
 
@@ -125,6 +126,7 @@ export default function PromotorProfilePage() {
   return (
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <PendingSurveysBanner surveysHref="/promotor/surveys" />
         {/* Profile Card */}
         <Card className="p-6">
           <div className="flex items-center gap-4">

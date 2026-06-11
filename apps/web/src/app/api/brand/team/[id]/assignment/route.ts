@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 import { createNotification } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 
 const VALID_SPECIALIZATIONS = [
   'general', 'retail', 'wholesale', 'pharma', 'food_service', 'convenience', 'supermarket'
@@ -250,6 +251,7 @@ export async function PUT(
         title: 'Asignación actualizada',
         message: existing ? 'Tu asignación ha sido modificada' : 'Se te ha creado una nueva asignación',
         notification_type: 'assignment_changed',
+        action_url: buildActionUrl('assignment_changed', 'promotor', {}),
       })
     } catch (notifError) {
       console.error('[PUT /api/brand/team/[id]/assignment] Notification error:', notifError)

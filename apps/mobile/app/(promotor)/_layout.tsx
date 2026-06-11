@@ -75,6 +75,11 @@ export default function PromotorLayout() {
         }}
       />
       <Stack.Screen name="visits/[id]" options={{ headerShown: false }} />
+      {/* Survey routes — entered via notification tap. No tab button (promotor
+        uses Stack, not Tabs), so the list is accessible only through the
+        deep-link from a survey_assigned notification today. */}
+      <Stack.Screen name="surveys/index" options={{ headerShown: false }} />
+      <Stack.Screen name="surveys/[surveyId]" options={{ headerShown: false }} />
     </Stack>
   )
 }

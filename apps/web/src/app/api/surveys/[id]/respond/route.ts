@@ -135,7 +135,10 @@ export async function POST(
     let respondentRole: SurveyTargetRoleEnum = 'client'
     if (profileId) {
       const roles = (userRoles || []).map(r => r.role)
-      if (roles.includes('promotor')) respondentRole = 'promotor'
+      // Priority order: higher-privilege roles win when a user has multiple.
+      // Mirrors how the mobile `useUserRole` resolves the primary role.
+      if (roles.includes('supervisor')) respondentRole = 'supervisor'
+      else if (roles.includes('promotor')) respondentRole = 'promotor'
       else if (roles.includes('asesor_de_ventas')) respondentRole = 'asesor_de_ventas'
     }
 

@@ -15,6 +15,7 @@ import { ListEmptyState } from '@/components/ui/ListEmptyState'
 import { MetricCard } from '@/components/ui/MetricCard'
 import { signOut } from '@/lib/auth'
 import { useMyVisits, type VisitListItem } from '@/features/visits/api'
+import { StaffSurveysPendingBanner } from '@/features/staff-surveys/PendingBanner'
 
 function VisitRow({ visit }: { visit: VisitListItem }) {
   const status = visit.visit_status
@@ -101,6 +102,8 @@ export default function VisitsScreen() {
         data={visits}
         keyExtractor={(v) => v.id}
         contentContainerClassName="px-4 py-3"
+        alwaysBounceVertical
+        ListHeaderComponent={<StaffSurveysPendingBanner rolePathPrefix="/(promotor)" />}
         renderItem={({ item }) => <VisitRow visit={item} />}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         ListEmptyComponent={

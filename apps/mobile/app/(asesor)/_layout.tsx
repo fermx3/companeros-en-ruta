@@ -94,6 +94,8 @@ export default function AsesorTabsLayout() {
       <Tabs.Screen name="clients/[id]" options={{ href: null, headerShown: false }} />
       <Tabs.Screen name="orders/[id]" options={{ href: null, headerShown: false }} />
       <Tabs.Screen name="orders/new" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="surveys/index" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="surveys/[surveyId]" options={{ href: null, headerShown: false }} />
     </Tabs>
   )
 }

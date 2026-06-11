@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
 // Helper to get promotor profile from auth
@@ -168,7 +169,7 @@ export async function POST(
             title: 'Visita completada',
             message: `Visita completada en ${clientName}`,
             notification_type: 'visit_completed' as const,
-            action_url: '/supervisor/',
+            action_url: buildActionUrl('visit_completed', 'supervisor', { visit_id: visit.id }) ?? undefined,
             metadata: { visit_id: visit.id },
           }))
         )

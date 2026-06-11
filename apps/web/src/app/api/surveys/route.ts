@@ -54,7 +54,8 @@ export async function GET() {
 
       const roleMap: Record<string, string> = {
         promotor: 'promotor',
-        asesor_de_ventas: 'asesor_de_ventas'
+        asesor_de_ventas: 'asesor_de_ventas',
+        supervisor: 'supervisor',
       }
 
       for (const r of userRoles || []) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { createNotification } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 import type { Database } from '@companeros/shared/types/supabase'
 
 type TransactionType = Database['public']['Enums']['points_transaction_type_enum']
@@ -210,7 +211,8 @@ export async function POST(request: NextRequest) {
         title: isDeduction ? 'Puntos deducidos' : 'Puntos otorgados',
         message: `${Math.abs(effectiveAmount)} puntos ${isDeduction ? 'deducidos' : 'otorgados'}. Nuevo saldo: ${newBalance}`,
         notification_type: 'points_adjusted',
-        action_url: '/client/loyalty',
+        action_url: buildActionUrl('points_adjusted', 'client', { brand_id: membership.brand_id }),
+        metadata: { brand_id: membership.brand_id },
       })
     } catch (notifError) {
       console.error('[POST /api/brand/points] Notification error:', notifError)

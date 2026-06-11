@@ -87,6 +87,8 @@ export default function SupervisorTabsLayout() {
       {/* Hide dynamic sub-routes from the tab bar; each renders its own
         ScreenHeader inline. */}
       <Tabs.Screen name="team/[id]" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="surveys/index" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="surveys/[surveyId]" options={{ href: null, headerShown: false }} />
     </Tabs>
   )
 }

@@ -455,7 +455,8 @@ export type SurveyQuestionTypeEnum =
 export type SurveyTargetRoleEnum =
   | 'promotor'
   | 'asesor_de_ventas'
-  | 'client';
+  | 'client'
+  | 'supervisor';
 
 /**
  * Multiple choice option shape (stored in JSONB)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
 // Helper to get admin profile from auth
@@ -127,7 +128,7 @@ export async function POST(
         title: 'Promoción rechazada',
         message: `La promoción "${currentPromotion.name}" fue rechazada. Motivo: ${rejection_reason.trim()}`,
         notification_type: 'promotion_rejected',
-        action_url: `/brand/promotions`,
+        action_url: buildActionUrl('promotion_rejected', 'brand_manager', { promotion_id: id }),
         metadata: { promotion_id: id, rejection_reason: rejection_reason.trim() },
       })
     } catch (notifError) {

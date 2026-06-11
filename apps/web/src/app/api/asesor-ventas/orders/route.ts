@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 import { resolveAsesorAuth, isAsesorAuthError, asesorAuthErrorResponse } from '@/lib/api/asesor-auth'
 import type { Database } from '@companeros/shared/types/supabase'
 
@@ -391,7 +392,7 @@ export async function POST(request: NextRequest) {
         title: 'Nueva orden creada',
         message: `Se ha creado la orden ${newOrder.order_number} para tu negocio`,
         notification_type: 'order_created',
-        action_url: '/client/orders',
+        action_url: buildActionUrl('order_created', 'client', { order_id: newOrder.id }),
         metadata: { order_id: newOrder.id },
       })
     } catch (notifError) {

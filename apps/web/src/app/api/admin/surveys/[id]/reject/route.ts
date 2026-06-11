@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
 export async function POST(
@@ -93,7 +94,7 @@ export async function POST(
         title: 'Encuesta rechazada',
         message: `Tu encuesta "${survey.title}" fue rechazada. Motivo: ${rejection_reason.trim()}`,
         notification_type: 'survey_rejected',
-        action_url: `/brand/surveys/${survey.id}`,
+        action_url: buildActionUrl('survey_rejected', 'brand_manager', { survey_id: survey.id }),
         metadata: { survey_id: survey.id, rejection_reason: rejection_reason.trim() }
       })
     } catch (notifError) {

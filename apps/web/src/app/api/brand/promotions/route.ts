@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@companeros/shared/types/supabase'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 
 // Promotion type labels
@@ -353,7 +354,7 @@ export async function POST(request: NextRequest) {
               title: 'Nueva promoción pendiente',
               message: `La promoción "${newPromotion.name}" fue enviada para aprobación`,
               notification_type: 'new_promotion' as const,
-              action_url: `/admin/promotions`,
+              action_url: buildActionUrl('new_promotion', 'admin', { promotion_id: newPromotion.id }),
               metadata: { promotion_id: newPromotion.id },
             }))
           )

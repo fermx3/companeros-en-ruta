@@ -14,6 +14,7 @@
     "./utils/client": "./src/utils/client.ts",
     "./utils/csv": "./src/utils/csv.ts",
     "./utils/mx-states": "./src/utils/mx-states.ts",
+    "./utils/notification-routing": "./src/utils/notification-routing.ts",
     "./utils/onboarding-labels": "./src/utils/onboarding-labels.ts",
     "./utils/phone": "./src/utils/phone.ts",
     "./utils/public-id": "./src/utils/public-id.ts",

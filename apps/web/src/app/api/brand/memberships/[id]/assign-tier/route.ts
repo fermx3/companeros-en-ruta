@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 
@@ -138,8 +139,8 @@ export async function POST(
         title: 'Nivel asignado',
         message: `Has sido asignado al nivel "${tier.name}"`,
         notification_type: 'tier_upgrade',
-        action_url: '/client/brands',
-        metadata: { membership_id: membership.id, tier_id: tier.id },
+        action_url: buildActionUrl('tier_upgrade', 'client', { brand_id: membership.brand_id }),
+        metadata: { membership_id: membership.id, tier_id: tier.id, brand_id: membership.brand_id },
       })
     } catch (notifError) {
       console.error('Error creating tier upgrade notification:', notifError)

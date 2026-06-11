@@ -7,7 +7,21 @@ import { useToast } from '@/components/ui/toaster';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@companeros/shared/utils/cn';
+import {
+  resolveNotificationRoute,
+  type NotificationType,
+  type RecipientKind,
+} from '@companeros/shared/utils/notification-routing';
 import type { Notification } from '@companeros/shared/types/database';
+
+const PATH_TO_RECIPIENT: Record<string, RecipientKind> = {
+  admin: 'admin',
+  brand: 'brand_manager',
+  supervisor: 'supervisor',
+  promotor: 'promotor',
+  'asesor-ventas': 'asesor_de_ventas',
+  client: 'client',
+};
 
 const NOTIFICATION_TYPE_ICONS: Record<string, string> = {
   promotion_approved: '🎉',
@@ -154,15 +168,10 @@ export function NotificationBell() {
     onNewNotification: handleNewNotification,
   });
 
-  // Extract the dashboard prefix (e.g. "/promotor", "/client", "/brand") from the current path
-  const dashboardPrefix = pathname.match(/^\/(promotor|asesor-ventas|client|admin|brand|supervisor)/)?.[0] ?? '';
-
-  // Resolve action_url: if it starts with a known dashboard prefix, use as-is;
-  // otherwise prepend the current user's dashboard prefix
-  const resolveActionUrl = useCallback((url: string) => {
-    if (/^\/(promotor|asesor-ventas|client|admin|brand|supervisor)\//.test(url)) return url;
-    return `${dashboardPrefix}${url}`;
-  }, [dashboardPrefix]);
+  // Recipient role inferred from the dashboard the user is currently in.
+  // Used to pick the right row in the shared routing matrix.
+  const dashboardSegment = pathname.match(/^\/(promotor|asesor-ventas|client|admin|brand|supervisor)/)?.[1];
+  const recipient: RecipientKind | null = dashboardSegment ? PATH_TO_RECIPIENT[dashboardSegment] : null;
 
   // Close on click outside
   useEffect(() => {
@@ -190,9 +199,19 @@ export function NotificationBell() {
     if (!notification.is_read) {
       await markAsRead([notification.id]);
     }
-    if (notification.action_url) {
+    if (!recipient) return;
+    const route = resolveNotificationRoute(
+      {
+        type: notification.notification_type as NotificationType,
+        metadata: (notification.metadata as Record<string, unknown> | null) ?? {},
+        surface: 'web',
+        recipient,
+      },
+      notification.action_url ?? null,
+    );
+    if (route) {
       setOpen(false);
-      router.push(resolveActionUrl(notification.action_url));
+      router.push(route);
     }
   };
 

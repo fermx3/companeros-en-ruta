@@ -116,7 +116,7 @@ export default function ScannerScreen() {
           <Text style={styles.helpText}>
             {scanning
               ? 'Apunta al código QR del cupón del cliente'
-              : 'Esperá… o tocá "Escanear otro" en el alert'}
+              : 'Espera… o toca "Escanear otro" en el alert'}
           </Text>
         )}
       </View>

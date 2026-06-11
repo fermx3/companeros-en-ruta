@@ -1,4 +1,4 @@
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native'
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { router } from 'expo-router'
 
 import { Button } from '@/components/ui/Button'
@@ -6,10 +6,13 @@ import { Card } from '@/components/ui/Card'
 import { ChevronRight } from '@/components/ui/Icon'
 import { signOut } from '@/lib/auth'
 import { useUnreadCount } from '@/features/notifications/api'
+import { usePendingStaffSurveys } from '@/features/staff-surveys/api'
 
 export default function SupervisorMoreScreen() {
   const unreadQuery = useUnreadCount()
   const unread = unreadQuery.data?.count ?? 0
+  const pendingSurveys = usePendingStaffSurveys()
+  const pendingCount = pendingSurveys.pendingCount
 
   async function onLogout() {
     Alert.alert('Cerrar sesión', '¿Estás seguro?', [
@@ -25,8 +28,19 @@ export default function SupervisorMoreScreen() {
     ])
   }
 
+  const refreshing = unreadQuery.isRefetching || pendingSurveys.isRefetching
+  function onRefresh() {
+    unreadQuery.refetch()
+    pendingSurveys.refetch()
+  }
+
   return (
-    <ScrollView className="flex-1 bg-app-bg" contentContainerClassName="p-4 pb-8">
+    <ScrollView
+      className="flex-1 bg-app-bg"
+      contentContainerClassName="p-4 pb-8"
+      alwaysBounceVertical
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <Pressable className="mb-3" onPress={() => router.push('/notifications' as never)}>
         <Card>
           <View className="flex-row items-center justify-between">
@@ -48,6 +62,37 @@ export default function SupervisorMoreScreen() {
               >
                 <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'NunitoSans_700Bold' }}>
                   {unread > 99 ? '99+' : unread}
+                </Text>
+              </View>
+            )}
+            <ChevronRight size={18} color="#999999" />
+          </View>
+        </Card>
+      </Pressable>
+
+      <Pressable className="mb-3" onPress={() => router.push('/(supervisor)/surveys' as never)}>
+        <Card>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1 pr-2">
+              <Text className="text-sm font-bold text-navy">Encuestas</Text>
+              <Text className="text-xs text-muted-foreground mt-0.5">
+                {pendingCount > 0
+                  ? `Tienes ${pendingCount} pendiente${pendingCount === 1 ? '' : 's'}`
+                  : 'Encuestas asignadas a tu rol'}
+              </Text>
+            </View>
+            {pendingCount > 0 && (
+              <View
+                style={{
+                  backgroundColor: '#dd5025',
+                  borderRadius: 999,
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  marginRight: 8,
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'NunitoSans_700Bold' }}>
+                  {pendingCount > 99 ? '99+' : pendingCount}
                 </Text>
               </View>
             )}
