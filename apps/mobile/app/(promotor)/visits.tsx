@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
 import { MetricCard } from '@/components/ui/MetricCard'
-import { signOut } from '@/lib/auth'
 import { useMyVisits, type VisitListItem } from '@/features/visits/api'
 import { StaffSurveysPendingBanner } from '@/features/staff-surveys/PendingBanner'
 
@@ -111,21 +110,6 @@ export default function VisitsScreen() {
             title="No hay visitas este mes"
             body="Cuando tengas visitas asignadas, las verás aquí."
           />
-        }
-        ListFooterComponent={
-          <View className="mt-4">
-            <Button
-              onPress={async () => {
-                await signOut()
-                router.replace('/(auth)/login')
-              }}
-              variant="outline"
-              size="default"
-              fullWidth
-            >
-              Cerrar sesión
-            </Button>
-          </View>
         }
       />
     </View>

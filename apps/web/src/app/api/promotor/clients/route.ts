@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { user, promotorId } = result
+    const { promotorId } = result
 
     // Parse query params
     const searchParams = request.nextUrl.searchParams
@@ -134,12 +134,16 @@ export async function GET(request: NextRequest) {
 
     const lastVisitDates: Record<string, string> = {}
     if (clientIds.length > 0) {
+      // visits.promotor_id is a user_profiles.id (NOT auth.users.id) and the
+      // status column is visit_status; the previous version used both the
+      // wrong FK and the wrong column name, so last_visit_date came back null
+      // for every row and the client detail screen had nothing to show.
       const { data: lastVisits } = await supabase
         .from('visits')
         .select('client_id, visit_date')
-        .eq('promotor_id', user!.id)
+        .eq('promotor_id', promotorId)
         .in('client_id', clientIds)
-        .eq('status', 'completed')
+        .eq('visit_status', 'completed')
         .is('deleted_at', null)
         .order('visit_date', { ascending: false })
 

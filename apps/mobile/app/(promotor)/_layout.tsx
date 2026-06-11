@@ -1,12 +1,15 @@
 import { useEffect } from 'react'
-import { Pressable, Text, View } from 'react-native'
-import { Stack, router } from 'expo-router'
-
-import { Bell } from 'lucide-react-native'
+import { Tabs } from 'expo-router'
+import { CalendarDays, ClipboardList, MoreHorizontal, Users } from 'lucide-react-native'
 
 import { useUnreadCount } from '@/features/notifications/api'
 import { registerForPushNotificationsAsync } from '@/features/notifications/push'
 import { useNotificationsRealtime } from '@/features/notifications/realtime'
+
+const ACTIVE = '#dd5025'
+const INACTIVE = '#999999'
+const NAVY = '#202456'
+const BORDER = '#cccccc'
 
 export default function PromotorLayout() {
   // Wire up push registration + Realtime once the promotor flow mounts (after
@@ -18,68 +21,69 @@ export default function PromotorLayout() {
   }, [])
   useNotificationsRealtime()
 
+  // Más tab carries the unread badge so notifications + surveys + perfil live
+  // in one place, matching the asesor / supervisor pattern.
   const unreadQuery = useUnreadCount()
   const unread = unreadQuery.data?.count ?? 0
 
   return (
-    <Stack
+    <Tabs
       screenOptions={{
+        tabBarActiveTintColor: ACTIVE,
+        tabBarInactiveTintColor: INACTIVE,
+        tabBarStyle: { backgroundColor: '#ffffff', borderTopColor: BORDER },
+        tabBarLabelStyle: { fontFamily: 'NunitoSans_700Bold', fontSize: 11 },
         headerStyle: { backgroundColor: '#ffffff' },
-        headerTintColor: '#202456',
+        headerTintColor: NAVY,
         headerTitleStyle: { fontFamily: 'NunitoSans_700Bold' },
       }}
     >
-      <Stack.Screen
+      <Tabs.Screen
         name="visits"
         options={{
-          title: 'Mis Visitas',
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push('/notifications' as never)}
-              hitSlop={12}
-              style={{ paddingHorizontal: 8, paddingVertical: 4 }}
-            >
-              <View style={{ position: 'relative', width: 26, height: 26, alignItems: 'center', justifyContent: 'center' }}>
-                <Bell size={22} color="#202456" />
-                {unread > 0 && (
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: -2,
-                      right: -8,
-                      backgroundColor: '#dd5025',
-                      borderRadius: 999,
-                      minWidth: 20,
-                      height: 20,
-                      paddingHorizontal: 5,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: '#fff',
-                        fontSize: 11,
-                        fontFamily: 'NunitoSans_700Bold',
-                        lineHeight: 14,
-                        textAlign: 'center',
-                      }}
-                    >
-                      {unread > 9 ? '9+' : unread}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </Pressable>
+          title: 'Visitas',
+          tabBarIcon: ({ focused, size }) => (
+            <ClipboardList size={size} color={focused ? ACTIVE : INACTIVE} />
           ),
         }}
       />
-      <Stack.Screen name="visits/[id]" options={{ headerShown: false }} />
-      {/* Survey routes — entered via notification tap. No tab button (promotor
-        uses Stack, not Tabs), so the list is accessible only through the
-        deep-link from a survey_assigned notification today. */}
-      <Stack.Screen name="surveys/index" options={{ headerShown: false }} />
-      <Stack.Screen name="surveys/[surveyId]" options={{ headerShown: false }} />
-    </Stack>
+      <Tabs.Screen
+        name="clients"
+        options={{
+          title: 'Clientes',
+          tabBarIcon: ({ focused, size }) => (
+            <Users size={size} color={focused ? ACTIVE : INACTIVE} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="schedule"
+        options={{
+          title: 'Agenda',
+          tabBarIcon: ({ focused, size }) => (
+            <CalendarDays size={size} color={focused ? ACTIVE : INACTIVE} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: 'Más',
+          tabBarIcon: ({ focused, size }) => (
+            <MoreHorizontal size={size} color={focused ? ACTIVE : INACTIVE} />
+          ),
+          tabBarBadge: unread > 0 ? (unread > 99 ? '99+' : unread) : undefined,
+          tabBarBadgeStyle: { backgroundColor: ACTIVE, color: '#ffffff' },
+        }}
+      />
+
+      {/* Hidden sub-routes — each renders its own ScreenHeader inline.
+        visits/[id] has its own nested Stack (_layout) for the wizard stages,
+        so a single entry suffices. */}
+      <Tabs.Screen name="visits/[id]" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="clients/[id]" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="surveys/index" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="surveys/[surveyId]" options={{ href: null, headerShown: false }} />
+    </Tabs>
   )
 }
