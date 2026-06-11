@@ -23,6 +23,15 @@ export const supabase = createClient<Database>(
   }
 )
 
+// Keep the Realtime socket authenticated with the user's JWT. RLS-gated
+// postgres_changes (e.g. the notifications table) deliver nothing to an
+// anonymous socket, so without this realtime updates silently never fire even
+// though REST queries work. Fires on INITIAL_SESSION (cold start with a
+// restored session), SIGNED_IN, and TOKEN_REFRESHED.
+supabase.auth.onAuthStateChange((_event, session) => {
+  supabase.realtime.setAuth(session?.access_token ?? null)
+})
+
 // React Native pauses timers while the app is in the background, so the
 // supabase-js auto-refresh loop stalls and the cached access_token can be
 // expired by the time the user returns. Pause/resume the loop on AppState

@@ -145,9 +145,17 @@ async function notifyTargetedRespondents(
     .flatMap(r => roleMap[r] || [])
     .filter(Boolean)
 
-  const profileIds: string[] = []
+  const recipients: Parameters<typeof createBulkNotifications>[0] = []
+  const base = {
+    tenant_id: survey.tenant_id,
+    title: 'Nueva encuesta disponible',
+    message: `Tienes una nueva encuesta por responder: "${survey.title}"`,
+    notification_type: 'survey_assigned' as const,
+    action_url: `/surveys/${survey.id}`,
+    metadata: { survey_id: survey.id },
+  }
 
-  // Get staff profiles matching roles
+  // Staff respondents — keyed by user_profile_id.
   if (dbRoles.length > 0) {
     const { data: staffProfiles } = await supabase
       .from('user_roles')
@@ -157,46 +165,34 @@ async function notifyTargetedRespondents(
       .eq('status', 'active')
       .is('deleted_at', null)
 
-    if (staffProfiles) {
-      profileIds.push(...staffProfiles.map(p => p.user_profile_id))
+    const seen = new Set<string>()
+    for (const p of staffProfiles ?? []) {
+      if (seen.has(p.user_profile_id)) continue
+      seen.add(p.user_profile_id)
+      recipients.push({ ...base, user_profile_id: p.user_profile_id })
     }
   }
 
-  // Get client profiles if client is targeted
+  // Client respondents — clients have NO user_profiles row, so notifications
+  // must be keyed by client_id directly. The mobile app and the
+  // notifications_select_own RLS policy scope client notifications by
+  // client_id, not user_profile_id (mapping clients through user_profiles
+  // silently dropped every client recipient).
   if (survey.target_roles.includes('client')) {
-    const { data: clientProfiles } = await supabase
+    const { data: clients } = await supabase
       .from('clients')
-      .select('user_id')
+      .select('id')
       .eq('tenant_id', survey.tenant_id)
-      .eq('is_active', true)
+      .eq('status', 'active')
+      .is('deleted_at', null)
       .not('user_id', 'is', null)
 
-    if (clientProfiles) {
-      for (const cp of clientProfiles) {
-        if (cp.user_id) {
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('id')
-            .eq('user_id', cp.user_id)
-            .single()
-          if (profile) profileIds.push(profile.id)
-        }
-      }
+    for (const c of clients ?? []) {
+      recipients.push({ ...base, client_id: c.id })
     }
   }
 
-  const uniqueIds = [...new Set(profileIds)]
-  if (uniqueIds.length === 0) return
+  if (recipients.length === 0) return
 
-  await createBulkNotifications(
-    uniqueIds.map(profileId => ({
-      tenant_id: survey.tenant_id,
-      user_profile_id: profileId,
-      title: 'Nueva encuesta disponible',
-      message: `Tienes una nueva encuesta por responder: "${survey.title}"`,
-      notification_type: 'survey_assigned' as const,
-      action_url: `/surveys/${survey.id}`,
-      metadata: { survey_id: survey.id }
-    }))
-  )
+  await createBulkNotifications(recipients)
 }

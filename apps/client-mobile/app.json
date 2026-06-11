@@ -26,6 +26,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.companeros.cliente",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 1
     },
     "plugins": [
@@ -43,7 +44,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/notification-icon.png",
           "color": "#dd5025",
           "defaultChannel": "default"
         }
