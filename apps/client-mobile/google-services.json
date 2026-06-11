@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "414239469840",
+    "project_id": "perfectapp-1b108",
+    "storage_bucket": "perfectapp-1b108.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:414239469840:android:0a1631bdf30f3cb47f7595",
+        "android_client_info": {
+          "package_name": "com.companeros.cliente"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARfyVjuTlwWkDBelbDNd-HmbFrDffXX2w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

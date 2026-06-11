@@ -28,6 +28,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.companeros.enruta",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
