@@ -198,6 +198,7 @@ export const supervisorNavConfig: RoleNavConfig = buildConfig(
     { id: 'team', label: 'Equipo', icon: UsersRound, href: '/supervisor/team' },
     { id: 'clients', label: 'Clientes', icon: Users, href: '/supervisor/clients' },
     { id: 'visits', label: 'Visitas', icon: Eye, href: '/supervisor/visits' },
+    { id: 'surveys', label: 'Encuestas', icon: ClipboardList, href: '/supervisor/surveys' },
     { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/supervisor/reports' },
   ],
 )

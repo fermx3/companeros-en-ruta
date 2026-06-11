@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 
 interface AvailableBrand {
   id: string
@@ -234,7 +235,7 @@ export async function POST(request: NextRequest) {
             title: 'Nueva solicitud de membresía',
             message: `Un cliente ha solicitado unirse a ${brand.name}`,
             notification_type: 'membership_pending' as const,
-            action_url: '/brand/clients',
+            action_url: buildActionUrl('membership_pending', 'brand_manager', {}) ?? undefined,
           }))
         )
       }

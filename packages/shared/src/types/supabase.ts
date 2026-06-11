@@ -15659,7 +15659,7 @@ export type Database = {
         | "active"
         | "closed"
         | "archived"
-      survey_target_role_enum: "promotor" | "asesor_de_ventas" | "client"
+      survey_target_role_enum: "promotor" | "asesor_de_ventas" | "client" | "supervisor"
       tenant_status_enum: "active" | "suspended" | "trial"
       tenant_subscription_plan_enum: "base" | "pro" | "enterprise"
       tier_assigned_by: "system" | "manual" | "external_sync"
@@ -16202,7 +16202,7 @@ export const Constants = {
         "closed",
         "archived",
       ],
-      survey_target_role_enum: ["promotor", "asesor_de_ventas", "client"],
+      survey_target_role_enum: ["promotor", "asesor_de_ventas", "client", "supervisor"],
       tenant_status_enum: ["active", "suspended", "trial"],
       tenant_subscription_plan_enum: ["base", "pro", "enterprise"],
       tier_assigned_by: ["system", "manual", "external_sync"],

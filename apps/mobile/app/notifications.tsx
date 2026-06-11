@@ -2,10 +2,17 @@ import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } fr
 import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import {
+  resolveNotificationRoute,
+  type NotificationType,
+  type RecipientKind,
+} from '@companeros/shared/utils/notification-routing'
+
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
 import { ScreenHeader } from '@/components/ui/ScreenHeader'
+import { useUserRole } from '@/lib/auth'
 import {
   useMarkAllRead,
   useMarkRead,
@@ -17,6 +24,7 @@ export default function NotificationsScreen() {
   const notificationsQuery = useNotifications()
   const markRead = useMarkRead()
   const markAllRead = useMarkAllRead()
+  const { role } = useUserRole()
 
   const items = notificationsQuery.data?.pages.flatMap(p => p.data) ?? []
   const total = notificationsQuery.data?.pages[0]?.count ?? 0
@@ -24,10 +32,17 @@ export default function NotificationsScreen() {
 
   function handleTap(n: NotificationItem) {
     if (!n.is_read) markRead.mutate([n.id])
-    if (n.action_url) {
-      // action_url comes from the server; treat unknown shapes as opaque.
-      router.push(n.action_url as never)
-    }
+    if (!role) return
+    const route = resolveNotificationRoute(
+      {
+        type: n.notification_type as NotificationType,
+        metadata: n.metadata ?? {},
+        surface: 'staff-mobile',
+        recipient: role as RecipientKind,
+      },
+      n.action_url ?? null,
+    )
+    if (route) router.push(route as never)
   }
 
   return (

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { resolveBrandAuth, isBrandAuthError, brandAuthErrorResponse } from '@/lib/api/brand-auth'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
 import { createNotification, createBulkNotifications } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 
 /**
  * PUT /api/brand/team/[id]/supervisor
@@ -102,6 +103,7 @@ export async function PUT(
           title: 'Supervisor asignado',
           message: 'Se te ha asignado un nuevo supervisor',
           notification_type: 'supervisor_changed',
+          action_url: buildActionUrl('supervisor_changed', 'promotor', {}) ?? undefined,
         },
         {
           tenant_id: tenantId,
@@ -109,6 +111,7 @@ export async function PUT(
           title: 'Nuevo miembro en tu equipo',
           message: 'Se te ha asignado un nuevo miembro para supervisar',
           notification_type: 'supervisor_changed',
+          action_url: buildActionUrl('supervisor_changed', 'promotor', {}) ?? undefined,
         },
       ])
     } catch (notifError) {
@@ -192,6 +195,7 @@ export async function DELETE(
         title: 'Supervisor removido',
         message: 'Tu supervisor ha sido removido',
         notification_type: 'supervisor_changed',
+        action_url: buildActionUrl('supervisor_changed', 'promotor', {}) ?? undefined,
       })
     } catch (notifError) {
       console.error('[DELETE /api/brand/team/[id]/supervisor] Notification error:', notifError)

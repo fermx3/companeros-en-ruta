@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { createBulkNotifications } from '@/lib/notifications'
+import { buildActionUrl } from '@companeros/shared/utils/notification-routing'
 
 /**
  * POST /api/qr/redeem
@@ -124,9 +125,24 @@ export async function POST(request: NextRequest) {
 
       const { data: brandManagers } = await bmQuery
 
+      // Pull promotion_id so the brand_manager link goes to the promotion
+      // detail (not the listing). qr_data doesn't include it today.
+      let promotionId: string | null = null
+      if (result.redemption_id) {
+        const { data: redemptionRow } = await serviceClient
+          .from('qr_redemptions')
+          .select('qr_code:qr_codes(promotion_id)')
+          .eq('id', result.redemption_id)
+          .single()
+        const qrCode = (redemptionRow?.qr_code as { promotion_id?: string | null } | null) ?? null
+        promotionId = qrCode?.promotion_id ?? null
+      }
+
       const notifications: Parameters<typeof createBulkNotifications>[0] = []
 
       if (brandManagers && brandManagers.length > 0) {
+        const metadata = { redemption_id: result.redemption_id, promotion_id: promotionId }
+        const action_url = buildActionUrl('qr_redeemed', 'brand_manager', metadata) ?? undefined
         notifications.push(
           ...brandManagers.map(bm => ({
             tenant_id: userProfile.tenant_id!,
@@ -134,8 +150,8 @@ export async function POST(request: NextRequest) {
             title: 'Código QR canjeado',
             message: 'Un código QR ha sido canjeado',
             notification_type: 'qr_redeemed' as const,
-            action_url: '/brand/promotions',
-            metadata: { redemption_id: result.redemption_id },
+            action_url,
+            metadata,
           }))
         )
       }
@@ -143,14 +159,15 @@ export async function POST(request: NextRequest) {
       // The client whose coupon was scanned needs to know their cupón fue
       // usado — otherwise they keep waiting for the asesor.
       if (clientId) {
+        const metadata = { redemption_id: result.redemption_id }
         notifications.push({
           tenant_id: userProfile.tenant_id!,
           client_id: clientId,
           title: 'Tu cupón fue canjeado',
-          message: 'El asesor canjeó tu cupón. ¡Disfrutá del descuento!',
+          message: 'El asesor canjeó tu cupón. ¡Disfruta del descuento!',
           notification_type: 'qr_redeemed' as const,
-          action_url: '/(tabs)/qr',
-          metadata: { redemption_id: result.redemption_id },
+          action_url: buildActionUrl('qr_redeemed', 'client', metadata),
+          metadata,
         })
       }
 

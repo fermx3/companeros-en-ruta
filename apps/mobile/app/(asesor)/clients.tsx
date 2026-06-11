@@ -13,6 +13,7 @@ import { BadgeStatus } from '@/components/ui/BadgeStatus'
 import { BrandLogo } from '@/components/ui/BrandLogo'
 import { Card } from '@/components/ui/Card'
 import { ChevronRight } from '@/components/ui/Icon'
+import { StaffSurveysPendingBanner } from '@/features/staff-surveys/PendingBanner'
 import { Input } from '@/components/ui/Input'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
 import { useAsesorClients, type AsesorClient } from '@/features/asesor/clients/api'
@@ -51,6 +52,8 @@ export default function ClientsScreen() {
         data={filtered}
         keyExtractor={c => c.id}
         contentContainerClassName="p-4 pb-8"
+        alwaysBounceVertical
+        ListHeaderComponent={<StaffSurveysPendingBanner rolePathPrefix="/(asesor)" />}
         refreshControl={
           <RefreshControl
             refreshing={clientsQuery.isRefetching}
@@ -67,7 +70,7 @@ export default function ClientsScreen() {
               title={search ? 'Sin resultados' : 'Sin clientes asignados'}
               body={
                 search
-                  ? 'Probá con otro término de búsqueda.'
+                  ? 'Prueba con otro término de búsqueda.'
                   : 'Cuando te asignen clientes, los verás aquí.'
               }
             />

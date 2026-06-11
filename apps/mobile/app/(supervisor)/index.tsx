@@ -14,6 +14,7 @@ import { ChevronRight } from '@/components/ui/Icon'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
 import { MetricCard } from '@/components/ui/MetricCard'
 import { useSupervisorMetrics } from '@/features/supervisor/metrics/api'
+import { StaffSurveysPendingBanner } from '@/features/staff-surveys/PendingBanner'
 
 export default function SupervisorOverview() {
   const metricsQuery = useSupervisorMetrics()
@@ -35,6 +36,7 @@ export default function SupervisorOverview() {
         />
       }
     >
+      <StaffSurveysPendingBanner rolePathPrefix="/(supervisor)" />
       {metricsQuery.isLoading || !metrics ? (
         <View className="items-center py-12">
           <ActivityIndicator size="large" />

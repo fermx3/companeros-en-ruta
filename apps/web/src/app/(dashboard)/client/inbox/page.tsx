@@ -11,6 +11,10 @@ import { LoadingSpinner } from '@/components/ui/feedback'
 import { useNotifications } from '@/hooks/useNotifications'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { cn } from '@companeros/shared/utils/cn'
+import {
+  resolveNotificationRoute,
+  type NotificationType,
+} from '@companeros/shared/utils/notification-routing'
 import type { Notification } from '@companeros/shared/types/database'
 
 const NOTIFICATION_TYPE_ICONS: Record<string, string> = {
@@ -41,9 +45,16 @@ export default function ClientInboxPage() {
 
   function handleTap(n: Notification) {
     if (!n.is_read) markAsRead([n.id])
-    if (n.action_url) {
-      router.push(n.action_url)
-    }
+    const route = resolveNotificationRoute(
+      {
+        type: n.notification_type as NotificationType,
+        metadata: (n.metadata as Record<string, unknown> | null) ?? {},
+        surface: 'web',
+        recipient: 'client',
+      },
+      n.action_url ?? null,
+    )
+    if (route) router.push(route)
   }
 
   if (loading) {

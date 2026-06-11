@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification, createBulkNotifications } from '@/lib/notifications'
 import { resolveIdColumn } from '@companeros/shared/utils/public-id'
+import {
+  buildActionUrl,
+  isDeliverable,
+  type RecipientKind,
+} from '@companeros/shared/utils/notification-routing'
 import type { Database } from '@companeros/shared/types/supabase'
 
 type UserRoleType = Database['public']['Enums']['user_role_type_enum']
@@ -95,7 +100,7 @@ export async function POST(
         title: 'Encuesta aprobada',
         message: `Tu encuesta "${survey.title}" ha sido aprobada${newStatus === 'active' ? ' y activada' : ''}.`,
         notification_type: 'survey_approved',
-        action_url: `/brand/surveys/${survey.id}`,
+        action_url: buildActionUrl('survey_approved', 'brand_manager', { survey_id: survey.id }),
         metadata: { survey_id: survey.id }
       })
     } catch (notifError) {
@@ -134,51 +139,51 @@ async function notifyTargetedRespondents(
   supabase: Awaited<Awaited<ReturnType<typeof createClient>>>,
   survey: { id: string; title: string; tenant_id: string; target_roles: string[] }
 ) {
-  // Map survey target roles to user_roles role names
-  const roleMap: Record<string, string[]> = {
-    promotor: ['promotor'],
-    asesor_de_ventas: ['asesor_de_ventas'],
-    client: [] // Clients don't have user_roles entries
+  // Map survey target roles → (user_roles.role, RecipientKind).
+  // Supervisor + asesor + promotor all have a user_roles row; client doesn't
+  // (clients are keyed by client_id, see below).
+  const STAFF_ROLE_MAP: Record<string, { dbRole: UserRoleType; recipient: RecipientKind }> = {
+    promotor: { dbRole: 'promotor' as UserRoleType, recipient: 'promotor' },
+    asesor_de_ventas: { dbRole: 'asesor_de_ventas' as UserRoleType, recipient: 'asesor_de_ventas' },
+    supervisor: { dbRole: 'supervisor' as UserRoleType, recipient: 'supervisor' },
   }
 
-  const dbRoles = survey.target_roles
-    .flatMap(r => roleMap[r] || [])
-    .filter(Boolean)
-
   const recipients: Parameters<typeof createBulkNotifications>[0] = []
-  const base = {
+  const metadata = { survey_id: survey.id }
+  const baseShape = {
     tenant_id: survey.tenant_id,
     title: 'Nueva encuesta disponible',
     message: `Tienes una nueva encuesta por responder: "${survey.title}"`,
     notification_type: 'survey_assigned' as const,
-    action_url: `/surveys/${survey.id}`,
-    metadata: { survey_id: survey.id },
+    metadata,
   }
 
-  // Staff respondents — keyed by user_profile_id.
-  if (dbRoles.length > 0) {
+  // Staff respondents — one query per target role, keyed by user_profile_id.
+  for (const targetRole of survey.target_roles) {
+    const mapping = STAFF_ROLE_MAP[targetRole]
+    if (!mapping) continue
+    if (!isDeliverable('survey_assigned', mapping.recipient)) continue
+
     const { data: staffProfiles } = await supabase
       .from('user_roles')
       .select('user_profile_id')
       .eq('tenant_id', survey.tenant_id)
-      .in('role', dbRoles as UserRoleType[])
+      .eq('role', mapping.dbRole)
       .eq('status', 'active')
       .is('deleted_at', null)
 
+    const action_url = buildActionUrl('survey_assigned', mapping.recipient, metadata)
     const seen = new Set<string>()
     for (const p of staffProfiles ?? []) {
       if (seen.has(p.user_profile_id)) continue
       seen.add(p.user_profile_id)
-      recipients.push({ ...base, user_profile_id: p.user_profile_id })
+      recipients.push({ ...baseShape, action_url, user_profile_id: p.user_profile_id })
     }
   }
 
-  // Client respondents — clients have NO user_profiles row, so notifications
-  // must be keyed by client_id directly. The mobile app and the
-  // notifications_select_own RLS policy scope client notifications by
-  // client_id, not user_profile_id (mapping clients through user_profiles
-  // silently dropped every client recipient).
-  if (survey.target_roles.includes('client')) {
+  // Client respondents — keyed by client_id (RLS policy scopes client
+  // notifications that way; user_profiles mapping silently drops them).
+  if (survey.target_roles.includes('client') && isDeliverable('survey_assigned', 'client')) {
     const { data: clients } = await supabase
       .from('clients')
       .select('id')
@@ -187,8 +192,9 @@ async function notifyTargetedRespondents(
       .is('deleted_at', null)
       .not('user_id', 'is', null)
 
+    const action_url = buildActionUrl('survey_assigned', 'client', metadata)
     for (const c of clients ?? []) {
-      recipients.push({ ...base, client_id: c.id })
+      recipients.push({ ...baseShape, action_url, client_id: c.id })
     }
   }
 

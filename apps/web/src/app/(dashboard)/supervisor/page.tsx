@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Users, MapPin, CheckCircle, Clock, Star, TrendingUp, ShoppingCart, ArrowRight } from "lucide-react"
 import { EmptyState } from '@/components/ui/EmptyState'
 import { QuickActions } from '@/components/layout'
+import { PendingSurveysBanner } from '@/components/surveys/PendingSurveysBanner'
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -113,6 +114,7 @@ export default function SupervisorDashboard() {
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
+          <PendingSurveysBanner surveysHref="/supervisor/surveys" />
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>

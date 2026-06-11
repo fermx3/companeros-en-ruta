@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { displayPhone } from '@companeros/shared/utils/phone';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { QuickActions } from '@/components/layout';
+import { PendingSurveysBanner } from '@/components/surveys/PendingSurveysBanner';
 import { Users, ClipboardList, Clock, QrCode, Plus, History, FileText } from 'lucide-react';
 
 interface AsesorVentasProfile {
@@ -124,6 +125,9 @@ export default function AsesorVentasPage() {
 
   return (
     <div className="min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <PendingSurveysBanner surveysHref="/asesor-ventas/surveys" />
+      </div>
       {/* Header */}
       <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

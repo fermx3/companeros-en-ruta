@@ -1,6 +1,11 @@
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native'
 import { router } from 'expo-router'
 
+import {
+  resolveNotificationRoute,
+  type NotificationType,
+} from '@companeros/shared/utils/notification-routing'
+
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ListEmptyState } from '@/components/ui/ListEmptyState'
@@ -29,9 +34,16 @@ export function NotificationsList({ header, showMarkAllAction = true }: Notifica
 
   function handleTap(n: NotificationItem) {
     if (!n.is_read) markRead.mutate([n.id])
-    if (n.action_url) {
-      router.push(n.action_url as never)
-    }
+    const route = resolveNotificationRoute(
+      {
+        type: n.notification_type as NotificationType,
+        metadata: n.metadata ?? {},
+        surface: 'client-mobile',
+        recipient: 'client',
+      },
+      n.action_url ?? null,
+    )
+    if (route) router.push(route as never)
   }
 
   return (

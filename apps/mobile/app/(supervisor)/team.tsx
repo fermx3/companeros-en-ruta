@@ -54,7 +54,7 @@ export default function TeamScreen() {
               title={search ? 'Sin resultados' : 'Sin promotores asignados'}
               body={
                 search
-                  ? 'Probá con otro término.'
+                  ? 'Prueba con otro término.'
                   : 'Cuando tengas promotores a tu cargo, los verás aquí.'
               }
             />
