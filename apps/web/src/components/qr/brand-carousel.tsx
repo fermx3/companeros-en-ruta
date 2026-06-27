@@ -114,15 +114,8 @@ export function BrandCarousel({
         ))}
       </div>
 
-      <style jsx>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
+      {/* .no-scrollbar lives in apps/web/src/app/globals.css (was inlined
+        here via <style jsx> which broke tsc after the React types refresh). */}
     </div>
   )
 }
