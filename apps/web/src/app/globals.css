@@ -124,6 +124,17 @@ html {
   background: color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
 }
 
+/* Hide scrollbars where Tailwind's `overflow-x-auto` needs to scroll silently
+   (used by horizontal carousels). Defined globally so the class works wherever
+   the markup uses className="no-scrollbar". */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Utility Classes */
 .touch-target {
   min-height: 44px;
