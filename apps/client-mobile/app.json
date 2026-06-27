@@ -48,7 +48,8 @@
           "color": "#dd5025",
           "defaultChannel": "default"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
