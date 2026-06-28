@@ -37,22 +37,15 @@ import { queryClient } from '@/lib/query'
 
 SplashScreen.preventAutoHideAsync().catch(() => {})
 
-// How push notifications are presented while the app is foregrounded.
-// Wrapped because expo-notifications can fail to initialize on some
-// architectures/OS combinations; if the handler errors at module load it
-// brings down the whole app before React mounts.
-try {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-    }),
-  })
-} catch (err) {
-  console.error('[boot] setNotificationHandler failed', err)
-}
+// `setNotificationHandler` used to live here at module-load. On iOS 26.5
+// with TurboModules enabled, the underlying ObjC call threw an NSException
+// during the first invocation; React Native tried to convert it to a JS
+// Error via TurboModuleConvertUtils::createJSRuntimeError and Hermes
+// crashed building the Error object (DictPropertyMap / SymbolID). Moving
+// the call into useEffect (RootLayout) ensures React is mounted, the JS
+// runtime is fully warmed, and the global ErrorUtils handler is already
+// in place if the throw recurs — so we get a logged message instead of
+// the app aborting before render.
 
 // Default fontFamily on Text/TextInput because RN doesn't inherit through
 // nested <Text>. defaultProps mutation is deprecated in React 19 and may
@@ -85,6 +78,23 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync().catch(() => {})
   }, [fontsLoaded])
+
+  // Register the foreground notification presentation handler here (NOT at
+  // module load — see the long comment above the SplashScreen block).
+  useEffect(() => {
+    try {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+        }),
+      })
+    } catch (err) {
+      console.error('[boot] setNotificationHandler failed', err)
+    }
+  }, [])
 
   if (!fontsLoaded) return null
 
