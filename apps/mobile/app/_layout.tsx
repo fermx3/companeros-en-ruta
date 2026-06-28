@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { queryClient } from '@/lib/query'
+import { attachSupabaseLifecycle } from '@/lib/supabase'
 
 // Catch any uncaught JS error during app boot and surface it as a console
 // error instead of letting RN's RCTExceptionsManager promote it to a fatal
@@ -33,9 +34,9 @@ if (errorUtils?.setGlobalHandler) {
     if (prev) prev(err, false)
   })
 }
-LogBox.ignoreAllLogs(false)
+try { LogBox.ignoreAllLogs(false) } catch (err) { console.error('[boot] LogBox', err) }
 
-SplashScreen.preventAutoHideAsync().catch(() => {})
+try { SplashScreen.preventAutoHideAsync().catch(() => {}) } catch (err) { console.error('[boot] SplashScreen', err) }
 
 // `setNotificationHandler` used to live here at module-load. On iOS 26.5
 // with TurboModules enabled, the underlying ObjC call threw an NSException
@@ -87,6 +88,20 @@ export default function RootLayout() {
       })
     } catch (err) {
       console.error('[boot] setNotificationHandler failed', err)
+    }
+  }, [])
+
+  // Attach supabase realtime auth + AppState auto-refresh listeners here so
+  // the native registrations happen after React mount, not at module load.
+  useEffect(() => {
+    let detach: (() => void) | undefined
+    try {
+      detach = attachSupabaseLifecycle()
+    } catch (err) {
+      console.error('[boot] attachSupabaseLifecycle failed', err)
+    }
+    return () => {
+      try { detach?.() } catch {}
     }
   }, [])
 
