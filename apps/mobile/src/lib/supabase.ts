@@ -4,10 +4,23 @@ import * as SecureStore from 'expo-secure-store'
 import type { Database } from '@companeros/shared/types/supabase'
 import { env } from '../env'
 
+// Each method wrapped in .catch so a SecureStore TurboModule throw can't
+// propagate up to RCTExceptionsManager and abort the app at boot. Mirrors
+// the fix in apps/client-mobile/src/lib/supabase.ts; see comment there.
 const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+  getItem: (key: string) =>
+    SecureStore.getItemAsync(key).catch(err => {
+      console.error('[supabase.storage.getItem] failed', err)
+      return null
+    }),
+  setItem: (key: string, value: string) =>
+    SecureStore.setItemAsync(key, value).catch(err => {
+      console.error('[supabase.storage.setItem] failed', err)
+    }),
+  removeItem: (key: string) =>
+    SecureStore.deleteItemAsync(key).catch(err => {
+      console.error('[supabase.storage.removeItem] failed', err)
+    }),
 }
 
 export const supabase = createClient<Database>(
@@ -23,23 +36,24 @@ export const supabase = createClient<Database>(
   }
 )
 
-// Keep the Realtime socket authenticated with the user's JWT. RLS-gated
-// postgres_changes (e.g. the notifications table) deliver nothing to an
-// anonymous socket, so without this realtime updates silently never fire even
-// though REST queries work. Fires on INITIAL_SESSION (cold start with a
-// restored session), SIGNED_IN, and TOKEN_REFRESHED.
-supabase.auth.onAuthStateChange((_event, session) => {
-  supabase.realtime.setAuth(session?.access_token ?? null)
-})
+// Lifecycle wiring moved out of module-load — see comment in
+// apps/client-mobile/src/lib/supabase.ts. Call attachSupabaseLifecycle()
+// from a useEffect in your root layout.
+export function attachSupabaseLifecycle(): () => void {
+  const authSub = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.realtime.setAuth(session?.access_token ?? null)
+  })
 
-// React Native pauses timers while the app is in the background, so the
-// supabase-js auto-refresh loop stalls and the cached access_token can be
-// expired by the time the user returns. Pause/resume the loop on AppState
-// transitions per the Supabase RN guide.
-AppState.addEventListener('change', state => {
-  if (state === 'active') {
-    supabase.auth.startAutoRefresh()
-  } else {
-    supabase.auth.stopAutoRefresh()
+  const appStateSub = AppState.addEventListener('change', state => {
+    if (state === 'active') {
+      supabase.auth.startAutoRefresh()
+    } else {
+      supabase.auth.stopAutoRefresh()
+    }
+  })
+
+  return () => {
+    try { authSub.data.subscription.unsubscribe() } catch {}
+    try { appStateSub.remove() } catch {}
   }
-})
+}
