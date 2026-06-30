@@ -79,6 +79,62 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
 
 > Append below. Newest at top.
 
+### 2026-06-29 — EAS Build default image for SDK 54 ships a Hermes that crashes on iOS 26.5
+
+- **Context:** `apps/client-mobile`, EAS Build production profile. Apple rejected build 7 with a crash on iPad Air M3 / iPadOS 26.5. We then burned builds 8-15 via EAS — every one crashed at boot on iPhone 17 / iOS 26.5 with the same signature (`TurboModule` void method throws NSException → RN's `convertNSExceptionToJSError` → Hermes `errorStackGetter` null deref).
+- **Symptom:** TestFlight install opens for 155ms and dies. No JS stack visible — the conversion to JSError crashes before logging the NSException. Indistinguishable in TestFlight from "our code is broken at boot".
+- **Root cause:** EAS Build resolves `sdk-54` to `macos-sequoia-15.6-xcode-26.0`. The Xcode 26.0 toolchain bundles a Hermes precompiled binary with a known incompatibility on iOS 26.5 runtime. Xcode 26.4 (latest at the time) bundles a fixed Hermes. Confirmed by comparing the two IPAs: `hermes.framework/hermes` differs by ~27KB and only the Xcode 26.4-built one boots.
+- **Fix / Rule:** Pin `ios.image: "macos-tahoe-26.4-xcode-26.4"` in `apps/client-mobile/eas.json` (PR #57). **Caveat:** even with the image pinned, the binary EAS produces still differs ~27KB from a local Xcode 26.4 Archive and STILL crashes — investigation open (`project_eas_build_xcode_drift.md` memory). Workaround when EAS-built IPAs misbehave on a bleeding-edge iOS: local `npx expo prebuild --platform ios --clean && pod install && open ios/*.xcworkspace` + Product → Archive + Distribute → ASC. Tarda lo mismo, produce un IPA funcional.
+- **Tags:** #ios #eas #expo #hermes #release
+
+---
+
+### 2026-06-29 — Module-load native calls = crash chain on iOS bleeding-edge
+
+- **Context:** `apps/client-mobile/app/_layout.tsx`, `apps/client-mobile/src/lib/supabase.ts`. PRs #55 (defer `Notifications.setNotificationHandler` to `useEffect`) and #56 (defer `AppState.addEventListener` + `supabase.auth.onAuthStateChange` via a new `attachSupabaseLifecycle()` helper).
+- **Symptom:** App crashes at boot before React mounts. No JS error logged because the global `ErrorUtils` handler hasn't been installed yet. Native crash logs show abort in `objc_exception_rethrow` or `convertNSExceptionToJSError`.
+- **Root cause:** any TurboModule void method invoked at the top level of a module that gets imported during JS bundle evaluation (i.e., before any React component renders) can throw an NSException. The dispatch queue / JSI runtime has no handler in place yet, so terminate is called → SIGABRT. iOS 26.5 surfaces this aggressively because of stricter Hermes/TurboModule behavior.
+- **Fix / Rule:** Treat module top-level as a no-side-effects zone in mobile apps. Any code that touches native modules (`Notifications.*`, `AppState.*`, `LogBox.*`, `SecureStore.*`, etc.) goes inside a `useEffect` in the root layout — wrapped in `try/catch` so even if it throws it stays bounded. Install `global.ErrorUtils.setGlobalHandler` early in `_layout.tsx` so anything that DOES leak gets logged instead of taking the app down.
+- **Tags:** #ios #expo #react-native #boot #turbo-modules
+
+---
+
+### 2026-06-29 — IPA drift diagnostic toolkit
+
+- **Context:** Debugging the crash gap between EAS-built and local-Xcode-built IPAs of `apps/client-mobile`.
+- **Symptom:** Same code, same EAS image, but the binaries differ and behave differently on the same device. Need to find the actual delta.
+- **Root cause:** N/A — this is the toolkit, not a bug.
+- **Fix / Rule:** Standard diagnostic flow when an IPA misbehaves on a real device:
+  1. Download the EAS IPA: `eas build:view <id> --json | jq -r .artifacts.buildUrl` then `curl -O`.
+  2. Unzip: `mkdir x && cd x && unzip ../build.ipa`.
+  3. Entitlements diff: `codesign -d --entitlements - Payload/*.app` — confirms `aps-environment` (production vs development) and signing identity.
+  4. Info.plist diff: `plutil -p Payload/*.app/Info.plist` and grep for `DTXcode`, `DTPlatformVersion`, `BuildMachineOSBuild`. Reveals which Xcode/macOS produced each IPA.
+  5. Frameworks diff: `ls -l Payload/*.app/Frameworks/{hermes,React,ReactNativeDependencies}.framework/*` — size differences here are the smoking gun for engine incompatibilities.
+  6. If a local Archive boots and EAS doesn't, the gap is in the build infra, not your code.
+- **Tags:** #ios #release #debug #ipa
+
+---
+
+### 2026-06-29 — `.env.local` always loaded by Expo, overrides `.env.production`
+
+- **Context:** `apps/client-mobile/.env.local`. Local Archive for production needed prod URLs baked in but `.env.local` had dev URLs and they leaked into the IPA.
+- **Symptom:** App built via local Xcode Archive with intent to ship to TestFlight came up pointing at `http://192.168.100.166:54321` (local Supabase). Login network-errored because the LAN IP isn't reachable from outside the local network.
+- **Root cause:** Expo's env loader respects the standard precedence `.env.{NODE_ENV}.local > .env.local > .env.{NODE_ENV} > .env`. `.env.local` is loaded in EVERY environment including production — it's not gated by NODE_ENV. EAS Build remote ignores `.env.local` (it's gitignored), but local builds read it.
+- **Fix / Rule:** Before doing a local production Archive: back up `apps/client-mobile/.env.local` → write prod values → Archive → upload → restore. For long-term, populate EAS environment variables (`pnpm exec eas env:create ...`) so future EAS builds carry the prod values without depending on local files. Document the temporary swap in the PR description if the local Archive ships.
+- **Tags:** #expo #env #release
+
+---
+
+### 2026-06-29 — `react-native-css-interop` must be a direct dep in pnpm-isolated monorepos
+
+- **Context:** `apps/client-mobile/package.json`, `apps/client-mobile/metro.config.js`. After running `expo prebuild` locally for the first time, Metro failed to resolve `react-native-css-interop/jsx-runtime` from `expo-router/build/qualified-entry.js`.
+- **Symptom:** Build error: `Unable to resolve module react-native-css-interop/jsx-runtime from <pnpm-deeply-nested>/expo-router/build/qualified-entry.js`. Web build is fine.
+- **Root cause:** `react-native-css-interop` is a transitive dep of `nativewind`. In pnpm's isolated `node_modules`, it lives in a versioned `.pnpm/` directory, not in `apps/client-mobile/node_modules`. The Metro config has `resolver.disableHierarchicalLookup: true` (needed for monorepo determinism) — so Metro never walks up to find the transitive. `expo-router` tries to import the jsx-runtime by bare specifier and the resolution fails.
+- **Fix / Rule:** Add `"react-native-css-interop": "0.2.3"` (pin the same version pnpm already resolved transitively) to `apps/client-mobile/package.json` `dependencies` and rerun `pnpm install`. pnpm hoists it as a direct symlink under `apps/client-mobile/node_modules`. Mirror in any other Expo app added to the monorepo (e.g., `apps/mobile` should add this proactively when it gets its first NativeWind component).
+- **Tags:** #expo #metro #monorepo #pnpm #nativewind
+
+---
+
 ### 2026-05-03 — `Authorization: Bearer` needs transport-level setup, not just JWT validation
 
 - **Context:** PR B (`feat/mobile-bootstrap`). The original PR A `auth-resolver` validated a Bearer access token via `supabase.auth.getUser(token)` and returned the user id. Smoke-testing against a real promotor account returned 200 → 404 with `"Perfil de usuario no encontrado"`. The token was valid; the lookup failed.

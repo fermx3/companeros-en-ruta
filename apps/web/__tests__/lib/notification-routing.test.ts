@@ -2,6 +2,7 @@ import {
   buildActionUrl,
   isDeliverable,
   resolveNotificationRoute,
+  safeNotificationRoute,
 } from '@companeros/shared/utils/notification-routing'
 
 describe('notification-routing', () => {
@@ -65,7 +66,7 @@ describe('notification-routing', () => {
       expect(route).toBe('/orders/ord-9')
     })
 
-    it('falls back to the stored action_url when matrix cannot resolve', () => {
+    it('falls back to the stored action_url when matrix has no entry (e.g. system type)', () => {
       const route = resolveNotificationRoute(
         {
           type: 'system',
@@ -78,13 +79,31 @@ describe('notification-routing', () => {
       expect(route).toBe('/client/brands')
     })
 
-    it('returns null when both matrix and fallback are empty', () => {
+    it('returns null when matrix builder is present but metadata is missing (does NOT trust action_url)', () => {
+      // The matrix HAS an entry for survey_assigned/client/client-mobile but it
+      // requires `survey_id`. When missing we deliberately ignore the fallback
+      // action_url — the create-site that forgot the metadata likely also
+      // wrote a malformed action_url. `safeNotificationRoute` provides the
+      // safe surface-home destination for tap handlers.
       const route = resolveNotificationRoute(
         {
           type: 'survey_assigned',
           recipient: 'client',
           surface: 'client-mobile',
           metadata: {}, // no survey_id
+        },
+        '/legacy-but-malformed-path',
+      )
+      expect(route).toBeNull()
+    })
+
+    it('returns null when both matrix and fallback are empty', () => {
+      const route = resolveNotificationRoute(
+        {
+          type: 'survey_assigned',
+          recipient: 'client',
+          surface: 'client-mobile',
+          metadata: {},
         },
         null,
       )
@@ -129,6 +148,78 @@ describe('notification-routing', () => {
           null,
         ),
       ).toBe('/(supervisor)/surveys/s2')
+    })
+  })
+
+  describe('safeNotificationRoute', () => {
+    it('returns the matrix-derived path when available (delegates to resolveNotificationRoute)', () => {
+      const route = safeNotificationRoute(
+        {
+          type: 'order_created',
+          recipient: 'client',
+          surface: 'web',
+          metadata: { order_id: 'ord-1' },
+        },
+        null,
+      )
+      expect(route).toBe('/client/orders/ord-1')
+    })
+
+    it('falls through to the surface home for client-mobile/client when matrix and action_url are both empty', () => {
+      const route = safeNotificationRoute(
+        {
+          type: 'survey_assigned',
+          recipient: 'client',
+          surface: 'client-mobile',
+          metadata: {},
+        },
+        null,
+      )
+      expect(route).toBe('/(tabs)')
+    })
+
+    it('falls through to the role home on web when matrix has no entry and action_url is null', () => {
+      const route = safeNotificationRoute(
+        {
+          type: 'system',
+          recipient: 'admin',
+          surface: 'web',
+          metadata: {},
+        },
+        null,
+      )
+      expect(route).toBe('/admin')
+    })
+
+    it('preserves the stored action_url for legacy/system notifications when matrix has no entry', () => {
+      const route = safeNotificationRoute(
+        {
+          type: 'system',
+          recipient: 'client',
+          surface: 'web',
+          metadata: {},
+        },
+        '/client/custom-landing',
+      )
+      expect(route).toBe('/client/custom-landing')
+    })
+
+    it('regression — new_promotion+client+client-mobile without promotion_id and an invalid action_url resolves to /(tabs) instead of pushing the broken URL', () => {
+      // Repro of the 2026-06-29 bug: a notification created via REST without
+      // populating metadata + action_url=/promotions (no [id]) → tap on the
+      // mobile inbox previously pushed `/promotions` and the expo-router
+      // showed "Unmatched Route" because the dynamic route is /promotions/[id].
+      // Now we route to the tabs home and the user can navigate manually.
+      const route = safeNotificationRoute(
+        {
+          type: 'new_promotion',
+          recipient: 'client',
+          surface: 'client-mobile',
+          metadata: {},
+        },
+        '/promotions',
+      )
+      expect(route).toBe('/(tabs)')
     })
   })
 })

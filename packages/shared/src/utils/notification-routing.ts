@@ -245,18 +245,85 @@ export interface RouteContext {
 }
 
 /**
+ * Per-surface "home" route for every recipient role. Used by
+ * `safeNotificationRoute` as the last-resort destination when neither the
+ * matrix nor the stored action_url yield a navigable path. Keeps tap from
+ * silently no-op'ing or pushing a malformed URL that crashes the router
+ * (e.g., `/promotions` on mobile, which collides with the dynamic
+ * `/promotions/[id]` route and shows "Unmatched Route").
+ */
+const SAFE_DEFAULTS: Record<Surface, Record<RecipientKind, string>> = {
+  web: {
+    admin: '/admin',
+    brand_manager: '/brand',
+    supervisor: '/supervisor',
+    promotor: '/promotor',
+    asesor_de_ventas: '/asesor-ventas',
+    client: '/client',
+  },
+  'client-mobile': {
+    admin: '/(tabs)',
+    brand_manager: '/(tabs)',
+    supervisor: '/(tabs)',
+    promotor: '/(tabs)',
+    asesor_de_ventas: '/(tabs)',
+    client: '/(tabs)',
+  },
+  'staff-mobile': {
+    admin: '/(promotor)',
+    brand_manager: '/(promotor)',
+    supervisor: '/(supervisor)',
+    promotor: '/(promotor)',
+    asesor_de_ventas: '/(asesor)',
+    client: '/(promotor)',
+  },
+}
+
+/**
  * Resolve where a tap should navigate. Prefers the matrix-derived canonical
- * path for the surface; falls back to `fallbackUrl` (the stored action_url) if
- * the matrix has no entry for that surface, so legacy notifications with paths
- * like `/client/loyalty` still work as best-effort.
+ * path for the surface; only falls back to `fallbackUrl` (the stored
+ * action_url) when the matrix has NO entry for `(type, recipient, surface)`
+ * — so legacy notifications with paths like `/client/loyalty` still work.
  *
- * Returns null when there's nothing to navigate to.
+ * If the matrix HAS an entry but the builder returns null (metadata
+ * missing — e.g. `new_promotion` without `promotion_id`), this returns null
+ * directly instead of trusting `action_url`: the create-site that failed to
+ * supply metadata almost certainly also wrote a malformed action_url, so
+ * pushing it (`/promotions` on mobile, where the route is `/promotions/[id]`)
+ * leaves the user on an Unmatched Route screen. `safeNotificationRoute`
+ * picks a home route in that case.
  */
 export function resolveNotificationRoute(
   ctx: RouteContext,
   fallbackUrl: string | null
 ): string | null {
   const builder = MATRIX[ctx.type]?.[ctx.recipient]?.[ctx.surface]
-  const fromMatrix = builder?.(ctx.metadata) ?? null
-  return fromMatrix ?? fallbackUrl
+  if (builder) {
+    return builder(ctx.metadata)
+  }
+  return fallbackUrl
+}
+
+/**
+ * Like `resolveNotificationRoute` but always returns a navigable path. When
+ * the matrix has no entry and the stored action_url is also null, falls back
+ * to a per-surface home route from SAFE_DEFAULTS. Tap handlers should prefer
+ * this over `resolveNotificationRoute` so a malformed action_url or a
+ * notification created without metadata (e.g. by an admin tool or older
+ * trigger) never leaves the user staring at a silent no-op or an
+ * "Unmatched Route" screen.
+ *
+ * Note: the surface-home fallback is only used when BOTH matrix and
+ * fallbackUrl resolve to null. If a stored action_url exists it's still
+ * preferred — preserves intentional custom destinations on `system`-typed
+ * notifications and legacy data.
+ */
+export function safeNotificationRoute(
+  ctx: RouteContext,
+  fallbackUrl: string | null
+): string {
+  return (
+    resolveNotificationRoute(ctx, fallbackUrl) ??
+    SAFE_DEFAULTS[ctx.surface][ctx.recipient]
+  )
 }
