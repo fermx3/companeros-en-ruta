@@ -84,7 +84,7 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
 - **Context:** `apps/client-mobile`, EAS Build production profile. Apple rejected build 7 with a crash on iPad Air M3 / iPadOS 26.5. We then burned builds 8-15 via EAS — every one crashed at boot on iPhone 17 / iOS 26.5 with the same signature (`TurboModule` void method throws NSException → RN's `convertNSExceptionToJSError` → Hermes `errorStackGetter` null deref).
 - **Symptom:** TestFlight install opens for 155ms and dies. No JS stack visible — the conversion to JSError crashes before logging the NSException. Indistinguishable in TestFlight from "our code is broken at boot".
 - **Root cause:** EAS Build resolves `sdk-54` to `macos-sequoia-15.6-xcode-26.0`. The Xcode 26.0 toolchain bundles a Hermes precompiled binary with a known incompatibility on iOS 26.5 runtime. Xcode 26.4 (latest at the time) bundles a fixed Hermes. Confirmed by comparing the two IPAs: `hermes.framework/hermes` differs by ~27KB and only the Xcode 26.4-built one boots.
-- **Fix / Rule:** Pin `ios.image: "macos-tahoe-26.4-xcode-26.4"` in `apps/client-mobile/eas.json` (PR #57). **Caveat:** even with the image pinned, the binary EAS produces still differs ~27KB from a local Xcode 26.4 Archive and STILL crashes — investigation open (`project_eas_build_xcode_drift.md` memory). Workaround when EAS-built IPAs misbehave on a bleeding-edge iOS: local `npx expo prebuild --platform ios --clean && pod install && open ios/*.xcworkspace` + Product → Archive + Distribute → ASC. Tarda lo mismo, produce un IPA funcional.
+- **Fix / Rule:** Pin `ios.image: "macos-tahoe-26.4-xcode-26.4"` in `apps/client-mobile/eas.json` (PR #57). See the 2026-06-30 walk-back entry — earlier text here claimed PR #57 didn't fully fix it, which turned out to be a misdiagnosis from a mislabeled IPA download. PR #57 alone produces a Hermes binary byte-equivalent in size (and likely behavior) to the local Xcode 26.4 Archive. The remaining crash that hit build 16 is a separate issue, not a Hermes mismatch.
 - **Tags:** #ios #eas #expo #hermes #release
 
 ---
@@ -112,6 +112,17 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
   5. Frameworks diff: `ls -l Payload/*.app/Frameworks/{hermes,React,ReactNativeDependencies}.framework/*` — size differences here are the smoking gun for engine incompatibilities.
   6. If a local Archive boots and EAS doesn't, the gap is in the build infra, not your code.
 - **Tags:** #ios #release #debug #ipa
+
+---
+
+### 2026-06-30 — Walk-back: PR #57 alone produced byte-equivalent Hermes; build 16's crash was NOT a Hermes mismatch
+
+- **Context:** Re-investigation of the EAS Build vs local Xcode Archive drift, using direct IPA inspection on builds 15, 16, and 20.
+- **Symptom:** Yesterday's entry "EAS Build default image for SDK 54..." claimed PR #57 didn't fully fix the EAS pipeline because build 16 supposedly still had a ~27KB-larger Hermes than the local Archive. Today's comparison shows that's false: builds 16 and 20 (both with the pinned image) ship `hermes.framework/hermes` at **4,728,080 bytes — exactly the same size as the local Xcode 26.4 Archive** (md5 differs by signing only). Only build 15 (pre-pin, Xcode 26.0) had the 4,755,632-byte mismatched Hermes.
+- **Root cause of the misdiagnosis:** I downloaded the build 15 IPA into `/tmp/build15_ipa` and then mislabeled its size as "with image pinned" when writing the prior LEARNINGS entry. Build 15 was actually pre-pin (Xcode 26.0); build 16 was the first post-pin and already had the correct Hermes.
+- **What this means for the build 16 crash report:** the user's build 16 TestFlight crash log showed `objc_exception_rethrow` → `WorkletsModule installTurboModule`. That is a **different** crash family from build 15's `convertNSExceptionToJSError` + `errorStackGetter` null deref. The build 16 crash is most likely a distribution-signing-specific issue (production APS env, `get-task-allow=false`, hardened runtime variations) interacting with `react-native-worklets`, not Hermes. Confirming requires installing build 16 or 20 on iPhone 17 via TestFlight and reading the next crash signature.
+- **Fix / Rule:** When recording a "EAS still broken" finding, **download and inspect the actual IPA of the build in question** before claiming the binary differs. `ls -l Frameworks/hermes.framework/hermes` + `md5 -q` on both IPAs takes 30 seconds. Don't accept a single data point as "the pipeline is broken" — at minimum confirm against the build that was supposed to ship the fix.
+- **Tags:** #ios #eas #hermes #release #debug #self-correction
 
 ---
 
