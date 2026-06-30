@@ -115,6 +115,16 @@ LEARNINGS.md is the staging ground; rules and skills are the canon.
 
 ---
 
+### 2026-06-30 — Custom production domain is undecided; do not assume `companerosenruta.com`
+
+- **Context:** `apps/client-mobile/.env.example`, mobile `EXPO_PUBLIC_WEB_API_BASE`, future Vercel custom domain config.
+- **Symptom:** `.env.example` documented `https://companerosenruta.com` as the production URL → mobile builds shipped pointing there → network errors on login because that domain does not resolve DNS. The user later confirmed (2026-06-30) that the final production domain is **still undecided**, not "decided but pending DNS".
+- **Root cause:** the `.env.example` was a wishful placeholder, not a current state. Easy to mistake for the source of truth.
+- **Fix / Rule:** ship mobile builds pointing at the Vercel-natural URL `https://companeros-en-ruta.vercel.app` until the user picks a final domain. Treat any "the production domain is X" claim in `.env.example` or docs as stale unless freshly confirmed with the user. Update `apps/client-mobile/.env.example` comment to call out the indecision explicitly so the next contributor doesn't bake the wrong domain again.
+- **Tags:** #env #release #mobile
+
+---
+
 ### 2026-06-29 — `.env.local` always loaded by Expo, overrides `.env.production`
 
 - **Context:** `apps/client-mobile/.env.local`. Local Archive for production needed prod URLs baked in but `.env.local` had dev URLs and they leaked into the IPA.
