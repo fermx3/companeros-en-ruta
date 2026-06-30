@@ -8,7 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@companeros/shared/utils/cn';
 import {
-  resolveNotificationRoute,
+  safeNotificationRoute,
   type NotificationType,
   type RecipientKind,
 } from '@companeros/shared/utils/notification-routing';
@@ -200,7 +200,7 @@ export function NotificationBell() {
       await markAsRead([notification.id]);
     }
     if (!recipient) return;
-    const route = resolveNotificationRoute(
+    const route = safeNotificationRoute(
       {
         type: notification.notification_type as NotificationType,
         metadata: (notification.metadata as Record<string, unknown> | null) ?? {},
@@ -209,9 +209,11 @@ export function NotificationBell() {
       },
       notification.action_url ?? null,
     );
-    if (route) {
-      setOpen(false);
+    setOpen(false);
+    try {
       router.push(route);
+    } catch (err) {
+      console.error('[notifications] router.push failed for route:', route, err);
     }
   };
 

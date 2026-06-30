@@ -2,7 +2,7 @@ import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } fr
 import { router } from 'expo-router'
 
 import {
-  resolveNotificationRoute,
+  safeNotificationRoute,
   type NotificationType,
 } from '@companeros/shared/utils/notification-routing'
 
@@ -34,7 +34,7 @@ export function NotificationsList({ header, showMarkAllAction = true }: Notifica
 
   function handleTap(n: NotificationItem) {
     if (!n.is_read) markRead.mutate([n.id])
-    const route = resolveNotificationRoute(
+    const route = safeNotificationRoute(
       {
         type: n.notification_type as NotificationType,
         metadata: n.metadata ?? {},
@@ -43,7 +43,11 @@ export function NotificationsList({ header, showMarkAllAction = true }: Notifica
       },
       n.action_url ?? null,
     )
-    if (route) router.push(route as never)
+    try {
+      router.push(route as never)
+    } catch (err) {
+      console.error('[notifications] router.push failed for route:', route, err)
+    }
   }
 
   return (

@@ -12,7 +12,7 @@ import { useNotifications } from '@/hooks/useNotifications'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { cn } from '@companeros/shared/utils/cn'
 import {
-  resolveNotificationRoute,
+  safeNotificationRoute,
   type NotificationType,
 } from '@companeros/shared/utils/notification-routing'
 import type { Notification } from '@companeros/shared/types/database'
@@ -45,7 +45,7 @@ export default function ClientInboxPage() {
 
   function handleTap(n: Notification) {
     if (!n.is_read) markAsRead([n.id])
-    const route = resolveNotificationRoute(
+    const route = safeNotificationRoute(
       {
         type: n.notification_type as NotificationType,
         metadata: (n.metadata as Record<string, unknown> | null) ?? {},
@@ -54,7 +54,11 @@ export default function ClientInboxPage() {
       },
       n.action_url ?? null,
     )
-    if (route) router.push(route)
+    try {
+      router.push(route)
+    } catch (err) {
+      console.error('[notifications] router.push failed for route:', route, err)
+    }
   }
 
   if (loading) {

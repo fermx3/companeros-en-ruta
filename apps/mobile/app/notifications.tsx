@@ -3,7 +3,7 @@ import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import {
-  resolveNotificationRoute,
+  safeNotificationRoute,
   type NotificationType,
   type RecipientKind,
 } from '@companeros/shared/utils/notification-routing'
@@ -33,7 +33,7 @@ export default function NotificationsScreen() {
   function handleTap(n: NotificationItem) {
     if (!n.is_read) markRead.mutate([n.id])
     if (!role) return
-    const route = resolveNotificationRoute(
+    const route = safeNotificationRoute(
       {
         type: n.notification_type as NotificationType,
         metadata: n.metadata ?? {},
@@ -42,7 +42,11 @@ export default function NotificationsScreen() {
       },
       n.action_url ?? null,
     )
-    if (route) router.push(route as never)
+    try {
+      router.push(route as never)
+    } catch (err) {
+      console.error('[notifications] router.push failed for route:', route, err)
+    }
   }
 
   return (
